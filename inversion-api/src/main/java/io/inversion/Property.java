@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,191 +16,191 @@
  */
 package io.inversion;
 
-import java.io.Serializable;
-
 import io.inversion.utils.Utils;
+
+import java.io.Serializable;
 
 public class Property implements Serializable {
 
-   protected String     jsonName   = null;
-   protected String     columnName = null;
-   protected String     type       = "string";
-   protected boolean    nullable   = false;
+    protected String  jsonName   = null;
+    protected String  columnName = null;
+    protected String  type       = "string";
+    protected boolean nullable   = false;
 
-   protected String     hint       = null;
+    protected String hint = null;
 
-   protected boolean    exclude    = false;
+    protected boolean exclude = false;
 
-   /**
-    *  If this Property is a foreign key, this will be populated
-    *  with the referenced primary key from the referred Collection
-    */
-   protected Property   pk         = null;
+    /**
+     * If this Property is a foreign key, this will be populated
+     * with the referenced primary key from the referred Collection
+     */
+    protected Property pk = null;
 
-   protected Collection collection = null;
+    protected Collection collection = null;
 
-   public Property() {
+    public Property() {
 
-   }
+    }
 
-   public Property(String name) {
-      this(name, "string", true);
-   }
+    public Property(String name) {
+        this(name, "string", true);
+    }
 
-   public Property(String name, String type) {
-      this(name, type, true);
-   }
+    public Property(String name, String type) {
+        this(name, type, true);
+    }
 
-   public Property(String name, String type, boolean nullable) {
-      withColumnName(name);
-      withJsonName(name);
-      withType(type);
-      withNullable(nullable);
-   }
+    public Property(String name, String type, boolean nullable) {
+        withColumnName(name);
+        withJsonName(name);
+        withType(type);
+        withNullable(nullable);
+    }
 
-   //   @Override
-   //   public int compareTo(Property o)
-   //   {
-   //      if (o == null)
-   //         return 1;
-   //
-   //      if (o.collection == collection)
-   //      {
-   //         return getName().compareTo(((Property)collection.indexOf(this) > collection.indexOf(o) ? 1 : -1;
-   //      }
-   //
-   //      return 0;
-   //   }
+    //   @Override
+    //   public int compareTo(Property o)
+    //   {
+    //      if (o == null)
+    //         return 1;
+    //
+    //      if (o.collection == collection)
+    //      {
+    //         return getName().compareTo(((Property)collection.indexOf(this) > collection.indexOf(o) ? 1 : -1;
+    //      }
+    //
+    //      return 0;
+    //   }
 
-   public boolean equals(Object object) {
-      if (object == this)
-         return true;
+    public boolean equals(Object object) {
+        if (object == this)
+            return true;
 
-      if (object instanceof Property) {
-         Property column = (Property) object;
-         return ((collection == null || collection == column.collection) && Utils.equal(columnName, column.columnName));
-      }
-      return false;
-   }
+        if (object instanceof Property) {
+            Property column = (Property) object;
+            return ((collection == null || collection == column.collection) && Utils.equal(columnName, column.columnName));
+        }
+        return false;
+    }
 
-   public String toString() {
-      return hint == null ? getJsonName() : hint;
-   }
+    public String toString() {
+        return hint == null ? getJsonName() : hint;
+    }
 
-   /**
-    * @return the primaryKey
-    */
-   public Property getPk() {
-      return pk;
-   }
+    /**
+     * @return the primaryKey
+     */
+    public Property getPk() {
+        return pk;
+    }
 
-   /**
-    * @param primaryKey the primaryKey to set
-    */
-   public Property withPk(Property pk) {
-      this.pk = pk;
-      return this;
-   }
+    /**
+     * @param primaryKey the primaryKey to set
+     */
+    public Property withPk(Property pk) {
+        this.pk = pk;
+        return this;
+    }
 
-   public boolean isFk() {
-      return pk != null;
-   }
+    public boolean isFk() {
+        return pk != null;
+    }
 
-   /**
-    * @return the name
-    */
-   public String getColumnName() {
-      return columnName;
-   }
+    /**
+     * @return the name
+     */
+    public String getColumnName() {
+        return columnName;
+    }
 
-   /**
-    * @param name the name to set
-    */
-   public Property withColumnName(String name) {
-      this.columnName = name;
-      return this;
-   }
+    /**
+     * @param name the name to set
+     */
+    public Property withColumnName(String name) {
+        this.columnName = name;
+        return this;
+    }
 
-   /**
-    * @return the name
-    */
-   public String getJsonName() {
-      return jsonName;
-   }
+    /**
+     * @return the name
+     */
+    public String getJsonName() {
+        return jsonName;
+    }
 
-   /**
-    * @param name the name to set
-    */
-   public Property withJsonName(String name) {
-      this.jsonName = name;
-      return this;
-   }
+    /**
+     * @param name the name to set
+     */
+    public Property withJsonName(String name) {
+        this.jsonName = name;
+        return this;
+    }
 
-   /**
-    * @return the type
-    */
-   public String getType() {
-      return type;
-   }
+    /**
+     * @return the type
+     */
+    public String getType() {
+        return type;
+    }
 
-   /**
-    * @param type the type to set
-    */
-   public Property withType(String type) {
-      if (!Utils.empty(type) && !"null".equalsIgnoreCase(type))
-         this.type = type;
-      return this;
-   }
+    /**
+     * @param type the type to set
+     */
+    public Property withType(String type) {
+        if (!Utils.empty(type) && !"null".equalsIgnoreCase(type))
+            this.type = type;
+        return this;
+    }
 
-   /**
-    * @return the tbl
-    */
-   public Collection getCollection() {
-      return collection;
-   }
+    /**
+     * @return the tbl
+     */
+    public Collection getCollection() {
+        return collection;
+    }
 
-   /**
-    * @param tbl the tbl to set
-    */
-   public Property withCollection(Collection collection) {
-      if (this.collection != collection) {
-         this.collection = collection;
-         collection.withProperties(this);
-      }
-      return this;
-   }
+    /**
+     * @param tbl the tbl to set
+     */
+    public Property withCollection(Collection collection) {
+        if (this.collection != collection) {
+            this.collection = collection;
+            collection.withProperties(this);
+        }
+        return this;
+    }
 
-   /**
-    * @return the hint
-    */
-   public String getHint() {
-      return hint;
-   }
+    /**
+     * @return the hint
+     */
+    public String getHint() {
+        return hint;
+    }
 
-   /**
-    * @param hint the hint to set
-    */
-   public Property withHint(String hint) {
-      this.hint = hint;
-      return this;
-   }
+    /**
+     * @param hint the hint to set
+     */
+    public Property withHint(String hint) {
+        this.hint = hint;
+        return this;
+    }
 
-   public boolean isNullable() {
-      return nullable;
-   }
+    public boolean isNullable() {
+        return nullable;
+    }
 
-   public Property withNullable(boolean nullable) {
-      this.nullable = nullable;
-      return this;
-   }
+    public Property withNullable(boolean nullable) {
+        this.nullable = nullable;
+        return this;
+    }
 
-   public boolean isExclude() {
-      return exclude;
-   }
+    public boolean isExclude() {
+        return exclude;
+    }
 
-   public Property withExclude(boolean exclude) {
-      this.exclude = exclude;
-      return this;
-   }
+    public Property withExclude(boolean exclude) {
+        this.exclude = exclude;
+        return this;
+    }
 
 }

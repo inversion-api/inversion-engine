@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,27 +16,18 @@
  */
 package io.inversion;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.inversion.rql.RqlParser;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
 import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * An adapter to an underlying data source.
@@ -47,1348 +38,1349 @@ import io.inversion.utils.Utils;
  * <ol>
  *  <li>reflectively generate Collections to represent their underlying tables (or buckets, folders, containers etc.) columns, indexes, and relationships, during {@code #doStartup(Api)}.
  *  <li>implement REST CRUD support by implementing {@link #select(Collection, List)}, {@link #upsert(Collection, List)}, {@link #delete(Collection, List)}.
- * </ol> 
+ * </ol>
  * <p>
  * Actions such as DbGetAction then:
  * <ol>
- *  <li>translate a REST collection/resource request into columnName based json and RQL, 
+ *  <li>translate a REST collection/resource request into columnName based json and RQL,
  *  <li>execute the requested CRUD method on the Collection's underlying Db
- *  <li>then translate the results back from the Db columnName based data into the approperiate jsonName version for external consumption.  
+ *  <li>then translate the results back from the Db columnName based data into the approperiate jsonName version for external consumption.
  * </ol>
  *
  * @param <T>
  */
 public abstract class Db<T extends Db> {
 
-   protected final Logger          log            = LoggerFactory.getLogger(getClass());
+    protected final Logger log = LoggerFactory.getLogger(getClass());
 
-   transient Set<Api>              runningApis    = new HashSet();
+    transient Set<Api> runningApis = new HashSet();
 
-   transient boolean               firstStartup   = true;
+    transient boolean firstStartup = true;
 
-   transient boolean               shutdown       = false;
+    transient boolean shutdown = false;
 
-   /**
-    * The Collections that are the REST interface to the backend tables (or buckets, folders, containers etc.) this Db exposes through an Api.
-    */
-   protected ArrayList<Collection> collections    = new ArrayList();
+    /**
+     * The Collections that are the REST interface to the backend tables (or buckets, folders, containers etc.) this Db exposes through an Api.
+     */
+    protected ArrayList<Collection> collections = new ArrayList();
 
-   /**
-    * A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflicitive Collection creation.
-    */
-   protected Map<String, String>   includeTables  = new HashMap();
+    /**
+     * A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflicitive Collection creation.
+     */
+    protected Map<String, String> includeTables = new HashMap();
 
-   /**
-    * Indicates that this Db should reflectively create and configure Collections to represent its underlying tables.
-    * <p>
-    * This would be false when an Api designer wants to very specifically configure an Api probably when the underlying db does not support the type of 
-    * reflection required.  For example, you may want to put specific Property and Relationship structure on top of an unstructured JSON document store.
-    */
-   protected boolean               bootstrap      = true;
+    /**
+     * Indicates that this Db should reflectively create and configure Collections to represent its underlying tables.
+     * <p>
+     * This would be false when an Api designer wants to very specifically configure an Api probably when the underlying db does not support the type of
+     * reflection required.  For example, you may want to put specific Property and Relationship structure on top of an unstructured JSON document store.
+     */
+    protected boolean bootstrap = true;
 
-   /**
-    * The name of his Db used for "name.property" style autowiring. 
-    */
-   protected String                name           = null;
+    /**
+     * The name of his Db used for "name.property" style autowiring.
+     */
+    protected String name = null;
 
-   /**
-    * A property that can be used to disambiguate different backends supported by a single subclass.  
-    * <p>
-    * For example type might be "mysql" for a JdbcDb.
-    */
-   protected String                type           = null;
+    /**
+     * A property that can be used to disambiguate different backends supported by a single subclass.
+     * <p>
+     * For example type might be "mysql" for a JdbcDb.
+     */
+    protected String type = null;
 
-   /**
-    * Used to differentiate which Collection is being referred by a Request when an Api supports Collections with the same name from different Dbs. 
-    */
-   protected Path                  endpointPath   = null;
+    /**
+     * Used to differentiate which Collection is being referred by a Request when an Api supports Collections with the same name from different Dbs.
+     */
+    protected Path endpointPath = null;
 
-   /**
-    * OPTIONAL column names that should be included in RQL queries, upserts and patches. 
-    * @see #shouldInclude(Collection, String)
-    */
-   protected Set<String>           includeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    /**
+     * OPTIONAL column names that should be included in RQL queries, upserts and patches.
+     *
+     * @see #shouldInclude(Collection, String)
+     */
+    protected Set<String> includeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
-   /**
-    * OPTIONAL column names that should be excluded from RQL queries, upserts and patches. 
-    * @see #shouldInclude(Collection, String)
-    */
-   protected Set<String>           excludeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    /**
+     * OPTIONAL column names that should be excluded from RQL queries, upserts and patches.
+     *
+     * @see #shouldInclude(Collection, String)
+     */
+    protected Set<String> excludeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
-   /**
-    * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves 
-    */
-   protected Set<String>           reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
+    /**
+     * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves
+     */
+    protected Set<String> reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
 
-   public Db() {
-   }
+    public Db() {
+    }
 
-   public Db(String name) {
-      this.name = name;
-   }
+    public Db(String name) {
+        this.name = name;
+    }
 
-   /**
-    * Called by an Api to as part of Api.startup().
-    * <p>
-    * This implementation really only manages starting/started state, with the heaving lifting of bootstrapping delegated to {@link #doStartup(Api)}. 
-    *  
-    * @param api
-    * @return
-    * @see #doStartup(Api)
-    */
-   public final synchronized T startup(Api api) {
-      if (runningApis.contains(api))
-         return (T) this;
+    /**
+     * Called by an Api to as part of Api.startup().
+     * <p>
+     * This implementation really only manages starting/started state, with the heaving lifting of bootstrapping delegated to {@link #doStartup(Api)}.
+     *
+     * @param api
+     * @return
+     * @see #doStartup(Api)
+     */
+    public final synchronized T startup(Api api) {
+        if (runningApis.contains(api))
+            return (T) this;
 
-      runningApis.add(api);
-      doStartup(api);
+        runningApis.add(api);
+        doStartup(api);
 
-      return (T) this;
-   }
+        return (T) this;
+    }
 
-   /**
-    * Made to be overridden by subclasses or anonymous inner classes to do specific init of an Api.  
-    * <p>
-    * This method will not be called a second time after for an Api unless the Api is shutdown and then restarted.
-    * <p>
-    * The default implementation, when {@link #isBootstrap()} is true, calls {@link #configDb()} once globally and {@link #configApi(Api)} once for each Api passed in.
-    * 
-    * @see #configDb()
-    * @see #configApi(Api)
-    */
-   protected void doStartup(Api api) {
-      try {
-         if (isBootstrap()) {
-            if (firstStartup) {
-               firstStartup = false;
-               configDb();
+    /**
+     * Made to be overridden by subclasses or anonymous inner classes to do specific init of an Api.
+     * <p>
+     * This method will not be called a second time after for an Api unless the Api is shutdown and then restarted.
+     * <p>
+     * The default implementation, when {@link #isBootstrap()} is true, calls {@link #configDb()} once globally and {@link #configApi(Api)} once for each Api passed in.
+     *
+     * @see #configDb()
+     * @see #configApi(Api)
+     */
+    protected void doStartup(Api api) {
+        try {
+            if (isBootstrap()) {
+                if (firstStartup) {
+                    firstStartup = false;
+                    configDb();
+                }
+                configApi(api);
             }
-            configApi(api);
-         }
-      } catch (Exception ex) {
-         ex.printStackTrace();
-         Utils.rethrow(ex);
-      }
-   }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Utils.rethrow(ex);
+        }
+    }
 
-   /**
-    * Shutsdown all running Apis.
-    * <p>
-    * This is primarily a method used for testing.
-    * 
-    * @return this
-    */
-   public synchronized T shutdown() {
-      if (!shutdown) {
-         shutdown = true;
-         runningApis.forEach(api -> shutdown(api));
-         doShutdown();
-      }
-      return (T) this;
-   }
+    /**
+     * Shutsdown all running Apis.
+     * <p>
+     * This is primarily a method used for testing.
+     *
+     * @return this
+     */
+    public synchronized T shutdown() {
+        if (!shutdown) {
+            shutdown = true;
+            runningApis.forEach(api -> shutdown(api));
+            doShutdown();
+        }
+        return (T) this;
+    }
 
-   protected void doShutdown() {
+    protected void doShutdown() {
 
-   }
+    }
 
-   public synchronized T shutdown(Api api) {
-      if (runningApis.contains(api)) {
-         doShutdown(api);
-         runningApis.remove(api);
-      }
+    public synchronized T shutdown(Api api) {
+        if (runningApis.contains(api)) {
+            doShutdown(api);
+            runningApis.remove(api);
+        }
 
-      if (runningApis.size() == 0)
-         shutdown();
+        if (runningApis.size() == 0)
+            shutdown();
 
-      return (T) this;
-   }
+        return (T) this;
+    }
 
-   /**
-    * Made to be overridden by subclasses or anonymous inner classes to do specific cleanup
-    */
-   protected void doShutdown(Api api) {
+    /**
+     * Made to be overridden by subclasses or anonymous inner classes to do specific cleanup
+     */
+    protected void doShutdown(Api api) {
 
-   }
+    }
 
-   public boolean isRunning(Api api) {
-      return runningApis.contains(api);
-   }
+    public boolean isRunning(Api api) {
+        return runningApis.contains(api);
+    }
 
-   protected Term asTerm(String paramName, String paramValue) {
-      String termStr = null;
-      if (Utils.empty(paramValue) && paramName.indexOf("(") > -1) {
-         termStr = paramName;
-      } else {
-         if (Utils.empty(paramValue))
-            paramValue = "true";
+    protected Term asTerm(String paramName, String paramValue) {
+        String termStr = null;
+        if (Utils.empty(paramValue) && paramName.indexOf("(") > -1) {
+            termStr = paramName;
+        } else {
+            if (Utils.empty(paramValue))
+                paramValue = "true";
 
-         termStr = "eq(" + paramName + "," + paramValue + ")";
-      }
-      Term term = RqlParser.parse(termStr);
-      return term;
-   }
+            termStr = "eq(" + paramName + "," + paramValue + ")";
+        }
+        Term term = RqlParser.parse(termStr);
+        return term;
+    }
 
-   /**
-    * Finds all records that match the supplied RQL query terms.   
-    * <p>
-    * The implementation of this method primarily translates jsonNames to columnNames for RQL inputs and JSON outputs 
-    * delegating the work to {@link #doSelect(Collection, List)} where all ins and outs are based on columnName. 
-    *  
-    * @param collection
-    * @param queryTerms  RQL terms that have been translated to use Property jsonNames 
-    * @return A list of maps with keys as Property jsonNames
-    * @throws ApiException
-    */
-   public final Results select(Collection collection, Map<String, String> params) throws ApiException {
-      List<Term> inTerms = new ArrayList();
-      for (String key : params.keySet()) {
-         if (!reservedParams.contains(key))
-            inTerms.add(asTerm(key, params.get(key)));
-      }
+    /**
+     * Finds all records that match the supplied RQL query terms.
+     * <p>
+     * The implementation of this method primarily translates jsonNames to columnNames for RQL inputs and JSON outputs
+     * delegating the work to {@link #doSelect(Collection, List)} where all ins and outs are based on columnName.
+     *
+     * @param collection
+     * @param queryTerms RQL terms that have been translated to use Property jsonNames
+     * @return A list of maps with keys as Property jsonNames
+     * @throws ApiException
+     */
+    public final Results select(Collection collection, Map<String, String> params) throws ApiException {
+        List<Term> inTerms = new ArrayList();
+        for (String key : params.keySet()) {
+            if (!reservedParams.contains(key))
+                inTerms.add(asTerm(key, params.get(key)));
+        }
 
-      //------------------------------------------------
-      // Normalize all of the params and convert attribute
-      // names to column names.
-      List<Term> terms = new ArrayList();
+        //------------------------------------------------
+        // Normalize all of the params and convert attribute
+        // names to column names.
+        List<Term> terms = new ArrayList();
 
-      for (Term term : inTerms) {
-         if (term.hasToken("eq") && reservedParams.contains(term.getToken(0)))
-            continue;
+        for (Term term : inTerms) {
+            if (term.hasToken("eq") && reservedParams.contains(term.getToken(0)))
+                continue;
 
-         if (term.hasToken("eq") && term.getTerm(0).hasToken("includes")) {
-            //THIS IS AN OPTIMIZATION...the rest action can pull stuff OUT of the results based on
-            //dotted path expressions.  If you don't use dotted path expressions the includes values
-            //can be used to limit the sql select clause...however if any of the columns are actually
-            //dotted paths, don't pass on to the Query the extra stuff will be removed by the rest action.
-            boolean dottedInclude = false;
-            for (int i = 1; i < term.size(); i++) {
-               String str = term.getToken(i);
-               if (str.indexOf(".") > -1) {
-                  dottedInclude = true;
-                  break;
-               }
-            }
-            if (dottedInclude)
-               continue;
+            if (term.hasToken("eq") && term.getTerm(0).hasToken("includes")) {
+                //THIS IS AN OPTIMIZATION...the rest action can pull stuff OUT of the results based on
+                //dotted path expressions.  If you don't use dotted path expressions the includes values
+                //can be used to limit the sql select clause...however if any of the columns are actually
+                //dotted paths, don't pass on to the Query the extra stuff will be removed by the rest action.
+                boolean dottedInclude = false;
+                for (int i = 1; i < term.size(); i++) {
+                    String str = term.getToken(i);
+                    if (str.indexOf(".") > -1) {
+                        dottedInclude = true;
+                        break;
+                    }
+                }
+                if (dottedInclude)
+                    continue;
 
-            //TODO: need test cases 
-            for (Term child : term.getTerms()) {
-               if (child.hasToken("href") && collection != null) {
-                  term.removeTerm(child);
+                //TODO: need test cases
+                for (Term child : term.getTerms()) {
+                    if (child.hasToken("href") && collection != null) {
+                        term.removeTerm(child);
 
-                  Index pk = collection.getPrimaryIndex();
-                  for (int i = 0; i < pk.size(); i++) {
-                     Property c = pk.getProperty(i);
-                     boolean includesPkCol = false;
-                     for (Term col : term.getTerms()) {
-                        if (col.hasToken(c.getColumnName())) {
-                           includesPkCol = true;
-                           break;
+                        Index pk = collection.getPrimaryIndex();
+                        for (int i = 0; i < pk.size(); i++) {
+                            Property c             = pk.getProperty(i);
+                            boolean  includesPkCol = false;
+                            for (Term col : term.getTerms()) {
+                                if (col.hasToken(c.getColumnName())) {
+                                    includesPkCol = true;
+                                    break;
+                                }
+                            }
+                            if (!includesPkCol)
+                                term.withTerm(Term.term(term, c.getColumnName()));
                         }
-                     }
-                     if (!includesPkCol)
-                        term.withTerm(Term.term(term, c.getColumnName()));
-                  }
-                  break;
-               }
+                        break;
+                    }
+                }
             }
-         }
 
-         //            if (collection != null)
-         //            {
-         //               terms.addAll(collection.getDb().mapToColumns(collection, term));
-         //            }
-         //            else
-         {
-            terms.add(term);
-         }
-      }
+            //            if (collection != null)
+            //            {
+            //               terms.addAll(collection.getDb().mapToColumns(collection, term));
+            //            }
+            //            else
+            {
+                terms.add(term);
+            }
+        }
 
-      //-- this sort is not strictly necessary but it makes the order of terms in generated
-      //-- query text dependable so you can write better tests.
-      Collections.sort(terms);
+        //-- this sort is not strictly necessary but it makes the order of terms in generated
+        //-- query text dependable so you can write better tests.
+        Collections.sort(terms);
 
-      List<Term> mappedTerms = new ArrayList();
-      terms.forEach(term -> mappedTerms.addAll(mapToColumnNames(collection, term.copy())));
+        List<Term> mappedTerms = new ArrayList();
+        terms.forEach(term -> mappedTerms.addAll(mapToColumnNames(collection, term.copy())));
 
-      Results results = doSelect(collection, mappedTerms);
+        Results results = doSelect(collection, mappedTerms);
 
-      if (results.size() > 0) {
+        if (results.size() > 0) {
 
-         for (int i = 0; i < results.size(); i++) {
-            //convert the map into a JSNode
-            Map<String, Object> row = results.getRow(i);
+            for (int i = 0; i < results.size(); i++) {
+                //convert the map into a JSNode
+                Map<String, Object> row = results.getRow(i);
 
-            if (collection == null) {
-               JSNode node = new JSNode(row);
-               results.setRow(i, node);
-            } else {
-               JSNode node = new JSNode();
-               results.setRow(i, node);
+                if (collection == null) {
+                    JSNode node = new JSNode(row);
+                    results.setRow(i, node);
+                } else {
+                    JSNode node = new JSNode();
+                    results.setRow(i, node);
 
-               //String resourceKey = req.getCollection().encodeResourceKey(row);
-               String resourceKey = collection.encodeResourceKey(row);
+                    //String resourceKey = req.getCollection().encodeResourceKey(row);
+                    String resourceKey = collection.encodeResourceKey(row);
 
-               if (!Utils.empty(resourceKey)) {
-                  //------------------------------------------------
-                  //next turn all relationships into links that will 
-                  //retrieve the related entities
-                  for (Relationship rel : collection.getRelationships()) {
-                     String link = null;
-                     if (rel.isManyToOne()) {
-                        String fkval = null;
-                        if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1)//this value is already an encoded resourceKey
+                    if (!Utils.empty(resourceKey)) {
+                        //------------------------------------------------
+                        //next turn all relationships into links that will
+                        //retrieve the related entities
+                        for (Relationship rel : collection.getRelationships()) {
+                            String link = null;
+                            if (rel.isManyToOne()) {
+                                String fkval = null;
+                                if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1)//this value is already an encoded resourceKey
+                                {
+                                    Object obj = row.get(rel.getFk1Col1().getColumnName());
+                                    if (obj != null)
+                                        fkval = obj.toString();
+                                } else {
+                                    fkval = Collection.encodeResourceKey(row, rel.getFkIndex1());
+                                }
+
+                                if (fkval != null) {
+                                    link = Chain.buildLink(rel.getRelated(), fkval.toString(), null);
+                                }
+                            } else {
+                                //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
+                                link = Chain.buildLink(collection, resourceKey, rel.getName());
+                            }
+                            node.put(rel.getName(), link);
+                        }
+
+                        //------------------------------------------------
+                        // finally make sure the resource key is encoded as
+                        // the href
+                        String href = node.getString("href");
+                        if (Utils.empty(href)) {
+                            href = Chain.buildLink(collection, resourceKey, null);
+                            node.putFirst("href", href);
+                        }
+                    }
+
+                    //------------------------------------------------
+                    //copy over defined attributes first, if the select returned
+                    //extra columns they will be copied over last
+                    for (Property attr : collection.getProperties()) {
+                        String attrName = attr.getJsonName();
+                        String colName  = attr.getColumnName();
+
+                        boolean rowHas = row.containsKey(colName);
+                        if (rowHas)
+                        //if (resourceKey != null || rowHas)
                         {
-                           Object obj = row.get(rel.getFk1Col1().getColumnName());
-                           if (obj != null)
-                              fkval = obj.toString();
-                        } else {
-                           fkval = Collection.encodeResourceKey(row, rel.getFkIndex1());
+                            //-- if the resourceKey was null don't create
+                            //-- empty props for fields that were not
+                            //-- returned from the db
+                            Object val = row.remove(colName);
+                            if (!node.containsKey(attrName))
+                                node.put(attrName, val);
                         }
+                    }
 
-                        if (fkval != null) {
-                           link = Chain.buildLink(rel.getRelated(), fkval.toString(), null);
+                    //------------------------------------------------
+                    // next, if the db returned extra columns that
+                    // are not mapped to attributes, just straight copy them
+                    for (String key : row.keySet()) {
+                        if (!key.equalsIgnoreCase("href") && !node.containsKey(key)) {
+                            Object value = row.get(key);
+                            node.put(key, value);
                         }
-                     } else {
-                        //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
-                        link = Chain.buildLink(collection, resourceKey, rel.getName());
-                     }
-                     node.put(rel.getName(), link);
-                  }
+                    }
 
-                  //------------------------------------------------
-                  // finally make sure the resource key is encoded as
-                  // the href
-                  String href = node.getString("href");
-                  if (Utils.empty(href)) {
-                     href = Chain.buildLink(collection, resourceKey, null);
-                     node.putFirst("href", href);
-                  }
-               }
-
-               //------------------------------------------------
-               //copy over defined attributes first, if the select returned 
-               //extra columns they will be copied over last
-               for (Property attr : collection.getProperties()) {
-                  String attrName = attr.getJsonName();
-                  String colName = attr.getColumnName();
-
-                  boolean rowHas = row.containsKey(colName);
-                  if (rowHas)
-                  //if (resourceKey != null || rowHas)
-                  {
-                     //-- if the resourceKey was null don't create
-                     //-- empty props for fields that were not 
-                     //-- returned from the db
-                     Object val = row.remove(colName);
-                     if (!node.containsKey(attrName))
-                        node.put(attrName, val);
-                  }
-               }
-
-               //------------------------------------------------
-               // next, if the db returned extra columns that 
-               // are not mapped to attributes, just straight copy them
-               for (String key : row.keySet()) {
-                  if (!key.equalsIgnoreCase("href") && !node.containsKey(key)) {
-                     Object value = row.get(key);
-                     node.put(key, value);
-                  }
-               }
-
+                }
             }
-         }
 
-      } // end if results.size() > 0
+        } // end if results.size() > 0
 
-      //------------------------------------------------
-      //the "next" params come from the db encoded with db col names
-      //have to convert them to their attribute equivalents
-      for (Term term : ((List<Term>) results.getNext())) {
-         mapToJsonNames(collection, term);
-      }
+        //------------------------------------------------
+        //the "next" params come from the db encoded with db col names
+        //have to convert them to their attribute equivalents
+        for (Term term : ((List<Term>) results.getNext())) {
+            mapToJsonNames(collection, term);
+        }
 
-      return results;
-   }
+        return results;
+    }
 
-   /**
-    * Finds all records that match the supplied RQL query terms.   
-    * 
-    * @param collection
-    * @param queryTerms  RQL terms that have been translated to use Property columnNames not jsonNames 
-    * @return A list of maps with keys as Property columnNames not jsonNames
-    * @throws ApiException
-    */
-   public abstract Results doSelect(Collection collection, List<Term> queryTerms) throws ApiException;
+    /**
+     * Finds all records that match the supplied RQL query terms.
+     *
+     * @param collection
+     * @param queryTerms RQL terms that have been translated to use Property columnNames not jsonNames
+     * @return A list of maps with keys as Property columnNames not jsonNames
+     * @throws ApiException
+     */
+    public abstract Results doSelect(Collection collection, List<Term> queryTerms) throws ApiException;
 
-   public final List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws ApiException {
-      List<Map<String, Object>> upsertMaps = new ArrayList();
-      for (Map<String, Object> node : rows) {
-         Map<String, Object> mapped = new HashMap();
-         upsertMaps.add(mapped);
+    public final List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws ApiException {
+        List<Map<String, Object>> upsertMaps = new ArrayList();
+        for (Map<String, Object> node : rows) {
+            Map<String, Object> mapped = new HashMap();
+            upsertMaps.add(mapped);
 
-         String href = node.get("href") != null ? node.get("href").toString() : null;
-         if (href != null) {
-            Row decodedKey = collection.decodeResourceKey(href);
-            mapped.putAll(decodedKey);
-         }
-
-         HashSet copied = new HashSet();
-         for (Property attr : collection.getProperties()) {
-            String attrName = attr.getJsonName();
-
-            //skip relationships first, all relationships will be upserted first
-            //to make sure child foreign keys are created
-            if (collection.getRelationship(attrName) != null)
-               continue;
-
-            String colName = attr.getColumnName();
-            if (node.containsKey(attrName)) {
-               copied.add(attrName.toLowerCase());
-               copied.add(colName.toLowerCase());
-
-               Object attrValue = node.get(attrName);
-               Object colValue = collection.getDb().cast(attr, attrValue);
-               mapped.put(colName, colValue);
+            String href = node.get("href") != null ? node.get("href").toString() : null;
+            if (href != null) {
+                Row decodedKey = collection.decodeResourceKey(href);
+                mapped.putAll(decodedKey);
             }
-         }
-         for (Relationship rel : collection.getRelationships()) {
-            copied.add(rel.getName().toLowerCase());
 
-            if (rel.isManyToOne() && node.get(rel.getName()) != null) {
-               if (rel.getFkIndex1().size() == 1 && rel.getRelated().getPrimaryIndex().size() > 1) {
-                  String jsonName = rel.getFkIndex1().getJsonNames().get(0);
-                  String colName = rel.getFkIndex1().getColumnName(0);
+            HashSet copied = new HashSet();
+            for (Property attr : collection.getProperties()) {
+                String attrName = attr.getJsonName();
 
-                  Object value = node.get(jsonName);
+                //skip relationships first, all relationships will be upserted first
+                //to make sure child foreign keys are created
+                if (collection.getRelationship(attrName) != null)
+                    continue;
 
-                  if (value != null) {
-                     value = Utils.substringAfter(value.toString(), "/");
-                     mapped.put(colName, value);
-                     copied.add(colName);
-                  }
-               } else {
-                  for (String colName : rel.getFkIndex1().getColumnNames()) {
-                     copied.add(colName.toLowerCase());
-                  }
+                String colName = attr.getColumnName();
+                if (node.containsKey(attrName)) {
+                    copied.add(attrName.toLowerCase());
+                    copied.add(colName.toLowerCase());
 
-                  Map key = getKey(rel.getRelated(), node.get(rel.getName()));
-                  if (key != null) {
-                     Map foreignKey = mapTo(key, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
-                     for (Object keyPart : foreignKey.keySet()) {
-                        Object keyValue = foreignKey.get(keyPart);
-                        if (keyValue != null) {
-                           mapped.put((String) keyPart, keyValue);
-                        }
-                     }
-                  }
-               }
+                    Object attrValue = node.get(attrName);
+                    Object colValue  = collection.getDb().cast(attr, attrValue);
+                    mapped.put(colName, colValue);
+                }
             }
-         }
+            for (Relationship rel : collection.getRelationships()) {
+                copied.add(rel.getName().toLowerCase());
 
-         //-- this pulls in any properties that were supplied in the submitted document 
-         //-- but are unknown to the collection/table.  This is necessary to support
-         //-- document stores like dynamo/elastic where all columns are not necessarily
-         //-- known.
-         for (String key : node.keySet()) {
-            if (!copied.contains(key.toLowerCase())) {
-               if (!key.equals("href"))
-                  mapped.put(key, node.get(key));
-            }
-         }
+                if (rel.isManyToOne() && node.get(rel.getName()) != null) {
+                    if (rel.getFkIndex1().size() == 1 && rel.getRelated().getPrimaryIndex().size() > 1) {
+                        String jsonName = rel.getFkIndex1().getJsonNames().get(0);
+                        String colName  = rel.getFkIndex1().getColumnName(0);
 
-         for (String key : (List<String>) new ArrayList(mapped.keySet())) {
-            //TODO can optimize?
-            if (!shouldInclude(collection, key)) {
-               mapped.remove(key);
-            }
-         }
-      }
+                        Object value = node.get(jsonName);
 
-      return doUpsert(collection, upsertMaps);
-   }
-
-   public String getHref(Object hrefOrNode) {
-      if (hrefOrNode instanceof JSNode)
-         hrefOrNode = ((JSNode) hrefOrNode).get("href");
-
-      if (hrefOrNode instanceof String)
-         return (String) hrefOrNode;
-
-      return null;
-   }
-
-   public Map getKey(Collection collection, Object node) {
-      if (node instanceof JSNode)
-         node = ((JSNode) node).getString("href");
-
-      if (node instanceof String)
-         return collection.decodeResourceKey((String) node);
-
-      return null;
-   }
-
-   public Map mapTo(Map srcRow, Index srcCols, Index destCols) {
-      if (srcCols.size() != destCols.size() && destCols.size() == 1) {
-         //when the foreign key is only one column but the related primary key is multiple 
-         //columns, encode the FK as an resourceKey.
-         String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
-
-         for (Object key : srcRow.keySet())
-            srcRow.remove(key);
-
-         srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
-      } else {
-         if (srcCols.size() != destCols.size())
-            ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
-
-         if (srcRow == null)
-            return Collections.EMPTY_MAP;
-
-         if (srcCols != destCols) {
-            for (int i = 0; i < srcCols.size(); i++) {
-               String key = srcCols.getProperty(i).getColumnName();
-               Object value = srcRow.remove(key);
-               srcRow.put(destCols.getProperty(i).getColumnName(), value);
-            }
-         }
-      }
-      return srcRow;
-   }
-
-   /**
-    * Upserts the key/values pairs for each row into the underlying data source.  
-    * <p>
-    * Keys that are not supplied in the call but that exist in the row in the target DB should not be modified.
-    * <p>
-    * Each row should minimally contain key value pairs that satisfy one of the 
-    * tables unique index constraints allowing an update to take place instead  
-    * of an insert if the row already exists in the underlying data source.
-    * <p>
-    * IMPORTANT #1 - implementors should note that the keys on each row in <code>rows</code> may be different.
-    * <p>
-    * IMPORTANT #2 - strict POST/PUT vs POST/PATCH semantics are implementation specific.
-    * For example, a RDBMS backed implementation may choose to upsert only the supplied
-    * client supplied keys effectively making this a POST/PATCH operation.  A 
-    * document store that is simply storing the supplied JSON may not be able to do
-    * partial updates elegantly and replace existing documents entirely rendering
-    * this a POST/PUT.    
-    * 
-    * @param collection
-    * @param rows
-    * @return the encoded resource key for every supplied row
-    * @throws ApiException
-    * 
-    */
-   public abstract List<String> doUpsert(Collection collection, List<Map<String, Object>> rows) throws ApiException;
-
-   /**
-    * Should be called by Actions instead of upsert() only when all records are strictly known to exist.
-    * <p>
-    * The default implementation simply calls upsert().  
-    * 
-    * @param collection
-    * @param rows the key/value pairs to update on existing records
-    * @throws ApiException
-    */
-   //TODO: all rows need to be have a resourceKey 
-   public List<String> patch(Collection collection, List<Map<String, Object>> nodes) throws ApiException {
-      List<Map<String, Object>> rows = new ArrayList();
-
-      List<String> resourceKeys = new ArrayList();
-      for (Map<String, Object> node : nodes) {
-         if (node.size() == 1)
-            continue;//patching an "href" only so no changes.
-
-         Row row = new Row();
-         rows.add(row);
-
-         for (String jsonProp : node.keySet()) {
-            Object value = node.get(jsonProp);
-
-            if ("href".equalsIgnoreCase(jsonProp)) {
-               String resourceKey = Utils.substringAfter(value.toString(), "/");
-               resourceKeys.add(resourceKey);
-               row.putAll(collection.decodeResourceKey(resourceKey));
-            } else {
-               Property collProp = collection.getProperty(jsonProp);
-               if (collProp != null) {
-                  value = cast(collProp, value);
-                  row.put(collProp.getColumnName(), value);
-               } else {
-                  //TODO: need test case here
-                  Relationship rel = collection.getRelationship(jsonProp);
-                  if (rel != null) {
-                     if (rel.isManyToOne()) {
                         if (value != null) {
-                           Map fk = rel.getRelated().decodeResourceKey(value.toString());
-                           mapTo(fk, rel.getFkIndex1(), rel.getRelated().getPrimaryIndex());
-                           row.putAll(fk);
-                        } else {
-                           for (Property fkProp : rel.getFkIndex1().getProperties()) {
-                              row.put(fkProp.getColumnName(), null);
-                           }
+                            value = Utils.substringAfter(value.toString(), "/");
+                            mapped.put(colName, value);
+                            copied.add(colName);
                         }
-                     } else {
-                        ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related resource.");
-                     }
-                  } else {
-                     row.put(jsonProp, value);
-                  }
-               }
+                    } else {
+                        for (String colName : rel.getFkIndex1().getColumnNames()) {
+                            copied.add(colName.toLowerCase());
+                        }
+
+                        Map key = getKey(rel.getRelated(), node.get(rel.getName()));
+                        if (key != null) {
+                            Map foreignKey = mapTo(key, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
+                            for (Object keyPart : foreignKey.keySet()) {
+                                Object keyValue = foreignKey.get(keyPart);
+                                if (keyValue != null) {
+                                    mapped.put((String) keyPart, keyValue);
+                                }
+                            }
+                        }
+                    }
+                }
             }
-         }
 
-         for (String columnName : (Set<String>) row.keySet()) {
-            //TODO can optimize?
-            if (!shouldInclude(collection, columnName))
-               row.remove(columnName);
-         }
-      }
-
-      doPatch(collection, rows);
-
-      return resourceKeys;
-   }
-
-   public void doPatch(Collection collection, List<Map<String, Object>> rows) throws ApiException {
-      doUpsert(collection, rows);
-   }
-
-   /**
-    * Deletes rows identified by the unique index values from the underlying data source.
-    * <p>
-    * IMPORTANT implementors should note that the keys on each <code>indexValues</code> row may be different.
-    * <p>
-    * The keys should have come from a unique index, meaning that the key/value pairs
-    * for each row should uniquely identify the row, however there is no guarantee 
-    * that each row will reference the same index.
-    * 
-    * @param table
-    * @param indexValues
-    * @throws ApiException
-    */
-   public abstract void delete(Collection collection, List<Map<String, Object>> indexValues) throws ApiException;
-
-   /**
-    * Adds all non excluded Collections to the Api via Api.withCollection
-    * 
-    * @param api  the Api to configure.
-    */
-   protected void configApi(Api api) {
-
-      for (Collection coll : getCollections()) {
-         if (!coll.isExclude()) {
-            api.withCollection(coll);
-         }
-      }
-
-   }
-
-   /**
-    * Subclasses should reflectively create Collections and Properties, Indexes, and Relationships here.
-    * <p>
-    * The default implementation simply delegates to {@link #buildCollections()} and {@link #buildRelationships()}.  
-    * <p>
-    * Generally, you will need to override buildCollections when implementing a new Db subclass but can probably leave buildRelationships alone 
-    * as all it does is reflectively build Relationships off of Indexes that are on the Collections. 
-    * 
-    * @throws ApiException
-    */
-   protected void configDb() throws ApiException {
-      if (collections.size() == 0) {
-         buildCollections();
-         buildRelationships();
-      }
-   }
-
-   /**
-    * Creates a collection for every table name in <code>includeTables</code> giving the Collections and Properties beautified JSON names.
-    * <p>
-    * Subclasses should override this method to reflectively create Collections, Properties and Indexes and then call super.buildCollections()
-    * if they want names them beautified.
-    */
-   protected void buildCollections() {
-      for (String tableName : includeTables.keySet()) {
-         Collection collection = getCollectionByTableName(tableName);
-         if (collection == null) {
-            withCollection(new Collection(tableName));
-         }
-      }
-
-      for (Collection coll : getCollections()) {
-         if (coll.getName().equals(coll.getTableName())) {
-            //collection has not already been specifically customized
-            String prettyName = beautifyCollectionName(coll.getTableName());
-            coll.withName(prettyName);
-         }
-
-         for (Property prop : coll.getProperties()) {
-            if (prop.getColumnName().equals(prop.getJsonName())) {
-               //json name has not already been specifically customized
-               String prettyName = beautifyName(prop.getColumnName());
-               prop.withJsonName(prettyName);
+            //-- this pulls in any properties that were supplied in the submitted document
+            //-- but are unknown to the collection/table.  This is necessary to support
+            //-- document stores like dynamo/elastic where all columns are not necessarily
+            //-- known.
+            for (String key : node.keySet()) {
+                if (!copied.contains(key.toLowerCase())) {
+                    if (!key.equals("href"))
+                        mapped.put(key, node.get(key));
+                }
             }
-         }
-      }
-   }
 
-   /**
-    * Creates ONE_TO_MANY, MANY_TO_ONE, and MANY_TO_MANY Relationships with attractive RESTish names
-    * based on the primary Index and foreign key Index structures of the Collections.
-    * <p>
-    * For all foreign key indexes, two relationships objects are created representing both sides of the relationship. 
-    * A MANY_TO_ONE also creates a ONE_TO_MANY and vice versa and there are always two for a MANY_TO_MANY modeling the relationship from both sides.
-    */
-   protected void buildRelationships() {
-      List<String> relationshipStrs = new ArrayList();
-
-      for (Collection coll : getCollections()) {
-         if (coll.isLinkTbl()) {
-            //create reciprocal pairs for of MANY_TO_MANY relationships
-            //for each pair combination in the link table.
-            List<Index> indexes = coll.getIndexes();
-            for (int i = 0; i < indexes.size(); i++) {
-               for (int j = 0; j < indexes.size(); j++) {
-                  Index idx1 = indexes.get(i);
-                  Index idx2 = indexes.get(j);
-
-                  if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
-                     continue;
-
-                  Collection resource1 = idx1.getProperty(0).getPk().getCollection();
-                  Collection resource2 = idx2.getProperty(0).getPk().getCollection();
-
-                  Relationship r = new Relationship();
-                  r.withType(Relationship.REL_MANY_TO_MANY);
-
-                  r.withRelated(resource2);
-                  r.withFkIndex1(idx1);
-                  r.withFkIndex2(idx2);
-                  r.withName(makeRelationshipName(resource1, r));
-                  r.withCollection(resource1);
-                  relationshipStrs.add(r.toString());
-               }
+            for (String key : (List<String>) new ArrayList(mapped.keySet())) {
+                //TODO can optimize?
+                if (!shouldInclude(collection, key)) {
+                    mapped.remove(key);
+                }
             }
-         } else {
-            for (Index fkIdx : coll.getIndexes()) {
-               try {
-                  if (!fkIdx.getType().equals("FOREIGN_KEY") || fkIdx.getProperty(0).getPk() == null)
-                     continue;
+        }
 
-                  Collection pkResource = fkIdx.getProperty(0).getPk().getCollection();
-                  Collection fkResource = fkIdx.getProperty(0).getCollection();
+        return doUpsert(collection, upsertMaps);
+    }
 
-                  //ONE_TO_MANY
-                  {
-                     Relationship r = new Relationship();
-                     //TODO:this name may not be specific enough or certain types
-                     //of relationships. For example where an resource is related
-                     //to another resource twice
-                     r.withType(Relationship.REL_ONE_TO_MANY);
-                     r.withFkIndex1(fkIdx);
-                     r.withRelated(fkResource);
-                     r.withName(makeRelationshipName(pkResource, r));
-                     r.withCollection(pkResource);
-                     relationshipStrs.add(r.toString());
-                  }
+    public String getHref(Object hrefOrNode) {
+        if (hrefOrNode instanceof JSNode)
+            hrefOrNode = ((JSNode) hrefOrNode).get("href");
 
-                  //MANY_TO_ONE
-                  {
-                     Relationship r = new Relationship();
-                     r.withType(Relationship.REL_MANY_TO_ONE);
-                     r.withFkIndex1(fkIdx);
-                     r.withRelated(pkResource);
-                     r.withName(makeRelationshipName(fkResource, r));
-                     r.withCollection(fkResource);
-                     relationshipStrs.add(r.toString());
-                  }
-               } catch (Exception ex) {
-                  ApiException.throw500InternalServerError(ex, "Error creating relationship for index: {}", fkIdx);
-               }
+        if (hrefOrNode instanceof String)
+            return (String) hrefOrNode;
+
+        return null;
+    }
+
+    public Map getKey(Collection collection, Object node) {
+        if (node instanceof JSNode)
+            node = ((JSNode) node).getString("href");
+
+        if (node instanceof String)
+            return collection.decodeResourceKey((String) node);
+
+        return null;
+    }
+
+    public Map mapTo(Map srcRow, Index srcCols, Index destCols) {
+        if (srcCols.size() != destCols.size() && destCols.size() == 1) {
+            //when the foreign key is only one column but the related primary key is multiple
+            //columns, encode the FK as an resourceKey.
+            String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
+
+            for (Object key : srcRow.keySet())
+                srcRow.remove(key);
+
+            srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
+        } else {
+            if (srcCols.size() != destCols.size())
+                ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
+
+            if (srcRow == null)
+                return Collections.EMPTY_MAP;
+
+            if (srcCols != destCols) {
+                for (int i = 0; i < srcCols.size(); i++) {
+                    String key   = srcCols.getProperty(i).getColumnName();
+                    Object value = srcRow.remove(key);
+                    srcRow.put(destCols.getProperty(i).getColumnName(), value);
+                }
             }
-         }
-      }
-   }
+        }
+        return srcRow;
+    }
 
-   /**
-    * Attempts to camelCase and pluralize the table name to make it an attractive REST collection name.
-    * 
-    * @param tableName
-    * @return a camelCased and pluralied version of tableName
-    * @see #beautifyName(String)
-    */
-   protected String beautifyCollectionName(String tableName) {
-      if (includeTables.containsKey(tableName))
-         return includeTables.get(tableName);
+    /**
+     * Upserts the key/values pairs for each row into the underlying data source.
+     * <p>
+     * Keys that are not supplied in the call but that exist in the row in the target DB should not be modified.
+     * <p>
+     * Each row should minimally contain key value pairs that satisfy one of the
+     * tables unique index constraints allowing an update to take place instead
+     * of an insert if the row already exists in the underlying data source.
+     * <p>
+     * IMPORTANT #1 - implementors should note that the keys on each row in <code>rows</code> may be different.
+     * <p>
+     * IMPORTANT #2 - strict POST/PUT vs POST/PATCH semantics are implementation specific.
+     * For example, a RDBMS backed implementation may choose to upsert only the supplied
+     * client supplied keys effectively making this a POST/PATCH operation.  A
+     * document store that is simply storing the supplied JSON may not be able to do
+     * partial updates elegantly and replace existing documents entirely rendering
+     * this a POST/PUT.
+     *
+     * @param collection
+     * @param rows
+     * @return the encoded resource key for every supplied row
+     * @throws ApiException
+     */
+    public abstract List<String> doUpsert(Collection collection, List<Map<String, Object>> rows) throws ApiException;
 
-      String collectionName = beautifyName(tableName);
+    /**
+     * Should be called by Actions instead of upsert() only when all records are strictly known to exist.
+     * <p>
+     * The default implementation simply calls upsert().
+     *
+     * @param collection
+     * @param rows       the key/value pairs to update on existing records
+     * @throws ApiException
+     */
+    //TODO: all rows need to be have a resourceKey
+    public List<String> patch(Collection collection, List<Map<String, Object>> nodes) throws ApiException {
+        List<Map<String, Object>> rows = new ArrayList();
 
-      if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
-         collectionName = Pluralizer.plural(collectionName);
+        List<String> resourceKeys = new ArrayList();
+        for (Map<String, Object> node : nodes) {
+            if (node.size() == 1)
+                continue;//patching an "href" only so no changes.
 
-      return collectionName;
-   }
+            Row row = new Row();
+            rows.add(row);
 
-   /**
-    * Try to make an attractive camelCase valid javascript variable name.
-    * <p>
-    * Lots of sql db designers use things like SNAKE_CASE_COLUMN_NAMES that look terrible as json property names.
-    * 
-    * @param name the to beautify
-    * @return a camelCased version of <code>name</code>
-    * 
-    * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables
-    */
-   protected String beautifyName(String name) {
-      //all upper case...U.G.L.Y you ain't got on alibi you UGLY, hay hay you UGLY
-      if (name.toUpperCase().equals(name)) {
-         name = name.toLowerCase();
-      }
+            for (String jsonProp : node.keySet()) {
+                Object value = node.get(jsonProp);
 
-      StringBuffer buff = new StringBuffer("");
-
-      boolean nextUpper = false;
-      for (int i = 0; i < name.length(); i++) {
-         char next = name.charAt(i);
-         if (next == ' ' || next == '_') {
-            nextUpper = true;
-            continue;
-         }
-
-         if (buff.length() == 0 && // 
-               !(Character.isAlphabetic(next)// 
-                     || next == '$'))//OK $ is a valid initial character in a JS identifier but seriously why dude, just why? 
-         {
-            next = 'x';
-         }
-
-         if (nextUpper) {
-            next = Character.toUpperCase(next);
-            nextUpper = false;
-         }
-
-         if (buff.length() == 0)
-            next = Character.toLowerCase(next);
-
-         buff.append(next);
-      }
-      return buff.toString();
-   }
-
-   //   /**
-   //    * Attempts to construct a sensible json property name for a Relationship.
-   //    * <p>
-   //    * For example, a "ONE Author TO_MANY Books" relationship might show up as "books" on the Author collection and "Author" on the Books collection. 
-   //    * <p>
-   //    * The algorithm attempts to pluralize the "MANY" side of the relationship.
-   //    * <p>
-   //    * The "ONE" side of a relationship uses the first foreign key column name minus an trailing case insensitive "ID", so in the above example, 
-   //    * if there is a foreign key Book.authorId pointing to the Author table, the the name would be "author".  If the foreign key column name
-   //    * was Book.primaryAuthorKey, the relationship would be named "primaryAuthorKey".
-   //    *  
-   //    * @param resource
-   //    * @param rel
-   //    * @return the json property name for this Relationship. 
-   //    */
-   //   protected String makeRelationshipName(Collection resource, Relationship rel)
-   //   {
-   //      String name = null;
-   //      String type = rel.getType();
-   //      boolean pluralize = false;
-   //      if (type.equals(Relationship.REL_MANY_TO_ONE))
-   //      {
-   //         name = rel.getFk1Col1().getJsonName();
-   //         if (name.toLowerCase().endsWith("id") && name.length() > 2)
-   //         {
-   //            name = name.substring(0, name.length() - 2);
-   //         }
-   //      }
-   //      else if (type.equals(Relationship.REL_ONE_TO_MANY))
-   //      {
-   //         name = rel.getRelated().getName();
-   //         pluralize = true;
-   //      }
-   //      else if (type.equals(Relationship.REL_MANY_TO_MANY))
-   //      {
-   //         name = rel.getFk2Col1().getPk().getCollection().getName();
-   //         pluralize = true;
-   //      }
-   //
-   //      name = beautifyName(name);
-   //
-   //      if (pluralize)
-   //      {
-   //         name = Pluralizer.plural(name);
-   //      }
-   //
-   //      return name;
-   //   }
-
-   /**
-    * Attempts to construct a sensible json property name for a Relationship.
-    * <p>
-    * For example, a "ONE Author TO_MANY Books" relationship might show up as "books" on the Author collection and "Author" on the Books collection. 
-    * <p>
-    * The algorithm attempts to pluralize the "MANY" side of the relationship.
-    * <p>
-    * The "ONE" side of a relationship uses the first foreign key column name minus an trailing case insensitive "ID", so in the above example, 
-    * if there is a foreign key Book.authorId pointing to the Author table, the the name would be "author".  If the foreign key column name
-    * was Book.primaryAuthorKey, the relationship would be named "primaryAuthorKey".
-    *  
-    * @param resource
-    * @param rel
-    * @return the json property name for this Relationship. 
-    */
-   protected String makeRelationshipName(Collection resource, Relationship rel) {
-      String name = null;
-      String type = rel.getType();
-
-      String fkColName = rel.getFk1Col1().getColumnName();
-      if (fkColName.toLowerCase().endsWith("id") && fkColName.length() > 2) {
-         fkColName = fkColName.substring(0, fkColName.length() - 2);
-         while (fkColName.endsWith("_"))
-            fkColName = fkColName.substring(0, fkColName.length() - 1);
-      }
-      fkColName = fkColName.trim();
-      fkColName = beautifyName(fkColName);
-
-      if (type.equals(Relationship.REL_MANY_TO_ONE)) {
-         name = fkColName;
-      } else if (type.equals(Relationship.REL_ONE_TO_MANY)) {
-         //Example
-         //
-         //if the Alarm table has a FK to the Category table
-         //this would be called to add a relationship to the Category
-         //collection called "alarms"....this is the default case
-         //assuming the Alarm fk column is semantically related to 
-         //the Category table with a name such as:
-         //category, categories, categoryId or categoriesId 
-         //
-         //say for example that the Alarm table had two foreign
-         //keys to the Category table.  One called "categoryId"
-         //and the other called "subcategoryId".  In this case
-         //the "categoryId" column is semantically related and would
-         //result in the collection property "alarms" being added
-         //to the Category collection.  The "subcategoyId" column
-         //name is not one of the semantically related names 
-         //so it results in a property called "subcategoryAlarms"
-         //being added to the Category collection.
-
-         name = rel.getRelated().getName();
-
-         for (Relationship aRel : resource.getRelationships()) {
-            if (rel == aRel)
-               continue;
-
-            if (rel.getRelated() == aRel.getRelated()) {
-               if (!fkColName.equals(name)) {
-                  name = fkColName + Character.toUpperCase(name.charAt(0)) + name.substring(1);
-               }
-               break;
+                if ("href".equalsIgnoreCase(jsonProp)) {
+                    String resourceKey = Utils.substringAfter(value.toString(), "/");
+                    resourceKeys.add(resourceKey);
+                    row.putAll(collection.decodeResourceKey(resourceKey));
+                } else {
+                    Property collProp = collection.getProperty(jsonProp);
+                    if (collProp != null) {
+                        value = cast(collProp, value);
+                        row.put(collProp.getColumnName(), value);
+                    } else {
+                        //TODO: need test case here
+                        Relationship rel = collection.getRelationship(jsonProp);
+                        if (rel != null) {
+                            if (rel.isManyToOne()) {
+                                if (value != null) {
+                                    Map fk = rel.getRelated().decodeResourceKey(value.toString());
+                                    mapTo(fk, rel.getFkIndex1(), rel.getRelated().getPrimaryIndex());
+                                    row.putAll(fk);
+                                } else {
+                                    for (Property fkProp : rel.getFkIndex1().getProperties()) {
+                                        row.put(fkProp.getColumnName(), null);
+                                    }
+                                }
+                            } else {
+                                ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related resource.");
+                            }
+                        } else {
+                            row.put(jsonProp, value);
+                        }
+                    }
+                }
             }
-         }
-      } else if (type.equals(Relationship.REL_MANY_TO_MANY)) {
-         name = rel.getFk2Col1().getPk().getCollection().getName();
 
-      }
+            for (String columnName : (Set<String>) row.keySet()) {
+                //TODO can optimize?
+                if (!shouldInclude(collection, columnName))
+                    row.remove(columnName);
+            }
+        }
 
-      return name;
-   }
+        doPatch(collection, rows);
 
-   /**
-    * Casts value as Property.type.
-    * 
-    * @param property
-    * @param value
-    * @return <code>value</code> cast to <code>Property.type</code>
-    * @see io.inversion.utils.Utils.cast(String, Object)
-    */
-   public Object cast(Property property, Object value) {
-      return Utils.cast(property != null ? property.getType() : null, value);
-   }
+        return resourceKeys;
+    }
 
-   /**
-    * Casts value to as type.
-    * 
-    * @param type
-    * @param value
-    * @return <code>value</code> cast to <code>type</code>
-    * @see io.inversion.utils.Utils.cast(String, Object)
-    */
-   public Object cast(String type, Object value) {
-      return Utils.cast(type, value);
-   }
+    public void doPatch(Collection collection, List<Map<String, Object>> rows) throws ApiException {
+        doUpsert(collection, rows);
+    }
 
-   protected void mapToJsonNames(Collection collection, Term term) {
-      if (collection == null)
-         return;
+    /**
+     * Deletes rows identified by the unique index values from the underlying data source.
+     * <p>
+     * IMPORTANT implementors should note that the keys on each <code>indexValues</code> row may be different.
+     * <p>
+     * The keys should have come from a unique index, meaning that the key/value pairs
+     * for each row should uniquely identify the row, however there is no guarantee
+     * that each row will reference the same index.
+     *
+     * @param table
+     * @param indexValues
+     * @throws ApiException
+     */
+    public abstract void delete(Collection collection, List<Map<String, Object>> indexValues) throws ApiException;
 
-      if (term.isLeaf() && !term.isQuoted()) {
-         String token = term.getToken();
+    /**
+     * Adds all non excluded Collections to the Api via Api.withCollection
+     *
+     * @param api the Api to configure.
+     */
+    protected void configApi(Api api) {
 
-         Property attr = collection.findProperty(token);
-         if (attr != null)
-            term.withToken(attr.getJsonName());
-      } else {
-         for (Term child : term.getTerms()) {
-            mapToJsonNames(collection, child);
-         }
-      }
-   }
+        for (Collection coll : getCollections()) {
+            if (!coll.isExclude()) {
+                api.withCollection(coll);
+            }
+        }
 
-   protected Set<Term> mapToColumnNames(Collection collection, Term term) {
-      Set terms = new HashSet();
+    }
 
-      if (term.getParent() == null)
-         terms.add(term);
+    /**
+     * Subclasses should reflectively create Collections and Properties, Indexes, and Relationships here.
+     * <p>
+     * The default implementation simply delegates to {@link #buildCollections()} and {@link #buildRelationships()}.
+     * <p>
+     * Generally, you will need to override buildCollections when implementing a new Db subclass but can probably leave buildRelationships alone
+     * as all it does is reflectively build Relationships off of Indexes that are on the Collections.
+     *
+     * @throws ApiException
+     */
+    protected void configDb() throws ApiException {
+        if (collections.size() == 0) {
+            buildCollections();
+            buildRelationships();
+        }
+    }
 
-      if (collection == null)
-         return terms;
+    /**
+     * Creates a collection for every table name in <code>includeTables</code> giving the Collections and Properties beautified JSON names.
+     * <p>
+     * Subclasses should override this method to reflectively create Collections, Properties and Indexes and then call super.buildCollections()
+     * if they want names them beautified.
+     */
+    protected void buildCollections() {
+        for (String tableName : includeTables.keySet()) {
+            Collection collection = getCollectionByTableName(tableName);
+            if (collection == null) {
+                withCollection(new Collection(tableName));
+            }
+        }
 
-      if (term.isLeaf() && !term.isQuoted()) {
-         String token = term.getToken();
+        for (Collection coll : getCollections()) {
+            if (coll.getName().equals(coll.getTableName())) {
+                //collection has not already been specifically customized
+                String prettyName = beautifyCollectionName(coll.getTableName());
+                coll.withName(prettyName);
+            }
 
-         while (token.startsWith("-") || token.startsWith("+"))
-            token = token.substring(1, token.length());
+            for (Property prop : coll.getProperties()) {
+                if (prop.getColumnName().equals(prop.getJsonName())) {
+                    //json name has not already been specifically customized
+                    String prettyName = beautifyName(prop.getColumnName());
+                    prop.withJsonName(prettyName);
+                }
+            }
+        }
+    }
 
-         String name = "";
-         String[] parts = token.split("\\.");
+    /**
+     * Creates ONE_TO_MANY, MANY_TO_ONE, and MANY_TO_MANY Relationships with attractive RESTish names
+     * based on the primary Index and foreign key Index structures of the Collections.
+     * <p>
+     * For all foreign key indexes, two relationships objects are created representing both sides of the relationship.
+     * A MANY_TO_ONE also creates a ONE_TO_MANY and vice versa and there are always two for a MANY_TO_MANY modeling the relationship from both sides.
+     */
+    protected void buildRelationships() {
+        List<String> relationshipStrs = new ArrayList();
 
-         //         if (parts.length > 2)//this could be a literal
-         //            throw new ApiException("You can only specify a single level of relationship in dotted attributes: '" + token + "'");
+        for (Collection coll : getCollections()) {
+            if (coll.isLinkTbl()) {
+                //create reciprocal pairs for of MANY_TO_MANY relationships
+                //for each pair combination in the link table.
+                List<Index> indexes = coll.getIndexes();
+                for (int i = 0; i < indexes.size(); i++) {
+                    for (int j = 0; j < indexes.size(); j++) {
+                        Index idx1 = indexes.get(i);
+                        Index idx2 = indexes.get(j);
 
-         for (int i = 0; i < parts.length; i++) {
-            String part = parts[i];
+                        if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
+                            continue;
 
-            if (i == parts.length - 1) {
-               Property attr = collection.findProperty(parts[i]);
+                        Collection resource1 = idx1.getProperty(0).getPk().getCollection();
+                        Collection resource2 = idx2.getProperty(0).getPk().getCollection();
 
-               if (attr != null)
-                  name += attr.getColumnName();
-               else
-                  name += parts[i];
+                        Relationship r = new Relationship();
+                        r.withType(Relationship.REL_MANY_TO_MANY);
+
+                        r.withRelated(resource2);
+                        r.withFkIndex1(idx1);
+                        r.withFkIndex2(idx2);
+                        r.withName(makeRelationshipName(resource1, r));
+                        r.withCollection(resource1);
+                        relationshipStrs.add(r.toString());
+                    }
+                }
             } else {
-               Relationship rel = collection.getRelationship(part);
+                for (Index fkIdx : coll.getIndexes()) {
+                    try {
+                        if (!fkIdx.getType().equals("FOREIGN_KEY") || fkIdx.getProperty(0).getPk() == null)
+                            continue;
 
-               if (rel != null) {
-                  name += rel.getName() + ".";
-                  collection = rel.getRelated();
-               } else {
-                  name += parts[i] + ".";
-               }
+                        Collection pkResource = fkIdx.getProperty(0).getPk().getCollection();
+                        Collection fkResource = fkIdx.getProperty(0).getCollection();
+
+                        //ONE_TO_MANY
+                        {
+                            Relationship r = new Relationship();
+                            //TODO:this name may not be specific enough or certain types
+                            //of relationships. For example where an resource is related
+                            //to another resource twice
+                            r.withType(Relationship.REL_ONE_TO_MANY);
+                            r.withFkIndex1(fkIdx);
+                            r.withRelated(fkResource);
+                            r.withName(makeRelationshipName(pkResource, r));
+                            r.withCollection(pkResource);
+                            relationshipStrs.add(r.toString());
+                        }
+
+                        //MANY_TO_ONE
+                        {
+                            Relationship r = new Relationship();
+                            r.withType(Relationship.REL_MANY_TO_ONE);
+                            r.withFkIndex1(fkIdx);
+                            r.withRelated(pkResource);
+                            r.withName(makeRelationshipName(fkResource, r));
+                            r.withCollection(fkResource);
+                            relationshipStrs.add(r.toString());
+                        }
+                    } catch (Exception ex) {
+                        ApiException.throw500InternalServerError(ex, "Error creating relationship for index: {}", fkIdx);
+                    }
+                }
             }
-         }
+        }
+    }
 
-         if (!Utils.empty(name)) {
-            if (term.getToken().startsWith("-"))
-               name = "-" + name;
-            term.withToken(name);
-         }
-      } else {
-         for (Term child : term.getTerms()) {
-            terms.addAll(mapToColumnNames(collection, child));
-         }
-      }
+    /**
+     * Attempts to camelCase and pluralize the table name to make it an attractive REST collection name.
+     *
+     * @param tableName
+     * @return a camelCased and pluralied version of tableName
+     * @see #beautifyName(String)
+     */
+    protected String beautifyCollectionName(String tableName) {
+        if (includeTables.containsKey(tableName))
+            return includeTables.get(tableName);
 
-      return terms;
-   }
+        String collectionName = beautifyName(tableName);
 
-   protected Property getProperty(String tableName, String columnName) {
-      Collection collection = getCollectionByTableName(tableName);
-      if (collection != null)
-         return collection.getPropertyByColumnName(columnName);
+        if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
+            collectionName = Pluralizer.plural(collectionName);
 
-      return null;
-   }
+        return collectionName;
+    }
 
-   public Collection getCollectionByTableName(String tableName) {
-      for (Collection t : collections) {
-         if (tableName.equalsIgnoreCase(t.getTableName()))
-            return t;
-      }
+    /**
+     * Try to make an attractive camelCase valid javascript variable name.
+     * <p>
+     * Lots of sql db designers use things like SNAKE_CASE_COLUMN_NAMES that look terrible as json property names.
+     *
+     * @param name the to beautify
+     * @return a camelCased version of <code>name</code>
+     * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables
+     */
+    protected String beautifyName(String name) {
+        //all upper case...U.G.L.Y you ain't got on alibi you UGLY, hay hay you UGLY
+        if (name.toUpperCase().equals(name)) {
+            name = name.toLowerCase();
+        }
 
-      return null;
-   }
+        StringBuffer buff = new StringBuffer("");
 
-   public void removeCollection(Collection table) {
-      collections.remove(table);
-   }
+        boolean nextUpper = false;
+        for (int i = 0; i < name.length(); i++) {
+            char next = name.charAt(i);
+            if (next == ' ' || next == '_') {
+                nextUpper = true;
+                continue;
+            }
 
-   /**
-    * @return a shallow copy of <code>collections</code>
-    */
-   public List<Collection> getCollections() {
-      return new ArrayList(collections);
-   }
+            if (buff.length() == 0 && //
+                    !(Character.isAlphabetic(next)//
+                            || next == '$'))//OK $ is a valid initial character in a JS identifier but seriously why dude, just why?
+            {
+                next = 'x';
+            }
 
-   /**
-   * Utility that parses a comma and pipe separated list of table name to collection name mappings.
-   * <p>
-   * Example: db.tables=customers,books-prod-catalog|books,INVENTORY_ADJUSTED_BY_PERIOD|inventory
-   * <p>
-   * This method is primarily useful when an Api designer wants to manually configure Collections instead of having the Db reflectively build the Collections.
-   * <p>
-   * This method can also be called prior to the db reflection phase of startup to whitelist tables that the reflection should include.
-   * <p>
-   * The string is first split on "," to get a list of table names.  
-   * <p>
-   * If the table name contains a "|" character, the part on the left is considered the tableName and the part on the right is considered the collectionName.  
-   * <p>
-   * If there is no "|" then the beautified tableName is used for the collectionName.  
-   * 
-   * @see #beautifyCollectionName(String)
-   */
-   public T withIncludeTables(String includeTables) {
-      for (String pair : Utils.explode(",", includeTables)) {
-         String tableName = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
-         String collectionName = pair.indexOf('|') < 0 ? pair : pair.substring(pair.indexOf("|") + 1);
-         withIncludeTable(tableName, collectionName);
-      }
-      return (T) this;
-   }
+            if (nextUpper) {
+                next = Character.toUpperCase(next);
+                nextUpper = false;
+            }
 
-   /**
-    * Whitelists tableName as an underlying table that should be reflectively bootstrapped and exposed as collectionName.
-    *
-    * @param tableName   the table to build a Collection for
-    * @param collectionName  the name of the target collection that can be different from tableName.
-    * @return this
-    */
-   public T withIncludeTable(String tableName, String collectionName) {
-      this.includeTables.put(tableName, collectionName);
-      return (T) this;
-   }
+            if (buff.length() == 0)
+                next = Character.toLowerCase(next);
 
-   /**
-    * @param collections to include (add not replace)
-    */
-   public T withCollections(Collection... colls) {
-      for (Collection coll : colls)
-         withCollection(coll);
+            buff.append(next);
+        }
+        return buff.toString();
+    }
 
-      return (T) this;
-   }
+    //   /**
+    //    * Attempts to construct a sensible json property name for a Relationship.
+    //    * <p>
+    //    * For example, a "ONE Author TO_MANY Books" relationship might show up as "books" on the Author collection and "Author" on the Books collection.
+    //    * <p>
+    //    * The algorithm attempts to pluralize the "MANY" side of the relationship.
+    //    * <p>
+    //    * The "ONE" side of a relationship uses the first foreign key column name minus an trailing case insensitive "ID", so in the above example,
+    //    * if there is a foreign key Book.authorId pointing to the Author table, the the name would be "author".  If the foreign key column name
+    //    * was Book.primaryAuthorKey, the relationship would be named "primaryAuthorKey".
+    //    *
+    //    * @param resource
+    //    * @param rel
+    //    * @return the json property name for this Relationship.
+    //    */
+    //   protected String makeRelationshipName(Collection resource, Relationship rel)
+    //   {
+    //      String name = null;
+    //      String type = rel.getType();
+    //      boolean pluralize = false;
+    //      if (type.equals(Relationship.REL_MANY_TO_ONE))
+    //      {
+    //         name = rel.getFk1Col1().getJsonName();
+    //         if (name.toLowerCase().endsWith("id") && name.length() > 2)
+    //         {
+    //            name = name.substring(0, name.length() - 2);
+    //         }
+    //      }
+    //      else if (type.equals(Relationship.REL_ONE_TO_MANY))
+    //      {
+    //         name = rel.getRelated().getName();
+    //         pluralize = true;
+    //      }
+    //      else if (type.equals(Relationship.REL_MANY_TO_MANY))
+    //      {
+    //         name = rel.getFk2Col1().getPk().getCollection().getName();
+    //         pluralize = true;
+    //      }
+    //
+    //      name = beautifyName(name);
+    //
+    //      if (pluralize)
+    //      {
+    //         name = Pluralizer.plural(name);
+    //      }
+    //
+    //      return name;
+    //   }
 
-   public T withCollection(Collection tbl) {
-      if (tbl != null) {
-         if (tbl.getDb() != this)
-            tbl.withDb(this);
+    /**
+     * Attempts to construct a sensible json property name for a Relationship.
+     * <p>
+     * For example, a "ONE Author TO_MANY Books" relationship might show up as "books" on the Author collection and "Author" on the Books collection.
+     * <p>
+     * The algorithm attempts to pluralize the "MANY" side of the relationship.
+     * <p>
+     * The "ONE" side of a relationship uses the first foreign key column name minus an trailing case insensitive "ID", so in the above example,
+     * if there is a foreign key Book.authorId pointing to the Author table, the the name would be "author".  If the foreign key column name
+     * was Book.primaryAuthorKey, the relationship would be named "primaryAuthorKey".
+     *
+     * @param resource
+     * @param rel
+     * @return the json property name for this Relationship.
+     */
+    protected String makeRelationshipName(Collection resource, Relationship rel) {
+        String name = null;
+        String type = rel.getType();
 
-         if (!collections.contains(tbl))
-            collections.add(tbl);
-      }
-      return (T) this;
-   }
+        String fkColName = rel.getFk1Col1().getColumnName();
+        if (fkColName.toLowerCase().endsWith("id") && fkColName.length() > 2) {
+            fkColName = fkColName.substring(0, fkColName.length() - 2);
+            while (fkColName.endsWith("_"))
+                fkColName = fkColName.substring(0, fkColName.length() - 1);
+        }
+        fkColName = fkColName.trim();
+        fkColName = beautifyName(fkColName);
 
-   /**
-    * Checks if "collectionName.columnName" or just "columnName" is specifically included or excluded via <code>includeColumns</code>
-    * <code>excludeColumns</code> or is a valid Property columnName.
-    * <p>
-    * This can be used to filter out things like URL path mapped parameters that don't actually match to "columns" in a document store.
-    * <p>
-    * This does not prevent the underlying Property from being part of a Collection object model and the names here don't actually have to be Properties.
-    * 
-    * @param collection
-    * @param columnName
-    * @return
-    */
-   public boolean shouldInclude(Collection collection, String columnName) {
-      if (includeColumns.size() > 0 || excludeColumns.size() > 0) {
-         String fullName = collection + "." + columnName;
-         if (excludeColumns.contains(columnName) || excludeColumns.contains(fullName)) {
+        if (type.equals(Relationship.REL_MANY_TO_ONE)) {
+            name = fkColName;
+        } else if (type.equals(Relationship.REL_ONE_TO_MANY)) {
+            //Example
+            //
+            //if the Alarm table has a FK to the Category table
+            //this would be called to add a relationship to the Category
+            //collection called "alarms"....this is the default case
+            //assuming the Alarm fk column is semantically related to
+            //the Category table with a name such as:
+            //category, categories, categoryId or categoriesId
+            //
+            //say for example that the Alarm table had two foreign
+            //keys to the Category table.  One called "categoryId"
+            //and the other called "subcategoryId".  In this case
+            //the "categoryId" column is semantically related and would
+            //result in the collection property "alarms" being added
+            //to the Category collection.  The "subcategoyId" column
+            //name is not one of the semantically related names
+            //so it results in a property called "subcategoryAlarms"
+            //being added to the Category collection.
+
+            name = rel.getRelated().getName();
+
+            for (Relationship aRel : resource.getRelationships()) {
+                if (rel == aRel)
+                    continue;
+
+                if (rel.getRelated() == aRel.getRelated()) {
+                    if (!fkColName.equals(name)) {
+                        name = fkColName + Character.toUpperCase(name.charAt(0)) + name.substring(1);
+                    }
+                    break;
+                }
+            }
+        } else if (type.equals(Relationship.REL_MANY_TO_MANY)) {
+            name = rel.getFk2Col1().getPk().getCollection().getName();
+
+        }
+
+        return name;
+    }
+
+    /**
+     * Casts value as Property.type.
+     *
+     * @param property
+     * @param value
+     * @return <code>value</code> cast to <code>Property.type</code>
+     * @see io.inversion.utils.Utils.cast(String, Object)
+     */
+    public Object cast(Property property, Object value) {
+        return Utils.cast(property != null ? property.getType() : null, value);
+    }
+
+    /**
+     * Casts value to as type.
+     *
+     * @param type
+     * @param value
+     * @return <code>value</code> cast to <code>type</code>
+     * @see io.inversion.utils.Utils.cast(String, Object)
+     */
+    public Object cast(String type, Object value) {
+        return Utils.cast(type, value);
+    }
+
+    protected void mapToJsonNames(Collection collection, Term term) {
+        if (collection == null)
+            return;
+
+        if (term.isLeaf() && !term.isQuoted()) {
+            String token = term.getToken();
+
+            Property attr = collection.findProperty(token);
+            if (attr != null)
+                term.withToken(attr.getJsonName());
+        } else {
+            for (Term child : term.getTerms()) {
+                mapToJsonNames(collection, child);
+            }
+        }
+    }
+
+    protected Set<Term> mapToColumnNames(Collection collection, Term term) {
+        Set terms = new HashSet();
+
+        if (term.getParent() == null)
+            terms.add(term);
+
+        if (collection == null)
+            return terms;
+
+        if (term.isLeaf() && !term.isQuoted()) {
+            String token = term.getToken();
+
+            while (token.startsWith("-") || token.startsWith("+"))
+                token = token.substring(1, token.length());
+
+            String   name  = "";
+            String[] parts = token.split("\\.");
+
+            //         if (parts.length > 2)//this could be a literal
+            //            throw new ApiException("You can only specify a single level of relationship in dotted attributes: '" + token + "'");
+
+            for (int i = 0; i < parts.length; i++) {
+                String part = parts[i];
+
+                if (i == parts.length - 1) {
+                    Property attr = collection.findProperty(parts[i]);
+
+                    if (attr != null)
+                        name += attr.getColumnName();
+                    else
+                        name += parts[i];
+                } else {
+                    Relationship rel = collection.getRelationship(part);
+
+                    if (rel != null) {
+                        name += rel.getName() + ".";
+                        collection = rel.getRelated();
+                    } else {
+                        name += parts[i] + ".";
+                    }
+                }
+            }
+
+            if (!Utils.empty(name)) {
+                if (term.getToken().startsWith("-"))
+                    name = "-" + name;
+                term.withToken(name);
+            }
+        } else {
+            for (Term child : term.getTerms()) {
+                terms.addAll(mapToColumnNames(collection, child));
+            }
+        }
+
+        return terms;
+    }
+
+    protected Property getProperty(String tableName, String columnName) {
+        Collection collection = getCollectionByTableName(tableName);
+        if (collection != null)
+            return collection.getPropertyByColumnName(columnName);
+
+        return null;
+    }
+
+    public Collection getCollectionByTableName(String tableName) {
+        for (Collection t : collections) {
+            if (tableName.equalsIgnoreCase(t.getTableName()))
+                return t;
+        }
+
+        return null;
+    }
+
+    public void removeCollection(Collection table) {
+        collections.remove(table);
+    }
+
+    /**
+     * @return a shallow copy of <code>collections</code>
+     */
+    public List<Collection> getCollections() {
+        return new ArrayList(collections);
+    }
+
+    /**
+     * Utility that parses a comma and pipe separated list of table name to collection name mappings.
+     * <p>
+     * Example: db.tables=customers,books-prod-catalog|books,INVENTORY_ADJUSTED_BY_PERIOD|inventory
+     * <p>
+     * This method is primarily useful when an Api designer wants to manually configure Collections instead of having the Db reflectively build the Collections.
+     * <p>
+     * This method can also be called prior to the db reflection phase of startup to whitelist tables that the reflection should include.
+     * <p>
+     * The string is first split on "," to get a list of table names.
+     * <p>
+     * If the table name contains a "|" character, the part on the left is considered the tableName and the part on the right is considered the collectionName.
+     * <p>
+     * If there is no "|" then the beautified tableName is used for the collectionName.
+     *
+     * @see #beautifyCollectionName(String)
+     */
+    public T withIncludeTables(String includeTables) {
+        for (String pair : Utils.explode(",", includeTables)) {
+            String tableName      = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
+            String collectionName = pair.indexOf('|') < 0 ? pair : pair.substring(pair.indexOf("|") + 1);
+            withIncludeTable(tableName, collectionName);
+        }
+        return (T) this;
+    }
+
+    /**
+     * Whitelists tableName as an underlying table that should be reflectively bootstrapped and exposed as collectionName.
+     *
+     * @param tableName      the table to build a Collection for
+     * @param collectionName the name of the target collection that can be different from tableName.
+     * @return this
+     */
+    public T withIncludeTable(String tableName, String collectionName) {
+        this.includeTables.put(tableName, collectionName);
+        return (T) this;
+    }
+
+    /**
+     * @param collections to include (add not replace)
+     */
+    public T withCollections(Collection... colls) {
+        for (Collection coll : colls)
+            withCollection(coll);
+
+        return (T) this;
+    }
+
+    public T withCollection(Collection tbl) {
+        if (tbl != null) {
+            if (tbl.getDb() != this)
+                tbl.withDb(this);
+
+            if (!collections.contains(tbl))
+                collections.add(tbl);
+        }
+        return (T) this;
+    }
+
+    /**
+     * Checks if "collectionName.columnName" or just "columnName" is specifically included or excluded via <code>includeColumns</code>
+     * <code>excludeColumns</code> or is a valid Property columnName.
+     * <p>
+     * This can be used to filter out things like URL path mapped parameters that don't actually match to "columns" in a document store.
+     * <p>
+     * This does not prevent the underlying Property from being part of a Collection object model and the names here don't actually have to be Properties.
+     *
+     * @param collection
+     * @param columnName
+     * @return
+     */
+    public boolean shouldInclude(Collection collection, String columnName) {
+        if (includeColumns.size() > 0 || excludeColumns.size() > 0) {
+            String fullName = collection + "." + columnName;
+            if (excludeColumns.contains(columnName) || excludeColumns.contains(fullName)) {
+                return false;
+            }
+            if (includeColumns.size() > 0 && !(includeColumns.contains(columnName) || includeColumns.contains(fullName))) {
+                return false;
+            }
+        }
+
+        return collection != null ? collection.getPropertyByColumnName(columnName) != null : true;
+    }
+
+    public T withIncludeColumns(String... columnNames) {
+        includeColumns.addAll(Utils.explode(",", columnNames));
+        return (T) this;
+    }
+
+    public T withExcludeColumns(String... columnNames) {
+        excludeColumns.addAll(Utils.explode(",", columnNames));
+        return (T) this;
+    }
+
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * The name of the Db is used primarily for autowiring "name.property" bean props from
+     *
+     * @param name the name to set
+     */
+    public T withName(String name) {
+        this.name = name;
+        return (T) this;
+    }
+
+    public boolean isType(String... types) {
+        String type = getType();
+        if (type == null)
             return false;
-         }
-         if (includeColumns.size() > 0 && !(includeColumns.contains(columnName) || includeColumns.contains(fullName))) {
-            return false;
-         }
-      }
 
-      return collection != null ? collection.getPropertyByColumnName(columnName) != null : true;
-   }
+        for (String t : types) {
+            if (type.equalsIgnoreCase(t))
+                return true;
+        }
+        return false;
+    }
 
-   public T withIncludeColumns(String... columnNames) {
-      includeColumns.addAll(Utils.explode(",", columnNames));
-      return (T) this;
-   }
+    public String getType() {
+        return type;
+    }
 
-   public T withExcludeColumns(String... columnNames) {
-      excludeColumns.addAll(Utils.explode(",", columnNames));
-      return (T) this;
-   }
+    public T withType(String type) {
+        this.type = type;
+        return (T) this;
+    }
 
-   /**
-    * @return the name
-    */
-   public String getName() {
-      return name;
-   }
+    public boolean isBootstrap() {
+        return bootstrap;
+    }
 
-   /**
-    * The name of the Db is used primarily for autowiring "name.property" bean props from
-    * 
-    * @param name the name to set
-    */
-   public T withName(String name) {
-      this.name = name;
-      return (T) this;
-   }
+    public T withBootstrap(boolean bootstrap) {
+        this.bootstrap = bootstrap;
+        return (T) this;
+    }
 
-   public boolean isType(String... types) {
-      String type = getType();
-      if (type == null)
-         return false;
+    public Path getEndpointPath() {
+        return endpointPath;
+    }
 
-      for (String t : types) {
-         if (type.equalsIgnoreCase(t))
-            return true;
-      }
-      return false;
-   }
+    public T withEndpointPath(Path endpointPath) {
+        this.endpointPath = endpointPath;
+        return (T) this;
+    }
 
-   public String getType() {
-      return type;
-   }
+    /*
+     * Copyright 2011 Atteo.
+     *
+     * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+     * in compliance with the License. You may obtain a copy of the License at
+     *
+     * http://www.apache.org/licenses/LICENSE-2.0
+     *
+     * Unless required by applicable law or agreed to in writing, software distributed under the License
+     * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+     * or implied. See the License for the specific language governing permissions and limitations under
+     * the License.
+     */
 
-   public T withType(String type) {
-      this.type = type;
-      return (T) this;
-   }
+    /**
+     * Transforms English words from singular to plural form.
+     * <p>
+     * Examples:
+     * <pre>
+     *    English.plural("word") = "words";
+     *
+     *    English.plural("cat", 1) = "cat";
+     *    English.plural("cat", 2) = "cats";
+     * </pre>
+     * </p>
+     * <p>
+     * Based on <a href="http://www.csse.monash.edu.au/~damian/papers/HTML/Plurals.html">
+     * An Algorithmic Approach to English Pluralization</a> by Damian Conway.
+     * </p>
+     */
+    static class Pluralizer {
 
-   public boolean isBootstrap() {
-      return bootstrap;
-   }
+        enum MODE {
+            ENGLISH_ANGLICIZED, ENGLISH_CLASSICAL
+        }
 
-   public T withBootstrap(boolean bootstrap) {
-      this.bootstrap = bootstrap;
-      return (T) this;
-   }
+        private static final String[] CATEGORY_EX_ICES = {"codex", "murex", "silex",};
 
-   public Path getEndpointPath() {
-      return endpointPath;
-   }
+        private static final String[] CATEGORY_IX_ICES = {"radix", "helix",};
 
-   public T withEndpointPath(Path endpointPath) {
-      this.endpointPath = endpointPath;
-      return (T) this;
-   }
+        private static final String[] CATEGORY_UM_A = {"bacterium", "agendum", "desideratum", "erratum", "stratum", "datum", "ovum", "extremum", "candelabrum",};
 
-   /*
-    * Copyright 2011 Atteo.
-    * 
-    * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
-    * in compliance with the License. You may obtain a copy of the License at
-    * 
-    * http://www.apache.org/licenses/LICENSE-2.0
-    * 
-    * Unless required by applicable law or agreed to in writing, software distributed under the License
-    * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-    * or implied. See the License for the specific language governing permissions and limitations under
-    * the License.
-    */
-   /**
-    * Transforms English words from singular to plural form.
-    * <p>
-    * Examples:
-    * <pre>
-    *    English.plural("word") = "words";
-    *
-    *    English.plural("cat", 1) = "cat";
-    *    English.plural("cat", 2) = "cats";
-    * </pre>
-    * </p>
-    * <p>
-    * Based on <a href="http://www.csse.monash.edu.au/~damian/papers/HTML/Plurals.html">
-    * An Algorithmic Approach to English Pluralization</a> by Damian Conway.
-    * </p>
-    */
-   static class Pluralizer {
+        // Always us -> i
+        private static final String[] CATEGORY_US_I = {"alumnus", "alveolus", "bacillus", "bronchus", "locus", "nucleus", "stimulus", "meniscus", "thesaurus",};
 
-      enum MODE {
-         ENGLISH_ANGLICIZED, ENGLISH_CLASSICAL
-      }
+        private static final String[] CATEGORY_ON_A = {"criterion", "perihelion", "aphelion", "phenomenon", "prolegomenon", "noumenon", "organon", "asyndeton", "hyperbaton",};
 
-      private static final String[] CATEGORY_EX_ICES  = {"codex", "murex", "silex",};
+        private static final String[] CATEGORY_A_AE = {"alumna", "alga", "vertebra", "persona"};
 
-      private static final String[] CATEGORY_IX_ICES  = {"radix", "helix",};
+        // Always o -> os
+        private static final String[] CATEGORY_O_OS = {"albino", "archipelago", "armadillo", "commando", "crescendo", "fiasco", "ditto", "dynamo", "embryo", "ghetto", "guano", "inferno", "jumbo", "lumbago", "magneto", "manifesto", "medico", "octavo", "photo", "pro", "quarto", "canto", "lingo", "generalissimo", "stylo", "rhino", "casino", "auto", "macro", "zero", "todo"};
 
-      private static final String[] CATEGORY_UM_A     = {"bacterium", "agendum", "desideratum", "erratum", "stratum", "datum", "ovum", "extremum", "candelabrum",};
+        // Classical o -> i  (normally -> os)
+        private static final String[] CATEGORY_O_I = {"solo", "soprano", "basso", "alto", "contralto", "tempo", "piano", "virtuoso",};
 
-      // Always us -> i
-      private static final String[] CATEGORY_US_I     = {"alumnus", "alveolus", "bacillus", "bronchus", "locus", "nucleus", "stimulus", "meniscus", "thesaurus",};
+        private static final String[] CATEGORY_EN_INA = {"stamen", "foramen", "lumen"};
 
-      private static final String[] CATEGORY_ON_A     = {"criterion", "perihelion", "aphelion", "phenomenon", "prolegomenon", "noumenon", "organon", "asyndeton", "hyperbaton",};
+        // -a to -as (anglicized) or -ata (classical)
+        private static final String[] CATEGORY_A_ATA = {"anathema", "enema", "oedema", "bema", "enigma", "sarcoma", "carcinoma", "gumma", "schema", "charisma", "lemma", "soma", "diploma", "lymphoma", "stigma", "dogma", "magma", "stoma", "drama", "melisma", "trauma", "edema", "miasma"};
 
-      private static final String[] CATEGORY_A_AE     = {"alumna", "alga", "vertebra", "persona"};
+        private static final String[] CATEGORY_IS_IDES = {"iris", "clitoris"};
 
-      // Always o -> os
-      private static final String[] CATEGORY_O_OS     = {"albino", "archipelago", "armadillo", "commando", "crescendo", "fiasco", "ditto", "dynamo", "embryo", "ghetto", "guano", "inferno", "jumbo", "lumbago", "magneto", "manifesto", "medico", "octavo", "photo", "pro", "quarto", "canto", "lingo", "generalissimo", "stylo", "rhino", "casino", "auto", "macro", "zero", "todo"};
+        // -us to -uses (anglicized) or -us (classical)
+        private static final String[] CATEGORY_US_US = {"apparatus", "impetus", "prospectus", "cantus", "nexus", "sinus", "coitus", "plexus", "status", "hiatus"};
 
-      // Classical o -> i  (normally -> os)
-      private static final String[] CATEGORY_O_I      = {"solo", "soprano", "basso", "alto", "contralto", "tempo", "piano", "virtuoso",};
+        private static final String[] CATEGORY_NONE_I = {"afreet", "afrit", "efreet"};
 
-      private static final String[] CATEGORY_EN_INA   = {"stamen", "foramen", "lumen"};
+        private static final String[] CATEGORY_NONE_IM = {"cherub", "goy", "seraph"};
 
-      // -a to -as (anglicized) or -ata (classical)
-      private static final String[] CATEGORY_A_ATA    = {"anathema", "enema", "oedema", "bema", "enigma", "sarcoma", "carcinoma", "gumma", "schema", "charisma", "lemma", "soma", "diploma", "lymphoma", "stigma", "dogma", "magma", "stoma", "drama", "melisma", "trauma", "edema", "miasma"};
+        private static final String[] CATEGORY_EX_EXES = {"apex", "latex", "vertex", "cortex", "pontifex", "vortex", "index", "simplex"};
 
-      private static final String[] CATEGORY_IS_IDES  = {"iris", "clitoris"};
+        private static final String[] CATEGORY_IX_IXES = {"appendix"};
 
-      // -us to -uses (anglicized) or -us (classical)
-      private static final String[] CATEGORY_US_US    = {"apparatus", "impetus", "prospectus", "cantus", "nexus", "sinus", "coitus", "plexus", "status", "hiatus"};
+        private static final String[] CATEGORY_S_ES = {"acropolis", "chaos", "lens", "aegis", "cosmos", "mantis", "alias", "dais", "marquis", "asbestos", "digitalis", "metropolis", "atlas", "epidermis", "pathos", "bathos", "ethos", "pelvis", "bias", "gas", "polis", "caddis", "glottis", "rhinoceros", "cannabis", "glottis", "sassafras", "canvas", "ibis", "trellis"};
 
-      private static final String[] CATEGORY_NONE_I   = {"afreet", "afrit", "efreet"};
+        private static final String[] CATEGORY_MAN_MANS = {"human", "Alabaman", "Bahaman", "Burman", "German", "Hiroshiman", "Liman", "Nakayaman", "Oklahoman", "Panaman", "Selman", "Sonaman", "Tacoman", "Yakiman", "Yokohaman", "Yuman"};
 
-      private static final String[] CATEGORY_NONE_IM  = {"cherub", "goy", "seraph"};
+        private static Pluralizer inflector = new Pluralizer();
 
-      private static final String[] CATEGORY_EX_EXES  = {"apex", "latex", "vertex", "cortex", "pontifex", "vortex", "index", "simplex"};
+        public Pluralizer() {
+            this(MODE.ENGLISH_ANGLICIZED);
+        }
 
-      private static final String[] CATEGORY_IX_IXES  = {"appendix"};
+        public Pluralizer(MODE mode) {
 
-      private static final String[] CATEGORY_S_ES     = {"acropolis", "chaos", "lens", "aegis", "cosmos", "mantis", "alias", "dais", "marquis", "asbestos", "digitalis", "metropolis", "atlas", "epidermis", "pathos", "bathos", "ethos", "pelvis", "bias", "gas", "polis", "caddis", "glottis", "rhinoceros", "cannabis", "glottis", "sassafras", "canvas", "ibis", "trellis"};
+            uncountable(new String[]{
+                    // 2. Handle words that do not inflect in the plural (such as fish, travois, chassis, nationalities ending
+                    // endings
+                    "fish", "ois", "sheep", "deer", "pox", "itis",
 
-      private static final String[] CATEGORY_MAN_MANS = {"human", "Alabaman", "Bahaman", "Burman", "German", "Hiroshiman", "Liman", "Nakayaman", "Oklahoman", "Panaman", "Selman", "Sonaman", "Tacoman", "Yakiman", "Yokohaman", "Yuman"};
+                    // words
+                    "bison", "flounder", "pliers", "bream", "gallows", "proceedings", "breeches", "graffiti", "rabies", "britches", "headquarters", "salmon", "carp", "herpes", "scissors", "chassis", "high-jinks", "sea-bass", "clippers", "homework", "series", "cod", "innings", "shears", "contretemps", "jackanapes", "species", "corps", "mackerel", "swine", "debris", "measles", "trout", "diabetes", "mews", "tuna", "djinn", "mumps", "whiting", "eland", "news", "wildebeest", "elk", "pincers", "sugar"});
 
-      private static Pluralizer     inflector         = new Pluralizer();
+            // 4. Handle standard irregular plurals (mongooses, oxen, etc.)
 
-      public Pluralizer() {
-         this(MODE.ENGLISH_ANGLICIZED);
-      }
+            irregular(new String[][]{{"child", "children"}, // classical
+                    {"ephemeris", "ephemerides"}, // classical
+                    {"mongoose", "mongoose"}, // anglicized
+                    {"mythos", "mythoi"}, // classical
+                    // TO DO: handle entire word correctly
+                    //{ "ox", "oxen" }, // classical
+                    {"soliloquy", "soliloquies"}, // anglicized
+                    {"trilby", "trilbys"}, // anglicized
+                    {"genus", "genera"}, // classical
+                    {"quiz", "quizzes"},});
 
-      public Pluralizer(MODE mode) {
+            if (mode == MODE.ENGLISH_ANGLICIZED) {
+                // Anglicized plural
+                irregular(new String[][]{{"beef", "beefs"}, {"brother", "brothers"}, {"cow", "cows"}, {"genie", "genies"}, {"money", "moneys"}, {"octopus", "octopuses"}, {"opus", "opuses"},});
+            } else if (mode == MODE.ENGLISH_CLASSICAL) {
+                // Classical plural
+                irregular(new String[][]{{"beef", "beeves"}, {"brother", "brethren"}, {"cos", "kine"}, {"genie", "genii"}, {"money", "monies"}, {"octopus", "octopodes"}, {"opus", "opera"},});
+            }
 
-         uncountable(new String[]{
-               // 2. Handle words that do not inflect in the plural (such as fish, travois, chassis, nationalities ending
-               // endings
-               "fish", "ois", "sheep", "deer", "pox", "itis",
+            categoryRule(CATEGORY_MAN_MANS, "", "s");
 
-               // words
-               "bison", "flounder", "pliers", "bream", "gallows", "proceedings", "breeches", "graffiti", "rabies", "britches", "headquarters", "salmon", "carp", "herpes", "scissors", "chassis", "high-jinks", "sea-bass", "clippers", "homework", "series", "cod", "innings", "shears", "contretemps", "jackanapes", "species", "corps", "mackerel", "swine", "debris", "measles", "trout", "diabetes", "mews", "tuna", "djinn", "mumps", "whiting", "eland", "news", "wildebeest", "elk", "pincers", "sugar"});
-
-         // 4. Handle standard irregular plurals (mongooses, oxen, etc.)
-
-         irregular(new String[][]{{"child", "children"}, // classical
-               {"ephemeris", "ephemerides"}, // classical
-               {"mongoose", "mongoose"}, // anglicized
-               {"mythos", "mythoi"}, // classical
-               // TO DO: handle entire word correctly
-               //{ "ox", "oxen" }, // classical
-               {"soliloquy", "soliloquies"}, // anglicized
-               {"trilby", "trilbys"}, // anglicized
-               {"genus", "genera"}, // classical
-               {"quiz", "quizzes"},});
-
-         if (mode == MODE.ENGLISH_ANGLICIZED) {
-            // Anglicized plural
-            irregular(new String[][]{{"beef", "beefs"}, {"brother", "brothers"}, {"cow", "cows"}, {"genie", "genies"}, {"money", "moneys"}, {"octopus", "octopuses"}, {"opus", "opuses"},});
-         } else if (mode == MODE.ENGLISH_CLASSICAL) {
-            // Classical plural
-            irregular(new String[][]{{"beef", "beeves"}, {"brother", "brethren"}, {"cos", "kine"}, {"genie", "genii"}, {"money", "monies"}, {"octopus", "octopodes"}, {"opus", "opera"},});
-         }
-
-         categoryRule(CATEGORY_MAN_MANS, "", "s");
-
-         // questionable
+            // questionable
          /*
           rule(new String[][] {
                  { "(ness)$", "$1" },
@@ -1397,238 +1389,240 @@ public abstract class Db<T extends Db> {
                  { "(ivity)$", "$1" },
          });
           */
-         // 5. Handle irregular inflections for common suffixes
-         rule(new String[][]{{"man$", "men"}, {"([lm])ouse$", "$1ice"}, {"tooth$", "teeth"}, {"goose$", "geese"}, {"foot$", "feet"}, {"zoon$", "zoa"}, {"([csx])is$", "$1es"},});
+            // 5. Handle irregular inflections for common suffixes
+            rule(new String[][]{{"man$", "men"}, {"([lm])ouse$", "$1ice"}, {"tooth$", "teeth"}, {"goose$", "geese"}, {"foot$", "feet"}, {"zoon$", "zoa"}, {"([csx])is$", "$1es"},});
 
-         // 6. Handle fully assimilated classical inflections
-         categoryRule(CATEGORY_EX_ICES, "ex", "ices");
-         categoryRule(CATEGORY_IX_ICES, "ix", "ices");
-         categoryRule(CATEGORY_UM_A, "um", "a");
-         categoryRule(CATEGORY_ON_A, "on", "a");
-         categoryRule(CATEGORY_A_AE, "a", "ae");
+            // 6. Handle fully assimilated classical inflections
+            categoryRule(CATEGORY_EX_ICES, "ex", "ices");
+            categoryRule(CATEGORY_IX_ICES, "ix", "ices");
+            categoryRule(CATEGORY_UM_A, "um", "a");
+            categoryRule(CATEGORY_ON_A, "on", "a");
+            categoryRule(CATEGORY_A_AE, "a", "ae");
 
-         // 7. Handle classical variants of modern inflections
-         if (mode == MODE.ENGLISH_CLASSICAL) {
-            rule(new String[][]{{"trix$", "trices"}, {"eau$", "eaux"}, {"ieu$", "ieux"}, {"(..[iay])nx$", "$1nges"},});
-            categoryRule(CATEGORY_EN_INA, "en", "ina");
-            categoryRule(CATEGORY_A_ATA, "a", "ata");
-            categoryRule(CATEGORY_IS_IDES, "is", "ides");
-            categoryRule(CATEGORY_US_US, "", "");
-            categoryRule(CATEGORY_O_I, "o", "i");
-            categoryRule(CATEGORY_NONE_I, "", "i");
-            categoryRule(CATEGORY_NONE_IM, "", "im");
-            categoryRule(CATEGORY_EX_EXES, "ex", "ices");
-            categoryRule(CATEGORY_IX_IXES, "ix", "ices");
-         }
+            // 7. Handle classical variants of modern inflections
+            if (mode == MODE.ENGLISH_CLASSICAL) {
+                rule(new String[][]{{"trix$", "trices"}, {"eau$", "eaux"}, {"ieu$", "ieux"}, {"(..[iay])nx$", "$1nges"},});
+                categoryRule(CATEGORY_EN_INA, "en", "ina");
+                categoryRule(CATEGORY_A_ATA, "a", "ata");
+                categoryRule(CATEGORY_IS_IDES, "is", "ides");
+                categoryRule(CATEGORY_US_US, "", "");
+                categoryRule(CATEGORY_O_I, "o", "i");
+                categoryRule(CATEGORY_NONE_I, "", "i");
+                categoryRule(CATEGORY_NONE_IM, "", "im");
+                categoryRule(CATEGORY_EX_EXES, "ex", "ices");
+                categoryRule(CATEGORY_IX_IXES, "ix", "ices");
+            }
 
-         categoryRule(CATEGORY_US_I, "us", "i");
+            categoryRule(CATEGORY_US_I, "us", "i");
 
-         rule("([cs]h|[zx])$", "$1es");
-         categoryRule(CATEGORY_S_ES, "", "es");
-         categoryRule(CATEGORY_IS_IDES, "", "es");
-         categoryRule(CATEGORY_US_US, "", "es");
-         rule("(us)$", "$1es");
-         categoryRule(CATEGORY_A_ATA, "", "s");
+            rule("([cs]h|[zx])$", "$1es");
+            categoryRule(CATEGORY_S_ES, "", "es");
+            categoryRule(CATEGORY_IS_IDES, "", "es");
+            categoryRule(CATEGORY_US_US, "", "es");
+            rule("(us)$", "$1es");
+            categoryRule(CATEGORY_A_ATA, "", "s");
 
-         // The suffixes -ch, -sh, and -ss all take -es in the plural (churches,
-         // classes, etc)...
-         rule(new String[][]{{"([cs])h$", "$1hes"}, {"ss$", "sses"}});
+            // The suffixes -ch, -sh, and -ss all take -es in the plural (churches,
+            // classes, etc)...
+            rule(new String[][]{{"([cs])h$", "$1hes"}, {"ss$", "sses"}});
 
-         // Certain words ending in -f or -fe take -ves in the plural (lives,
-         // wolves, etc)...
-         rule(new String[][]{{"([aeo]l)f$", "$1ves"}, {"([^d]ea)f$", "$1ves"}, {"(ar)f$", "$1ves"}, {"([nlw]i)fe$", "$1ves"}});
+            // Certain words ending in -f or -fe take -ves in the plural (lives,
+            // wolves, etc)...
+            rule(new String[][]{{"([aeo]l)f$", "$1ves"}, {"([^d]ea)f$", "$1ves"}, {"(ar)f$", "$1ves"}, {"([nlw]i)fe$", "$1ves"}});
 
-         // Words ending in -y take -ys
-         rule(new String[][]{{"([aeiou])y$", "$1ys"}, {"y$", "ies"},});
+            // Words ending in -y take -ys
+            rule(new String[][]{{"([aeiou])y$", "$1ys"}, {"y$", "ies"},});
 
-         // Some words ending in -o take -os (including does preceded by a vowel)
-         categoryRule(CATEGORY_O_I, "o", "os");
-         categoryRule(CATEGORY_O_OS, "o", "os");
-         rule("([aeiou])o$", "$1os");
-         // The rest take -oes
-         rule("o$", "oes");
+            // Some words ending in -o take -os (including does preceded by a vowel)
+            categoryRule(CATEGORY_O_I, "o", "os");
+            categoryRule(CATEGORY_O_OS, "o", "os");
+            rule("([aeiou])o$", "$1os");
+            // The rest take -oes
+            rule("o$", "oes");
 
-         rule("ulum", "ula");
+            rule("ulum", "ula");
 
-         categoryRule(CATEGORY_A_ATA, "", "es");
+            categoryRule(CATEGORY_A_ATA, "", "es");
 
-         rule("s$", "ses");
-         // Otherwise, assume that the plural just adds -s
-         rule("$", "s");
-      }
+            rule("s$", "ses");
+            // Otherwise, assume that the plural just adds -s
+            rule("$", "s");
+        }
 
-      //   /**
-      //    * Returns plural form of the given word.
-      //    *
-      //    * @param word word in singular form
-      //    * @return plural form of the word
-      //    */
-      //   @Override
-      //   public String getPlural(String word)
-      //   {
-      //      return super.getPlural(word);
-      //   }
+        //   /**
+        //    * Returns plural form of the given word.
+        //    *
+        //    * @param word word in singular form
+        //    * @return plural form of the word
+        //    */
+        //   @Override
+        //   public String getPlural(String word)
+        //   {
+        //      return super.getPlural(word);
+        //   }
 
-      /**
-       * Returns singular or plural form of the word based on count.
-       *
-       * @param word word in singular form
-       * @param count word count
-       * @return form of the word correct for given count
-       */
-      public String getPlural(String word, int count) {
-         if (count == 1) {
+        /**
+         * Returns singular or plural form of the word based on count.
+         *
+         * @param word  word in singular form
+         * @param count word count
+         * @return form of the word correct for given count
+         */
+        public String getPlural(String word, int count) {
+            if (count == 1) {
+                return word;
+            }
+            return getPlural(word);
+        }
+
+        /**
+         * Returns plural form of the given word.
+         * <p>
+         * For instance:
+         * <pre>
+         * {@code
+         * English.plural("cat") == "cats";
+         * }
+         * </pre>
+         * </p>
+         *
+         * @param word word in singular form
+         * @return plural form of given word
+         */
+        public static String plural(String word) {
+            if (word.endsWith("s") || word.endsWith("S"))
+                return word;
+
+            word = inflector.getPlural(word);
             return word;
-         }
-         return getPlural(word);
-      }
+        }
 
-      /**
-       * Returns plural form of the given word.
-       * <p>
-       * For instance:
-       * <pre>
-       * {@code
-       * English.plural("cat") == "cats";
-       * }
-       * </pre>
-       * </p>
-       * @param word word in singular form
-       * @return plural form of given word
-       */
-      public static String plural(String word) {
-         if (word.endsWith("s") || word.endsWith("S"))
-            return word;
+        /**
+         * Returns singular or plural form of the word based on count.
+         * <p>
+         * For instance:
+         * <pre>
+         * {@code
+         * English.plural("cat", 1) == "cat";
+         * English.plural("cat", 2) == "cats";
+         * }
+         * </pre>
+         * </p>
+         *
+         * @param word  word in singular form
+         * @param count word count
+         * @return form of the word correct for given count
+         */
+        public static String plural(String word, int count) {
+            return inflector.getPlural(word, count);
+        }
 
-         word = inflector.getPlural(word);
-         return word;
-      }
+        public static void setMode(MODE mode) {
+            Pluralizer newInflector = new Pluralizer(mode);
+            inflector = newInflector;
+        }
 
-      /**
-       * Returns singular or plural form of the word based on count.
-       * <p>
-       * For instance:
-       * <pre>
-       * {@code
-       * English.plural("cat", 1) == "cat";
-       * English.plural("cat", 2) == "cats";
-       * }
-       * </pre>
-       * </p>
-       * @param word word in singular form
-       * @param count word count
-       * @return form of the word correct for given count
-       */
-      public static String plural(String word, int count) {
-         return inflector.getPlural(word, count);
-      }
+        //   public static abstract class TwoFormInflector
+        //   {
+        private interface Rule {
 
-      public static void setMode(MODE mode) {
-         Pluralizer newInflector = new Pluralizer(mode);
-         inflector = newInflector;
-      }
+            String getPlural(String singular);
+        }
 
-      //   public static abstract class TwoFormInflector
-      //   {
-      private interface Rule {
+        private static class RegExpRule implements Rule {
 
-         String getPlural(String singular);
-      }
+            private final Pattern singular;
+            private final String  plural;
 
-      private static class RegExpRule implements Rule {
+            private RegExpRule(Pattern singular, String plural) {
+                this.singular = singular;
+                this.plural = plural;
+            }
 
-         private final Pattern singular;
-         private final String  plural;
+            @Override
+            public String getPlural(String word) {
+                StringBuffer buffer  = new StringBuffer();
+                Matcher      matcher = singular.matcher(word);
+                if (matcher.find()) {
+                    matcher.appendReplacement(buffer, plural);
+                    matcher.appendTail(buffer);
+                    return buffer.toString();
+                }
+                return null;
+            }
+        }
 
-         private RegExpRule(Pattern singular, String plural) {
-            this.singular = singular;
-            this.plural = plural;
-         }
+        private static class CategoryRule implements Rule {
 
-         @Override
-         public String getPlural(String word) {
-            StringBuffer buffer = new StringBuffer();
-            Matcher matcher = singular.matcher(word);
-            if (matcher.find()) {
-               matcher.appendReplacement(buffer, plural);
-               matcher.appendTail(buffer);
-               return buffer.toString();
+            private final String[] list;
+            private final String   singular;
+            private final String   plural;
+
+            public CategoryRule(String[] list, String singular, String plural) {
+                this.list = list;
+                this.singular = singular;
+                this.plural = plural;
+            }
+
+            @Override
+            public String getPlural(String word) {
+                String lowerWord = word.toLowerCase();
+                for (String suffix : list) {
+                    if (lowerWord.endsWith(suffix)) {
+                        if (!lowerWord.endsWith(singular)) {
+                            throw new RuntimeException("Internal error");
+                        }
+                        return word.substring(0, word.length() - singular.length()) + plural;
+                    }
+                }
+                return null;
+            }
+        }
+
+        private final List<Rule> rules = new ArrayList<Rule>();
+
+        protected String getPlural(String word) {
+            for (Rule rule : rules) {
+                String result = rule.getPlural(word);
+                if (result != null) {
+                    return result;
+                }
             }
             return null;
-         }
-      }
+        }
 
-      private static class CategoryRule implements Rule {
+        protected void uncountable(String[] list) {
+            rules.add(new CategoryRule(list, "", ""));
+        }
 
-         private final String[] list;
-         private final String   singular;
-         private final String   plural;
-
-         public CategoryRule(String[] list, String singular, String plural) {
-            this.list = list;
-            this.singular = singular;
-            this.plural = plural;
-         }
-
-         @Override
-         public String getPlural(String word) {
-            String lowerWord = word.toLowerCase();
-            for (String suffix : list) {
-               if (lowerWord.endsWith(suffix)) {
-                  if (!lowerWord.endsWith(singular)) {
-                     throw new RuntimeException("Internal error");
-                  }
-                  return word.substring(0, word.length() - singular.length()) + plural;
-               }
+        protected void irregular(String singular, String plural) {
+            if (singular.charAt(0) == plural.charAt(0)) {
+                rules.add(new RegExpRule(Pattern.compile("(?i)(" + singular.charAt(0) + ")" + singular.substring(1) + "$"), "$1" + plural.substring(1)));
+            } else {
+                rules.add(new RegExpRule(Pattern.compile(Character.toUpperCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toUpperCase(plural.charAt(0)) + plural.substring(1)));
+                rules.add(new RegExpRule(Pattern.compile(Character.toLowerCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toLowerCase(plural.charAt(0)) + plural.substring(1)));
             }
-            return null;
-         }
-      }
+        }
 
-      private final List<Rule> rules = new ArrayList<Rule>();
-
-      protected String getPlural(String word) {
-         for (Rule rule : rules) {
-            String result = rule.getPlural(word);
-            if (result != null) {
-               return result;
+        protected void irregular(String[][] list) {
+            for (String[] pair : list) {
+                irregular(pair[0], pair[1]);
             }
-         }
-         return null;
-      }
+        }
 
-      protected void uncountable(String[] list) {
-         rules.add(new CategoryRule(list, "", ""));
-      }
+        protected void rule(String singular, String plural) {
+            rules.add(new RegExpRule(Pattern.compile(singular, Pattern.CASE_INSENSITIVE), plural));
+        }
 
-      protected void irregular(String singular, String plural) {
-         if (singular.charAt(0) == plural.charAt(0)) {
-            rules.add(new RegExpRule(Pattern.compile("(?i)(" + singular.charAt(0) + ")" + singular.substring(1) + "$"), "$1" + plural.substring(1)));
-         } else {
-            rules.add(new RegExpRule(Pattern.compile(Character.toUpperCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toUpperCase(plural.charAt(0)) + plural.substring(1)));
-            rules.add(new RegExpRule(Pattern.compile(Character.toLowerCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toLowerCase(plural.charAt(0)) + plural.substring(1)));
-         }
-      }
+        protected void rule(String[][] list) {
+            for (String[] pair : list) {
+                rules.add(new RegExpRule(Pattern.compile(pair[0], Pattern.CASE_INSENSITIVE), pair[1]));
+            }
+        }
 
-      protected void irregular(String[][] list) {
-         for (String[] pair : list) {
-            irregular(pair[0], pair[1]);
-         }
-      }
-
-      protected void rule(String singular, String plural) {
-         rules.add(new RegExpRule(Pattern.compile(singular, Pattern.CASE_INSENSITIVE), plural));
-      }
-
-      protected void rule(String[][] list) {
-         for (String[] pair : list) {
-            rules.add(new RegExpRule(Pattern.compile(pair[0], Pattern.CASE_INSENSITIVE), pair[1]));
-         }
-      }
-
-      protected void categoryRule(String[] list, String singular, String plural) {
-         rules.add(new CategoryRule(list, singular, plural));
-      }
-   }
+        protected void categoryRule(String[] list, String singular, String plural) {
+            rules.add(new CategoryRule(list, singular, plural));
+        }
+    }
 
 }

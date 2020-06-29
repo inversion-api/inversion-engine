@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,154 +16,150 @@
  */
 package io.inversion.action.misc;
 
+import io.inversion.*;
+import io.inversion.utils.JSArray;
+import io.inversion.utils.JSNode;
+import io.inversion.utils.Utils;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URL;
 
-import io.inversion.Action;
-import io.inversion.ApiException;
-import io.inversion.Request;
-import io.inversion.Response;
-import io.inversion.Status;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
-
 public class MockAction extends Action<MockAction> {
 
-   protected JSNode  json          = null;
-   protected String  jsonUrl       = null;
-   protected int     statusCode    = -1;
-   protected String  status        = null;
-   protected boolean cancelRequest = true;
+    protected JSNode  json          = null;
+    protected String  jsonUrl       = null;
+    protected int     statusCode    = -1;
+    protected String  status        = null;
+    protected boolean cancelRequest = true;
 
-   public MockAction() {
+    public MockAction() {
 
-   }
+    }
 
-   public MockAction(String status, JSNode json) {
-      withStatus(status);
-      withJson(json);
-   }
+    public MockAction(String status, JSNode json) {
+        withStatus(status);
+        withJson(json);
+    }
 
-   public MockAction(String name) {
-      this(null, null, name, null);
-   }
+    public MockAction(String name) {
+        this(null, null, name, null);
+    }
 
-   public MockAction(String methods, String includePaths, String name) {
-      this(methods, includePaths, name, null);
-   }
+    public MockAction(String methods, String includePaths, String name) {
+        this(methods, includePaths, name, null);
+    }
 
-   public MockAction(String methods, String includePaths, String name, JSNode json) {
-      if (name != null && json == null)
-         json = new JSNode("name", name);
+    public MockAction(String methods, String includePaths, String name, JSNode json) {
+        if (name != null && json == null)
+            json = new JSNode("name", name);
 
-      withName(name);
-      withIncludeOn(methods, includePaths);
-      withJson(json);
-   }
+        withName(name);
+        withIncludeOn(methods, includePaths);
+        withJson(json);
+    }
 
-   @Override
-   public void run(Request req, Response res) throws ApiException {
-      if (statusCode > 0)
-         res.withStatus(status);
+    @Override
+    public void run(Request req, Response res) throws ApiException {
+        if (statusCode > 0)
+            res.withStatus(status);
 
-      if (status != null)
-         res.withStatus(status);
-      else if (statusCode < 0)
-         withStatus(Status.SC_200_OK);
+        if (status != null)
+            res.withStatus(status);
+        else if (statusCode < 0)
+            withStatus(Status.SC_200_OK);
 
-      JSNode json = getJson();
+        JSNode json = getJson();
 
-      if (json != null) {
-         if (json instanceof JSArray)
-            res.withData((JSArray) json);
-         else
-            res.withJson(json);
-      }
+        if (json != null) {
+            if (json instanceof JSArray)
+                res.withData((JSArray) json);
+            else
+                res.withJson(json);
+        }
 
-      if (cancelRequest)
-         req.getChain().cancel();
-   }
+        if (cancelRequest)
+            req.getChain().cancel();
+    }
 
-   public MockAction withJson(JSNode json) {
-      this.json = json;
-      return this;
-   }
+    public MockAction withJson(JSNode json) {
+        this.json = json;
+        return this;
+    }
 
-   public String getJsonUrl() {
-      return jsonUrl;
-   }
+    public String getJsonUrl() {
+        return jsonUrl;
+    }
 
-   public MockAction withJsonUrl(String jsonUrl) {
-      this.jsonUrl = jsonUrl;
-      return this;
-   }
+    public MockAction withJsonUrl(String jsonUrl) {
+        this.jsonUrl = jsonUrl;
+        return this;
+    }
 
-   public JSNode getJson() {
-      if (json == null && jsonUrl != null) {
-         InputStream stream = null;
-         try {
-            stream = new URL(jsonUrl).openStream();
-         } catch (Exception ex) {
-         }
-
-         if (stream == null) {
-            stream = getClass().getResourceAsStream(jsonUrl);
-         }
-
-         if (stream == null) {
-            stream = getClass().getClassLoader().getResourceAsStream(jsonUrl);
-         }
-
-         if (stream == null) {
+    public JSNode getJson() {
+        if (json == null && jsonUrl != null) {
+            InputStream stream = null;
             try {
-               File f = new File(jsonUrl);
-               if (f.exists())
-                  stream = new BufferedInputStream(new FileInputStream(jsonUrl));
+                stream = new URL(jsonUrl).openStream();
             } catch (Exception ex) {
-               ex.printStackTrace();
             }
-         }
 
-         if (stream != null) {
-            json = JSNode.parseJsonNode(Utils.read(stream));
-         } else {
-            ApiException.throw500InternalServerError("Unable to locate jsonUrl '{}'. Please check your configuration", jsonUrl);
-         }
+            if (stream == null) {
+                stream = getClass().getResourceAsStream(jsonUrl);
+            }
 
-      }
+            if (stream == null) {
+                stream = getClass().getClassLoader().getResourceAsStream(jsonUrl);
+            }
 
-      return json;
+            if (stream == null) {
+                try {
+                    File f = new File(jsonUrl);
+                    if (f.exists())
+                        stream = new BufferedInputStream(new FileInputStream(jsonUrl));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
 
-   }
+            if (stream != null) {
+                json = JSNode.parseJsonNode(Utils.read(stream));
+            } else {
+                ApiException.throw500InternalServerError("Unable to locate jsonUrl '{}'. Please check your configuration", jsonUrl);
+            }
 
-   public int getStatusCode() {
-      return statusCode;
-   }
+        }
 
-   public MockAction wihtStatusCode(int statusCode) {
-      this.statusCode = statusCode;
-      return this;
-   }
+        return json;
 
-   public String getStatus() {
-      return status;
-   }
+    }
 
-   public MockAction withStatus(String status) {
-      this.status = status;
-      return this;
-   }
+    public int getStatusCode() {
+        return statusCode;
+    }
 
-   public boolean isCancelRequest() {
-      return cancelRequest;
-   }
+    public MockAction wihtStatusCode(int statusCode) {
+        this.statusCode = statusCode;
+        return this;
+    }
 
-   public MockAction withCancelRequest(boolean cancelRequest) {
-      this.cancelRequest = cancelRequest;
-      return this;
-   }
+    public String getStatus() {
+        return status;
+    }
+
+    public MockAction withStatus(String status) {
+        this.status = status;
+        return this;
+    }
+
+    public boolean isCancelRequest() {
+        return cancelRequest;
+    }
+
+    public MockAction withCancelRequest(boolean cancelRequest) {
+        this.cancelRequest = cancelRequest;
+        return this;
+    }
 }
