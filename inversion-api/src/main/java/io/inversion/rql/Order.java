@@ -50,8 +50,7 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P> {
                if (property.startsWith("-")) {
                   asc = false;
                   property = property.substring(1, property.length());
-               }
-               else if (property.startsWith("+")) {
+               } else if (property.startsWith("+")) {
                   property = property.substring(1, property.length());
                }
                sorts.add(new Sort(property, asc));

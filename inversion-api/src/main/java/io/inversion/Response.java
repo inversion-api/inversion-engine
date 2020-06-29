@@ -109,8 +109,7 @@ public class Response {
 
          if (msg.getClass().isArray()) {
             write0(buff, (Object[]) msg);
-         }
-         else {
+         } else {
             if (i > 0)
                buff.append(" ");
             buff.append(msg);
@@ -130,8 +129,7 @@ public class Response {
          if (statusMesg.length() > 4) {
             statusMesg = status.substring(4, status.length());
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          //the status message did not start with numeric status code. 
          //this can be ignored.
       }
@@ -421,8 +419,7 @@ public class Response {
          for (String id : deletedIds) {
             changes.add(new Change(method, collectionKey, id));
          }
-      }
-      else {
+      } else {
          changes.add(new Change(method, collectionKey, resourceKey));
       }
       return this;
@@ -501,8 +498,7 @@ public class Response {
             if (string != null) {
                try {
                   json = JSNode.parseJsonNode(string);
-               }
-               catch (Exception ex) {
+               } catch (Exception ex) {
                   //OK
                   text = string;
                }
@@ -511,12 +507,10 @@ public class Response {
 
          if (text != null) {
             return text;
-         }
-         else if (json != null) {
+         } else if (json != null) {
             return json.toString();
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          Utils.rethrow(ex);
       }
       return null;
@@ -532,8 +526,7 @@ public class Response {
             String string = getStatus() + (!Utils.empty(message) ? " - " + message : "");
             return string;
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          Utils.rethrow(ex);
       }
 
@@ -644,8 +637,7 @@ public class Response {
             fileName = new URL(url).getFile();
             if (Utils.empty(fileName))
                fileName = null;
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
 
          }
       }
@@ -722,8 +714,7 @@ public class Response {
             File tempFile = file;
             file = null;
             tempFile.delete();
-         }
-         catch (Throwable t) {
+         } catch (Throwable t) {
             // ignore
          }
       }
@@ -768,8 +759,7 @@ public class Response {
          while (message != null && message.startsWith("{") && message.indexOf("\\\"message\\\"") > -1) {
             message = JSNode.parseJsonNode(message).getString("message");
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          //igore
       }
 

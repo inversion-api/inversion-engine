@@ -43,8 +43,7 @@ public class Group<T extends Group, P extends Query> extends Builder<T, P> {
          for (String property : properties) {
             group.withTerm(Term.term(group, property));
          }
-      }
-      else {
+      } else {
          withTerm("group", (Object[]) properties);
       }
 

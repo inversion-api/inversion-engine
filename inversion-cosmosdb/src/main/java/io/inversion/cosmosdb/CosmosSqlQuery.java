@@ -70,13 +70,11 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
                if (idx == 0) {
                   parent.withToken("ew");
                   parent.getTerm(1).withToken(text.substring(1, text.length()));
-               }
-               else {
+               } else {
                   parent.withToken("sw");
                   parent.getTerm(1).withToken(text.substring(0, text.length() - 1));
                }
-            }
-            else if (parent.hasToken("w", "wo")) {
+            } else if (parent.hasToken("w", "wo")) {
                ApiException.throw400BadRequest("CosmosDb supports 'sw' and 'ew' but not 'w' or 'wo' functions.");
             }
 
@@ -120,8 +118,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
          if (partKeyTerm != null && partKeyTerm.getParent() == null) {
             partKey = partKeyTerm.getToken(1);
-         }
-         else if ("id".equalsIgnoreCase(partKeyCol)) {
+         } else if ("id".equalsIgnoreCase(partKeyCol)) {
             partKey = Chain.peek().getRequest().getResourceKey();
          }
       }
@@ -130,8 +127,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
          partKey = getDb().cast(partKeyIdx.getProperty(0), partKey);
          options.setEnableCrossPartitionQuery(false);
          options.setPartitionKey(new PartitionKey(partKey));
-      }
-      else {
+      } else {
          if (!isDryRun() && getDb() != null && !getDb().isAllowCrossPartitionQueries())
             ApiException.throw400BadRequest("CosmosSqlQuery.allowCrossPartitionQueries is false.");
 
@@ -153,8 +149,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
          FeedResponse<Document> queryResults = null;
          try {
             queryResults = cosmos.queryDocuments(collectionUri, querySpec, options);
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             System.err.println(ex.getMessage());
             System.err.println(debug);
 
@@ -260,11 +255,9 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
                sql.append(" ");
          }
          sql.append(")");
-      }
-      else if ("nn".equals(token)) {
+      } else if ("nn".equals(token)) {
          sql.append(preparedStmtChildText.get(0)).append(" <> null");
-      }
-      else if ("sw".equalsIgnoreCase(token)) {
+      } else if ("sw".equalsIgnoreCase(token)) {
          sql.append(" STARTSWITH (");
          for (int i = 0; i < preparedStmtChildText.size(); i++) {
             String val = preparedStmtChildText.get(i);
@@ -273,8 +266,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
                sql.append(", ");
          }
          sql.append(")");
-      }
-      else if ("ew".equalsIgnoreCase(token)) {
+      } else if ("ew".equalsIgnoreCase(token)) {
          sql.append(" ENDSWITH (");
          for (int i = 0; i < preparedStmtChildText.size(); i++) {
             String val = preparedStmtChildText.get(i);

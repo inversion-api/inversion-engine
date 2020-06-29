@@ -58,11 +58,9 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
    public void run(Request req, Response res) throws ApiException {
       if (req.isMethod("PUT", "POST")) {
          upsert(req, res);
-      }
-      else if (req.isMethod("PATCH")) {
+      } else if (req.isMethod("PATCH")) {
          patch(req, res);
-      }
-      else {
+      } else {
          ApiException.throw400BadRequest("Method '%' is not supported by RestPostHandler");
       }
 
@@ -84,8 +82,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
          if (!Utils.empty(req.getResourceKey())) {
             ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
          }
-      }
-      else {
+      } else {
          String href = body.getString("href");
          if (req.getResourceKey() != null) {
             if (href == null)
@@ -133,8 +130,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
             ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
          }
          resourceKeys = upsert(req, collection, (JSArray) obj);
-      }
-      else {
+      } else {
          String href = obj.getString("href");
          if (req.isPut() && href != null && req.getResourceKey() != null && !req.getUrl().toString().startsWith(href)) {
             ApiException.throw400BadRequest("You are PUT-ing an resource with a different href property than the resource URL you are PUT-ing to.");
@@ -253,8 +249,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                         //-- the child inverse of this is a many-to-one that modifies the child row.  
                         child = new JSArray(child);
                         childArr.set(i, child);
-                     }
-                     else {
+                     } else {
                         //-- don't do anything..the many-to-many section below will update this
                      }
                   }
@@ -273,8 +268,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
 
                   }
                }
-            }
-            else if (value instanceof JSNode) {
+            } else if (value instanceof JSNode) {
                //-- this must be a many-to-one...the FK is in this generation, not the child
                JSNode childNode = ((JSNode) value);
                childNodes.add(childNode);
@@ -330,8 +324,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                   if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1) {
                      //-- the fk is an resourceKey not a one-to-one column mapping to the primary composite key
                      updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeResourceKey(foreignResourceKey));
-                  }
-                  else {
+                  } else {
                      Map foreignKey = collection.getDb().mapTo(foreignResourceKey, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
                      updatedRow.putAll(foreignKey);
                   }
@@ -386,8 +379,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
 
                   if (rel.isOneToMany()) {
                      ((ArrayList) keepRels.get(rel, parentKey)).add(childPk);
-                  }
-                  else if (rel.isManyToMany()) {
+                  } else if (rel.isManyToMany()) {
                      Map childFk = collection.getDb().mapTo(childPk, rel.getRelated().getPrimaryIndex(), rel.getFkIndex2());
                      ((ArrayList) keepRels.get(rel, parentKey)).add(childFk);
                   }
@@ -447,8 +439,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
             //TODO: go through front door?
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().doPatch(coll, upserts);
-         }
-         else if (rel.isManyToMany()) {
+         } else if (rel.isManyToMany()) {
             //TODO: go through front door?
             log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
             coll.getDb().doUpsert(coll, upserts);
@@ -569,8 +560,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
 
          if (t == null) {
             t = Term.term(null, "eq", key, value);
-         }
-         else {
+         } else {
             if (!t.hasToken("and"))
                t = Term.term(null, "and", t);
 
@@ -629,8 +619,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                if (children.length() == 0)
                   parent.remove(key);
 
-            }
-            else if (value instanceof JSNode) {
+            } else if (value instanceof JSNode) {
                JSNode child = (JSNode) value;
                for (String key2 : (List<String>) new ArrayList(child.keySet())) {
                   if (!key2.equalsIgnoreCase("href")) {
@@ -640,16 +629,14 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                if (child.keySet().size() == 0)
                   parent.remove(key);
             }
-         }
-         else if (value instanceof JSArray) {
+         } else if (value instanceof JSArray) {
             JSArray children = (JSArray) value;
             for (int i = 0; i < children.length(); i++) {
                if (children.get(i) instanceof JSNode && !(children.get(i) instanceof JSArray)) {
                   collapse(children.getNode(i), collapseAll, collapses, nextPath(path, key));
                }
             }
-         }
-         else if (value instanceof JSNode) {
+         } else if (value instanceof JSNode) {
             collapse((JSNode) value, collapseAll, collapses, nextPath(path, key));
          }
 

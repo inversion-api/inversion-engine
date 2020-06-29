@@ -93,13 +93,11 @@ public class AclAction extends Action<AclAction> {
 
                allowed = false;
                break;
-            }
-            else {
+            } else {
                if (!aclRule.isInfo() && aclRule.isAllow()) {
                   Chain.debug("AclAction: MATCH_ALLOW " + aclRule);
                   allowed = true;
-               }
-               else {
+               } else {
                   Chain.debug("AclAction: MATCH_INFO " + aclRule);
                }
             }

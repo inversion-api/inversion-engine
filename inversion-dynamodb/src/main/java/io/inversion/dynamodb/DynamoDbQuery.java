@@ -124,8 +124,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             Term attrNotExists = Term.term(null, "attribute_not_exists", term.getTerm(0));
 
             term = Term.term(term.getParent(), "or", attrNotExists, eqNull);
-         }
-         else if (term.hasToken("nn", "nemp")) {
+         } else if (term.hasToken("nn", "nemp")) {
             Term neNull = Term.term(term.getParent(), "ne", term.getTerm(0), "null");
             Term attrExists = Term.term(null, "attribute_exists", term.getTerm(0));
             term = Term.term(term.getParent(), "and", attrExists, neNull);
@@ -186,8 +185,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
       Results.LAST_QUERY = null;
       try {
          return doSelect0();
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          if (Results.LAST_QUERY != null) {
             System.out.println("Error after query: " + Results.LAST_QUERY);
             System.out.println(ex.getMessage());
@@ -226,8 +224,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                result.withRow(item.asMap());
             }
          }
-      }
-      else if (spec instanceof QuerySpec) {
+      } else if (spec instanceof QuerySpec) {
          QuerySpec qs = ((QuerySpec) spec);
 
          StringBuffer debug = new StringBuffer("DynamoDb: ").append("QuerySpec").append(index != null ? ":'" + index.getName() + "'" : "");
@@ -267,8 +264,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
 
             result.withNext(after(index, queryResult.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey()));
          }
-      }
-      else if (spec instanceof ScanSpec) {
+      } else if (spec instanceof ScanSpec) {
          ScanSpec ss = ((ScanSpec) spec);
 
          StringBuffer debug = new StringBuffer("DynamoDb: ").append("ScanSpec").append(index != null ? ":'" + index.getName() + "'" : "");
@@ -320,8 +316,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             after.withTerm(Term.term(after, index.getColumnName(1)));
             after.withTerm(Term.term(after, getValue(attrs.get(index.getColumnName(1))).toString()));
          }
-      }
-      else {
+      } else {
          for (String key : attrs.keySet()) {
             after.withTerm(Term.term(after, key));
             after.withTerm(Term.term(after, getValue(attrs.get(key)).toString()));
@@ -544,8 +539,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
 
             if (afterSortKeyCol != null) {
                querySpec.withExclusiveStartKey(afterHashKeyCol.getColumnName(), hashValue, afterSortKeyCol.getColumnName(), sortValue);
-            }
-            else {
+            } else {
                querySpec.withExclusiveStartKey(afterHashKeyCol.getColumnName(), hashValue);
             }
          }
@@ -571,8 +565,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
          }
 
          return querySpec;
-      }
-      else {
+      } else {
          ScanSpec scanSpec = new ScanSpec();
          //scanSpec.withMaxPageSize(pageSize);
          scanSpec.withMaxResultSize(pageSize);
@@ -590,8 +583,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
 
             if (afterSortKeyCol != null) {
                scanSpec.withExclusiveStartKey(afterHashKeyCol.getColumnName(), hashValue, afterSortKeyCol.getColumnName(), sortValue);
-            }
-            else {
+            } else {
                scanSpec.withExclusiveStartKey(afterHashKeyCol.getColumnName(), hashValue);
             }
          }
@@ -627,8 +619,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             space(buff).append("and ");
 
          buff.append("(NOT ").append(toString(new StringBuffer(""), term.getTerm(0), nameMap, valueMap)).append(")");
-      }
-      else if (term.hasToken("and", "or")) {
+      } else if (term.hasToken("and", "or")) {
          buff.append("(");
          for (int i = 0; i < term.getNumTerms(); i++) {
             buff.append(toString(new StringBuffer(""), term.getTerm(i), nameMap, valueMap));
@@ -636,8 +627,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                space(buff).append(term.getToken()).append(" ");
          }
          buff.append(")");
-      }
-      else if (term.hasToken("in", "out")) {
+      } else if (term.hasToken("in", "out")) {
          String col = term.getToken(0);
          String nameKey = "#var" + (nameMap.size() + 1);
          nameMap.put(nameKey, col);
@@ -656,8 +646,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
 
          }
          buff.append("))");
-      }
-      else if (op != null) {
+      } else if (op != null) {
          String col = term.getToken(0);
 
          String nameKey = "#var" + (nameMap.size() + 1);
@@ -669,8 +658,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             space(buff).append("and ");
 
          buff.append("(").append(nameKey).append(" ").append(op).append(" ").append(expr).append(")");
-      }
-      else if (func != null) {
+      } else if (func != null) {
          if (buff.length() > 0)
             space(buff).append("and ");
 
@@ -682,12 +670,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
          if (term.size() > 1) {
             String expr = toString(new StringBuffer(""), term.getTerm(1), nameMap, valueMap);
             space(buff).append(func).append("(").append(nameKey).append(",").append(expr).append(")");
-         }
-         else {
+         } else {
             space(buff).append(func).append("(").append(nameKey).append(")");
          }
-      }
-      else if (term.isLeaf()) {
+      } else if (term.isLeaf()) {
          String colName = term.getParent().getToken(0);
 
          Object value = term.getToken();

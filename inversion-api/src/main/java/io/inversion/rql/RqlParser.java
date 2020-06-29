@@ -32,23 +32,19 @@ public class RqlParser {
 
          if (func != null) {
             tb.push(Term.term(null, func));
-         }
-         else if (")".equals(lc)) {
+         } else if (")".equals(lc)) {
             tb.pop();
-         }
-         else if ("=".equals(lc)) {
+         } else if ("=".equals(lc)) {
             Term top = tb.top();
             List<Term> children = top.getTerms();
 
             if ("eq".equalsIgnoreCase(top.getToken()) && children.size() == 2) {
                top.withToken(children.get(1).getToken());
                top.removeTerm(children.get(1));
-            }
-            else {
+            } else {
                tb.top().withToken("eq");
             }
-         }
-         else {
+         } else {
             tb.top().withTerm(Term.term(null, token));
          }
       }
@@ -84,8 +80,7 @@ public class RqlParser {
          if (root == null) {
             root = term;
             terms.add(term);
-         }
-         else {
+         } else {
             top().withTerm(term);
             terms.add(term);
          }

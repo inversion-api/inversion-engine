@@ -338,8 +338,7 @@ public class Collection extends Rule<Collection> implements Serializable {
 
          if (found == null) {
             found = index;
-         }
-         else if (index.size() < found.size()) {
+         } else if (index.size() < found.size()) {
             found = index;
          }
       }
@@ -412,8 +411,7 @@ public class Collection extends Rule<Collection> implements Serializable {
       if (index == null) {
          index = new Index(name, type, unique, properties);
          withIndexes(index);
-      }
-      else {
+      } else {
          index.withType(type);
          index.withUnique(unique);
          index.withProperties(properties);
@@ -759,8 +757,7 @@ public class Collection extends Rule<Collection> implements Serializable {
          }
          m.appendTail(sb);
          return sb.toString();
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          throw new RuntimeException(ex);
       }
    }
@@ -956,8 +953,7 @@ public class Collection extends Rule<Collection> implements Serializable {
          Collection c = (Collection) ois.readObject();
          c.db = this.db;
          return c;
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          Utils.rethrow(e);
       }
       return null;

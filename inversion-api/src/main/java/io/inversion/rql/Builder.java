@@ -222,13 +222,11 @@ public class Builder<T, P extends Builder> {
       for (Object term : rqlTerms) {
          if (term instanceof Term) {
             withTerm((Term) term);
-         }
-         else if (term instanceof Collection) {
+         } else if (term instanceof Collection) {
             for (Object t : ((Collection) term)) {
                withTerms(t);
             }
-         }
-         else if (term instanceof Map) {
+         } else if (term instanceof Map) {
             Map<String, Object> map = (Map) term;
 
             for (String key : map.keySet()) {
@@ -239,14 +237,12 @@ public class Builder<T, P extends Builder> {
 
                if (empty(value) && key.indexOf("(") > -1) {
                   term = key;
-               }
-               else {
+               } else {
                   term = "eq(" + key + "," + value + ")";
                }
                withTerm((String) term);
             }
-         }
-         else {
+         } else {
             withTerm(term.toString());
          }
       }
@@ -267,11 +263,9 @@ public class Builder<T, P extends Builder> {
       for (Object term : rqlTerms) {
          if (empty(term)) {
             continue;
-         }
-         else if (term instanceof Term) {
+         } else if (term instanceof Term) {
             terms.add((Term) term);
-         }
-         else {
+         } else {
             String[] parts = term.toString().split("\\&");
             for (int i = 0; i < parts.length; i++) {
                if (parts[i] == null || parts[i].length() == 0)

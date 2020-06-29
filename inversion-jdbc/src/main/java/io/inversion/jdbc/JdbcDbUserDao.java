@@ -123,14 +123,12 @@ public class JdbcDbUserDao extends JwtUserDao {
                if (rows == null || rows.size() == 0) {
                   //-- there is a users with the given username but the don't have any association to this apiName/tenant
                   user = null;
-               }
-               else {
+               } else {
                   populateGRP(user, rows);
                }
             }
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
 
@@ -151,8 +149,7 @@ public class JdbcDbUserDao extends JwtUserDao {
 
          String encoded = Base64.encodeBase64String(input).trim();
          return encoded;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throwEx(null, ex, null);
       }
       return null;
@@ -168,8 +165,7 @@ public class JdbcDbUserDao extends JwtUserDao {
          String hex = (new HexBinaryAdapter()).marshal(bytes);
 
          return hex;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          throw new RuntimeException(ex);
       }
    }

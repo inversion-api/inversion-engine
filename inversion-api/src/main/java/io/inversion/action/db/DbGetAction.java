@@ -88,8 +88,7 @@ public class DbGetAction extends Action<DbGetAction> {
             {
                String propName = rel.getFk1Col1().getJsonName();
                newHref += propName + "=" + resourceKey;
-            }
-            else {
+            } else {
                //TODO: test this change
                Index fkIdx = rel.getFkIndex1();
                Index pkIdx = collection.getPrimaryIndex();
@@ -108,8 +107,7 @@ public class DbGetAction extends Action<DbGetAction> {
                newHref = newHref.substring(0, newHref.length() - 1);
             }
 
-         }
-         else if (rel.isManyToMany()) {
+         } else if (rel.isManyToMany()) {
             //-- CONVERTS: http://localhost/northwind/source/employees/1/territories
             //-- TO THIS : http://localhost/northwind/source/territories/06897,19713
 
@@ -122,12 +120,10 @@ public class DbGetAction extends Action<DbGetAction> {
                String resourceKeys = Utils.implode(",", foreignKeys.toArray());
 
                newHref = Chain.buildLink(relatedCollection, resourceKeys, null);
-            }
-            else {
+            } else {
                return;
             }
-         }
-         else {
+         } else {
             //-- The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
             //-- The system would have written out : http://localhost/northwind/source/orders/YYYYY
             throw new UnsupportedOperationException("FIX ME IF FOUND...implementation logic error.");
@@ -148,8 +144,7 @@ public class DbGetAction extends Action<DbGetAction> {
          res.withStatus(included.getStatus());
          res.withJson(included.getJson());
          return;
-      }
-      else if (!Utils.empty(req.getCollection()) && !Utils.empty(req.getResourceKey())) {
+      } else if (!Utils.empty(req.getCollection()) && !Utils.empty(req.getResourceKey())) {
          List<String> resourceKeys = Utils.explode(",", req.getResourceKey());
          Term term = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName(), resourceKeys.toArray());
          req.getUrl().withParams(term.toString(), null);
@@ -159,8 +154,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
       if (results.size() == 0 && req.getResourceKey() != null && req.getCollectionKey() != null) {
          res.withStatus(Status.SC_404_NOT_FOUND);
-      }
-      else {
+      } else {
          //-- copy data into the response
          res.withRecords(results.getRows());
 
@@ -200,8 +194,7 @@ public class DbGetAction extends Action<DbGetAction> {
                      next += nextTerm;
                   }
                   res.withNext(next);
-               }
-               else if (results.size() == limit && (foundRows < 0 || (offest + limit) < foundRows)) {
+               } else if (results.size() == limit && (foundRows < 0 || (offest + limit) < foundRows)) {
                   String next = req.getUrl().getOriginal();
 
                   next = stripTerms(next, "offset", "page", "pageNum");
@@ -231,8 +224,7 @@ public class DbGetAction extends Action<DbGetAction> {
             List<Db> dbs = api.getDbs();
             if (dbs.size() == 1) {
                db = dbs.get(0);
-            }
-            else {
+            } else {
                for (Db candidate : dbs) {
                   if (candidate.getEndpointPath() != null && candidate.getEndpointPath().matches(req.getEndpointPath())) {
                      db = candidate;
@@ -246,8 +238,7 @@ public class DbGetAction extends Action<DbGetAction> {
             ApiException.throw400BadRequest("Unable to find collection for url '{}'", req.getUrl());
 
          results = db.select(null, req.getUrl().getParams());
-      }
-      else {
+      } else {
          results = collection.getDb().select(collection, req.getUrl().getParams());
       }
 
@@ -277,8 +268,7 @@ public class DbGetAction extends Action<DbGetAction> {
          String attrPath = path != null ? (path + "." + key) : key;
          if (exclude(attrPath, includes, excludes)) {
             node.remove(key);
-         }
-         else {
+         } else {
             Object value = node.get(key);
 
             if (value instanceof JSArray) {
@@ -288,8 +278,7 @@ public class DbGetAction extends Action<DbGetAction> {
                      exclude((JSNode) arr.get(i), includes, excludes, attrPath);
                   }
                }
-            }
-            else if (value instanceof JSNode) {
+            } else if (value instanceof JSNode) {
                exclude((JSNode) value, includes, excludes, attrPath);
             }
          }
@@ -415,16 +404,14 @@ public class DbGetAction extends Action<DbGetAction> {
                      relatedEks.add(new DefaultKeyValue(parentEk, childEk));
                   }
                }
-            }
-            else if (rel.isOneToMany()) {
+            } else if (rel.isOneToMany()) {
                //               idxToMatch = rel.getFkIndex1();
                //               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Resource().getKey().getColumn();
 
                idxToMatch = rel.getFkIndex1();
                idxToRetrieve = rel.getRelated().getPrimaryIndex();
 
-            }
-            else if (rel.isManyToMany()) {
+            } else if (rel.isManyToMany()) {
                idxToMatch = rel.getFkIndex1();
                idxToRetrieve = rel.getFkIndex2();
             }
@@ -441,8 +428,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
                      if (rel.isManyToOne()) {
                         parentObj.remove(rel.getName());
-                     }
-                     else {
+                     } else {
                         parentObj.put(rel.getName(), new JSArray());
                      }
                   }
@@ -479,8 +465,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
                if (rel.isManyToOne()) {
                   parentObj.put(rel.getName(), childObj);
-               }
-               else {
+               } else {
                   if (childObj != null) {
                      parentObj.getArray(rel.getName()).add(childObj);
                   }
@@ -605,11 +590,9 @@ public class DbGetAction extends Action<DbGetAction> {
 
       if (sc == 404) {
          return Collections.EMPTY_LIST;
-      }
-      else if (sc == 500) {
+      } else if (sc == 500) {
          res.rethrow();
-      }
-      else if (sc == 200) {
+      } else if (sc == 200) {
          List<JSNode> nodes = (List<JSNode>) res.getData().asList();
 
          for (JSNode node : nodes) {
@@ -691,8 +674,7 @@ public class DbGetAction extends Action<DbGetAction> {
                str = beginning;
             else
                str = beginning + str.substring(end + 1, str.length());
-         }
-         else {
+         } else {
             break;
          }
       }
@@ -758,8 +740,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
       if (params.contains(path)) {
          rtval = true;
-      }
-      else {
+      } else {
          for (String param : params) {
             if (matchStart) {
                if (param.startsWith(path + ".")) {

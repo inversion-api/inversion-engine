@@ -116,8 +116,7 @@ public class Pluralizer {
       if (mode == MODE.ENGLISH_ANGLICIZED) {
          // Anglicized plural
          irregular(new String[][]{{"beef", "beefs"}, {"brother", "brothers"}, {"cow", "cows"}, {"genie", "genies"}, {"money", "moneys"}, {"octopus", "octopuses"}, {"opus", "opuses"},});
-      }
-      else if (mode == MODE.ENGLISH_CLASSICAL) {
+      } else if (mode == MODE.ENGLISH_CLASSICAL) {
          // Classical plural
          irregular(new String[][]{{"beef", "beeves"}, {"brother", "brethren"}, {"cos", "kine"}, {"genie", "genii"}, {"money", "monies"}, {"octopus", "octopodes"}, {"opus", "opera"},});
       }
@@ -340,8 +339,7 @@ public class Pluralizer {
    void irregular(String singular, String plural) {
       if (singular.charAt(0) == plural.charAt(0)) {
          rules.add(new RegExpRule(Pattern.compile("(?i)(" + singular.charAt(0) + ")" + singular.substring(1) + "$"), "$1" + plural.substring(1)));
-      }
-      else {
+      } else {
          rules.add(new RegExpRule(Pattern.compile(Character.toUpperCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toUpperCase(plural.charAt(0)) + plural.substring(1)));
          rules.add(new RegExpRule(Pattern.compile(Character.toLowerCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toLowerCase(plural.charAt(0)) + plural.substring(1)));
       }

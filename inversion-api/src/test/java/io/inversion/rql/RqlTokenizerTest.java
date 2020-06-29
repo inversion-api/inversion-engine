@@ -87,8 +87,7 @@ public class RqlTokenizerTest {
                String check = test.get(j + 1);
                assertTrue(Utils.testCompare(check, token));
             }
-         }
-         catch (Throwable ex) {
+         } catch (Throwable ex) {
             System.err.println("Error in test " + i + ": '" + toParse + "' != " + tokens);
             throw ex;
          }
@@ -111,8 +110,7 @@ public class RqlTokenizerTest {
 
          try {
             new RqlTokenizer(test).asList();
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             failed = true;
          }
          assertTrue(failed, "String should have thrown a parsing error: " + (i + 1) + " '" + test + "'");

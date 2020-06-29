@@ -91,8 +91,7 @@ public class DynamoDbFactory {
          AmazonDynamoDB client = DynamoDb.buildDynamoClient("dynamo");
          DeleteTableRequest dtr = new DeleteTableRequest().withTableName("northwind");
          client.deleteTable(dtr);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          //ex.printStackTrace();
       }
 
@@ -157,8 +156,7 @@ public class DynamoDbFactory {
 
       try {
          table.waitForActive();
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          table.waitForActive();
       }
 
@@ -217,8 +215,7 @@ public class DynamoDbFactory {
          res.dump();
          assertEquals(201, res.getStatusCode());
          System.out.println("DYNAMO LOADED: " + total);// + " - " + js.getString("orderid"));
-      }
-      while (pages < 200 && next != null);
+      } while (pages < 200 && next != null);
 
    }
 

@@ -30,8 +30,7 @@ public class CosmosRqlIntegTest extends CosmosRqlUnitTest {
       Engine engine = null;
       try {
          engine = CosmosDbFactory.buildEngine((CosmosDb) db);
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          // TODO Auto-generated catch block
          e.printStackTrace();
       }

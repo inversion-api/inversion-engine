@@ -35,11 +35,9 @@ public class MockActionA extends Action<MockActionA> {
    public void run(Request req, Response res) throws ApiException {
       if (req.isMethod("get")) {
          res.withRecord(new JSNode("primaryKey", 1, "firstName", "tester1", "className", getClass().getSimpleName()));
-      }
-      else if (req.isMethod("put", "post")) {
+      } else if (req.isMethod("put", "post")) {
 
-      }
-      else if (req.isMethod("delete")) {
+      } else if (req.isMethod("delete")) {
 
       }
    }

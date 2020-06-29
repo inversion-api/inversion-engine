@@ -97,8 +97,7 @@ public class SwitchDirective extends InputBase {
 
                   break;
                }
-            }
-            else if (dirName.equalsIgnoreCase("default")) {
+            } else if (dirName.equalsIgnoreCase("default")) {
                for (int j = i + 1; j < numChildren; j++) {
                   renderNode = n.jjtGetChild(j);
                   renderNode.render(context, writer);

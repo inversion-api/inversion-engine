@@ -45,8 +45,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
          if (term.size() > 2) {
             Term as = Term.term(null, "as", t, term.getTerm(2).getToken());
             getParent().withTerm(as);
-         }
-         else {
+         } else {
             getParent().withTerm(t);
          }
          return true;
@@ -83,8 +82,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
          Term as = Term.term(null, "as", term, asName);
          withTerm(as);
          return true;
-      }
-      else {
+      } else {
          return super.addTerm(token, term);
       }
    }
@@ -112,8 +110,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
       for (Term as : findAll("as")) {
          if (!hasIncludes) {
             columns.add(as);
-         }
-         else {
+         } else {
             String name = as.getToken(1);
 
             boolean replaced = false;

@@ -29,8 +29,7 @@ public class RestClientTest {
          Chain.push(null, req, null);
          String url = client.buildUrl(null);
          assertEquals("http://somehost/12345/books/${something}/abcd", url);
-      }
-      finally {
+      } finally {
          Chain.pop();
       }
 
@@ -99,8 +98,7 @@ public class RestClientTest {
 
          assertEquals(0, finalHeaders.get("headerX").size());
 
-      }
-      finally {
+      } finally {
          Chain.pop();
       }
    }
@@ -137,8 +135,7 @@ public class RestClientTest {
          assertEquals("param2Val", finalParams.get("param2"));
          assertEquals("param3Val", finalParams.get("param3"));
 
-      }
-      finally {
+      } finally {
          Chain.pop();
       }
    }

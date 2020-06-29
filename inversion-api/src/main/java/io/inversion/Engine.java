@@ -199,8 +199,7 @@ public class Engine extends Rule<Engine> {
          //-- end debug output
 
          return this;
-      }
-      finally {
+      } finally {
          starting = false;
       }
    }
@@ -216,8 +215,7 @@ public class Engine extends Rule<Engine> {
       for (EngineListener listener : listeners) {
          try {
             listener.onShutdown(this);
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             ex.printStackTrace();
          }
       }
@@ -282,8 +280,7 @@ public class Engine extends Rule<Engine> {
          Map<String, String> params = new HashMap();
          queryTerms.forEach(key -> params.put(key.toString(), null));
          return service("GET", url, null, params);
-      }
-      else {
+      } else {
          return service("GET", url, null, null);
       }
    }
@@ -638,8 +635,7 @@ public class Engine extends Rule<Engine> {
          for (ApiListener listener : getApiListeners(req)) {
             try {
                listener.afterRequest(req, res);
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                if (listenerEx == null)
                   listenerEx = ex;
             }
@@ -648,8 +644,7 @@ public class Engine extends Rule<Engine> {
             throw listenerEx;
 
          return chain;
-      }
-      catch (Throwable ex) {
+      } catch (Throwable ex) {
          String status = Status.SC_500_INTERNAL_SERVER_ERROR;
 
          if (ex instanceof ApiException) {
@@ -665,8 +660,7 @@ public class Engine extends Rule<Engine> {
             //               if (redirectPlural(req, res))
             //                  return chain;
             //            }
-         }
-         else {
+         } else {
             ex = Utils.getCause(ex);
             if (Chain.getDepth() == 1)
                log.error("Non ApiException was caught in Engine.", ex);
@@ -684,28 +678,24 @@ public class Engine extends Rule<Engine> {
          for (ApiListener listener : getApiListeners(req)) {
             try {
                listener.afterError(req, res);
-            }
-            catch (Exception ex2) {
+            } catch (Exception ex2) {
                log.warn("Error notifying EngineListner.beforeError", ex);
             }
 
          }
 
-      }
-      finally {
+      } finally {
          for (ApiListener listener : getApiListeners(req)) {
             try {
                listener.beforeFinally(req, res);
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                log.warn("Error notifying EngineListner.onFinally", ex);
             }
          }
 
          try {
             writeResponse(req, res);
-         }
-         catch (Throwable ex) {
+         } catch (Throwable ex) {
             log.error("Error writing response.", ex);
          }
 
@@ -759,8 +749,7 @@ public class Engine extends Rule<Engine> {
 
       if ("OPTIONS".equals(method)) {
          //
-      }
-      else {
+      } else {
          if (debug) {
             res.debug("\r\n<< response -------------\r\n");
             res.debug(res.getStatusCode());
@@ -774,12 +763,10 @@ public class Engine extends Rule<Engine> {
                else
                   res.withContentType("text/text");
             }
-         }
-         else if (!Utils.empty(res.getRedirect())) {
+         } else if (!Utils.empty(res.getRedirect())) {
             res.withHeader("Location", res.getRedirect());
             res.withStatus(Status.SC_308_PERMANENT_REDIRECT);
-         }
-         else if (output == null && res.getJson() != null) {
+         } else if (output == null && res.getJson() != null) {
             output = res.getJson().toString();
 
             if (res.getContentType() == null)
@@ -866,8 +853,7 @@ public class Engine extends Rule<Engine> {
       if (existingApi != null && existingApi != api) {
          newList.remove(existingApi);
          newList.add(api);
-      }
-      else if (existingApi == null) {
+      } else if (existingApi == null) {
          newList.add(api);
       }
 
@@ -887,16 +873,14 @@ public class Engine extends Rule<Engine> {
       if (started) {
          try {
             api.startup();
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             log.warn("Error starting api '" + api.getName() + "'", ex);
          }
 
          for (EngineListener listener : listeners) {
             try {
                listener.onStartup(api);
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                log.warn("Error starting api '" + api.getName() + "'", ex);
             }
          }
@@ -919,16 +903,14 @@ public class Engine extends Rule<Engine> {
       if (api.isStarted()) {
          try {
             api.shutdown();
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             log.warn("Error shutting down api '" + api.getName() + "'", ex);
          }
 
          for (EngineListener listener : listeners) {
             try {
                listener.onShutdown(api);
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                log.warn("Error shutting down api '" + api.getName() + "'", ex);
             }
          }
@@ -960,8 +942,7 @@ public class Engine extends Rule<Engine> {
          }
 
          return url;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          throw new RuntimeException(ex);
       }
    }

@@ -165,8 +165,7 @@ public abstract class Db<T extends Db> {
             }
             configApi(api);
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ex.printStackTrace();
          Utils.rethrow(ex);
       }
@@ -219,8 +218,7 @@ public abstract class Db<T extends Db> {
       String termStr = null;
       if (Utils.empty(paramValue) && paramName.indexOf("(") > -1) {
          termStr = paramName;
-      }
-      else {
+      } else {
          if (Utils.empty(paramValue))
             paramValue = "true";
 
@@ -324,8 +322,7 @@ public abstract class Db<T extends Db> {
             if (collection == null) {
                JSNode node = new JSNode(row);
                results.setRow(i, node);
-            }
-            else {
+            } else {
                JSNode node = new JSNode();
                results.setRow(i, node);
 
@@ -345,16 +342,14 @@ public abstract class Db<T extends Db> {
                            Object obj = row.get(rel.getFk1Col1().getColumnName());
                            if (obj != null)
                               fkval = obj.toString();
-                        }
-                        else {
+                        } else {
                            fkval = Collection.encodeResourceKey(row, rel.getFkIndex1());
                         }
 
                         if (fkval != null) {
                            link = Chain.buildLink(rel.getRelated(), fkval.toString(), null);
                         }
-                     }
-                     else {
+                     } else {
                         //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
                         link = Chain.buildLink(collection, resourceKey, rel.getName());
                      }
@@ -472,8 +467,7 @@ public abstract class Db<T extends Db> {
                      mapped.put(colName, value);
                      copied.add(colName);
                   }
-               }
-               else {
+               } else {
                   for (String colName : rel.getFkIndex1().getColumnNames()) {
                      copied.add(colName.toLowerCase());
                   }
@@ -544,8 +538,7 @@ public abstract class Db<T extends Db> {
             srcRow.remove(key);
 
          srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
-      }
-      else {
+      } else {
          if (srcCols.size() != destCols.size())
             ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
 
@@ -617,14 +610,12 @@ public abstract class Db<T extends Db> {
                String resourceKey = Utils.substringAfter(value.toString(), "/");
                resourceKeys.add(resourceKey);
                row.putAll(collection.decodeResourceKey(resourceKey));
-            }
-            else {
+            } else {
                Property collProp = collection.getProperty(jsonProp);
                if (collProp != null) {
                   value = cast(collProp, value);
                   row.put(collProp.getColumnName(), value);
-               }
-               else {
+               } else {
                   //TODO: need test case here
                   Relationship rel = collection.getRelationship(jsonProp);
                   if (rel != null) {
@@ -633,18 +624,15 @@ public abstract class Db<T extends Db> {
                            Map fk = rel.getRelated().decodeResourceKey(value.toString());
                            mapTo(fk, rel.getFkIndex1(), rel.getRelated().getPrimaryIndex());
                            row.putAll(fk);
-                        }
-                        else {
+                        } else {
                            for (Property fkProp : rel.getFkIndex1().getProperties()) {
                               row.put(fkProp.getColumnName(), null);
                            }
                         }
-                     }
-                     else {
+                     } else {
                         ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related resource.");
                      }
-                  }
-                  else {
+                  } else {
                      row.put(jsonProp, value);
                   }
                }
@@ -782,8 +770,7 @@ public abstract class Db<T extends Db> {
                   relationshipStrs.add(r.toString());
                }
             }
-         }
-         else {
+         } else {
             for (Index fkIdx : coll.getIndexes()) {
                try {
                   if (!fkIdx.getType().equals("FOREIGN_KEY") || fkIdx.getProperty(0).getPk() == null)
@@ -816,8 +803,7 @@ public abstract class Db<T extends Db> {
                      r.withCollection(fkResource);
                      relationshipStrs.add(r.toString());
                   }
-               }
-               catch (Exception ex) {
+               } catch (Exception ex) {
                   ApiException.throw500InternalServerError(ex, "Error creating relationship for index: {}", fkIdx);
                }
             }
@@ -969,8 +955,7 @@ public abstract class Db<T extends Db> {
 
       if (type.equals(Relationship.REL_MANY_TO_ONE)) {
          name = fkColName;
-      }
-      else if (type.equals(Relationship.REL_ONE_TO_MANY)) {
+      } else if (type.equals(Relationship.REL_ONE_TO_MANY)) {
          //Example
          //
          //if the Alarm table has a FK to the Category table
@@ -1003,8 +988,7 @@ public abstract class Db<T extends Db> {
                break;
             }
          }
-      }
-      else if (type.equals(Relationship.REL_MANY_TO_MANY)) {
+      } else if (type.equals(Relationship.REL_MANY_TO_MANY)) {
          name = rel.getFk2Col1().getPk().getCollection().getName();
 
       }
@@ -1046,8 +1030,7 @@ public abstract class Db<T extends Db> {
          Property attr = collection.findProperty(token);
          if (attr != null)
             term.withToken(attr.getJsonName());
-      }
-      else {
+      } else {
          for (Term child : term.getTerms()) {
             mapToJsonNames(collection, child);
          }
@@ -1085,15 +1068,13 @@ public abstract class Db<T extends Db> {
                   name += attr.getColumnName();
                else
                   name += parts[i];
-            }
-            else {
+            } else {
                Relationship rel = collection.getRelationship(part);
 
                if (rel != null) {
                   name += rel.getName() + ".";
                   collection = rel.getRelated();
-               }
-               else {
+               } else {
                   name += parts[i] + ".";
                }
             }
@@ -1104,8 +1085,7 @@ public abstract class Db<T extends Db> {
                name = "-" + name;
             term.withToken(name);
          }
-      }
-      else {
+      } else {
          for (Term child : term.getTerms()) {
             terms.addAll(mapToColumnNames(collection, child));
          }
@@ -1401,8 +1381,7 @@ public abstract class Db<T extends Db> {
          if (mode == MODE.ENGLISH_ANGLICIZED) {
             // Anglicized plural
             irregular(new String[][]{{"beef", "beefs"}, {"brother", "brothers"}, {"cow", "cows"}, {"genie", "genies"}, {"money", "moneys"}, {"octopus", "octopuses"}, {"opus", "opuses"},});
-         }
-         else if (mode == MODE.ENGLISH_CLASSICAL) {
+         } else if (mode == MODE.ENGLISH_CLASSICAL) {
             // Classical plural
             irregular(new String[][]{{"beef", "beeves"}, {"brother", "brethren"}, {"cos", "kine"}, {"genie", "genii"}, {"money", "monies"}, {"octopus", "octopodes"}, {"opus", "opera"},});
          }
@@ -1625,8 +1604,7 @@ public abstract class Db<T extends Db> {
       protected void irregular(String singular, String plural) {
          if (singular.charAt(0) == plural.charAt(0)) {
             rules.add(new RegExpRule(Pattern.compile("(?i)(" + singular.charAt(0) + ")" + singular.substring(1) + "$"), "$1" + plural.substring(1)));
-         }
-         else {
+         } else {
             rules.add(new RegExpRule(Pattern.compile(Character.toUpperCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toUpperCase(plural.charAt(0)) + plural.substring(1)));
             rules.add(new RegExpRule(Pattern.compile(Character.toLowerCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toLowerCase(plural.charAt(0)) + plural.substring(1)));
          }

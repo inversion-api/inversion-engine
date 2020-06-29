@@ -307,8 +307,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
             Map<String, String> parsed = Utils.parseQueryString(queryString);
             configMap.putAll(parsed);
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ex.printStackTrace();
       }
       return (R) this;

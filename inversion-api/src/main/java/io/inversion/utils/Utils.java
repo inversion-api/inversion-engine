@@ -209,8 +209,7 @@ public class Utils {
                buff = new StringBuffer("");
             }
             continue;
-         }
-         else if (quotes.contains(c)) {
+         } else if (quotes.contains(c)) {
             quoted = !quoted;
          }
 
@@ -344,8 +343,7 @@ public class Utils {
       try {
          String bool = str + "";
          return !("0".equals(bool) || "false".equals(bool));
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          //ignore
       }
       return false;
@@ -357,8 +355,7 @@ public class Utils {
    public static int atoi(Object str) {
       try {
          return Integer.parseInt(str.toString().trim());
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          //ignore
       }
       return -1;
@@ -370,8 +367,7 @@ public class Utils {
    public static long atol(Object str) {
       try {
          return Long.parseLong(str.toString().trim());
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          //ignore
       }
       return -1;
@@ -383,8 +379,7 @@ public class Utils {
    public static float atof(Object str) {
       try {
          return Float.parseFloat(str.toString().trim());
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          //ignore
       }
       return -1;
@@ -396,8 +391,7 @@ public class Utils {
    public static double atod(Object str) {
       try {
          return Double.parseDouble(str.toString().trim());
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          //ignore
       }
       return -1;
@@ -458,8 +452,7 @@ public class Utils {
          String hex = (new HexBinaryAdapter()).marshal(bytes);
 
          return hex;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          rethrow(ex);
       }
       return null;
@@ -506,8 +499,7 @@ public class Utils {
          date = date.trim();
          SimpleDateFormat df = new SimpleDateFormat(format);
          return df.parse(date);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          rethrow(ex);
       }
       return null;
@@ -529,16 +521,14 @@ public class Utils {
          //         TemporalAccessor accessor = timeFormatter.parse(date);
          //         return Date.from(Instant.from(accessor));
          return ISO8601Utils.parse(date, new ParsePosition(0));
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
 
       }
       try {
          SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
          return f.parse(date);
 
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
 
       }
 
@@ -553,16 +543,14 @@ public class Utils {
          //System.out.println(d);
          return d;
 
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
 
       }
 
       try {
          SimpleDateFormat f = new SimpleDateFormat("yyyyMMdd");
          return f.parse(date);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          throw new RuntimeException("unsupported format: " + date);
       }
 
@@ -585,8 +573,7 @@ public class Utils {
             for (int i = 0; i < str1.length() && i < str2.length(); i++) {
                if (str1.charAt(i) == str2.charAt(i)) {
                   System.out.print(" ");
-               }
-               else {
+               } else {
                   System.out.println("X");
                   break;
                }
@@ -652,8 +639,7 @@ public class Utils {
 
       if (!empty(message)) {
          throw new RuntimeException(message, e);
-      }
-      else {
+      } else {
          throw new RuntimeException(e);
       }
    }
@@ -665,8 +651,7 @@ public class Utils {
    public static void sleep(long millis) {
       try {
          Thread.sleep(millis);
-      }
-      catch (InterruptedException e) {
+      } catch (InterruptedException e) {
          rethrow(e);
       }
    }
@@ -690,12 +675,10 @@ public class Utils {
 
       if (stackTrace != null) {
          stackTrace.printStackTrace(writer);
-      }
-      else {
+      } else {
          try {
             throw new Exception();
-         }
-         catch (Exception e) {
+         } catch (Exception e) {
             e.printStackTrace(writer);
          }
       }
@@ -722,20 +705,17 @@ public class Utils {
       if (stackTrace != null) {
          try {
             stackTrace.printStackTrace(writer);
-         }
-         catch (Exception e) {
+         } catch (Exception e) {
             createNewTrace = true;
          }
-      }
-      else {
+      } else {
          createNewTrace = true;
       }
 
       if (createNewTrace) {
          try {
             throw new Exception("Unable to get original stacktrace.");
-         }
-         catch (Exception e) {
+         } catch (Exception e) {
             e.printStackTrace(writer);
          }
       }
@@ -783,8 +763,7 @@ public class Utils {
 
       if (chop) {
          return cleanStackTrace(buffer.toString());
-      }
-      else {
+      } else {
          return buffer.toString();
       }
    }
@@ -804,8 +783,7 @@ public class Utils {
       for (int i = 0; i < lines.length && i < limit; i++) {
          if (i == limit - 1 && i != lines.length - 1) {
             buffer.append("..." + (lines.length - i) + " more");
-         }
-         else {
+         } else {
             buffer.append(lines[i]).append(NEW_LINE);
          }
       }
@@ -881,15 +859,13 @@ public class Utils {
                   f.setAccessible(true);
                   found.add(f.getName());
                   fields.add(f);
-               }
-               else {
+               } else {
                   System.out.println("This super class property is being skipped because it is being hidden by a child class property with the same name...is this a design mistake? " + f);
                }
             }
          }
          clazz = clazz.getSuperclass();
-      }
-      while (clazz != null && !Object.class.equals(clazz));
+      } while (clazz != null && !Object.class.equals(clazz));
 
       return fields;
    }
@@ -926,8 +902,7 @@ public class Utils {
          if (clazz != null) {
             clazz = clazz.getSuperclass();
          }
-      }
-      while (clazz != null && !Object.class.equals(clazz));
+      } while (clazz != null && !Object.class.equals(clazz));
 
       return null;
    }
@@ -943,14 +918,12 @@ public class Utils {
          Method getter = getMethod(object.getClass(), "get" + name);
          if (getter != null) {
             return getter.invoke(object);
-         }
-         else {
+         } else {
             Field field = getField(name, object.getClass());
             if (field != null)
                return field.get(object);
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ex.printStackTrace();
       }
       return null;
@@ -975,8 +948,7 @@ public class Utils {
          ByteArrayOutputStream out = new ByteArrayOutputStream();
          pipe(in, out);
          return new String(out.toByteArray());
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          rethrow(ex);
       }
       return null;
@@ -1046,8 +1018,7 @@ public class Utils {
          }
          dest.flush();
 
-      }
-      finally {
+      } finally {
          close(src);
          close(dest);
       }
@@ -1062,8 +1033,7 @@ public class Utils {
 
       if (fileName.endsWith("/")) {
          fileName = "working.tmp";
-      }
-      else {
+      } else {
          if (fileName.lastIndexOf('/') > 0) {
             fileName = fileName.substring(fileName.lastIndexOf('/') + 1, fileName.length());
          }
@@ -1078,8 +1048,7 @@ public class Utils {
          String suffix = fileName.substring(fileName.lastIndexOf('.'), fileName.length());
 
          return File.createTempFile(prefix + "-", suffix);
-      }
-      else {
+      } else {
          return File.createTempFile(fileName, "");
       }
    }
@@ -1103,15 +1072,12 @@ public class Utils {
 
          if (fileOrUrl.indexOf(':') >= 0) {
             return new URL(fileOrUrl).openStream();
-         }
-         else if (new File(fileOrUrl).exists()) {
+         } else if (new File(fileOrUrl).exists()) {
             return new FileInputStream(fileOrUrl);
-         }
-         else {
+         } else {
             return Thread.currentThread().getContextClassLoader().getResourceAsStream(fileOrUrl);
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          if (ex instanceof RuntimeException)
             throw (RuntimeException) ex;
 
@@ -1226,14 +1192,12 @@ public class Utils {
                      value = URLDecoder.decode(value, "UTF-8");
 
                      params.put(key, value);
-                  }
-                  else {
+                  } else {
                      params.put(URLDecoder.decode(pair, "UTF-8"), null);
                   }
                }
             }
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             rethrow(ex);
          }
       }
@@ -1314,8 +1278,7 @@ public class Utils {
                p.load(stream);
                Utils.close(stream);
                value = p.getProperty(name);
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                Utils.rethrow(ex);
             }
          }
@@ -1332,12 +1295,10 @@ public class Utils {
             try {
                if (value.toString().indexOf(".") < 0) {
                   return Long.parseLong(value.toString());
-               }
-               else {
+               } else {
                   return Double.parseDouble(value.toString());
                }
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                //must not have been an number
             }
             return value.toString();
@@ -1425,8 +1386,7 @@ public class Utils {
             default :
                ApiException.throw500InternalServerError("Error casting '{}' as type '{}'", value, type);
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          Utils.rethrow(ex);
          //throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
       }
@@ -1444,18 +1404,15 @@ public class Utils {
             try {
                if (o instanceof Closeable) {
                   ((Closeable) o).close();
-               }
-               else {
+               } else {
                   Method m = o.getClass().getMethod("close");
                   if (m != null) {
                      m.invoke(o);
                   }
                }
-            }
-            catch (NoSuchMethodException nsme) {
+            } catch (NoSuchMethodException nsme) {
                //nsme.printStackTrace();
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                //ex.printStackTrace();
             }
          }

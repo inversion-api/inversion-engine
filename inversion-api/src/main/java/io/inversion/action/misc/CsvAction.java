@@ -55,8 +55,7 @@ public class CsvAction extends Action<CsvAction> {
       if (!(arr instanceof JSArray)) {
          if (res.getJson().hasProperty("data")) {
             arr = res.getJson().getArray("data");
-         }
-         else {
+         } else {
             arr = new JSArray(arr);
          }
       }
@@ -100,8 +99,7 @@ public class CsvAction extends Action<CsvAction> {
                Object val = ((JSNode) arr.get(i)).get(key);
                if (val != null) {
                   printer.print(val);
-               }
-               else {
+               } else {
                   printer.print("");
                }
             }
@@ -111,8 +109,7 @@ public class CsvAction extends Action<CsvAction> {
          printer.close();
 
          return buff.toString();
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
       return null;

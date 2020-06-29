@@ -33,14 +33,11 @@ public class DbAction extends Action<DbAction> {
    public void run(Request req, Response res) throws ApiException {
       if (req.isMethod("GET")) {
          getAction.run(req, res);
-      }
-      else if (req.isMethod("POST")) {
+      } else if (req.isMethod("POST")) {
          postAction.run(req, res);
-      }
-      else if (req.isMethod("PUT")) {
+      } else if (req.isMethod("PUT")) {
          putAction.run(req, res);
-      }
-      else if (req.isMethod("PATCH")) {
+      } else if (req.isMethod("PATCH")) {
          patchAction.run(req, res);
       }
 

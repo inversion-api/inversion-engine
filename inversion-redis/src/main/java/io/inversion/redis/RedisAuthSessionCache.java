@@ -113,18 +113,15 @@ public class RedisAuthSessionCache extends InMemorySessionDao {
          try {
             jedis = getJedis();
             returnVal = jedisCallback.doWithJedis(jedis);
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             log.warn("Error getting or using the Redis client", ex);
          }
 
-      }
-      finally {
+      } finally {
          if (jedis != null) {
             try {
                jedis.close();
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                log.warn("Error closing redis connection", ex);
             }
          }

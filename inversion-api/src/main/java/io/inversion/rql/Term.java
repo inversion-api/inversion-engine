@@ -230,8 +230,7 @@ public class Term implements Comparable<Term> {
       StringBuffer buff = null;
       if (quote > 0) {
          buff = new StringBuffer("").append(quote).append(getToken()).append(quote);
-      }
-      else {
+      } else {
          buff = new StringBuffer(getToken());
       }
       if (terms.size() > 0) {
@@ -255,8 +254,7 @@ public class Term implements Comparable<Term> {
       for (Object aTerm : deconstructed) {
          if (aTerm instanceof Term) {
             newTerm.withTerm((Term) aTerm);
-         }
-         else {
+         } else {
             newTerm.withTerm(new Term(newTerm, aTerm.toString()));
          }
       }
@@ -271,14 +269,12 @@ public class Term implements Comparable<Term> {
       for (Object o : terms) {
          if (o instanceof Collection) {
             ((Collection) o).forEach(o2 -> deconstructed(found, o2));
-         }
-         else if (o.getClass().isArray()) {
+         } else if (o.getClass().isArray()) {
             Object[] arr = (Object[]) o;
             for (Object o2 : arr) {
                deconstructed(found, o2);
             }
-         }
-         else {
+         } else {
             found.add(o);
          }
       }

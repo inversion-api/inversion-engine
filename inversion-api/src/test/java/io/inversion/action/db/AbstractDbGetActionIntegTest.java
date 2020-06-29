@@ -190,8 +190,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
             assertEquals(3, res.getData().length());
             assertEquals(3, res.find("meta.pageSize"));
          }
-      }
-      while (pages < 200 && next != null);
+      } while (pages < 200 && next != null);
 
       assertEquals(9, pages);
       assertEquals(25, total);

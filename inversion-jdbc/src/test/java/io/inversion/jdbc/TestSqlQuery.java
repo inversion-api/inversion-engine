@@ -632,8 +632,7 @@ public class TestSqlQuery {
          int eqIdx = term.indexOf('=');
          if (eqIdx < 0) {
             map.put(term, null);
-         }
-         else {
+         } else {
             String value = term.substring(eqIdx + 1, term.length());
             term = term.substring(0, eqIdx);
             map.put(term, value);

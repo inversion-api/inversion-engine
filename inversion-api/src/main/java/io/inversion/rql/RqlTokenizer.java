@@ -77,13 +77,11 @@ public class RqlTokenizer {
                //this has to be the closing quote
                quote = 0;
                break;
-            }
-            else if (next.length() == 1) {
+            } else if (next.length() == 1) {
                //this has to be the starting quote
                quote = c;
                continue;
-            }
-            else {
+            } else {
                continue;
             }
          }
@@ -106,8 +104,7 @@ public class RqlTokenizer {
                append(c);
                if (c == ')')
                   function -= 1;
-            }
-            else {
+            } else {
                head--;
             }
 

@@ -167,8 +167,7 @@ public class RedisAction extends Action<RedisAction> {
          if (isFirstParam) {
             sortedParams += "?";
             isFirstParam = false;
-         }
-         else
+         } else
             sortedParams += "&";
 
          sortedParams += entry.getKey();

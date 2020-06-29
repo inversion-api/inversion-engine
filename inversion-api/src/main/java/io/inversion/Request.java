@@ -244,8 +244,7 @@ public class Request {
 
       try {
          json = JSNode.parseJsonNode(body);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw400BadRequest("Unparsable JSON body");
       }
 
@@ -269,15 +268,12 @@ public class Request {
       if (node != null) {
          if (node instanceof JSArray) {
             return (JSArray) node;
-         }
-         else if (node.get("data") instanceof JSArray) {
+         } else if (node.get("data") instanceof JSArray) {
             return node.getArray("data");
-         }
-         else {
+         } else {
             return new JSArray(node);
          }
-      }
-      else if (getBody() == null)
+      } else if (getBody() == null)
          return new JSArray();
       return null;
    }
@@ -664,8 +660,7 @@ public class Request {
             try {
                value = Double.parseDouble(value.toString());
                compareTo = Double.parseDouble(compareTo.toString());
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                //ignore numeric type conversion error.
             }
          }
@@ -824,8 +819,7 @@ public class Request {
 
          try {
             return Integer.parseInt(value + "");
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             fail("Field '" + propOrPath + "' must be an integer.");
          }
 
@@ -838,8 +832,7 @@ public class Request {
 
          try {
             return Double.parseDouble(value + "");
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             fail("Field '" + propOrPath + "' must be an number.");
          }
 
@@ -849,8 +842,7 @@ public class Request {
       public boolean asBoolean() {
          try {
             return Boolean.parseBoolean(value + "");
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             fail("Field '" + propOrPath + "' must be a boolean.");
          }
 

@@ -88,8 +88,7 @@ public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends Elastics
                t.withToken("eq");
 
             transformed = t;
-         }
-         else {
+         } else {
             //collection/valCol1~valCol2,valCol1~valCol2,valCol1~valCol2
             //keys(valCol1~valCol2,valCol1~valCol2,valCol1~valCol2)
 

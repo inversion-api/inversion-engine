@@ -131,11 +131,9 @@ public class AwsApiGatewayRequestStreamHandler implements RequestStreamHandler {
             writeResponse(res, outputStream);
          }
 
-      }
-      catch (Exception e1) {
+      } catch (Exception e1) {
          ex = e1;
-      }
-      finally {
+      } finally {
          if (ex != null) {
             if (config != null)
                responseBody.put("config", config);

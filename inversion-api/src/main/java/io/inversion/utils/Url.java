@@ -101,8 +101,7 @@ public class Url {
          int potocolEnd = url.indexOf("://");
          if (potocolEnd < 0) {
             path = url;
-         }
-         else {
+         } else {
             //-- parse a full url
             protocol = url.substring(0, url.indexOf(':'));
 
@@ -141,16 +140,14 @@ public class Url {
 
          if (path == null || path.length() == 0) {
             path = "/";
-         }
-         else if (path.charAt(0) != '/') {
+         } else if (path.charAt(0) != '/') {
             path = '/' + url;
          }
 
          if (!Utils.empty(path))
             this.path = new Path(path);
 
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          System.err.println("Error parsing url \"" + url + "\"");
          ex.printStackTrace();
       }
@@ -428,13 +425,11 @@ public class Url {
             try {
                if (params.get(key) != null) {
                   query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
-               }
-               else {
+               } else {
                   query += URLEncoder.encode(key, "UTF-8") + "&";
                }
 
-            }
-            catch (UnsupportedEncodingException e) {
+            } catch (UnsupportedEncodingException e) {
                Utils.rethrow(e);
             }
          }

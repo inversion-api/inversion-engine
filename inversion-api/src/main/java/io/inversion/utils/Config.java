@@ -201,8 +201,7 @@ public class Config {
                configuration.addConfiguration(configs.properties(url));
             }
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
 
@@ -227,8 +226,7 @@ public class Config {
          }
 
          return url;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          throw new RuntimeException(ex);
       }
    }

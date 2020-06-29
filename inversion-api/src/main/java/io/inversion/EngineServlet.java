@@ -157,8 +157,7 @@ public class EngineServlet extends HttpServlet {
                         inputStream = part.getInputStream();
                         fileName = part.getSubmittedFileName();
                         fileSize = part.getSize();
-                     }
-                     else if (part.getName().equals("requestPath")) {
+                     } else if (part.getName().equals("requestPath")) {
                         requestPath = Utils.read(part.getInputStream());
                         if (requestPath.indexOf("/") == 0)
                            requestPath = requestPath.substring(1);
@@ -171,8 +170,7 @@ public class EngineServlet extends HttpServlet {
                      uploads.add(new Upload(fileName, fileSize, requestPath, inputStream));
                   }
                   return uploads;
-               }
-               catch (Exception ex) {
+               } catch (Exception ex) {
                   Utils.rethrow(ex);
                }
                return null;
@@ -183,8 +181,7 @@ public class EngineServlet extends HttpServlet {
 
          engine.service(req, res);
          writeResponse(req, res, httpResp);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ex.printStackTrace();
          httpResp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
       }
@@ -206,20 +203,16 @@ public class EngineServlet extends HttpServlet {
             while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
                stringBuilder.append(charBuffer, 0, bytesRead);
             }
-         }
-         else {
+         } else {
             stringBuilder.append("");
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw400BadRequest(ex, "Unable to read request body");
-      }
-      finally {
+      } finally {
          if (bufferedReader != null) {
             try {
                bufferedReader.close();
-            }
-            catch (IOException ex) {
+            } catch (IOException ex) {
                //throw ex;
             }
          }
@@ -248,8 +241,7 @@ public class EngineServlet extends HttpServlet {
          }
          if ("OPTIONS".equals(method)) {
             //
-         }
-         else {
+         } else {
             String contentType = res.getContentType();
             byte[] bytes = res.getOutput().getBytes();
 
@@ -259,8 +251,7 @@ public class EngineServlet extends HttpServlet {
 
             out.write(bytes);
          }
-      }
-      finally {
+      } finally {
          out.flush();
          out.close();
       }

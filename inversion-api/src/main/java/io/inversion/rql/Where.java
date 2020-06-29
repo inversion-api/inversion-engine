@@ -45,13 +45,11 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
                t.withParent(null);
                super.addTerm(t.getToken(), t);
             }
-         }
-         else {
+         } else {
             super.addTerm(term.getToken(), term);
          }
          return true;
-      }
-      else {
+      } else {
          return super.addTerm(token, term);
       }
 
@@ -84,8 +82,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
                String token = parent.getToken().toLowerCase();
                if (existsFunctions.contains(token)) {
                   transformed = Term.term(parent.getParent(), "_exists", parent);
-               }
-               else if (notExistsFunctions.contains(token)) {
+               } else if (notExistsFunctions.contains(token)) {
                   parent.withToken(notExistsMap.get(token));
                   transformed = Term.term(parent.getParent(), "_notexists", parent);
                }
@@ -113,8 +110,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
                t.withToken("eq");
 
             transformed = t;
-         }
-         else {
+         } else {
             //collection/valCol1~valCol2,valCol1~valCol2,valCol1~valCol2
             //keys(valCol1~valCol2,valCol1~valCol2,valCol1~valCol2)
 

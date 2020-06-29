@@ -142,8 +142,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
                //                  }
                //              }               
                qb = QueryBuilders.wildcardQuery(field, value.toString());
-            }
-            else {
+            } else {
                //               {
                //                  "query": {
                //                    "term" : { "user" : "Kimchy" } 
@@ -183,8 +182,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
             if (nestedPath != null) {
                qb = QueryBuilders.nestedQuery(nestedPath, boolBuilder, ScoreMode.Avg);
                nestedPath = getNestedBaseIfExists(nestedPath);
-            }
-            else
+            } else
                qb = boolBuilder;
             break;
          case "sw":
@@ -210,8 +208,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
                   bqb.should(withBuilder);
                }
                qb = bqb;
-            }
-            else {
+            } else {
                qb = withList.get(0);
             }
             break;
@@ -298,8 +295,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
                for (Term selectTerm : term.getTerms()) {
                   includesList.add(selectTerm.getToken());
                }
-            }
-            else if (token.equalsIgnoreCase("excludes")) {
+            } else if (token.equalsIgnoreCase("excludes")) {
                if (excludesList == null)
                   excludesList = new ArrayList<>();
 
@@ -403,16 +399,13 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
             nestedList.add(childBuilder);
             if (nestedPath != null && !nestedPath.equalsIgnoreCase(childBuilder.getNestedPath())) {
                nestedPathsMatch = false;
-            }
-            else {
+            } else {
                nestedPath = childBuilder.getNestedPath();
             }
-         }
-         else if (childBuilderList.size() == 1) {
+         } else if (childBuilderList.size() == 1) {
             // dont automatically add to the bool builder as it may be an only child
             qb = childBuilder.getBuilder();
-         }
-         else {
+         } else {
             if (boolBuilder == null)
                boolBuilder = QueryBuilders.boolQuery();
             boolBuilder.filter(childBuilder.getBuilder());
@@ -427,8 +420,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
                if (nestedPathsMatch) {
                   // if the paths are the same, wrap the queries in a bool filter and then nest
                   nestedBoolBuilder.filter(nestedBuilder.getBuilder());
-               }
-               else {
+               } else {
                   // otherwise, create a nest for each builder, then add to a bool filter
                   qb = QueryBuilders.nestedQuery(nestedBuilder.getNestedPath(), nestedBuilder.getBuilder(), ScoreMode.Avg);
                   nestedBoolBuilder.filter(qb);
@@ -438,13 +430,11 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
             if (nestedPathsMatch) {
                qb = QueryBuilders.nestedQuery(nestedPath, nestedBoolBuilder, ScoreMode.Avg);
                nestedPath = getNestedBaseIfExists(nestedPath);
-            }
-            else {
+            } else {
                qb = nestedBoolBuilder;
                nestedPath = null;
             }
-         }
-         else {
+         } else {
             // found an only child
             WrappedQueryBuilder wrappedBuilder = nestedList.get(0);
             qb = QueryBuilders.nestedQuery(nestedPath, wrappedBuilder.getBuilder(), ScoreMode.Avg);

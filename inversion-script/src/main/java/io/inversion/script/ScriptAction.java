@@ -131,16 +131,14 @@ public class ScriptAction extends Action<ScriptAction> {
                URI uri = ((JarURLConnection) connection).getJarFileURL().toURI();
                try {
                   Paths.get(uri);
-               }
-               catch (FileSystemNotFoundException fsnfe) {
+               } catch (FileSystemNotFoundException fsnfe) {
                   log.info("Init : Attempting to create file system for " + uri);
                   Map<String, String> env = new HashMap<>();
                   env.put("create", "true");
                   FileSystem fs = FileSystems.newFileSystem(uri, env);
                }
             }
-         }
-         catch (Exception e) {
+         } catch (Exception e) {
             log.error("Error initializing the javascript language file system", e);
          }
       }
@@ -215,8 +213,7 @@ public class ScriptAction extends Action<ScriptAction> {
                context.eval("js", script.getString("script"));
 
                content = context.getBindings("js").getMember("content").asString();
-            }
-            else if ("velocity".equals(type)) {
+            } else if ("velocity".equals(type)) {
                VelocityContext context = (VelocityContext) contexts.get("velocity");
 
                if (context == null) {
@@ -270,8 +267,7 @@ public class ScriptAction extends Action<ScriptAction> {
                   JSNode obj = JSNode.parseJsonNode(content);
                   res.withJson(obj);
                   setText = false;
-               }
-               catch (Exception ex) {
+               } catch (Exception ex) {
 
                }
             }
@@ -280,11 +276,9 @@ public class ScriptAction extends Action<ScriptAction> {
                res.withText(content.trim());
             }
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
-      }
-      finally {
+      } finally {
          for (Object context : contexts.values()) {
             if (context instanceof Context)
                ((Context) context).close();
@@ -400,8 +394,7 @@ public class ScriptAction extends Action<ScriptAction> {
       List<String> paths = new ArrayList();
       if (ext != null) {
          paths.add(path);
-      }
-      else {
+      } else {
          for (Object e : handler.scriptTypes.keySet())
             paths.add(path + "." + e);
       }
@@ -415,8 +408,7 @@ public class ScriptAction extends Action<ScriptAction> {
          if (url != null) {
             try {
                script = new JSNode("type", handler.scriptTypes.get(ext), "script", Utils.read(url.openStream()));
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                //ignore
             }
             break;
@@ -546,11 +538,9 @@ public class ScriptAction extends Action<ScriptAction> {
 
          if (obj instanceof Map) {
             l.addAll(((Map) obj).values());
-         }
-         else if (obj instanceof Collection) {
+         } else if (obj instanceof Collection) {
             l.addAll((Collection) obj);
-         }
-         else if (obj != null) {
+         } else if (obj != null) {
             l.add(obj);
          }
 

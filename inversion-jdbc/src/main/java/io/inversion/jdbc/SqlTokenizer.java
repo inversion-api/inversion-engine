@@ -193,8 +193,7 @@ class SqlTokenizer {
                      head--;
                      done = true;
                      break;
-                  }
-                  else if (isAlphaNum(previousC) && !isAlphaNum(c)) {
+                  } else if (isAlphaNum(previousC) && !isAlphaNum(c)) {
                      head--;
                      done = true;
                      break;

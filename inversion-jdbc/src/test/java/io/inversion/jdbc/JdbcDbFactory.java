@@ -31,8 +31,7 @@ public class JdbcDbFactory {
                return bootstrapSqlServer(schemaName);
          }
          throw new RuntimeException("Unsupported db type: " + type);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          Utils.rethrow(ex);
       }
       return null;
@@ -83,8 +82,7 @@ public class JdbcDbFactory {
          //               }
          //            };
          return db;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          Utils.rethrow(ex);
       }
       return null;
@@ -127,8 +125,7 @@ public class JdbcDbFactory {
       Connection conn = null;
       try {
          conn = DriverManager.getConnection(url, user, pass);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          String message = "Looks like we could not connect to the MySql at: " + url + ".  You can start a free dev/test MySql with a few lines of Docker config.  See MySqlUtils.bootstrapMySql JavaDoc for Docker setup info.";
          throw new Exception(message, ex);
       }
@@ -178,8 +175,7 @@ public class JdbcDbFactory {
       Connection conn = null;
       try {
          conn = DriverManager.getConnection(url, user, pass);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          String message = "Looks like we could not connect to Postgress at: " + url + ".  You can start a free dev/test Postgres server with the following Docker one liner \"docker run --name postgres95 -p 5433:5432 -e POSTGRES_PASSWORD=password -d postgres:9.5\".";
          throw new Exception(message, ex);
       }
@@ -215,8 +211,7 @@ public class JdbcDbFactory {
       Connection conn = null;
       try {
          conn = DriverManager.getConnection(url, user, pass);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          String message = "Looks like we could not connect to the SqlServer at: " + url + ".  You can start a free dev/test SqlServer with the following Docker one liner \"docker run --name sqlserver2017 -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=Jmk38zZVn' -p 1434:1433 -d mcr.microsoft.com/mssql/server:2017-latest\".";
          throw new Exception(message, ex);
       }

@@ -296,8 +296,7 @@ public class CosmosDbFactory {
          }
          break;
 
-      }
-      while (res.findString("meta.next") != null);
+      } while (res.findString("meta.next") != null);
    }
 
 }

@@ -107,8 +107,7 @@ public class MockAction extends Action<MockAction> {
          InputStream stream = null;
          try {
             stream = new URL(jsonUrl).openStream();
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
          }
 
          if (stream == null) {
@@ -124,16 +123,14 @@ public class MockAction extends Action<MockAction> {
                File f = new File(jsonUrl);
                if (f.exists())
                   stream = new BufferedInputStream(new FileInputStream(jsonUrl));
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                ex.printStackTrace();
             }
          }
 
          if (stream != null) {
             json = JSNode.parseJsonNode(Utils.read(stream));
-         }
-         else {
+         } else {
             ApiException.throw500InternalServerError("Unable to locate jsonUrl '{}'. Please check your configuration", jsonUrl);
          }
 

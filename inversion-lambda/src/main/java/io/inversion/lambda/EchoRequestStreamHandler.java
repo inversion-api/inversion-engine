@@ -46,8 +46,7 @@ public class EchoRequestStreamHandler implements RequestStreamHandler {
          JSNode request = JSNode.parseJsonNode(input);
          responseBody.put("request", request);
 
-      }
-      catch (Exception ex)
+      } catch (Exception ex)
 
       {
          responseBody.put("error", Utils.getShortCause(ex));

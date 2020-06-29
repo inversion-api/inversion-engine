@@ -128,8 +128,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                if (Chain.peek().get("foundRows") == null && Chain.first().getRequest().isMethod("GET")) {
                   if (rows.size() == 0) {
                      foundRows = 0;
-                  }
-                  else {
+                  } else {
 
                      foundRows = queryFoundRows(conn, sql, values);
                   }
@@ -140,8 +139,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
             results.withFoundRows(foundRows);
             results.withRows(rows);
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             //System.out.println(sql);
             //ex.printStackTrace();
             ApiException.throw500InternalServerError(ex);
@@ -209,8 +207,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
          if (expression != null) {
             initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM (" + expression + ")";
-         }
-         else {
+         } else {
             expression = quoteCol(getFrom().getTable());
             initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM " + expression;
          }
@@ -242,8 +239,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                else
                   cols.append(" AS " + quoteCol(colName));
             }
-         }
-         else if (term.getToken().indexOf(".") < 0) {
+         } else if (term.getToken().indexOf(".") < 0) {
             cols.append(" " + printCol(term.getToken()));
          }
 
@@ -287,8 +283,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             int idx = parts.select.substring(0, star).indexOf(" ");
             String newSelect = parts.select.substring(0, idx) + cols + parts.select.substring(star + 1, parts.select.length());
             parts.select = newSelect;
-         }
-         else {
+         } else {
             String select = parts.select.trim();
             if (!select.toLowerCase().endsWith("select"))
                select += ", ";
@@ -491,8 +486,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                if (parts.select.contains(quoteCol(prop.getColumnName())))
                   sorts.add(new Sort(prop.getColumnName(), true));
             }
-         }
-         else {
+         } else {
             for (String col : getSelect().getColumnNames()) {
                sorts.add(new Sort(col, true));
             }
@@ -520,8 +514,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
                s += limit;
             }
-         }
-         else if (getDb().isType("sqlserver")) {
+         } else if (getDb().isType("sqlserver")) {
             //https://docs.microsoft.com/en-us/sql/t-sql/queries/select-order-by-clause-transact-sql?view=sql-server-2017#Offset
             //OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY  
 
@@ -531,8 +524,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
             if (limit >= 0)
                s += " FETCH NEXT " + limit + " ROWS ONLY ";
-         }
-         else {
+         } else {
             s = "";
 
             if (limit >= 0)
@@ -552,8 +544,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       if (db.isType("mysql")) {
          sql = "SELECT FOUND_ROWS()";
          foundRows = JdbcUtils.selectInt(conn, sql);
-      }
-      else {
+      } else {
          if (sql.indexOf("LIMIT ") > 0)
             sql = sql.substring(0, sql.lastIndexOf("LIMIT "));
 
@@ -577,14 +568,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          String value = null;
          if (isCol(term)) {
             value = printCol(token);
-         }
-         else if (isBool(term)) {
+         } else if (isBool(term)) {
             value = asBool(token);
-         }
-         else if (isNum(term)) {
+         } else if (isNum(term)) {
             value = asNum(token);
-         }
-         else {
+         } else {
             value = asString(term);
          }
          return value;
@@ -652,8 +640,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             String stringI = preparedStmtChildText.get(i);
             if ("null".equalsIgnoreCase(stringI)) {
                sql.append(string0).append(" IS NULL ");
-            }
-            else {
+            } else {
                boolean wildcard = dynamicSqlChildText.get(i).indexOf('%') >= 0;
 
                if (wildcard) {
@@ -672,8 +659,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                         ;
                      }
                   }
-               }
-               else {
+               } else {
                   sql.append(string0).append(" = ").append(stringI);
                }
             }
@@ -687,32 +673,23 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
          if (negation)
             sql.append(")");
-      }
-      else if ("nn".equalsIgnoreCase(token)) {
+      } else if ("nn".equalsIgnoreCase(token)) {
          sql.append(concatAll(" AND ", " IS NOT NULL", preparedStmtChildText));
-      }
-      else if ("emp".equalsIgnoreCase(token)) {
+      } else if ("emp".equalsIgnoreCase(token)) {
          sql.append("(").append(preparedStmtChildText.get(0)).append(" IS NULL OR ").append(preparedStmtChildText.get(0)).append(" = ").append(asString("")).append(")");
-      }
-      else if ("nemp".equalsIgnoreCase(token)) {
+      } else if ("nemp".equalsIgnoreCase(token)) {
          sql.append("(").append(preparedStmtChildText.get(0)).append(" IS NOT NULL AND ").append(preparedStmtChildText.get(0)).append(" != ").append(asString("")).append(")");
-      }
-      else if ("n".equalsIgnoreCase(token)) {
+      } else if ("n".equalsIgnoreCase(token)) {
          sql.append(concatAll(" AND ", " IS NULL", preparedStmtChildText));
-      }
-      else if ("lt".equalsIgnoreCase(token)) {
+      } else if ("lt".equalsIgnoreCase(token)) {
          sql.append(preparedStmtChildText.get(0)).append(" < ").append(preparedStmtChildText.get(1));
-      }
-      else if ("le".equalsIgnoreCase(token)) {
+      } else if ("le".equalsIgnoreCase(token)) {
          sql.append(preparedStmtChildText.get(0)).append(" <= ").append(preparedStmtChildText.get(1));
-      }
-      else if ("gt".equalsIgnoreCase(token)) {
+      } else if ("gt".equalsIgnoreCase(token)) {
          sql.append(preparedStmtChildText.get(0)).append(" > ").append(preparedStmtChildText.get(1));
-      }
-      else if ("ge".equalsIgnoreCase(token)) {
+      } else if ("ge".equalsIgnoreCase(token)) {
          sql.append(preparedStmtChildText.get(0)).append(" >= ").append(preparedStmtChildText.get(1));
-      }
-      else if ("in".equalsIgnoreCase(token) || "out".equalsIgnoreCase(token)) {
+      } else if ("in".equalsIgnoreCase(token) || "out".equalsIgnoreCase(token)) {
          sql.append(preparedStmtChildText.get(0));
 
          if ("out".equalsIgnoreCase(token))
@@ -725,16 +702,13 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                sql.append(", ");
          }
          sql.append(")");
-      }
-      else if ("if".equalsIgnoreCase(token)) {
+      } else if ("if".equalsIgnoreCase(token)) {
          if (db == null || db.isType("mysql")) {
             sql.append("IF(").append(preparedStmtChildText.get(0)).append(", ").append(preparedStmtChildText.get(1)).append(", ").append(preparedStmtChildText.get(2)).append(")");
-         }
-         else {
+         } else {
             sql.append("CASE WHEN ").append(preparedStmtChildText.get(0)).append(" THEN ").append(preparedStmtChildText.get(1)).append(" ELSE ").append(preparedStmtChildText.get(2)).append(" END");
          }
-      }
-      else if ("and".equalsIgnoreCase(token) || "or".equalsIgnoreCase(token)) {
+      } else if ("and".equalsIgnoreCase(token) || "or".equalsIgnoreCase(token)) {
          sql.append("(");
          for (int i = 0; i < preparedStmtChildText.size(); i++) {
             sql.append(preparedStmtChildText.get(i).trim());
@@ -742,8 +716,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                sql.append(" ").append(token.toUpperCase()).append(" ");
          }
          sql.append(")");
-      }
-      else if ("not".equalsIgnoreCase(token)) {
+      } else if ("not".equalsIgnoreCase(token)) {
          sql.append("NOT (");
          for (int i = 0; i < preparedStmtChildText.size(); i++) {
             sql.append(preparedStmtChildText.get(i).trim());
@@ -751,8 +724,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                sql.append(" ");
          }
          sql.append(")");
-      }
-      else if ("count".equalsIgnoreCase(token)) {
+      } else if ("count".equalsIgnoreCase(token)) {
          //String s = "COUNT (1)";
          //sql.append(s);
 
@@ -764,16 +736,13 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
          String s = token.toUpperCase() + "(" + acol + ")";
          sql.append(s);
 
-      }
-      else if ("distinct".equalsIgnoreCase(token)) {
+      } else if ("distinct".equalsIgnoreCase(token)) {
          //TODO: what do you do with this as a function????
-      }
-      else if ("sum".equalsIgnoreCase(token) || "min".equalsIgnoreCase(token) || "max".equalsIgnoreCase(token)) {
+      } else if ("sum".equalsIgnoreCase(token) || "min".equalsIgnoreCase(token) || "max".equalsIgnoreCase(token)) {
          String acol = preparedStmtChildText.get(0);
          String s = token.toUpperCase() + "(" + acol + ")";
          sql.append(s);
-      }
-      else if (Utils.in(token.toLowerCase(), "_exists", "_notexists")) {
+      } else if (Utils.in(token.toLowerCase(), "_exists", "_notexists")) {
          if ("_notexists".equalsIgnoreCase(token))
             sql.append("NOT ");
          sql.append("EXISTS (SELECT 1 FROM ");
@@ -820,8 +789,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                if (i < fk1.size() - 1)
                   sql.append(" AND ");
             }
-         }
-         else if (rel.isOneToMany()) {
+         } else if (rel.isOneToMany()) {
             for (int i = 0; i < fk1.size(); i++) {
                Property prop = fk1.getProperty(i);
                String pkName = prop.getPk().getColumnName();
@@ -830,8 +798,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                if (i < fk1.size() - 1)
                   sql.append(" AND ");
             }
-         }
-         else if (rel.isManyToMany()) {
+         } else if (rel.isManyToMany()) {
             for (int i = 0; i < fk1.size(); i++) {
                Property prop = fk1.getProperty(i);
                String pkName = prop.getPk().getColumnName();
@@ -859,11 +826,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                sql.append(" AND ");
          }
          sql.append(")");
-      }
-      else if ("miles".equalsIgnoreCase(token)) {
+      } else if ("miles".equalsIgnoreCase(token)) {
          sql.append("point(").append(preparedStmtChildText.get(0)).append(",").append(preparedStmtChildText.get(1)).append(") <@> point(").append(preparedStmtChildText.get(2)).append(",").append(preparedStmtChildText.get(3)).append(")");
-      }
-      else {
+      } else {
          throw new RuntimeException("Unable to parse: " + term);
       }
 
@@ -933,8 +898,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       for (int i = 0; i < parts.length; i++) {
          if ("*".equals(parts[i])) {
             buff.append(parts[i]);
-         }
-         else {
+         } else {
             if (parts[i].startsWith("~~relTbl_")) {
                String relName = parts[i];
                relName = relName.substring(relName.indexOf("_") + 1);
@@ -991,11 +955,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
             if (!token.endsWith("*"))
                token += "*";
-         }
-         else if (parent.hasToken("sw") && !token.endsWith("*")) {
+         } else if (parent.hasToken("sw") && !token.endsWith("*")) {
             token = token + "*";
-         }
-         else if (parent.hasToken("ew") && !token.startsWith("*")) {
+         } else if (parent.hasToken("ew") && !token.startsWith("*")) {
             token = "*" + token;
          }
 
@@ -1028,8 +990,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
       try {
          Double.parseDouble(token);
          return true;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          //not a number, ignore
       }
 

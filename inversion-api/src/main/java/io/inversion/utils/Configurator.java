@@ -176,19 +176,16 @@ public class Configurator {
                            field.setAccessible(true);
                            propVal = cast((String) propKey, (String) propVal, field.getType(), field, beans);
                            field.set(bean, propVal);
-                        }
-                        else {
+                        } else {
                            log.warn("Unable to find field '" + fieldName + "' on bean '" + beanName + "'");
                         }
-                     }
-                     catch (Exception ex) {
+                     } catch (Exception ex) {
                         log.warn("Error setting property '" + propKey + "'", ex);
                      }
                   }
                }
             }
-         }
-         else {
+         } else {
             //-- FULL WIRING MODE
 
             Decoder w = new Decoder();
@@ -196,8 +193,7 @@ public class Configurator {
             w.load(props);
             loadConfig(engine, props);
          }
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          ApiException.throw500InternalServerError(e, "Error loading configuration.");
       }
    }
@@ -369,14 +365,11 @@ public class Configurator {
 
             boolean inc = !excludeTypes.contains(c);
             return inc;
-         }
-         else if (Properties.class.isAssignableFrom(c)) {
+         } else if (Properties.class.isAssignableFrom(c)) {
             return true;
-         }
-         else if (JSNode.class.isAssignableFrom(c)) {
+         } else if (JSNode.class.isAssignableFrom(c)) {
             return true;
-         }
-         else if (Map.class.isAssignableFrom(c)) {
+         } else if (Map.class.isAssignableFrom(c)) {
             Type t = field.getGenericType();
             if (t instanceof ParameterizedType) {
                ParameterizedType pt = (ParameterizedType) t;
@@ -384,12 +377,10 @@ public class Configurator {
                Class valueType = (Class) pt.getActualTypeArguments()[1];
 
                return !excludeTypes.contains(keyType) && !excludeTypes.contains(valueType);
-            }
-            else {
+            } else {
                throw new RuntimeException("You need to parameterize this object: " + field);
             }
-         }
-         else {
+         } else {
             boolean inc = !excludeTypes.contains(c);
 
             if (!inc)
@@ -408,27 +399,22 @@ public class Configurator {
          Class clazz = o.getClass();
          if (o instanceof Api) {
             name = ((Api) o).getName();
-         }
-         else if (o instanceof Db)// || o instanceof Action || o instanceof Endpoint)
+         } else if (o instanceof Db)// || o instanceof Action || o instanceof Endpoint)
          {
             name = Utils.getField("name", clazz).get(o);
-         }
-         else if (o instanceof Collection) {
+         } else if (o instanceof Collection) {
             Collection t = (Collection) o;
             if (t.getDb() != null)
                name = t.getDb().getName() + ".collections." + t.getTableName();
-         }
-         else if (o instanceof Property) {
+         } else if (o instanceof Property) {
             Property col = (Property) o;
             if (col.getCollection() != null && col.getCollection().getDb() != null)
                name = col.getCollection().getDb().getName() + ".collections." + col.getCollection().getTableName() + ".properties." + col.getColumnName();
-         }
-         else if (o instanceof Index) {
+         } else if (o instanceof Index) {
             Index index = (Index) o;
             if (index.getCollection() != null && index.getCollection().getDb() != null)
                name = index.getCollection().getDb().getName() + ".collections." + index.getCollection().getTableName() + ".indexes." + index.getName();
-         }
-         else if (o instanceof Relationship) {
+         } else if (o instanceof Relationship) {
             Relationship rel = (Relationship) o;
             if (rel.getCollection() != null)
                name = getName(rel.getCollection()) + ".relationships." + rel.getName();
@@ -476,8 +462,7 @@ public class Configurator {
          Properties props = new Properties();
          try {
             props.load(new ByteArrayInputStream(propsStr.getBytes()));
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             Utils.rethrow(ex);
          }
          add(props);
@@ -497,13 +482,11 @@ public class Configurator {
          String value = System.getProperty(name);
          if (value != null) {
             //System.out.p("using syso prop for key: " + name);
-         }
-         else {
+         } else {
             value = System.getenv(name);
             if (value != null) {
                //log.info("using env var for key: " + name);
-            }
-            else {
+            } else {
                value = props.getProperty(name);
             }
          }
@@ -591,8 +574,7 @@ public class Configurator {
                Object obj = null;
                try {
                   obj = Class.forName(cn).newInstance();
-               }
-               catch (Exception ex) {
+               } catch (Exception ex) {
                   System.err.println("Error instantiating class: '" + cn + "'");
                   throw ex;
                }
@@ -641,35 +623,29 @@ public class Configurator {
 
                      if (isFirstPassSoLoadOnlyPrimitives && valueIsBean) {
                         continue;
-                     }
-                     else if (!isFirstPassSoLoadOnlyPrimitives && !valueIsBean) {
+                     } else if (!isFirstPassSoLoadOnlyPrimitives && !valueIsBean) {
                         continue;
                      }
 
                      if (handleProp(obj, prop, value)) {
                         //do nothing, already handled
-                     }
-                     else {
+                     } else {
                         Field field = getField(prop, obj.getClass());
                         if (field != null) {
                            Class type = field.getType();
 
                            if (beans.containsKey(value) && type.isAssignableFrom(beans.get(value).getClass())) {
                               field.set(obj, beans.get(value));
-                           }
-                           else if (java.util.Collection.class.isAssignableFrom(type)) {
+                           } else if (java.util.Collection.class.isAssignableFrom(type)) {
                               java.util.Collection list = (java.util.Collection) cast(key, value, type, field, beans);
                               ((java.util.Collection) field.get(obj)).addAll(list);
-                           }
-                           else if (Map.class.isAssignableFrom(type)) {
+                           } else if (Map.class.isAssignableFrom(type)) {
                               Map map = (Map) cast(key, value, type, null, beans);
                               ((Map) field.get(obj)).putAll(map);
-                           }
-                           else {
+                           } else {
                               field.set(obj, cast(key, value, type, null, beans));
                            }
-                        }
-                        else {
+                        } else {
                            System.out.println("Can't map: " + key + " = " + value);
                         }
 
@@ -691,8 +667,7 @@ public class Configurator {
                if (beans.containsKey(parentKey)) {
                   //               Object parent = beans.get(parentKey);
                   //               System.out.println(parent);
-               }
-               else if (count > 1) {
+               } else if (count > 1) {
                   String mapKey = propKey;
                   propKey = parentKey.substring(parentKey.lastIndexOf(".") + 1);
                   parentKey = parentKey.substring(0, parentKey.lastIndexOf("."));
@@ -705,23 +680,19 @@ public class Configurator {
                            Map map = (Map) field.get(parent);
                            if (!map.containsKey(mapKey))
                               map.put(mapKey, obj);
-                        }
-                        else if (java.util.Collection.class.isAssignableFrom(field.getType())) {
+                        } else if (java.util.Collection.class.isAssignableFrom(field.getType())) {
                            //System.err.println("You should consider adding " + parent.getClass().getName() + ".with" + propKey + "in camel case singular or plural form");//a settinger to accomodate property: " + beanName);
                            java.util.Collection list = (java.util.Collection) field.get(parent);
                            if (!list.contains(obj)) {
                               list.add(obj);
                            }
-                        }
-                        else {
+                        } else {
                            System.err.println("Unable to set nested value: '" + beanName + "'");
                         }
-                     }
-                     else {
+                     } else {
                         System.err.println("Field is not a mapped: " + beanName + " - " + field);
                      }
-                  }
-                  else {
+                  } else {
                      System.err.println("Missing parent for map compression: " + beanName);
                   }
                }
@@ -865,8 +836,7 @@ public class Configurator {
 
                      if (defaultValue != null && WRAPPER_TYPES.contains(defaultValue.getClass()))
                         defaults.put(object.getClass(), field.getName(), defaultValue);
-                  }
-                  catch (Exception ex) {
+                  } catch (Exception ex) {
                      // ex.printStackTrace();
                   }
                }
@@ -900,8 +870,7 @@ public class Configurator {
                      }
                      if (name != null)
                         props.put(fieldKey, Utils.implode(",", values));
-                  }
-                  else if (value instanceof Map) {
+                  } else if (value instanceof Map) {
                      Map map = (Map) value;
                      if (map.size() == 0)
                         continue;
@@ -912,14 +881,12 @@ public class Configurator {
                         if (name != null)
                            props.put(fieldKey + "." + encodedKey, encodedValue);
                      }
-                  }
-                  else {
+                  } else {
                      if (WRAPPER_TYPES.contains(value.getClass())) {
                         Object defaultVal = defaults.get(object.getClass(), field.getName());
                         if (defaultVal != null && defaultVal.equals(value))
                            continue;
-                     }
-                     else if (!includer.include(field))
+                     } else if (!includer.include(field))
                         continue;
 
                      if (name != null)
@@ -929,8 +896,7 @@ public class Configurator {
 
             }
             return name;
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             System.err.println("Error encoding " + object.getClass().getName() + " - " + ex.getMessage());
             ex.printStackTrace();
             throw ex;
@@ -983,33 +949,24 @@ public class Configurator {
    static <T> T cast(String key, String stringVal, Class<T> type, Field field, Map<String, Object> beans) throws Exception {
       if (String.class.isAssignableFrom(type)) {
          return (T) stringVal;
-      }
-      else if (Path.class.isAssignableFrom(type)) {
+      } else if (Path.class.isAssignableFrom(type)) {
          return (T) new Path(stringVal);
-      }
-      else if (boolean.class.isAssignableFrom(type)) {
+      } else if (boolean.class.isAssignableFrom(type)) {
          stringVal = stringVal.toLowerCase();
          return (T) (Boolean) (stringVal.equals("true") || stringVal.equals("t") || stringVal.equals("1"));
-      }
-      else if (byte.class.isAssignableFrom(type)) {
+      } else if (byte.class.isAssignableFrom(type)) {
          return (T) (Byte) Byte.parseByte(stringVal);
-      }
-      else if (char.class.isAssignableFrom(type)) {
+      } else if (char.class.isAssignableFrom(type)) {
          return (T) (Character) stringVal.charAt(0);
-      }
-      else if (int.class.isAssignableFrom(type)) {
+      } else if (int.class.isAssignableFrom(type)) {
          return (T) (Integer) Integer.parseInt(stringVal);
-      }
-      else if (long.class.isAssignableFrom(type)) {
+      } else if (long.class.isAssignableFrom(type)) {
          return (T) (Long) Long.parseLong(stringVal);
-      }
-      else if (float.class.isAssignableFrom(type)) {
+      } else if (float.class.isAssignableFrom(type)) {
          return (T) (Float) Float.parseFloat(stringVal);
-      }
-      else if (double.class.isAssignableFrom(type)) {
+      } else if (double.class.isAssignableFrom(type)) {
          return (T) (Double) Double.parseDouble(stringVal);
-      }
-      else if (type.isArray() || java.util.Collection.class.isAssignableFrom(type)) {
+      } else if (type.isArray() || java.util.Collection.class.isAssignableFrom(type)) {
          Class subtype = null;
          if (type.isArray()) {
             subtype = getArrayElementClass(type);
@@ -1036,8 +993,7 @@ public class Configurator {
             return (T) list.toArray((Object[]) Array.newInstance(subtype, list.size()));
 
          return (T) list;
-      }
-      else if (Map.class.isAssignableFrom(type)) {
+      } else if (Map.class.isAssignableFrom(type)) {
          Map map = new HashMap();
          String[] parts = stringVal.split(",");
          for (String part : parts) {
@@ -1045,8 +1001,7 @@ public class Configurator {
             map.put(part, val);
          }
          return (T) map;
-      }
-      else {
+      } else {
          Object o = beans.get(stringVal);
          if (o != null && type.isAssignableFrom(o.getClass()))
             return (T) o;
@@ -1064,26 +1019,19 @@ public class Configurator {
 
       if (typeStr.startsWith("class [Z")) {
          subtype = boolean.class;
-      }
-      else if (typeStr.startsWith("class [B")) {
+      } else if (typeStr.startsWith("class [B")) {
          subtype = byte.class;
-      }
-      else if (typeStr.startsWith("class [C")) {
+      } else if (typeStr.startsWith("class [C")) {
          subtype = char.class;
-      }
-      else if (typeStr.startsWith("class [I")) {
+      } else if (typeStr.startsWith("class [I")) {
          subtype = int.class;
-      }
-      else if (typeStr.startsWith("class [J")) {
+      } else if (typeStr.startsWith("class [J")) {
          subtype = long.class;
-      }
-      else if (typeStr.startsWith("class [F")) {
+      } else if (typeStr.startsWith("class [F")) {
          subtype = float.class;
-      }
-      else if (typeStr.startsWith("class [D")) {
+      } else if (typeStr.startsWith("class [D")) {
          subtype = double.class;
-      }
-      else //if (typeStr.startsWith("class ["))
+      } else //if (typeStr.startsWith("class ["))
       {
          subtype = Class.forName(typeStr.substring(typeStr.indexOf("[") + 2, typeStr.indexOf(";")));
       }

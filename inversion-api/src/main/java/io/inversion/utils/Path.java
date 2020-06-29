@@ -404,8 +404,7 @@ public class Path {
 
          if (myPart.startsWith(":")) {
             continue;
-         }
-         else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}")) {
+         } else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}")) {
             int nameStart = myPart.indexOf("{") + 1;
             int endName = myPart.indexOf(":");
             if (endName < 0)
@@ -420,8 +419,7 @@ public class Path {
                   return false;
                }
             }
-         }
-         else if (!myPart.equalsIgnoreCase(theirPart)) {
+         } else if (!myPart.equalsIgnoreCase(theirPart)) {
             return false;
          }
 
@@ -506,16 +504,14 @@ public class Path {
          if (greedy || !restOptional) {
             theirPart = matchingConcretePath.remove(0);
             matchedPath.add(theirPart);
-         }
-         else {
+         } else {
             theirPart = matchingConcretePath.get(nextOptional++);
          }
 
          if (myPart.startsWith(":")) {
             String name = myPart.substring(1).trim();
             params.put(name, theirPart);
-         }
-         else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}")) {
+         } else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}")) {
             int nameStart = myPart.indexOf("{") + 1;
             int endName = myPart.indexOf(":");
             if (endName < 0)
@@ -532,8 +528,7 @@ public class Path {
             }
 
             params.put(name, theirPart);
-         }
-         else if (!myPart.equalsIgnoreCase(theirPart)) {
+         } else if (!myPart.equalsIgnoreCase(theirPart)) {
             ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), matchingConcretePath.toString());
          }
       }

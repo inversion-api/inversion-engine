@@ -44,11 +44,9 @@ public class TestValidation {
       try {
          failed = false;
          assertEquals(5, req.validate("amount").minMax(8, 10).asInt());
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          failed = true;
-      }
-      finally {
+      } finally {
          if (!failed)
             fail("validation shoud have failed");
       }
@@ -56,11 +54,9 @@ public class TestValidation {
       try {
          failed = false;
          req.validate("someField1").required().in("value3", "value4");
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          failed = true;
-      }
-      finally {
+      } finally {
          if (!failed)
             fail("validation shoud have failed");
       }
@@ -68,11 +64,9 @@ public class TestValidation {
       try {
          failed = false;
          req.validate("someField1").required().in("value3", "value4");
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          failed = true;
-      }
-      finally {
+      } finally {
          if (!failed)
             fail("validation shoud have failed");
       }
@@ -80,11 +74,9 @@ public class TestValidation {
       try {
          failed = false;
          req.validate("someField1").required().out("value1");
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          failed = true;
-      }
-      finally {
+      } finally {
          if (!failed)
             fail("validation shoud have failed");
       }

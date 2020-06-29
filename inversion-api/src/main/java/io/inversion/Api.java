@@ -96,15 +96,13 @@ public class Api extends Rule<Api> {
          for (ApiListener listener : listeners) {
             try {
                listener.onStartup(this);
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                log.warn("Error notifing api startup listener: " + listener, ex);
             }
          }
 
          return this;
-      }
-      finally {
+      } finally {
          starting = false;
       }
    }
@@ -124,8 +122,7 @@ public class Api extends Rule<Api> {
          for (Collection coll : (List<Collection>) db.getCollections()) {
             if (coll.isExclude()) {
                db.removeCollection(coll);
-            }
-            else {
+            } else {
                for (Property col : coll.getProperties()) {
                   if (col.isExclude())
                      coll.removeProperty(col);

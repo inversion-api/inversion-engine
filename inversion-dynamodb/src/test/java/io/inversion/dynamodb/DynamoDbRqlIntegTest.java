@@ -40,8 +40,7 @@ public class DynamoDbRqlIntegTest extends DynamoDbRqlUnitTest {
       if (db == null) {
          try {
             db = DynamoDbFactory.buildNorthwindDynamoDb();
-         }
-         catch (Exception e) {
+         } catch (Exception e) {
             Utils.rethrow(e);
          }
          setDb(db);

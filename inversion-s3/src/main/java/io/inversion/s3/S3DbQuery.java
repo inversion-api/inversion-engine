@@ -96,14 +96,12 @@ public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3Db
                // directory name comes before file name
                //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
                directoryList.remove(0);
-            }
-            else {
+            } else {
                // file name comes before directory
                //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + file.getKey(), file.getLastModified(), file.getSize(), true));
                fileList.remove(0);
             }
-         }
-         else {
+         } else {
             //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
             directoryList.remove(0);
          }

@@ -60,8 +60,7 @@ public class InversionMain {
       try {
          InversionMain.engine = engine;
          SpringApplication.run(InversionMain.class);
-      }
-      catch (Throwable e) {
+      } catch (Throwable e) {
          e = Utils.getCause(e);
          if (Utils.getStackTraceString(e).indexOf("A child container failed during start") > -1) {
             String msg = "";
@@ -83,8 +82,7 @@ public class InversionMain {
 
             System.err.println(msg);
             throw new RuntimeException(msg, e);
-         }
-         else {
+         } else {
             e.printStackTrace();
          }
          Utils.rethrow(e);

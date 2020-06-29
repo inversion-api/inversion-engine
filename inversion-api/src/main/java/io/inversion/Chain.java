@@ -91,8 +91,7 @@ public class Chain {
          do {
             if (chain.user != null)
                return chain.user;
-         }
-         while ((chain = chain.parent) != null);
+         } while ((chain = chain.parent) != null);
       }
       return null;
    }
@@ -148,8 +147,7 @@ public class Chain {
          if (epp != null && epp.size() > 0) {
             url += epp + "/";
          }
-      }
-      else if (collection.getDb().getEndpointPath() != null) {
+      } else if (collection.getDb().getEndpointPath() != null) {
          Path epP = collection.getDb().getEndpointPath();
 
          for (int i = 0; i < epP.size(); i++) {
@@ -176,8 +174,7 @@ public class Chain {
                   ApiException.throw500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
 
                url += epP.get(i) + "/";
-            }
-            else {
+            } else {
                url += epP.get(i) + "/";
             }
          }
@@ -412,8 +409,7 @@ public class Chain {
    public String getConfig(String key, String defaultValue) {
       if (request == null) {
          System.out.println("The Request on the Chain is null, this should never happen");
-      }
-      else if (request.getEndpoint() == null) {
+      } else if (request.getEndpoint() == null) {
          System.out.println("The Endpoint on the Request is null, this should never happen");
          System.out.println(" -- Chain stack starting with this chain and then every parent after");
 

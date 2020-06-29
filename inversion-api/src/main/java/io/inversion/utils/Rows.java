@@ -477,8 +477,7 @@ public class Rows extends ArrayList<Row> {
             int idx = indexOf(key);
             if (idx >= 0)
                return values.get(idx);
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
          }
          return null;
       }
@@ -546,8 +545,7 @@ public class Rows extends ArrayList<Row> {
                values.add(null);
 
             return values.set(idx, value);
-         }
-         else {
+         } else {
             keys.addKey(key);
             values.add(value);
             return value;

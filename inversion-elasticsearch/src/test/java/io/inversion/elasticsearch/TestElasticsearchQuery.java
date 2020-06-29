@@ -1086,18 +1086,15 @@ public class TestElasticsearchQuery {
             testFound = true;
             assertEquals(1, node.getNode("test").size());
             assertEquals("asc", node.getNode("test").getString("order"));
-         }
-         else if (node.hasProperty("test2")) {
+         } else if (node.hasProperty("test2")) {
             test2Found = true;
             assertEquals(1, node.getNode("test2").size());
             assertEquals("desc", node.getNode("test2").getString("order"));
-         }
-         else if (node.hasProperty("test3")) {
+         } else if (node.hasProperty("test3")) {
             test3Found = true;
             assertEquals(1, node.getNode("test3").size());
             assertEquals("asc", node.getNode("test3").getString("order"));
-         }
-         else if (node.hasProperty("id")) {
+         } else if (node.hasProperty("id")) {
             assertEquals(1, node.getNode("id").size());
             assertEquals("asc", node.getNode("id").getString("order"));
             test4Found = true;
@@ -1731,8 +1728,7 @@ public class TestElasticsearchQuery {
             assertTrue((Boolean) rangeNode.getNode("hispanicRank").get("include_upper"));
             assertEquals(new Double(1.0), (Double) rangeNode.getNode("hispanicRank").get("boost"));
             rangeFound = true;
-         }
-         else if (node.hasProperty("bool")) {
+         } else if (node.hasProperty("bool")) {
             assertEquals(1, node.size());
             JSNode bool2Node = node.getNode("bool");
             assertEquals(3, bool2Node.size());
@@ -1837,8 +1833,7 @@ public class TestElasticsearchQuery {
             assertTrue((Boolean) rangeNode.getNode("hispanicRank").get("include_upper"));
             assertEquals(new Double(1.0), (Double) rangeNode.getNode("hispanicRank").get("boost"));
             rangeFound = true;
-         }
-         else if (node.hasProperty("bool")) {
+         } else if (node.hasProperty("bool")) {
             assertEquals(1, node.size());
             JSNode bool2Node = node.getNode("bool");
             assertEquals(3, bool2Node.size());
@@ -2143,8 +2138,7 @@ public class TestElasticsearchQuery {
                assertEquals("270*", locationNode.get("wildcard"));
                assertEquals(new Double(1.0), (Double) locationNode.get("boost"));
                locationNodeFound = true;
-            }
-            else if (wildcardNode.get("address1") != null) {
+            } else if (wildcardNode.get("address1") != null) {
                JSNode addressNode = wildcardNode.getNode("address1");
                assertEquals(2, addressNode.size());
                assertEquals("*McQueen*", addressNode.get("wildcard"));
@@ -2429,8 +2423,7 @@ public class TestElasticsearchQuery {
             assertEquals("3", idNode.get("value"));
 
             termNodeFound = true;
-         }
-         else if (node.hasProperty("wildcard")) {
+         } else if (node.hasProperty("wildcard")) {
             assertEquals(1, node.size());
             JSNode wildNode = node.getNode("wildcard");
             JSNode nameNode = wildNode.getNode("name");
@@ -2749,8 +2742,7 @@ public class TestElasticsearchQuery {
                assertTrue((Boolean) hispanicNode.get("include_upper"));
                assertEquals(new Double(1.0), (Double) hispanicNode.get("boost"));
                fromFound = true;
-            }
-            else if (hispanicNode.getString("to") != null) {
+            } else if (hispanicNode.getString("to") != null) {
                assertEquals("40", hispanicNode.getString("to"));
                assertNull(hispanicNode.get("from"));
                assertTrue((Boolean) hispanicNode.get("include_lower"));
@@ -2848,8 +2840,7 @@ public class TestElasticsearchQuery {
             assertEquals("*McQueen*", wildcardNode.getNode("address1").getString("wildcard"));
             assertEquals(new Double(1.0), (Double) wildcardNode.getNode("address1").get("boost"));
             wildcardFound = true;
-         }
-         else if (node.hasProperty("bool")) {
+         } else if (node.hasProperty("bool")) {
             JSNode innerBoolNode = node.getNode("bool");
             assertEquals(3, innerBoolNode.size());
             assertTrue((Boolean) innerBoolNode.get("adjust_pure_negative"));
@@ -2870,8 +2861,7 @@ public class TestElasticsearchQuery {
                   assertEquals("Chandler", termNode.getNode("city").getString("value"));
                   assertEquals(new Double(1.0), (Double) termNode.getNode("city").get("boost"));
                   termFound = true;
-               }
-               else if (innerNode.hasProperty("wildcard")) {
+               } else if (innerNode.hasProperty("wildcard")) {
                   JSNode innerWildcardNode = innerNode.getNode("wildcard");
                   assertEquals(1, innerWildcardNode.size());
                   assertEquals(2, innerWildcardNode.getNode("locationCode").size());
@@ -3050,8 +3040,7 @@ public class TestElasticsearchQuery {
                   assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                   nestedNameFound = true;
 
-               }
-               else if (termNode.hasProperty("keywords.value")) {
+               } else if (termNode.hasProperty("keywords.value")) {
                   assertEquals(2, termNode.getNode("keywords.value").size());
                   assertEquals("33", termNode.getNode("keywords.value").getString("value"));
                   assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.value").get("boost"));
@@ -3158,8 +3147,7 @@ public class TestElasticsearchQuery {
                assertEquals("age", termNode.getNode("keywords.name").getString("value"));
                assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                termFound = true;
-            }
-            else if (innerNode.hasProperty("range")) {
+            } else if (innerNode.hasProperty("range")) {
                JSNode rangeNode = innerNode.getNode("range");
                assertEquals(1, rangeNode.size());
 
@@ -3269,8 +3257,7 @@ public class TestElasticsearchQuery {
                assertEquals("items.name", termNode.getNode("keywords.name").getString("value"));
                assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                termFound = true;
-            }
-            else if (innerNode.hasProperty("wildcard")) {
+            } else if (innerNode.hasProperty("wildcard")) {
                JSNode innerWildcardNode = innerNode.getNode("wildcard");
                assertEquals(1, innerWildcardNode.size());
                assertEquals(2, innerWildcardNode.getNode("keywords.value").size());
@@ -3375,8 +3362,7 @@ public class TestElasticsearchQuery {
                assertEquals("items.name", termNode.getNode("keywords.name").getString("value"));
                assertEquals(new Double(1.0), (Double) termNode.getNode("keywords.name").get("boost"));
                termFound = true;
-            }
-            else if (innerNode.hasProperty("wildcard")) {
+            } else if (innerNode.hasProperty("wildcard")) {
                JSNode innerWildcardNode = innerNode.getNode("wildcard");
                assertEquals(1, innerWildcardNode.size());
                assertEquals(2, innerWildcardNode.getNode("keywords.value").size());
@@ -3470,8 +3456,7 @@ public class TestElasticsearchQuery {
             assertEquals("Chandler", termNode.getNode("city").getString("value"));
             assertEquals(new Double(1.0), (Double) termNode.getNode("city").get("boost"));
             termFound = true;
-         }
-         else if (node.hasProperty("nested")) {
+         } else if (node.hasProperty("nested")) {
             assertEquals(1, node.size());
             JSNode nestedNode = node.getNode("nested");
             assertEquals(5, nestedNode.size());
@@ -3592,8 +3577,7 @@ public class TestElasticsearchQuery {
             assertEquals("*VALLEY*", wildcardNode.getNode("address1").getString("wildcard"));
             assertEquals(new Double(1.0), (Double) wildcardNode.getNode("address1").get("boost"));
             wildcardFound = true;
-         }
-         else if (node.hasProperty("bool")) {
+         } else if (node.hasProperty("bool")) {
             assertEquals(1, node.size());
 
             JSNode innerBoolNode = node.getNode("bool");
@@ -3616,8 +3600,7 @@ public class TestElasticsearchQuery {
                   assertEquals("PHOENIX", termNode.getNode("city").getString("value"));
                   assertEquals(new Double(1.0), (Double) termNode.getNode("city").get("boost"));
                   termFound = true;
-               }
-               else if (innerNode.hasProperty("nested")) {
+               } else if (innerNode.hasProperty("nested")) {
                   JSNode nestedNode = innerNode.getNode("nested");
                   assertEquals(5, nestedNode.size());
                   assertEquals("players", nestedNode.get("path"));

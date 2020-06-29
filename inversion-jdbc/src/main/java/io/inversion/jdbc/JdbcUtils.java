@@ -152,8 +152,7 @@ public class JdbcUtils {
                   ((PreparedStatement) stmt).setObject(i + 1, vals[i]);
                }
                rs = ((PreparedStatement) stmt).executeQuery();
-            }
-            else {
+            } else {
                stmt = conn.createStatement();
                rs = stmt.executeQuery(sql);
             }
@@ -161,16 +160,14 @@ public class JdbcUtils {
                rtval = rs.getObject(1);
                return rtval;
             }
-         }
-         else {
+         } else {
             if (vals != null && vals.length > 0) {
                stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                for (int i = 0; vals != null && i < vals.length; i++) {
                   ((PreparedStatement) stmt).setObject(i + 1, vals[i]);
                }
                ((PreparedStatement) stmt).execute();
-            }
-            else {
+            } else {
                stmt = conn.createStatement();
                stmt.execute(sql, Statement.RETURN_GENERATED_KEYS);
             }
@@ -182,30 +179,25 @@ public class JdbcUtils {
                      rtval = rs.getObject(1);
                      return rtval;
                   }
-               }
-               catch (SQLFeatureNotSupportedException e) {
+               } catch (SQLFeatureNotSupportedException e) {
                   notifyError("execute", sql, vals, e);
                   //do nothing
                }
-            }
-            else if (isUpdate(sql)) {
+            } else if (isUpdate(sql)) {
                try {
                   rtval = stmt.getUpdateCount();
                   return rtval;
-               }
-               catch (SQLFeatureNotSupportedException e) {
+               } catch (SQLFeatureNotSupportedException e) {
                   notifyError("execute", sql, vals, e);
                   //do nothing
                }
             }
          }
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          notifyError("execute", sql, vals, e);
          ex = new Exception(e.getMessage() + " SQL=" + sql, Utils.getCause(e));
          throw ex;
-      }
-      finally {
+      } finally {
          close(rs, stmt);
          notifyAfter("execute", sql, vals, ex, rtval);
       }
@@ -242,8 +234,7 @@ public class JdbcUtils {
                ((PreparedStatement) stmt).setObject(i + 1, o);
             }
             rs = ((PreparedStatement) stmt).executeQuery();
-         }
-         else {
+         } else {
             stmt = conn.createStatement();
             rs = stmt.executeQuery(sql);
          }
@@ -275,13 +266,11 @@ public class JdbcUtils {
                         }
                         reader.close();
                         o = buffer.toString();
-                     }
-                     else if (o != null && o.getClass().isArray() && Array.getLength(o) == 0) {
+                     } else if (o != null && o.getClass().isArray() && Array.getLength(o) == 0) {
                         o = null;
                      }
 
-                  }
-                  catch (Exception e) {
+                  } catch (Exception e) {
                      System.out.println(sql);
                      e.printStackTrace();
                      notifyError("selectRows", sql, vals, e);
@@ -290,8 +279,7 @@ public class JdbcUtils {
                }
             }
          }
-      }
-      finally {
+      } finally {
          close(stmt, rs);
          notifyAfter("selectRows", sql, vals, ex, rows);
       }
@@ -516,8 +504,7 @@ public class JdbcUtils {
             returnKeys.addAll(insertMaps0(conn, tableName, Arrays.asList(map)));
          }
          return returnKeys;
-      }
-      else {
+      } else {
          return insertMaps0(conn, tableName, maps);
       }
    }
@@ -565,13 +552,11 @@ public class JdbcUtils {
             Object key = rs.getObject(1);
             returnKeys.add(key);
          }
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          ex = e;
          notifyError("insertMaps", sql, rows, ex);
          throw e;
-      }
-      finally {
+      } finally {
          notifyAfter("insertMap", sql, rows, ex, null);
       }
 
@@ -653,13 +638,11 @@ public class JdbcUtils {
          for (int i = 0; i < updatedCounts.length; i++) {
             returnCounts.add(updatedCounts[i]);
          }
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          ex = e;
          notifyError("update", sql, rows, ex);
          throw e;
-      }
-      finally {
+      } finally {
          JdbcUtils.close(stmt);
          notifyAfter("update", sql, rows, ex, returnCounts);
       }
@@ -841,13 +824,11 @@ public class JdbcUtils {
       try {
          notifyBefore("upsert", sql, row);
          return execute(conn, sql, vals);
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          ex = e;
          notifyError("upsert", sql, row, ex);
          throw e;
-      }
-      finally {
+      } finally {
          notifyAfter("upsert", sql, row, ex, null);
       }
    }
@@ -875,13 +856,11 @@ public class JdbcUtils {
             stmt.addBatch();
          }
          stmt.executeBatch();
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          ex = e;
          notifyError("upsert", sql, rows, ex);
          throw e;
-      }
-      finally {
+      } finally {
          close(stmt);
          notifyAfter("upsert", sql, rows, ex, null);
       }
@@ -942,13 +921,11 @@ public class JdbcUtils {
             stmt.addBatch();
          }
          stmt.executeBatch();
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          ex = e;
          notifyError("upsert", sql, rows, ex);
          throw e;
-      }
-      finally {
+      } finally {
          ResultSet rs = stmt.getGeneratedKeys();
          while (rs.next()) {
 
@@ -1020,13 +997,11 @@ public class JdbcUtils {
          }
 
          stmt.execute();
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          ex = e;
          notifyError("upsert", sql, row, ex);
          throw e;
-      }
-      finally {
+      } finally {
          close(stmt);
          notifyAfter("upsert", sql, row, ex, null);
       }
@@ -1111,20 +1086,17 @@ public class JdbcUtils {
                for (int i = 0; i < sql.length; i++) {
                   try {
                      stmt.execute(sql[i]);
-                  }
-                  catch (SQLException ex) {
+                  } catch (SQLException ex) {
                      System.err.println("Error trying to run sql statement: \r\n" + sql[i] + "\r\n\r\n");
                      ex.printStackTrace();
                      throw ex;
                   }
                }
-            }
-            finally {
+            } finally {
                stmt.close();
             }
             con.commit();
-         }
-         finally {
+         } finally {
             con.setAutoCommit(oldAutoCommit);
          }
       }
@@ -1217,8 +1189,7 @@ public class JdbcUtils {
                ((Statement) o).close();
             else if (o instanceof ResultSet)
                ((ResultSet) o).close();
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             //ex.printStackTrace();
          }
       }

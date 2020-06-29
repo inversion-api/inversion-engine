@@ -26,15 +26,12 @@ public class H2JdbcDb extends JdbcDb {
             if (url.indexOf(":MEM:") > 0 && url.indexOf("DB_CLOSE_DELAY=-1") > 0) {
                JdbcUtils.execute(getConnection(), "SHUTDOWN");
             }
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             ex.printStackTrace();
-         }
-         finally {
+         } finally {
             super.doShutdown();
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          //-- ignore
       }
    }

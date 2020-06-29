@@ -145,11 +145,9 @@ public class DynamoDb extends Db<DynamoDb> {
 
       if (pk.size() == 1) {
          dynamo.deleteItem(pk.getProperty(0).getColumnName(), row.get(pk.getProperty(0).getColumnName()));
-      }
-      else if (pk.size() == 2) {
+      } else if (pk.size() == 2) {
          dynamo.deleteItem(pk.getProperty(0).getColumnName(), row.get(pk.getProperty(0).getColumnName()), pk.getProperty(1).getColumnName(), row.get(pk.getProperty(1).getColumnName()));
-      }
-      else {
+      } else {
          ApiException.throw400BadRequest("A dynamo delete must have a hash key and an optional sortKey and that is it: '{}'", row);
       }
    }
@@ -307,11 +305,9 @@ public class DynamoDb extends Db<DynamoDb> {
    protected static String getTypeStringFromObject(Object obj) {
       if (obj instanceof Number) {
          return "N";
-      }
-      else if (obj instanceof Boolean) {
+      } else if (obj instanceof Boolean) {
          return "BOOL";
-      }
-      else {
+      } else {
          return "S";
       }
    }
@@ -342,8 +338,7 @@ public class DynamoDb extends Db<DynamoDb> {
          if (!Utils.empty(awsEndpoint)) {
             AwsClientBuilder.EndpointConfiguration endpointConfig = new AwsClientBuilder.EndpointConfiguration(awsEndpoint, awsRegion);
             builder.withEndpointConfiguration(endpointConfig);
-         }
-         else {
+         } else {
             builder.withRegion(awsRegion);
          }
       }

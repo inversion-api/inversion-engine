@@ -123,8 +123,7 @@ public class CosmosDb extends Db<CosmosDb> {
             ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '{}' vs. '{}'", id, returnedId);
 
          return id;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
       return null;
@@ -166,14 +165,12 @@ public class CosmosDb extends Db<CosmosDb> {
          if (statusCode >= 400) {
             ApiException.throw500InternalServerError("Unexpected http status code returned from database: {}", statusCode);
          }
-      }
-      catch (DocumentClientException ex) {
+      } catch (DocumentClientException ex) {
          ex.printStackTrace();
          int statusCode = ex.getStatusCode();
          if (statusCode == 404) {
             //ignore attempts to delete things that don't exist
-         }
-         else {
+         } else {
             ApiException.throw500InternalServerError(ex);
          }
       }

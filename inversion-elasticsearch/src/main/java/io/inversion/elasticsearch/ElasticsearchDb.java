@@ -148,8 +148,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
          try {
             System.out.println(query.getJson());
             res = getElasticClient().search(searchReq, RequestOptions.DEFAULT);
-         }
-         catch (IOException e) {
+         } catch (IOException e) {
             ApiException.throw500InternalServerError("The elastic client failed to search/select. " + e.getMessage());
          }
 
@@ -175,8 +174,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
          }
 
          result.withFoundRows(totalHits.intValue());
-      }
-      else
+      } else
          System.out.println("request failed :*(");
 
       return result;
@@ -210,8 +208,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
          if (statusCode >= 400) {
             ApiException.throw500InternalServerError("Unexpected http status code returned from database: %s", statusCode);
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ex.printStackTrace();
          ApiException.throw500InternalServerError(ex);
 
@@ -248,8 +245,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
       UpdateResponse response = null;
       try {
          response = getElasticClient().update(updateRequest, RequestOptions.DEFAULT);
-      }
-      catch (IOException e) {
+      } catch (IOException e) {
          ApiException.throw500InternalServerError("The elastic client failed to upsert. " + e.getMessage());
       }
 
@@ -302,8 +298,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
                // we now have the index and with it, it's aliases and mappings
                buildTables(entry.getKey(), entry.getValue(), tableMap);
             }
-         }
-         else {
+         } else {
             //                  if (allResp.getError() != null)
             //                  {
             //                     allResp.getError().printStackTrace();
@@ -312,8 +307,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
             throw new ApiException("Failed to retieve /_all with status code:" + statusCode);
 
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          Utils.rethrow(ex);
       }
 

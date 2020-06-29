@@ -221,8 +221,7 @@ public class JSNode implements Map<String, Object> {
                if (!collected.contains(value) && (qty < 1 || collected.size() < qty))
                   collected.add(value);
             }
-         }
-         else {
+         } else {
             List<String> nextPath = path.subList(1, path.size());
             for (Object value : values()) {
                if (value instanceof JSNode) {
@@ -230,12 +229,10 @@ public class JSNode implements Map<String, Object> {
                }
             }
          }
-      }
-      else if ("**".equals(nextSegment)) {
+      } else if ("**".equals(nextSegment)) {
          if (path.size() == 1) {
             //** does not collect anything.  **/* would collect everything
-         }
-         else {
+         } else {
             List<String> nextPath = path.subList(1, path.size());
 
             this.findAll0(nextPath, qty, collected);
@@ -285,14 +282,12 @@ public class JSNode implements Map<String, Object> {
 
                if (token.startsWith("@_")) {
                   subpath = token.substring(2);
-               }
-               else if (Utils.in(token, "=", ">", "<", "!")) {
+               } else if (Utils.in(token, "=", ">", "<", "!")) {
                   if (op == null)
                      op = token;
                   else
                      op += token;
-               }
-               else if (subpath != null && op != null && value == null) {
+               } else if (subpath != null && op != null && value == null) {
                   value = token;
 
                   if (isArray()) {
@@ -307,8 +302,7 @@ public class JSNode implements Map<String, Object> {
                            }
                         }
                      }
-                  }
-                  else {
+                  } else {
                      List found = findAll0(subpath, -1);
                      for (Object val : found) {
                         if (eval(val, op, value)) {
@@ -342,8 +336,7 @@ public class JSNode implements Map<String, Object> {
                         }
                      }
                   }
-               }
-               else {
+               } else {
                   List found = findAll0(subpath, -1);
                   if (found.size() > 0) {
                      if (!collected.contains(this) && (qty < 1 || collected.size() < qty))
@@ -352,21 +345,18 @@ public class JSNode implements Map<String, Object> {
                }
             }
          }
-      }
-      else {
+      } else {
          Object found = null;
          try {
             found = get(nextSegment);
-         }
-         catch (NumberFormatException ex) {
+         } catch (NumberFormatException ex) {
             //trying to access an array with a prop name...ignore
          }
          if (found != null) {
             if (path.size() == 1) {
                if (!collected.contains(found) && (qty < 1 || collected.size() < qty))
                   collected.add(found);
-            }
-            else if (found instanceof JSNode) {
+            } else if (found instanceof JSNode) {
                ((JSNode) found).findAll0(path.subList(1, path.size()), qty, collected);
             }
          }
@@ -381,8 +371,7 @@ public class JSNode implements Map<String, Object> {
       if (var instanceof Number) {
          try {
             value = Double.parseDouble(value.toString());
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             //ok, value was not a number...ignore
          }
       }
@@ -390,8 +379,7 @@ public class JSNode implements Map<String, Object> {
       if (var instanceof Boolean) {
          try {
             value = Boolean.parseBoolean(value.toString());
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             //ok, value was not a boolean...ignore
          }
       }
@@ -424,8 +412,7 @@ public class JSNode implements Map<String, Object> {
          patch = JsonDiff.asJson(mapper.readValue(source.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
          JSArray patchesArray = JSNode.parseJsonArray(patch.toPrettyString());
          return patchesArray;
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          e.printStackTrace();
          Utils.rethrow(e);
       }
@@ -459,8 +446,7 @@ public class JSNode implements Map<String, Object> {
          if (this.isArray()) {
             ((JSArray) this).objects = ((JSArray) patched).objects;
          }
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          Utils.rethrow(e);
       }
 
@@ -855,8 +841,7 @@ public class JSNode implements Map<String, Object> {
          if (value instanceof JSArray) {
             //map.put(name, ((JSArray) p.getValue()).asList());
             map.put(name, value);
-         }
-         else {
+         } else {
 
             map.put(name, value);
          }
@@ -1067,8 +1052,7 @@ public class JSNode implements Map<String, Object> {
 
          Object parsed = JSNode.mapNode(rootNode);
          return parsed;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          String msg = "Error parsing JSON:" + ex.getMessage();
 
          if (!(ex instanceof JsonParseException)) {
@@ -1113,8 +1097,7 @@ public class JSNode implements Map<String, Object> {
          baos.flush();
 
          return new String(baos.toByteArray());
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          throw new RuntimeException(ex);
       }
    }
@@ -1124,35 +1107,25 @@ public class JSNode implements Map<String, Object> {
       for (Object obj : array.asList()) {
          if (obj == null) {
             json.writeNull();
-         }
-         else if (obj instanceof JSNode) {
+         } else if (obj instanceof JSNode) {
             writeNode((JSNode) obj, json, visited, lowercaseNames);
-         }
-         else if (obj instanceof BigDecimal) {
+         } else if (obj instanceof BigDecimal) {
             json.writeNumber((BigDecimal) obj);
-         }
-         else if (obj instanceof Double) {
+         } else if (obj instanceof Double) {
             json.writeNumber((Double) obj);
-         }
-         else if (obj instanceof Float) {
+         } else if (obj instanceof Float) {
             json.writeNumber((Float) obj);
-         }
-         else if (obj instanceof Integer) {
+         } else if (obj instanceof Integer) {
             json.writeNumber((Integer) obj);
-         }
-         else if (obj instanceof Long) {
+         } else if (obj instanceof Long) {
             json.writeNumber((Long) obj);
-         }
-         else if (obj instanceof BigDecimal) {
+         } else if (obj instanceof BigDecimal) {
             json.writeNumber((BigDecimal) obj);
-         }
-         else if (obj instanceof BigDecimal) {
+         } else if (obj instanceof BigDecimal) {
             json.writeNumber((BigDecimal) obj);
-         }
-         else if (obj instanceof Boolean) {
+         } else if (obj instanceof Boolean) {
             json.writeBoolean((Boolean) obj);
-         }
-         else {
+         } else {
             json.writeString(encodeStringValue(obj + ""));
          }
       }
@@ -1185,8 +1158,7 @@ public class JSNode implements Map<String, Object> {
          }
 
          return retVal;
-      }
-      else if (json.isObject()) {
+      } else if (json.isObject()) {
          JSNode retVal = null;
          retVal = new JSNode();
 
@@ -1228,8 +1200,7 @@ public class JSNode implements Map<String, Object> {
             }
 
             json.writeEndObject();
-         }
-         else {
+         } else {
             ApiException.throw500InternalServerError("Your JSNode document contains the same object in multiple locations without a 'href' property.");
          }
          return;
@@ -1256,48 +1227,36 @@ public class JSNode implements Map<String, Object> {
 
          if (value == null) {
             json.writeNullField(name);
-         }
-         else if (value instanceof JSNode) {
+         } else if (value instanceof JSNode) {
             if (!lowercaseNames)
                json.writeFieldName(name);
             else
                json.writeFieldName(name.toLowerCase());
 
             writeNode((JSNode) value, json, visited, lowercaseNames);
-         }
-         else if (value instanceof Date) {
+         } else if (value instanceof Date) {
             json.writeStringField(name, Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
-         }
-         else if (value instanceof BigDecimal) {
+         } else if (value instanceof BigDecimal) {
             json.writeNumberField(name, (BigDecimal) value);
-         }
-         else if (value instanceof Double) {
+         } else if (value instanceof Double) {
             json.writeNumberField(name, (Double) value);
-         }
-         else if (value instanceof Float) {
+         } else if (value instanceof Float) {
             json.writeNumberField(name, (Float) value);
-         }
-         else if (value instanceof Integer) {
+         } else if (value instanceof Integer) {
             json.writeNumberField(name, (Integer) value);
-         }
-         else if (value instanceof Long) {
+         } else if (value instanceof Long) {
             json.writeNumberField(name, (Long) value);
-         }
-         else if (value instanceof BigDecimal) {
+         } else if (value instanceof BigDecimal) {
             json.writeNumberField(name, (BigDecimal) value);
-         }
-         else if (value instanceof BigInteger) {
+         } else if (value instanceof BigInteger) {
             json.writeNumberField(name, ((BigInteger) value).intValue());
-         }
-         else if (value instanceof Boolean) {
+         } else if (value instanceof Boolean) {
             json.writeBooleanField(name, (Boolean) value);
-         }
-         else {
+         } else {
             String strVal = value + "";
             if ("null".equals(strVal)) {
                json.writeNullField(name);
-            }
-            else {
+            } else {
                strVal = JSNode.encodeStringValue(strVal);
                json.writeStringField(name, strVal);
             }
@@ -1433,8 +1392,7 @@ public class JSNode implements Map<String, Object> {
 
             if (!quoted && !escaped && openQuotes.contains(c)) {
                quoted = true;
-            }
-            else if (quoted && !escaped && closeQuotes.contains(c)) {
+            } else if (quoted && !escaped && closeQuotes.contains(c)) {
                quoted = false;
             }
 

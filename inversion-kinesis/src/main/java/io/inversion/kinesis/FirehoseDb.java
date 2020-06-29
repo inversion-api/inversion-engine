@@ -113,8 +113,7 @@ public class FirehoseDb extends Db<FirehoseDb> {
             if (arr.length == 1)//a specific collection name was not supplied by the config
                coll.withTableName(beautifyCollectionName(collectionName));
          }
-      }
-      else {
+      } else {
          ApiException.throw500InternalServerError("FirehoseDb must have 'includeStreams' configured to be used");
       }
    }

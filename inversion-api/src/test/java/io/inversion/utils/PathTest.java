@@ -114,8 +114,7 @@ public class PathTest {
          Path path = new Path("part1/23452345234523452345/part3/part4");
 
          Path matched = rule.extract(params, path);
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          error = true;
       }
       assertTrue(error, "The test should have errored because 'the regex does not match'");
@@ -129,8 +128,7 @@ public class PathTest {
          Path rule = new Path("part1/part2/part3/*");
          Path path = new Path("part1/part5/part3/part4");
          Path matched = rule.extract(params, path);
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          error = true;
       }
       assertTrue(error, "The test should have errored because 'the paths do not match'");
@@ -161,8 +159,7 @@ public class PathTest {
       boolean error = false;
       try {
          rule.extract(params, path);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          error = true;
       }
 

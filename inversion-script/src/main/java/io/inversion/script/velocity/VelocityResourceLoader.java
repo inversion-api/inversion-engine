@@ -43,8 +43,7 @@ public class VelocityResourceLoader extends ResourceLoader {
          if (script != null) {
             return new InputStreamReader(new ByteArrayInputStream(script.getString("script").getBytes()));
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ex.printStackTrace();
       }
 

@@ -92,8 +92,7 @@ public class Relationship implements Serializable {
                return other;
             }
          }
-      }
-      else {
+      } else {
          for (Relationship other : related.getRelationships()) {
             if (other == this)
                continue;
@@ -170,17 +169,14 @@ public class Relationship implements Serializable {
 
          if (isManyToOne()) {
             str += getFkIndex1() + " -> " + collection.getPrimaryIndex();
-         }
-         else if (isOneToMany()) {
+         } else if (isOneToMany()) {
             str += collection.getPrimaryIndex() + " <- " + getFkIndex1();
-         }
-         else {
+         } else {
             str += getFkIndex1() + " <--> " + getFkIndex2();
          }
 
          return str;
-      }
-      catch (NullPointerException ex) {
+      } catch (NullPointerException ex) {
          return "Relationship: " + name + "-" + type + "-" + fkIndex1 + "-" + fkIndex2;
       }
    }

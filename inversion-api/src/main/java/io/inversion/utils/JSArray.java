@@ -44,8 +44,7 @@ public class JSArray extends JSNode implements Iterable {
    public JSArray(Object... objects) {
       if (objects != null && objects.length == 1 && objects[0].getClass().isArray()) {
          objects = (Object[]) objects[0];
-      }
-      else if (objects != null && objects.length == 1 && java.util.Collection.class.isAssignableFrom(objects[0].getClass())) {
+      } else if (objects != null && objects.length == 1 && java.util.Collection.class.isAssignableFrom(objects[0].getClass())) {
          objects = ((java.util.Collection) objects[0]).toArray();
       }
 

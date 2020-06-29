@@ -445,16 +445,14 @@ public class RestClient {
             Response response = null;
             try {
                response = doRequest(request);
-            }
-            finally {
+            } finally {
                if (shouldRetry(request, response)) {
                   request.incrementRetryCount();
 
                   long timeout = computeTimeout(request, response);
 
                   submitLater(this, timeout);
-               }
-               else {
+               } else {
                   setResponse(response);
                }
             }
@@ -516,8 +514,7 @@ public class RestClient {
 
       try {
          return doRequest0(request);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          response.withError(ex);
       }
 
@@ -544,8 +541,7 @@ public class RestClient {
          }
          if ("put".equalsIgnoreCase(m)) {
             req = new HttpPut(url);
-         }
-         else if ("get".equalsIgnoreCase(m)) {
+         } else if ("get".equalsIgnoreCase(m)) {
             req = new HttpGet(url);
 
             if (request.getRetryFile() != null && request.getRetryFile().length() > 0) {
@@ -555,16 +551,13 @@ public class RestClient {
 
                log.debug("RANGE REQUEST HEADER ** " + range);
             }
-         }
-         else if ("delete".equalsIgnoreCase(m)) {
+         } else if ("delete".equalsIgnoreCase(m)) {
             if (request.getBody() != null) {
                req = new HttpDeleteWithBody(url);
-            }
-            else {
+            } else {
                req = new HttpDelete(url);
             }
-         }
-         else if ("patch".equalsIgnoreCase(m)) {
+         } else if ("patch".equalsIgnoreCase(m)) {
             req = new HttpPatch(url);
          }
 
@@ -615,12 +608,10 @@ public class RestClient {
                && "bytes".equalsIgnoreCase(response.getContentRangeUnit())) {
             tempFile = request.getRetryFile();
             log.debug("## Using existing file .. " + tempFile);
-         }
-         else if (response.getStatusCode() == 206) {
+         } else if (response.getStatusCode() == 206) {
             // status code is 206 Partial Content, but we don't want to use the existing file for some reason, so abort this and force it to fail
             throw new Exception("Partial content without valid values, aborting this request");
-         }
-         else {
+         } else {
             if (fileName.length() < 3) {
                // if fileName is only 2 characters long, createTempFile will blow up
                fileName += "_ext";
@@ -644,13 +635,11 @@ public class RestClient {
                throw new Exception("Downloaded file is larger than the server says it should be, aborting this request");
             }
          }
-      }
-      finally {
+      } finally {
          if (req != null) {
             try {
                req.releaseConnection();
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                log.info("Exception trying to release the request connection", ex);
             }
          }
@@ -824,8 +813,7 @@ public class RestClient {
 
       if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
          //do nothing, the caller passed in a full url
-      }
-      else {
+      } else {
          url = url != null ? url : "";
 
          String prefix = Config.getString(getName() + ".url", this.url);
@@ -946,8 +934,7 @@ public class RestClient {
             if (httpClient == null) {
                try {
                   httpClient = buildHttpClient();
-               }
-               catch (Exception ex) {
+               } catch (Exception ex) {
                   Utils.rethrow(ex);
                }
             }
@@ -1138,8 +1125,7 @@ public class RestClient {
          if (done && isSuccess()) {
             try {
                handler.accept(response);
-            }
-            catch (Throwable ex) {
+            } catch (Throwable ex) {
                log.error("Error handling onSuccess", ex);
             }
          }
@@ -1166,8 +1152,7 @@ public class RestClient {
          if (done && !isSuccess()) {
             try {
                handler.accept(response);
-            }
-            catch (Throwable ex) {
+            } catch (Throwable ex) {
                log.error("Error handling onFailure", ex);
             }
          }
@@ -1194,8 +1179,7 @@ public class RestClient {
          if (done) {
             try {
                handler.accept(response);
-            }
-            catch (Throwable ex) {
+            } catch (Throwable ex) {
                log.error("Error handling onResponse", ex);
             }
          }
@@ -1211,18 +1195,15 @@ public class RestClient {
                for (Consumer<Response> h : successListeners) {
                   try {
                      h.accept(response);
-                  }
-                  catch (Throwable ex) {
+                  } catch (Throwable ex) {
                      log.error("Error handling success callbacks in setResponse", ex);
                   }
                }
-            }
-            else {
+            } else {
                for (Consumer<Response> h : failureListeners) {
                   try {
                      h.accept(response);
-                  }
-                  catch (Throwable ex) {
+                  } catch (Throwable ex) {
                      log.error("Error handling failure callbacks in setResponse", ex);
                   }
                }
@@ -1231,8 +1212,7 @@ public class RestClient {
             for (Consumer<Response> h : responseListeners) {
                try {
                   h.accept(response);
-               }
-               catch (Throwable ex) {
+               } catch (Throwable ex) {
                   log.error("Error handling callbacks in setResponse", ex);
                }
             }
@@ -1252,8 +1232,7 @@ public class RestClient {
                if (response == null) {
                   try {
                      wait();
-                  }
-                  catch (InterruptedException ex) {
+                  } catch (InterruptedException ex) {
                      //ignore
                   }
                }
@@ -1283,8 +1262,7 @@ public class RestClient {
                         break;
 
                      wait(timeout);
-                  }
-                  catch (InterruptedException e) {
+                  } catch (InterruptedException e) {
                      //ignore
                   }
                }
@@ -1390,8 +1368,7 @@ public class RestClient {
 
                   started = true;
                   task.run();
-               }
-               finally {
+               } finally {
                   synchronized (this) {
                      done = true;
                      notifyAll();
@@ -1448,8 +1425,7 @@ public class RestClient {
       public synchronized RunnableFuture submit(RunnableFuture task) {
          if (getThreadsMax() < 1) {
             task.run();
-         }
-         else {
+         } else {
             put(task);
             checkStartThread();
          }
@@ -1491,8 +1467,7 @@ public class RestClient {
             while (queue.size() >= queueMax) {
                try {
                   queue.wait();
-               }
-               catch (Exception ex) {
+               } catch (Exception ex) {
 
                }
             }
@@ -1507,8 +1482,7 @@ public class RestClient {
             while (queue.size() == 0) {
                try {
                   queue.wait();
-               }
-               catch (InterruptedException ex) {
+               } catch (InterruptedException ex) {
 
                }
             }
@@ -1525,11 +1499,9 @@ public class RestClient {
                do {
                   RunnableFuture task = take();
                   task.run();
-               }
-               while (queue.size() > 0);
+               } while (queue.size() > 0);
             }
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             ex.printStackTrace();
          }
       }

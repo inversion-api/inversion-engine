@@ -99,16 +99,14 @@ public class AuthAction extends Action<AuthAction> {
          if (token.toLowerCase().startsWith("bearer ")) {
             token = token.substring(token.indexOf(" ") + 1, token.length()).trim();
             user = userDao.getUser(this, token, apiName, tenant);
-         }
-         else if (token.toLowerCase().startsWith("basic ")) {
+         } else if (token.toLowerCase().startsWith("basic ")) {
             token = token.substring(token.indexOf(" ") + 1, token.length());
             token = new String(Base64.decodeBase64(token));
             username = token.substring(0, token.indexOf(":"));
             password = token.substring(token.indexOf(":") + 1, token.length());
 
             user = userDao.getUser(this, username, password, apiName, tenant);
-         }
-         else if (token.toLowerCase().startsWith("session ")) {
+         } else if (token.toLowerCase().startsWith("session ")) {
             if (sessionDao == null)
                ApiException.throw400BadRequest("AuthAction has not been configured to support session authorization");
 
@@ -126,16 +124,14 @@ public class AuthAction extends Action<AuthAction> {
             }
 
             user = sessionDao.get(token);
-         }
-         else {
+         } else {
             ApiException.throw400BadRequest("Authorization token format must be bearer,basic or session. {} ", token);
          }
 
          if (user == null)
             ApiException.throw401Unauthroized();
 
-      }
-      else {
+      } else {
          if (req.isPost() && sessionReq && (Utils.empty(username, password))) {
             username = req.getJson().getString("username");
             password = req.getJson().getString("password");
@@ -269,8 +265,7 @@ public class AuthAction extends Action<AuthAction> {
                user = null;
 
                ApiException.throw401Unauthroized("The session has expired.");
-            }
-            else if (now - lastRequest > sessionUpdate) {
+            } else if (now - lastRequest > sessionUpdate) {
                put(sessionKey, user);
             }
          }
@@ -395,8 +390,7 @@ public class AuthAction extends Action<AuthAction> {
                //this will throw an exception if the signatures don't match
                jwt = verifier.verify(token);
                break;
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                //-- this is not an error yet because there can be multiple signing keys in the list
                //-- and this jwt may be using an older/different but still supported one in the list
                //--

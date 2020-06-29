@@ -33,8 +33,7 @@ class JdbcConnectionLocal {
       for (Thread thread : threadToDbMap.keySet()) {
          try {
             close(thread);
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             //ex.printStackTrace();
          }
       }
@@ -87,8 +86,7 @@ class JdbcConnectionLocal {
                if (!(conn.isClosed() || conn.getAutoCommit())) {
                   conn.commit();
                }
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                if (toThrow == null)
                   toThrow = ex;
             }
@@ -109,8 +107,7 @@ class JdbcConnectionLocal {
                if (!(conn.isClosed() || conn.getAutoCommit())) {
                   conn.rollback();
                }
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                if (toThrow == null)
                   toThrow = ex;
             }
@@ -150,8 +147,7 @@ class JdbcConnectionLocal {
                if (!conn.isClosed()) {
                   conn.close();
                }
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                if (toThrow == null)
                   toThrow = ex;
             }

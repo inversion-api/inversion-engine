@@ -161,8 +161,7 @@ public class RqlValidationSuite {
 
          if (Utils.empty(expected)) {
             failures.put(testKey, "YOU NEED TO SUPPLY A MATCH FOR THIS TEST: " + Results.LAST_QUERY);
-         }
-         else if (!verifyIntegTest(testKey, queryString, expected, res)) {
+         } else if (!verifyIntegTest(testKey, queryString, expected, res)) {
             res.dump();
             failures.put(testKey, res.getStatus() + " - " + Results.LAST_QUERY);
          }
@@ -278,16 +277,14 @@ public class RqlValidationSuite {
             if (actual == null)
                actual = "NULL";
             actual = actual.substring(actual.indexOf(":") + 1).trim();
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             actual = ex.getMessage() + "";
             ex.printStackTrace();
          }
 
          if (!verifyUnitTest(testKey, queryString, expected, actual, query)) {
             failures.put(testKey, actual);
-         }
-         else {
+         } else {
             System.out.println("PASSED: " + actual);
          }
       }

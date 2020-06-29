@@ -112,8 +112,7 @@ public class S3UploadAction extends Action<S3UploadAction> {
 
          try {
             responseContent = saveFile(req.getChain(), uploadStream, fileName, requestPath);
-         }
-         catch (Exception e) {
+         } catch (Exception e) {
             error(res, e, "S3 Key may be invalid - valid characters are [  0-9 a-z A-Z !-_.*'()  ] --- your requested key was: " + requestPath + "/" + fileName);
 
             return;
@@ -122,11 +121,9 @@ public class S3UploadAction extends Action<S3UploadAction> {
          responseContent.put("fileMd5", getHash(uploadStream.getMessageDigest()));
          responseContent.put("fileSizeBytes", fileSize);
          res.withJson(new JSNode(responseContent));
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
-      }
-      finally {
+      } finally {
          if (uploadStream != null) {
             Utils.close(uploadStream);
          }
@@ -201,8 +198,7 @@ public class S3UploadAction extends Action<S3UploadAction> {
       if (accessKey != null) {
          BasicAWSCredentials creds = new BasicAWSCredentials(accessKey, secretKey);
          builder = AmazonS3ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(creds));
-      }
-      else {
+      } else {
          builder = AmazonS3ClientBuilder.standard();
       }
 

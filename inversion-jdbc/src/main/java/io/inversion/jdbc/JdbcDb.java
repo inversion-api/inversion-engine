@@ -138,8 +138,7 @@ public class JdbcDb extends Db<JdbcDb> {
          public void onError(String method, String sql, Object args, Exception ex) {
             if (method != null && method.equals("selectRows")) {
                log.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
-            }
-            else {
+            } else {
                log.warn(ex.getMessage(), ex);
             }
          }
@@ -220,8 +219,7 @@ public class JdbcDb extends Db<JdbcDb> {
          public void afterRequest(Request req, Response res) {
             try {
                JdbcConnectionLocal.commit();
-            }
-            catch (Exception ex) {
+            } catch (Exception ex) {
                ApiException.throw500InternalServerError(ex, "Error committing tansaction");
             }
          }
@@ -231,8 +229,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             try {
                JdbcConnectionLocal.rollback();
-            }
-            catch (Throwable t) {
+            } catch (Throwable t) {
                log.warn("Error rollowing back transaction.", t);
             }
 
@@ -242,8 +239,7 @@ public class JdbcDb extends Db<JdbcDb> {
          public void beforeFinally(Request req, Response res) {
             try {
                JdbcConnectionLocal.close();
-            }
-            catch (Throwable t) {
+            } catch (Throwable t) {
                log.warn("Error closing connections.", t);
             }
          }
@@ -311,8 +307,7 @@ public class JdbcDb extends Db<JdbcDb> {
          }
 
          return upserted;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
       return null;
@@ -329,8 +324,7 @@ public class JdbcDb extends Db<JdbcDb> {
          }
 
          JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
    }
@@ -355,8 +349,7 @@ public class JdbcDb extends Db<JdbcDb> {
             sql += " DELETE FROM " + quoteCol(table.getTableName());
             sql += " WHERE " + quoteCol(keyCol) + " IN (" + JdbcUtils.getQuestionMarkStr(columnMappedIndexValues.size()) + ")";
             JdbcUtils.execute(getConnection(), sql, values.toArray());
-         }
-         else {
+         } else {
             String sql = "";
             sql += " DELETE FROM " + quoteCol(table.getTableName());
             sql += " WHERE ";
@@ -379,8 +372,7 @@ public class JdbcDb extends Db<JdbcDb> {
             }
             JdbcUtils.execute(getConnection(), sql, values.toArray());
          }
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
       }
    }
@@ -431,8 +423,7 @@ public class JdbcDb extends Db<JdbcDb> {
          }
 
          return conn;
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex, "Unable to get DB connection");
          return null;
       }
@@ -470,14 +461,12 @@ public class JdbcDb extends Db<JdbcDb> {
                JdbcUtils.runSql(conn, new URL(ddlUrl).openStream());
             }
             conn.commit();
-         }
-         catch (Exception ex) {
+         } catch (Exception ex) {
             log.warn("Error initializing db with supplied ddl.", ex);
             if (conn != null)
                conn.rollback();
             throw ex;
-         }
-         finally {
+         } finally {
             JdbcUtils.close(conn);
          }
       }
@@ -498,8 +487,7 @@ public class JdbcDb extends Db<JdbcDb> {
          //-- hikari seemed to be overriding 'sessionVariables' set on the jdbc url
          //-- so this was done to force the config
          config.setConnectionInitSql("SET @@SESSION.sql_mode= 'NO_ENGINE_SUBSTITUTION'");
-      }
-      else if (isType("sqlserver")) {
+      } else if (isType("sqlserver")) {
          //-- upserts won't work if you can't upsert an idresource field
          //-- https://stackoverflow.com/questions/10116759/set-idresource-insert-off-for-all-tables
          config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
@@ -556,13 +544,11 @@ public class JdbcDb extends Db<JdbcDb> {
                schema = schema.substring(idx);
                schema = Utils.substringBefore(schema, ";");
                schema = Utils.substringBefore(schema, "&");
-            }
-            else {
+            } else {
                schema = "dbo";
             }
             rs = dbmd.getTables(conn.getCatalog(), schema, "%", new String[]{"TABLE", "VIEW"});
-         }
-         else
+         } else
             rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
          //ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
          boolean hasNext = rs.next();
@@ -632,8 +618,7 @@ public class JdbcDb extends Db<JdbcDb> {
                }
                indexMd.close();
 
-            }
-            while (rs.next());
+            } while (rs.next());
          rs.close();
 
          //-- now link all of the fks to pks
@@ -683,15 +668,12 @@ public class JdbcDb extends Db<JdbcDb> {
 
                }
                keyMd.close();
-            }
-            while (rs.next());
+            } while (rs.next());
 
          rs.close();
-      }
-      catch (Exception ex) {
+      } catch (Exception ex) {
          ApiException.throw500InternalServerError(ex);
-      }
-      finally {
+      } finally {
          Utils.close(rs);
       }
 

@@ -100,8 +100,7 @@ public class AclRule extends Rule<AclRule> {
             if (!allRolesMustMatch) {
                break;
             }
-         }
-         else {
+         } else {
             if (allRolesMustMatch) {
                break;
             }
@@ -116,8 +115,7 @@ public class AclRule extends Rule<AclRule> {
             if (!allPermissionsMustMatch) {
                break;
             }
-         }
-         else {
+         } else {
             if (allPermissionsMustMatch) {
                break;
             }
