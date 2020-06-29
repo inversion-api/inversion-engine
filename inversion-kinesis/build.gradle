@@ -1,11 +1,7 @@
-plugins {
-  id "java-library"
-}
-
 dependencies {
 
     compile project(':inversion-api')
 	compile "com.amazonaws:aws-java-sdk-kinesis:${awsSdkVersion}"
 
- 	testCompile 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
+
 }
