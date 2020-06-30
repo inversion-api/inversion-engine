@@ -1,6 +1,5 @@
 package io.inversion;
 
-public class Temp
-{
+public class Temp {
 
 }

@@ -1,12 +1,10 @@
-plugins {
-  id "java-library"
-}
-
 dependencies {
 
     compile "com.amazonaws:aws-java-sdk-dynamodb:${awsSdkVersion}"
     compile project(':inversion-api')
     compile project(':inversion-jdbc')
+    
+
 	testCompile  project(':inversion-api').sourceSets.test.output
 	testCompile  project(':inversion-jdbc').sourceSets.test.output
 	testCompile project(':inversion-spring-boot')

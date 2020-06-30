@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,32 +20,28 @@ import io.inversion.Action;
 
 /**
  * Accepts RQL parameters and responds with json or files to the client.
- * Special request parameters used by the GET handler: 
+ * Special request parameters used by the GET handler:
  * 'download' attempts to download the specified key.
  * 'marker' determines where paging should begin
- * 
+ * <p>
  * Supports simple RQL functions: eq & sw
- * 
+ * <p>
  * TODO it would be awesome if a user could request several files to be downloaded.
  * The files would be zipped and returned to the client.  A zip would be named
  * either 'files.zip' for various files, or 'sw_x_files.zip' where files that
  * 'start with' x are zipped.
- * 
+ * <p>
  * TODO what to do about buckets containing '.'s within the name? ex:
  * Missing parent for map compression: api.collections.s3db_files.liftck.coms
  * Missing parent for map compression: api.collections.s3db_static-pages.liftck.coms
  * Missing parent for map compression: s3db.tables.files.liftck.com
  * Missing parent for map compression: s3db.tables.static-pages.liftck.com
- * 
+ * <p>
  * Mar 6, 2019 - If a json body is received, it is expected that a meta update should
  * occur.  If a multipart form is received, it is expected that a binary file
  * was sent and possibly json
- * 
- * 
- *
  */
-public class S3DownloadAction extends Action
-{
+public class S3DownloadAction extends Action {
 //   protected transient Logger log     = LoggerFactory.getLogger(S3DbRestHandler.class);
 //
 //   int    maxRows = 100;

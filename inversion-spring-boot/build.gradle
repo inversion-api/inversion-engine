@@ -1,7 +1,3 @@
-plugins {
-  id "java-library"
-}
-
 dependencies {
 
 	compile project(':inversion-api')
@@ -10,4 +6,6 @@ dependencies {
 	compile "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
 	compile "org.springframework.boot:spring-boot-starter-jdbc:${springBootVersion}"
 	compile 'net.rakugakibox.spring.boot:logback-access-spring-boot-starter:2.6.0'
+	
+
 }

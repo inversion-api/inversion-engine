@@ -16,37 +16,34 @@
  */
 package io.inversion.utils;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import org.junit.jupiter.api.Test;
 
-public class UtilsTest
-{
-   @Test
-   public void testToDollarAmount1()
-   {
-      // test round down
-      printAssertEquals("45.00", 45.000001);
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-      // test round up
-      printAssertEquals("76.67", 76.6666666);
+public class UtilsTest {
+    @Test
+    public void testToDollarAmount1() {
+        // test round down
+        printAssertEquals("45.00", 45.000001);
 
-      // test a slightly different round down
-      printAssertEquals("489.32", 489.321);
+        // test round up
+        printAssertEquals("76.67", 76.6666666);
 
-      // test a slight different round up
-      printAssertEquals("909.49", 909.485000000001);
+        // test a slightly different round down
+        printAssertEquals("489.32", 489.321);
 
-      // test an even dollarization
-      printAssertEquals("10949395.00", 10949395);
+        // test a slight different round up
+        printAssertEquals("909.49", 909.485000000001);
 
-      // a zero test
-      printAssertEquals("0.00", 0.00001);
-   }
+        // test an even dollarization
+        printAssertEquals("10949395.00", 10949395);
 
-   void printAssertEquals(String expected, double orig)
-   {
-      System.out.println("Expected : " + expected + ", orig : " + orig + ", result : " + Utils.toDollarAmount(orig));
-      assertEquals(expected, Utils.toDollarAmount(orig).toString());
-   }
+        // a zero test
+        printAssertEquals("0.00", 0.00001);
+    }
+
+    void printAssertEquals(String expected, double orig) {
+        System.out.println("Expected : " + expected + ", orig : " + orig + ", result : " + Utils.toDollarAmount(orig));
+        assertEquals(expected, Utils.toDollarAmount(orig).toString());
+    }
 }

@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,62 +23,58 @@ import io.inversion.spring.InversionMain;
 import io.inversion.utils.Utils;
 
 /**
- * This demo launches an API that exposes SQL database tables as REST collection endpoints.  
+ * This demo launches an API that exposes SQL database tables as REST collection endpoints.
  * The demo supports full GET,PUT,POST,DELETE operations with an extensive Resource Query Language
  * (RQL) for GET requests
- *   
- * @see https://github.com/inversion-api/inversion-engine for more information on building awesome APIs with Inversion 
- * @author wellsb1
  *
+ * @author wellsb1
+ * @see https://github.com/inversion-api/inversion-engine for more information on building awesome APIs with Inversion
  */
-public class JdbcNorthwindApiDemoMain
-{
-   /**
-    * This simple factory method is static so that other  
-    * demos can use and extend this api configuration.
-    */
-   public static Api buildApi()
-   {
-      return new Api()//
-                      .withName("northwind")//
+public class JdbcNorthwindApiDemoMain {
+    /**
+     * This simple factory method is static so that other
+     * demos can use and extend this api configuration.
+     */
+    public static Api buildApi() {
+        return new Api()//
+                .withName("northwind")//
 
-                      //-- DATABASE CONFIGURATION OPTION #1.
-                      //-- you can set your database connection information explicitly in the code here... 
-                      .withDb(new JdbcDb("northwind", //the database name used as the properties key prefix when 
-                                         "org.h2.Driver", //-- jdbc driver
-                                         "jdbc:h2:mem:northwind;DB_CLOSE_DELAY=-1", //-- jdbc url 
-                                         "sa", //-- jdbc user
-                                         "", //-- jdbc password
-                                         //-- OPTIONAL: the demo db is an in-memory db that gets
-                                         //-- reinitialized each time with the data in "northwind-h2.ddl"
-                                         JdbcDb.class.getResource("northwind-h2.ddl").toString()))
+                //-- DATABASE CONFIGURATION OPTION #1.
+                //-- you can set your database connection information explicitly in the code here...
+                .withDb(new JdbcDb("northwind", //the database name used as the properties key prefix when
+                        "org.h2.Driver", //-- jdbc driver
+                        "jdbc:h2:mem:northwind;DB_CLOSE_DELAY=-1", //-- jdbc url
+                        "sa", //-- jdbc user
+                        "", //-- jdbc password
+                        //-- OPTIONAL: the demo db is an in-memory db that gets
+                        //-- reinitialized each time with the data in "northwind-h2.ddl"
+                        JdbcDb.class.getResource("northwind-h2.ddl").toString()))
 
-                      //-- DATABASE CONFIGURATION OPTION #2 & #3
-                      //-- comment out the above  "withDb()" method and uncomment below
-                      //.withDb(new SqlDb("northwind"))
+                //-- DATABASE CONFIGURATION OPTION #2 & #3
+                //-- comment out the above  "withDb()" method and uncomment below
+                //.withDb(new SqlDb("northwind"))
 
-                      //-- then add the following name value pairs to one of the following
-                      //--   - to an 'inversion.properties' file in the classpath
-                      //--   - OR as java system properties
-                      //--   - OR as environment variables
-                      //-- 
-                      //--  northwind.driver=${YOUR_JDBC_DRIVER}
-                      //--  northwind.url=${YOUR_JDBC_URL}
-                      //--  northwind.user=${YOUR_JDBC_USERNAME}
-                      //--  northwind.pass=${YOUR_JDBC_PASSWORD}
+                //-- then add the following name value pairs to one of the following
+                //--   - to an 'inversion.properties' file in the classpath
+                //--   - OR as java system properties
+                //--   - OR as environment variables
+                //--
+                //--  northwind.driver=${YOUR_JDBC_DRIVER}
+                //--  northwind.url=${YOUR_JDBC_URL}
+                //--  northwind.user=${YOUR_JDBC_USERNAME}
+                //--  northwind.pass=${YOUR_JDBC_PASSWORD}
 
-                      //-- the RestAction performs CRUD operations on Db objects.
-                      .withEndpoint("GET,POST,PUT,PATCH,DELETE", "/*", new DbAction());
+                //-- the RestAction performs CRUD operations on Db objects.
+                .withEndpoint("GET,POST,PUT,PATCH,DELETE", "/*", new DbAction());
 
-   }
+    }
 
-   public static void main(String[] args) throws Exception
-   {
-      //Launches the API on port 8080
-      InversionMain.run(buildApi());
+    public static void main(String[] args) throws Exception {
+        //Launches the API on port 8080
+        InversionMain.run(buildApi());
 
-      //this simply prints out the README to the console  
-      System.out.println(Utils.read("README-JdbcNorthwindApiDemoMain.md"));
-   }
+        //this simply prints out the README to the console
+        System.out.println(Utils.read("README-JdbcNorthwindApiDemoMain.md"));
+    }
 
 }

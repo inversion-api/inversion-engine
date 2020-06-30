@@ -1,9 +1,7 @@
-plugins {
-  id "java-library"
-}
-
 dependencies {
 
 	compile project(':inversion-api')
 	compile 'com.amazonaws:aws-lambda-java-core:1.2.0'
+	
+
 }

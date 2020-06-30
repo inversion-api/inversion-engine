@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,17 +16,10 @@
  */
 package io.inversion;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import io.inversion.Request.Upload;
+import io.inversion.Request.Uploader;
+import io.inversion.rql.RqlTokenizer;
+import io.inversion.utils.Utils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -34,278 +27,221 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
+import java.io.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import io.inversion.Request.Upload;
-import io.inversion.Request.Uploader;
-import io.inversion.rql.RqlTokenizer;
-import io.inversion.utils.Utils;
+public class EngineServlet extends HttpServlet {
+    static class EngineServletLocal {
+        static ThreadLocal<HttpServletRequest>  request  = new ThreadLocal();
+        static ThreadLocal<HttpServletResponse> response = new ThreadLocal();
 
-public class EngineServlet extends HttpServlet
-{
-   static class EngineServletLocal
-   {
-      static ThreadLocal<HttpServletRequest>  request  = new ThreadLocal();
-      static ThreadLocal<HttpServletResponse> response = new ThreadLocal();
+        public static void set(HttpServletRequest req, HttpServletResponse res) {
+            request.set(req);
+            response.set(res);
+        }
 
-      public static void set(HttpServletRequest req, HttpServletResponse res)
-      {
-         request.set(req);
-         response.set(res);
-      }
+        public static void setRequest(HttpServletRequest req) {
+            request.set(req);
+        }
 
-      public static void setRequest(HttpServletRequest req)
-      {
-         request.set(req);
-      }
+        public static void setResponse(HttpServletResponse res) {
+            response.set(res);
+        }
 
-      public static void setResponse(HttpServletResponse res)
-      {
-         response.set(res);
-      }
+        public static HttpServletRequest getRequest() {
+            return request.get();
+        }
 
-      public static HttpServletRequest getRequest()
-      {
-         return request.get();
-      }
+        public static HttpServletResponse getResponse() {
+            return response.get();
+        }
+    }
 
-      public static HttpServletResponse getResponse()
-      {
-         return response.get();
-      }
-   }
+    Engine engine = null;//new Engine();
 
-   Engine engine = null;//new Engine();
+    public void destroy() {
+        engine.shutdown();
+    }
 
-   public void destroy()
-   {
-      engine.shutdown();
-   }
+    public void init(ServletConfig config) {
+        engine.startup();
+    }
 
-   public void init(ServletConfig config)
-   {
-      engine.startup();
-   }
+    public Engine getEngine() {
+        return engine;
+    }
 
-   public Engine getEngine()
-   {
-      return engine;
-   }
+    public void setEngine(Engine engine) {
+        this.engine = engine;
+    }
 
-   public void setEngine(Engine engine)
-   {
-      this.engine = engine;
-   }
+    @Override
+    public void service(HttpServletRequest httpReq, HttpServletResponse httpResp) throws ServletException, IOException {
+        EngineServletLocal.set(httpReq, httpResp);
 
-   @Override
-   public void service(HttpServletRequest httpReq, HttpServletResponse httpResp) throws ServletException, IOException
-   {
-      EngineServletLocal.set(httpReq, httpResp);
+        Response res = null;
+        Request  req = null;
 
-      Response res = null;
-      Request req = null;
+        try {
+            String method = httpReq.getMethod();
+            String urlstr = httpReq.getRequestURL().toString();
 
-      try
-      {
-         String method = httpReq.getMethod();
-         String urlstr = httpReq.getRequestURL().toString();
+            if (!urlstr.endsWith("/"))
+                urlstr = urlstr + "/";
 
-         if (!urlstr.endsWith("/"))
-            urlstr = urlstr + "/";
-
-         String query = httpReq.getQueryString();
-         if (!Utils.empty(query))
-         {
-            urlstr += "?" + query;
-         }
-
-         Map headers = new HashMap();
-         Enumeration<String> headerEnum = httpReq.getHeaderNames();
-         while (headerEnum.hasMoreElements())
-         {
-            String key = headerEnum.nextElement();
-            String val = httpReq.getHeader(key);
-            headers.put(key, val);
-         }
-
-         Map params = new HashMap();
-         Enumeration<String> paramsEnumer = httpReq.getParameterNames();
-         while (paramsEnumer.hasMoreElements())
-         {
-            String key = paramsEnumer.nextElement();
-            boolean skip = false;
-
-            if (key.indexOf("_") > 0)
-            {
-               //-- RQL expressions with tokens that start with an "_" are not for public use at this time.
-               List illegals = new RqlTokenizer(key).stream().filter(s -> s.startsWith("_")).collect(Collectors.toList());
-               if (illegals.size() > 0)
-               {
-                  skip = true;
-               }
+            String query = httpReq.getQueryString();
+            if (!Utils.empty(query)) {
+                urlstr += "?" + query;
             }
 
-            if (!skip)
-            {
-               String val = httpReq.getParameter(key);
-               params.put(key, val);
+            Map                 headers    = new HashMap();
+            Enumeration<String> headerEnum = httpReq.getHeaderNames();
+            while (headerEnum.hasMoreElements()) {
+                String key = headerEnum.nextElement();
+                String val = httpReq.getHeader(key);
+                headers.put(key, val);
             }
-         }
 
-         String body = readBody(httpReq);
+            Map                 params       = new HashMap();
+            Enumeration<String> paramsEnumer = httpReq.getParameterNames();
+            while (paramsEnumer.hasMoreElements()) {
+                String  key  = paramsEnumer.nextElement();
+                boolean skip = false;
 
-         req = new Request(method, urlstr, headers, params, body);
-         req.withRemoteAddr(httpReq.getRemoteAddr());
+                if (key.indexOf("_") > 0) {
+                    //-- RQL expressions with tokens that start with an "_" are not for public use at this time.
+                    List illegals = new RqlTokenizer(key).stream().filter(s -> s.startsWith("_")).collect(Collectors.toList());
+                    if (illegals.size() > 0) {
+                        skip = true;
+                    }
+                }
 
-         req.withUploader(new Uploader()
-            {
-               @Override
-               public List<Upload> getUploads()
-               {
-                  try
-                  {
-                     String fileName = null;
-                     long fileSize = 0;
-                     String requestPath = null;
-                     InputStream inputStream = null;
+                if (!skip) {
+                    String val = httpReq.getParameter(key);
+                    params.put(key, val);
+                }
+            }
 
-                     for (Part part : httpReq.getParts())
-                     {
-                        if (part.getName() == null)
-                        {
-                           continue;
+            String body = readBody(httpReq);
+
+            req = new Request(method, urlstr, headers, params, body);
+            req.withRemoteAddr(httpReq.getRemoteAddr());
+
+            req.withUploader(new Uploader() {
+                @Override
+                public List<Upload> getUploads() {
+                    try {
+                        String      fileName    = null;
+                        long        fileSize    = 0;
+                        String      requestPath = null;
+                        InputStream inputStream = null;
+
+                        for (Part part : httpReq.getParts()) {
+                            if (part.getName() == null) {
+                                continue;
+                            }
+                            if (part.getName().equals("file")) {
+                                inputStream = part.getInputStream();
+                                fileName = part.getSubmittedFileName();
+                                fileSize = part.getSize();
+                            } else if (part.getName().equals("requestPath")) {
+                                requestPath = Utils.read(part.getInputStream());
+                                if (requestPath.indexOf("/") == 0)
+                                    requestPath = requestPath.substring(1);
+                            }
                         }
-                        if (part.getName().equals("file"))
-                        {
-                           inputStream = part.getInputStream();
-                           fileName = part.getSubmittedFileName();
-                           fileSize = part.getSize();
-                        }
-                        else if (part.getName().equals("requestPath"))
-                        {
-                           requestPath = Utils.read(part.getInputStream());
-                           if (requestPath.indexOf("/") == 0)
-                              requestPath = requestPath.substring(1);
-                        }
-                     }
 
-                     List uploads = new ArrayList();
+                        List uploads = new ArrayList();
 
-                     if (inputStream != null)
-                     {
-                        uploads.add(new Upload(fileName, fileSize, requestPath, inputStream));
-                     }
-                     return uploads;
-                  }
-                  catch (Exception ex)
-                  {
-                     Utils.rethrow(ex);
-                  }
-                  return null;
-               }
+                        if (inputStream != null) {
+                            uploads.add(new Upload(fileName, fileSize, requestPath, inputStream));
+                        }
+                        return uploads;
+                    } catch (Exception ex) {
+                        Utils.rethrow(ex);
+                    }
+                    return null;
+                }
             });
 
-         res = new Response();
+            res = new Response();
 
-         engine.service(req, res);
-         writeResponse(req, res, httpResp);
-      }
-      catch (Exception ex)
-      {
-         ex.printStackTrace();
-         httpResp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-      }
-   }
+            engine.service(req, res);
+            writeResponse(req, res, httpResp);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            httpResp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 
-   public static String readBody(HttpServletRequest request) throws ApiException
-   {
-      if (request == null)
-         return null;
+    public static String readBody(HttpServletRequest request) throws ApiException {
+        if (request == null)
+            return null;
 
-      StringBuilder stringBuilder = new StringBuilder();
-      BufferedReader bufferedReader = null;
+        StringBuilder  stringBuilder  = new StringBuilder();
+        BufferedReader bufferedReader = null;
 
-      try
-      {
-         InputStream inputStream = request.getInputStream();
-         if (inputStream != null)
-         {
-            bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-            char[] charBuffer = new char[128];
-            int bytesRead = -1;
-            while ((bytesRead = bufferedReader.read(charBuffer)) > 0)
-            {
-               stringBuilder.append(charBuffer, 0, bytesRead);
+        try {
+            InputStream inputStream = request.getInputStream();
+            if (inputStream != null) {
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                char[] charBuffer = new char[128];
+                int    bytesRead  = -1;
+                while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
+                    stringBuilder.append(charBuffer, 0, bytesRead);
+                }
+            } else {
+                stringBuilder.append("");
             }
-         }
-         else
-         {
-            stringBuilder.append("");
-         }
-      }
-      catch (Exception ex)
-      {
-         ApiException.throw400BadRequest(ex, "Unable to read request body");
-      }
-      finally
-      {
-         if (bufferedReader != null)
-         {
-            try
-            {
-               bufferedReader.close();
+        } catch (Exception ex) {
+            ApiException.throw400BadRequest(ex, "Unable to read request body");
+        } finally {
+            if (bufferedReader != null) {
+                try {
+                    bufferedReader.close();
+                } catch (IOException ex) {
+                    //throw ex;
+                }
             }
-            catch (IOException ex)
-            {
-               //throw ex;
+        }
+
+        return stringBuilder.toString();
+    }
+
+    void writeResponse(Request req, Response res, HttpServletResponse http) throws Exception {
+        String method = req != null ? req.getMethod() : null;
+
+        http.setStatus(res.getStatusCode());
+
+        OutputStream out = http.getOutputStream();
+        try {
+            for (String key : res.getHeaders().keySet()) {
+                List         values = res.getHeaders().get(key);
+                StringBuffer buff   = new StringBuffer();
+                for (int i = 0; i < values.size(); i++) {
+                    buff.append(values.get(i));
+                    if (i < values.size() - 1)
+                        buff.append(",");
+                }
+                http.setHeader(key, buff.toString());
+                res.debug(key + " " + buff);
             }
-         }
-      }
+            if ("OPTIONS".equals(method)) {
+                //
+            } else {
+                String contentType = res.getContentType();
+                byte[] bytes       = res.getOutput().getBytes();
 
-      return stringBuilder.toString();
-   }
+                http.setContentType(contentType);
+                res.withHeader("Content-Length", bytes.length + "");
+                res.debug("Content-Length " + bytes.length + "");
 
-   void writeResponse(Request req, Response res, HttpServletResponse http) throws Exception
-   {
-      String method = req != null ? req.getMethod() : null;
-
-      http.setStatus(res.getStatusCode());
-
-      OutputStream out = http.getOutputStream();
-      try
-      {
-         for (String key : res.getHeaders().keySet())
-         {
-            List values = res.getHeaders().get(key);
-            StringBuffer buff = new StringBuffer();
-            for (int i = 0; i < values.size(); i++)
-            {
-               buff.append(values.get(i));
-               if (i < values.size() - 1)
-                  buff.append(",");
+                out.write(bytes);
             }
-            http.setHeader(key, buff.toString());
-            res.debug(key + " " + buff);
-         }
-         if ("OPTIONS".equals(method))
-         {
-            //
-         }
-         else
-         {
-            String contentType = res.getContentType();
-            byte[] bytes = res.getOutput().getBytes();
-
-            http.setContentType(contentType);
-            res.withHeader("Content-Length", bytes.length + "");
-            res.debug("Content-Length " + bytes.length + "");
-
-            out.write(bytes);
-         }
-      }
-      finally
-      {
-         out.flush();
-         out.close();
-      }
-   }
+        } finally {
+            out.flush();
+            out.close();
+        }
+    }
 }

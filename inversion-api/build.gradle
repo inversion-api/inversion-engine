@@ -1,7 +1,3 @@
-plugins {
-  id "java-library"
-}
-
 dependencies {
 
     compile group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.+'
@@ -31,5 +27,7 @@ dependencies {
 
     //JWT support
     compile group: 'com.auth0', name: 'java-jwt', version: '3.1.+'
+    
+
        
 }
