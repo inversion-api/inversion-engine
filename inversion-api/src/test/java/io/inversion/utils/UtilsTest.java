@@ -16,11 +16,14 @@
  */
 package io.inversion.utils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class UtilsTest {
+
     @Test
     public void testToDollarAmount1() {
         // test round down
@@ -45,5 +48,15 @@ public class UtilsTest {
     void printAssertEquals(String expected, double orig) {
         System.out.println("Expected : " + expected + ", orig : " + orig + ", result : " + Utils.toDollarAmount(orig));
         assertEquals(expected, Utils.toDollarAmount(orig).toString());
+    }
+
+    @Test
+    public void containsToken() {
+        assertFalse(Utils.containsToken("token", "asdfasdf"));
+        assertTrue(Utils.containsToken("token", "token"));
+        assertFalse(Utils.containsToken("token", "eq(tokenasdasdf)"));
+        assertTrue(Utils.containsToken("token", "eq(token)"));
+        assertTrue(Utils.containsToken("equals(includes,field1,field2)", "equals(includes,field1,field2)"));
+        assertTrue(Utils.containsToken("equals(includes,field1,field2)", "equals(includes,field1,field2), asdasdf"));
     }
 }

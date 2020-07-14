@@ -250,6 +250,10 @@ public class Utils {
         return map;
     }
 
+    
+    static final String CONTAINS_TOKEN_PLACEHOLDER = "INVERSIONREPLACEDINVERSION";
+    static final Pattern CONTAINS_TOKEN_PATTERN = Pattern.compile("\\b\\Q" + CONTAINS_TOKEN_PLACEHOLDER + "\\E\\b", Pattern.CASE_INSENSITIVE);
+    
     /**
      * Checks for a whole word case insensitive match of <code>findThisToken</code>
      * in <code>inThisString</code>
@@ -261,8 +265,8 @@ public class Utils {
      * @param inThisString
      */
     public static boolean containsToken(String findThisToken, String inThisString) {
-        String regex = "\\b\\Q" + findThisToken + "\\E\\b";
-        return Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(inThisString).find();
+        inThisString = inThisString.replace(findThisToken,  CONTAINS_TOKEN_PLACEHOLDER);
+        return CONTAINS_TOKEN_PATTERN.matcher(inThisString).find();
     }
 
     /**
