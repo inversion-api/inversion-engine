@@ -265,6 +265,9 @@ public class Utils {
      * @param inThisString
      */
     public static boolean containsToken(String findThisToken, String inThisString) {
+        
+        findThisToken = findThisToken.toLowerCase();
+        inThisString = inThisString.toLowerCase();
         inThisString = inThisString.replace(findThisToken,  CONTAINS_TOKEN_PLACEHOLDER);
         return CONTAINS_TOKEN_PATTERN.matcher(inThisString).find();
     }

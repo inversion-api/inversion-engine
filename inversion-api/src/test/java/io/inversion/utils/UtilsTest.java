@@ -54,8 +54,12 @@ public class UtilsTest {
     public void containsToken() {
         assertFalse(Utils.containsToken("token", "asdfasdf"));
         assertTrue(Utils.containsToken("token", "token"));
+        assertTrue(Utils.containsToken("token", "toKEN"));
+        assertTrue(Utils.containsToken("token", "(toKEN)"));
         assertFalse(Utils.containsToken("token", "eq(tokenasdasdf)"));
         assertTrue(Utils.containsToken("token", "eq(token)"));
+        assertTrue(Utils.containsToken("INCLUDES", "equals(includes,field1,field2)"));
+        assertTrue(Utils.containsToken("includes", "equals(INcluDes,field1,field2)"));
         assertTrue(Utils.containsToken("equals(includes,field1,field2)", "equals(includes,field1,field2)"));
         assertTrue(Utils.containsToken("equals(includes,field1,field2)", "equals(includes,field1,field2), asdasdf"));
     }
