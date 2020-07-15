@@ -323,9 +323,13 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     public String toString() {
-        StringBuffer buff = new StringBuffer();
-        if (name != null)
-            buff.append(name).append(" -");
+        StringBuffer buff = new StringBuffer(getClass().getSimpleName());
+
+        if (name != null) {
+            buff.append(":").append(name);
+        }
+
+        buff.append(" -");
 
         if (includeMatchers.size() > 0)
             buff.append(" includes: ").append(includeMatchers);
