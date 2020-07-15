@@ -19,6 +19,7 @@ package io.inversion;
 import ch.qos.logback.classic.Level;
 import io.inversion.Api.ApiListener;
 import io.inversion.Chain.ActionMatch;
+import io.inversion.rql.RqlParser;
 import io.inversion.utils.*;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
@@ -492,9 +493,24 @@ public class Engine extends Rule<Engine> {
                     url.withHost(xfh);
             }
 
-            Path   parts  = new Path(url.getPath());
+            //-- remove any RQL terms that functions with leading "_" as these are internal/restricted
+            if (Chain.getDepth() < 2) {
+                Map<String, String> urlParams = req.getUrl().getParams();
+                for (String key : urlParams.keySet()) {
+
+                    if (key.indexOf("_") > 0) {
+                        List illegals = RqlParser.parse(key, urlParams.get(key)).stream().filter(t -> !t.isLeaf() && t.getToken().startsWith("_")).collect(Collectors.toList());
+                        if (illegals.size() > 0) {
+                            req.getUrl().clearParams(key);
+                        }
+                    }
+                }
+            }
+
+
             String method = req.getMethod();
 
+            Path                parts      = new Path(url.getPath());
             Map<String, String> pathParams = new HashMap();
 
             Path containerPath = match(method, parts);

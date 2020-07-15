@@ -19,7 +19,7 @@ package io.inversion.rql;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class Term implements Comparable<Term> {
     public Term       parent = null;
@@ -281,25 +281,21 @@ public class Term implements Comparable<Term> {
     }
 
     /**
-     * Returns true if <code>toFind</code> is in <code>values</code>
-     * ignoring case.
+     * Returns a stream containing all Terms recursively.
      *
-     * @param toFind
-     * @param values
-     * @return
+     * @return this term and all children recursively
      */
-    public static boolean in(String toFind, String... values) {
-        toFind = toFind.toLowerCase();
-        for (String val : values) {
-            if (toFind.equals(val.toLowerCase()))
-                return true;
-        }
-        return false;
+    public Stream<Term> stream() {
+        List<Term> list = new ArrayList();
+        collect(list);
+        return list.stream();
     }
 
-    public void stream(Consumer action) {
-        action.accept(token);
-        for (Term child : terms)
-            child.stream(action);
+    void collect(List list) {
+        list.add(this);
+        for (Term child : terms) {
+            child.collect(list);
+        }
     }
+
 }

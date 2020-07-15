@@ -18,7 +18,6 @@ package io.inversion;
 
 import io.inversion.Request.Upload;
 import io.inversion.Request.Uploader;
-import io.inversion.rql.RqlTokenizer;
 import io.inversion.utils.Utils;
 
 import javax.servlet.ServletConfig;
@@ -29,7 +28,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import java.io.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class EngineServlet extends HttpServlet {
     static class EngineServletLocal {
@@ -106,21 +104,9 @@ public class EngineServlet extends HttpServlet {
             Map                 params       = new HashMap();
             Enumeration<String> paramsEnumer = httpReq.getParameterNames();
             while (paramsEnumer.hasMoreElements()) {
-                String  key  = paramsEnumer.nextElement();
-                boolean skip = false;
-
-                if (key.indexOf("_") > 0) {
-                    //-- RQL expressions with tokens that start with an "_" are not for public use at this time.
-                    List illegals = new RqlTokenizer(key).stream().filter(s -> s.startsWith("_")).collect(Collectors.toList());
-                    if (illegals.size() > 0) {
-                        skip = true;
-                    }
-                }
-
-                if (!skip) {
-                    String val = httpReq.getParameter(key);
-                    params.put(key, val);
-                }
+                String key = paramsEnumer.nextElement();
+                String val = httpReq.getParameter(key);
+                params.put(key, val);
             }
 
             String body = readBody(httpReq);
