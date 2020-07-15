@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 /**
  * An adapter to an underlying data source.
  * <p>
@@ -50,67 +51,56 @@ import java.util.regex.Pattern;
  * @param <T>
  */
 public abstract class Db<T extends Db> {
-    protected final Logger log = LoggerFactory.getLogger(getClass());
-
-    transient Set<Api> runningApis = new HashSet();
-
-    transient boolean firstStartup = true;
-
-    transient boolean shutdown = false;
-
+    protected final Logger                log            = LoggerFactory.getLogger(getClass());
     /**
      * The Collections that are the REST interface to the backend tables (or buckets, folders, containers etc.) this Db exposes through an Api.
      */
-    protected ArrayList<Collection> collections = new ArrayList();
-
+    protected       ArrayList<Collection> collections    = new ArrayList<>();
     /**
      * A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflicitive Collection creation.
      */
-    protected Map<String, String> includeTables = new HashMap();
-
+    protected       Map<String, String>   includeTables  = new HashMap<>();
     /**
      * Indicates that this Db should reflectively create and configure Collections to represent its underlying tables.
      * <p>
      * This would be false when an Api designer wants to very specifically configure an Api probably when the underlying db does not support the type of
      * reflection required.  For example, you may want to put specific Property and Relationship structure on top of an unstructured JSON document store.
      */
-    protected boolean bootstrap = true;
-
+    protected       boolean               bootstrap      = true;
     /**
      * The name of his Db used for "name.property" style autowiring.
      */
-    protected String name = null;
-
+    protected       String                name           = null;
     /**
      * A property that can be used to disambiguate different backends supported by a single subclass.
      * <p>
      * For example type might be "mysql" for a JdbcDb.
      */
-    protected String type = null;
-
+    protected       String                type           = null;
     /**
      * Used to differentiate which Collection is being referred by a Request when an Api supports Collections with the same name from different Dbs.
      */
-    protected Path endpointPath = null;
-
+    protected       Path                  endpointPath   = null;
     /**
      * OPTIONAL column names that should be included in RQL queries, upserts and patches.
      *
-     * @see #shouldInclude(Collection, String)
+     * @see #filterOutJsonProperty(Collection, String)
      */
-    protected Set<String> includeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-
+    protected       Set<String>           includeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     /**
      * OPTIONAL column names that should be excluded from RQL queries, upserts and patches.
      *
-     * @see #shouldInclude(Collection, String)
+     * @see #filterOutJsonProperty(Collection, String)
      */
-    protected Set<String> excludeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-
+    protected       Set<String>           excludeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     /**
      * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves
      */
-    protected Set<String> reservedParams = new HashSet(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
+    protected       Set<String>           reservedParams = new TreeSet<String>(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
+
+    transient Set<Api> runningApis  = new HashSet<>();
+    transient boolean  firstStartup = true;
+    transient boolean  shutdown     = false;
 
     public Db() {
     }
@@ -206,19 +196,6 @@ public abstract class Db<T extends Db> {
         return runningApis.contains(api);
     }
 
-    protected Term asTerm(String paramName, String paramValue) {
-        String termStr = null;
-        if (Utils.empty(paramValue) && paramName.indexOf("(") > -1) {
-            termStr = paramName;
-        } else {
-            if (Utils.empty(paramValue))
-                paramValue = "true";
-
-            termStr = "eq(" + paramName + "," + paramValue + ")";
-        }
-        Term term = RqlParser.parse(termStr);
-        return term;
-    }
 
     /**
      * Finds all records that match the supplied RQL query terms.
@@ -232,19 +209,14 @@ public abstract class Db<T extends Db> {
      * @throws ApiException
      */
     public final Results select(Collection collection, Map<String, String> params) throws ApiException {
-        List<Term> inTerms = new ArrayList();
-        for (String key : params.keySet()) {
-            if (!reservedParams.contains(key))
-                inTerms.add(asTerm(key, params.get(key)));
-        }
 
-        //------------------------------------------------
-        // Normalize all of the params and convert attribute
-        // names to column names.
         List<Term> terms = new ArrayList();
 
-        for (Term term : inTerms) {
-            if (term.hasToken("eq") && reservedParams.contains(term.getToken(0)))
+        for (String key : params.keySet()) {
+
+            Term term = RqlParser.parse(key, params.get(key));
+
+            if (filterOutQueryTerm(collection, term))
                 continue;
 
             if (term.hasToken("eq") && term.getTerm(0).hasToken("includes")) {
@@ -286,14 +258,7 @@ public abstract class Db<T extends Db> {
                 }
             }
 
-            //            if (collection != null)
-            //            {
-            //               terms.addAll(collection.getDb().mapToColumns(collection, term));
-            //            }
-            //            else
-            {
-                terms.add(term);
-            }
+            terms.add(term);
         }
 
         //-- this sort is not strictly necessary but it makes the order of terms in generated
@@ -329,8 +294,8 @@ public abstract class Db<T extends Db> {
                             String link = null;
                             if (rel.isManyToOne()) {
                                 String fkval = null;
-                                if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1)//this value is already an encoded resourceKey
-                                {
+                                if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1) {
+                                    //this value is already an encoded resourceKey
                                     Object obj = row.get(rel.getFk1Col1().getColumnName());
                                     if (obj != null)
                                         fkval = obj.toString();
@@ -425,7 +390,7 @@ public abstract class Db<T extends Db> {
                 mapped.putAll(decodedKey);
             }
 
-            HashSet copied = new HashSet();
+            HashSet<String> copied = new HashSet<>();
             for (Property attr : collection.getProperties()) {
                 String attrName = attr.getJsonName();
 
@@ -491,7 +456,7 @@ public abstract class Db<T extends Db> {
 
             for (String key : (List<String>) new ArrayList(mapped.keySet())) {
                 //TODO can optimize?
-                if (!shouldInclude(collection, key)) {
+                if (!filterOutJsonProperty(collection, key)) {
                     mapped.remove(key);
                 }
             }
@@ -632,7 +597,7 @@ public abstract class Db<T extends Db> {
 
             for (String columnName : (Set<String>) row.keySet()) {
                 //TODO can optimize?
-                if (!shouldInclude(collection, columnName))
+                if (!filterOutJsonProperty(collection, columnName))
                     row.remove(columnName);
             }
         }
@@ -821,51 +786,6 @@ public abstract class Db<T extends Db> {
         return collectionName;
     }
 
-    /**
-     * Try to make an attractive camelCase valid javascript variable name.
-     * <p>
-     * Lots of sql db designers use things like SNAKE_CASE_COLUMN_NAMES that look terrible as json property names.
-     *
-     * @param name the to beautify
-     * @return a camelCased version of <code>name</code>
-     * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables
-     */
-    protected String beautifyName(String name) {
-        //all upper case...U.G.L.Y you ain't got on alibi you UGLY, hay hay you UGLY
-        if (name.toUpperCase().equals(name)) {
-            name = name.toLowerCase();
-        }
-
-        StringBuffer buff = new StringBuffer("");
-
-        boolean nextUpper = false;
-        for (int i = 0; i < name.length(); i++) {
-            char next = name.charAt(i);
-            if (next == ' ' || next == '_') {
-                nextUpper = true;
-                continue;
-            }
-
-            if (buff.length() == 0 && //
-                    !(Character.isAlphabetic(next)//
-                            || next == '$'))//OK $ is a valid initial character in a JS identifier but seriously why dude, just why?
-            {
-                next = 'x';
-            }
-
-            if (nextUpper) {
-                next = Character.toUpperCase(next);
-                nextUpper = false;
-            }
-
-            if (buff.length() == 0)
-                next = Character.toLowerCase(next);
-
-            buff.append(next);
-        }
-        return buff.toString();
-    }
-
     //   /**
     //    * Attempts to construct a sensible json property name for a Relationship.
     //    * <p>
@@ -914,6 +834,51 @@ public abstract class Db<T extends Db> {
     //
     //      return name;
     //   }
+
+    /**
+     * Try to make an attractive camelCase valid javascript variable name.
+     * <p>
+     * Lots of sql db designers use things like SNAKE_CASE_COLUMN_NAMES that look terrible as json property names.
+     *
+     * @param name the to beautify
+     * @return a camelCased version of <code>name</code>
+     * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables
+     */
+    protected String beautifyName(String name) {
+        //all upper case...U.G.L.Y you ain't got on alibi you UGLY, hay hay you UGLY
+        if (name.toUpperCase().equals(name)) {
+            name = name.toLowerCase();
+        }
+
+        StringBuffer buff = new StringBuffer("");
+
+        boolean nextUpper = false;
+        for (int i = 0; i < name.length(); i++) {
+            char next = name.charAt(i);
+            if (next == ' ' || next == '_') {
+                nextUpper = true;
+                continue;
+            }
+
+            if (buff.length() == 0 && //
+                    !(Character.isAlphabetic(next)//
+                            || next == '$'))//OK $ is a valid initial character in a JS identifier but seriously why dude, just why?
+            {
+                next = 'x';
+            }
+
+            if (nextUpper) {
+                next = Character.toUpperCase(next);
+                nextUpper = false;
+            }
+
+            if (buff.length() == 0)
+                next = Character.toLowerCase(next);
+
+            buff.append(next);
+        }
+        return buff.toString();
+    }
 
     /**
      * Attempts to construct a sensible json property name for a Relationship.
@@ -1183,18 +1148,66 @@ public abstract class Db<T extends Db> {
      * @param columnName
      * @return
      */
-    public boolean shouldInclude(Collection collection, String columnName) {
+    public boolean filterOutJsonProperty(Collection collection, String name) {
+
+        if (reservedParams.contains(name) || name.startsWith("_"))
+            return true;
+
+        String[] guesses = new String[]{name, collection.getName() + "." + name, collection.getTableName() + "." + name, collection.getTableName() + collection.getColumnName(name)};
+
         if (includeColumns.size() > 0 || excludeColumns.size() > 0) {
-            String fullName = collection + "." + columnName;
-            if (excludeColumns.contains(columnName) || excludeColumns.contains(fullName)) {
-                return false;
+            boolean included = false;
+            for (String guess : guesses) {
+                if (excludeColumns.contains(guess))
+                    return true;
+
+                if (includeColumns.contains(guess))
+                    included = false;
             }
-            if (includeColumns.size() > 0 && !(includeColumns.contains(columnName) || includeColumns.contains(fullName))) {
-                return false;
+            if (!included && includeColumns.size() > 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks that the
+     *
+     * @param collection
+     * @param term
+     * @return
+     */
+    public boolean filterOutQueryTerm(Collection collection, Term term) {
+
+        if (term.isLeaf())
+            return false;
+
+        String function = term.getToken();
+        String propName = term.getToken(0);
+
+        //-- functions that start with an "_" are considered private/internal
+        //--  and should not be processed when passed in from the caller
+        //if (Chain.getDepth() < 2 && token.startsWith("_"))
+        //    return true;
+
+        //-- function and column names can't be in reservedParams
+        if (reservedParams.contains(function) || reservedParams.contains(propName))
+            return true;
+
+        //-- don't include query terms where the column names is unknown
+        //-- and the propName starts with an "_".  This is most likely an
+        //-- default path mapped param like "_collection" or "_entity"
+        if (collection != null && collection.findProperty(propName) == null && propName.startsWith("_"))
+            return true;
+
+        for (Term child : term.getTerms()) {
+            if (filterOutQueryTerm(collection, child)) {
+                return true;
             }
         }
 
-        return collection != null ? collection.getPropertyByColumnName(columnName) != null : true;
+        return false;
     }
 
     public T withIncludeColumns(String... columnNames) {
@@ -1262,7 +1275,6 @@ public abstract class Db<T extends Db> {
         this.endpointPath = endpointPath;
         return (T) this;
     }
-
     /*
      * Copyright 2011 Atteo.
      *
@@ -1294,52 +1306,31 @@ public abstract class Db<T extends Db> {
      * </p>
      */
     static class Pluralizer {
-        enum MODE {
-            ENGLISH_ANGLICIZED, ENGLISH_CLASSICAL
-        }
-
-        private static final String[] CATEGORY_EX_ICES = {"codex", "murex", "silex",};
-
-        private static final String[] CATEGORY_IX_ICES = {"radix", "helix",};
-
-        private static final String[] CATEGORY_UM_A = {"bacterium", "agendum", "desideratum", "erratum", "stratum", "datum", "ovum", "extremum", "candelabrum",};
-
+        private static final String[]   CATEGORY_EX_ICES  = {"codex", "murex", "silex",};
+        private static final String[]   CATEGORY_IX_ICES  = {"radix", "helix",};
+        private static final String[]   CATEGORY_UM_A     = {"bacterium", "agendum", "desideratum", "erratum", "stratum", "datum", "ovum", "extremum", "candelabrum",};
         // Always us -> i
-        private static final String[] CATEGORY_US_I = {"alumnus", "alveolus", "bacillus", "bronchus", "locus", "nucleus", "stimulus", "meniscus", "thesaurus",};
-
-        private static final String[] CATEGORY_ON_A = {"criterion", "perihelion", "aphelion", "phenomenon", "prolegomenon", "noumenon", "organon", "asyndeton", "hyperbaton",};
-
-        private static final String[] CATEGORY_A_AE = {"alumna", "alga", "vertebra", "persona"};
-
+        private static final String[]   CATEGORY_US_I     = {"alumnus", "alveolus", "bacillus", "bronchus", "locus", "nucleus", "stimulus", "meniscus", "thesaurus",};
+        private static final String[]   CATEGORY_ON_A     = {"criterion", "perihelion", "aphelion", "phenomenon", "prolegomenon", "noumenon", "organon", "asyndeton", "hyperbaton",};
+        private static final String[]   CATEGORY_A_AE     = {"alumna", "alga", "vertebra", "persona"};
         // Always o -> os
-        private static final String[] CATEGORY_O_OS = {"albino", "archipelago", "armadillo", "commando", "crescendo", "fiasco", "ditto", "dynamo", "embryo", "ghetto", "guano", "inferno", "jumbo", "lumbago", "magneto", "manifesto", "medico", "octavo", "photo", "pro", "quarto", "canto", "lingo", "generalissimo", "stylo", "rhino", "casino", "auto", "macro", "zero", "todo"};
-
+        private static final String[]   CATEGORY_O_OS     = {"albino", "archipelago", "armadillo", "commando", "crescendo", "fiasco", "ditto", "dynamo", "embryo", "ghetto", "guano", "inferno", "jumbo", "lumbago", "magneto", "manifesto", "medico", "octavo", "photo", "pro", "quarto", "canto", "lingo", "generalissimo", "stylo", "rhino", "casino", "auto", "macro", "zero", "todo"};
         // Classical o -> i  (normally -> os)
-        private static final String[] CATEGORY_O_I = {"solo", "soprano", "basso", "alto", "contralto", "tempo", "piano", "virtuoso",};
-
-        private static final String[] CATEGORY_EN_INA = {"stamen", "foramen", "lumen"};
-
+        private static final String[]   CATEGORY_O_I      = {"solo", "soprano", "basso", "alto", "contralto", "tempo", "piano", "virtuoso",};
+        private static final String[]   CATEGORY_EN_INA   = {"stamen", "foramen", "lumen"};
         // -a to -as (anglicized) or -ata (classical)
-        private static final String[] CATEGORY_A_ATA = {"anathema", "enema", "oedema", "bema", "enigma", "sarcoma", "carcinoma", "gumma", "schema", "charisma", "lemma", "soma", "diploma", "lymphoma", "stigma", "dogma", "magma", "stoma", "drama", "melisma", "trauma", "edema", "miasma"};
-
-        private static final String[] CATEGORY_IS_IDES = {"iris", "clitoris"};
-
+        private static final String[]   CATEGORY_A_ATA    = {"anathema", "enema", "oedema", "bema", "enigma", "sarcoma", "carcinoma", "gumma", "schema", "charisma", "lemma", "soma", "diploma", "lymphoma", "stigma", "dogma", "magma", "stoma", "drama", "melisma", "trauma", "edema", "miasma"};
+        private static final String[]   CATEGORY_IS_IDES  = {"iris", "clitoris"};
         // -us to -uses (anglicized) or -us (classical)
-        private static final String[] CATEGORY_US_US = {"apparatus", "impetus", "prospectus", "cantus", "nexus", "sinus", "coitus", "plexus", "status", "hiatus"};
-
-        private static final String[] CATEGORY_NONE_I = {"afreet", "afrit", "efreet"};
-
-        private static final String[] CATEGORY_NONE_IM = {"cherub", "goy", "seraph"};
-
-        private static final String[] CATEGORY_EX_EXES = {"apex", "latex", "vertex", "cortex", "pontifex", "vortex", "index", "simplex"};
-
-        private static final String[] CATEGORY_IX_IXES = {"appendix"};
-
-        private static final String[] CATEGORY_S_ES = {"acropolis", "chaos", "lens", "aegis", "cosmos", "mantis", "alias", "dais", "marquis", "asbestos", "digitalis", "metropolis", "atlas", "epidermis", "pathos", "bathos", "ethos", "pelvis", "bias", "gas", "polis", "caddis", "glottis", "rhinoceros", "cannabis", "glottis", "sassafras", "canvas", "ibis", "trellis"};
-
-        private static final String[] CATEGORY_MAN_MANS = {"human", "Alabaman", "Bahaman", "Burman", "German", "Hiroshiman", "Liman", "Nakayaman", "Oklahoman", "Panaman", "Selman", "Sonaman", "Tacoman", "Yakiman", "Yokohaman", "Yuman"};
-
-        private static Pluralizer inflector = new Pluralizer();
+        private static final String[]   CATEGORY_US_US    = {"apparatus", "impetus", "prospectus", "cantus", "nexus", "sinus", "coitus", "plexus", "status", "hiatus"};
+        private static final String[]   CATEGORY_NONE_I   = {"afreet", "afrit", "efreet"};
+        private static final String[]   CATEGORY_NONE_IM  = {"cherub", "goy", "seraph"};
+        private static final String[]   CATEGORY_EX_EXES  = {"apex", "latex", "vertex", "cortex", "pontifex", "vortex", "index", "simplex"};
+        private static final String[]   CATEGORY_IX_IXES  = {"appendix"};
+        private static final String[]   CATEGORY_S_ES     = {"acropolis", "chaos", "lens", "aegis", "cosmos", "mantis", "alias", "dais", "marquis", "asbestos", "digitalis", "metropolis", "atlas", "epidermis", "pathos", "bathos", "ethos", "pelvis", "bias", "gas", "polis", "caddis", "glottis", "rhinoceros", "cannabis", "glottis", "sassafras", "canvas", "ibis", "trellis"};
+        private static final String[]   CATEGORY_MAN_MANS = {"human", "Alabaman", "Bahaman", "Burman", "German", "Hiroshiman", "Liman", "Nakayaman", "Oklahoman", "Panaman", "Selman", "Sonaman", "Tacoman", "Yakiman", "Yokohaman", "Yuman"};
+        private static       Pluralizer inflector         = new Pluralizer();
+        private final        List<Rule> rules             = new ArrayList<Rule>();
 
         public Pluralizer() {
             this(MODE.ENGLISH_ANGLICIZED);
@@ -1460,20 +1451,6 @@ public abstract class Db<T extends Db> {
         //   }
 
         /**
-         * Returns singular or plural form of the word based on count.
-         *
-         * @param word  word in singular form
-         * @param count word count
-         * @return form of the word correct for given count
-         */
-        public String getPlural(String word, int count) {
-            if (count == 1) {
-                return word;
-            }
-            return getPlural(word);
-        }
-
-        /**
          * Returns plural form of the given word.
          * <p>
          * For instance:
@@ -1518,6 +1495,67 @@ public abstract class Db<T extends Db> {
         public static void setMode(MODE mode) {
             Pluralizer newInflector = new Pluralizer(mode);
             inflector = newInflector;
+        }
+
+        /**
+         * Returns singular or plural form of the word based on count.
+         *
+         * @param word  word in singular form
+         * @param count word count
+         * @return form of the word correct for given count
+         */
+        public String getPlural(String word, int count) {
+            if (count == 1) {
+                return word;
+            }
+            return getPlural(word);
+        }
+
+        protected String getPlural(String word) {
+            for (Rule rule : rules) {
+                String result = rule.getPlural(word);
+                if (result != null) {
+                    return result;
+                }
+            }
+            return null;
+        }
+
+        protected void uncountable(String[] list) {
+            rules.add(new CategoryRule(list, "", ""));
+        }
+
+        protected void irregular(String singular, String plural) {
+            if (singular.charAt(0) == plural.charAt(0)) {
+                rules.add(new RegExpRule(Pattern.compile("(?i)(" + singular.charAt(0) + ")" + singular.substring(1) + "$"), "$1" + plural.substring(1)));
+            } else {
+                rules.add(new RegExpRule(Pattern.compile(Character.toUpperCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toUpperCase(plural.charAt(0)) + plural.substring(1)));
+                rules.add(new RegExpRule(Pattern.compile(Character.toLowerCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toLowerCase(plural.charAt(0)) + plural.substring(1)));
+            }
+        }
+
+        protected void irregular(String[][] list) {
+            for (String[] pair : list) {
+                irregular(pair[0], pair[1]);
+            }
+        }
+
+        protected void rule(String singular, String plural) {
+            rules.add(new RegExpRule(Pattern.compile(singular, Pattern.CASE_INSENSITIVE), plural));
+        }
+
+        protected void rule(String[][] list) {
+            for (String[] pair : list) {
+                rules.add(new RegExpRule(Pattern.compile(pair[0], Pattern.CASE_INSENSITIVE), pair[1]));
+            }
+        }
+
+        protected void categoryRule(String[] list, String singular, String plural) {
+            rules.add(new CategoryRule(list, singular, plural));
+        }
+
+        enum MODE {
+            ENGLISH_ANGLICIZED, ENGLISH_CLASSICAL
         }
 
         //   public static abstract class TwoFormInflector
@@ -1572,51 +1610,6 @@ public abstract class Db<T extends Db> {
                 }
                 return null;
             }
-        }
-
-        private final List<Rule> rules = new ArrayList<Rule>();
-
-        protected String getPlural(String word) {
-            for (Rule rule : rules) {
-                String result = rule.getPlural(word);
-                if (result != null) {
-                    return result;
-                }
-            }
-            return null;
-        }
-
-        protected void uncountable(String[] list) {
-            rules.add(new CategoryRule(list, "", ""));
-        }
-
-        protected void irregular(String singular, String plural) {
-            if (singular.charAt(0) == plural.charAt(0)) {
-                rules.add(new RegExpRule(Pattern.compile("(?i)(" + singular.charAt(0) + ")" + singular.substring(1) + "$"), "$1" + plural.substring(1)));
-            } else {
-                rules.add(new RegExpRule(Pattern.compile(Character.toUpperCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toUpperCase(plural.charAt(0)) + plural.substring(1)));
-                rules.add(new RegExpRule(Pattern.compile(Character.toLowerCase(singular.charAt(0)) + "(?i)" + singular.substring(1) + "$"), Character.toLowerCase(plural.charAt(0)) + plural.substring(1)));
-            }
-        }
-
-        protected void irregular(String[][] list) {
-            for (String[] pair : list) {
-                irregular(pair[0], pair[1]);
-            }
-        }
-
-        protected void rule(String singular, String plural) {
-            rules.add(new RegExpRule(Pattern.compile(singular, Pattern.CASE_INSENSITIVE), plural));
-        }
-
-        protected void rule(String[][] list) {
-            for (String[] pair : list) {
-                rules.add(new RegExpRule(Pattern.compile(pair[0], Pattern.CASE_INSENSITIVE), pair[1]));
-            }
-        }
-
-        protected void categoryRule(String[] list, String singular, String plural) {
-            rules.add(new CategoryRule(list, singular, plural));
         }
     }
 
