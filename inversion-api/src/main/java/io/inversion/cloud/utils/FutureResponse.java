@@ -184,7 +184,8 @@ public abstract class FutureResponse implements RunnableFuture<Response>
                log.error("Error handling callbacks in setResponse", ex);
             }
          }
-
+         response.withRetryCount(totalRetries);
+         response.withCallDuration(System.currentTimeMillis() - createdAt);
          notifyAll();
       }
    }

@@ -5,9 +5,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -59,6 +59,8 @@ public class Response
    protected List<Change>                           changes           = new ArrayList();
    protected StringBuffer                           debug             = new StringBuffer();
 
+   protected int                                    retryCount        = 0;
+   protected long                                   callDuration        = 0;
    public Response()
    {
 
@@ -124,7 +126,7 @@ public class Response
    }
 
    /**
-    * @param statusCode - one of the SC constants ex "200 OK"
+    * @param status - one of the SC constants ex "200 OK"
     */
    public Response withStatus(String status)
    {
@@ -140,7 +142,7 @@ public class Response
       }
       catch (Exception ex)
       {
-         //the status message did not start with numeric status code. 
+         //the status message did not start with numeric status code.
          //this can be ignored.
       }
 
@@ -240,7 +242,7 @@ public class Response
    /**
     * Sets the root output json document...you should use withData and withMeta
     * instead unless you REALLY want to change to wrapper document structure.
-    * 
+    *
     * @param json the json to set
     */
    public Response withJson(JSNode json)
@@ -979,6 +981,22 @@ public class Response
          }
       }
       return this;
+   }
+
+   public Response withRetryCount(int retryCount){
+      this.retryCount = retryCount;
+      return this;
+   }
+   public int getRetryCount(){
+      return retryCount;
+   }
+
+   public Response withCallDuration(long callDuration){
+      this.callDuration = callDuration;
+      return this;
+   }
+   public long getCallDuration(){
+      return callDuration;
    }
 
 }
