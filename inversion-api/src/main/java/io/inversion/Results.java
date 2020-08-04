@@ -96,8 +96,8 @@ public class Results<M extends Map> implements Iterable<M> {
         return rows.size();
     }
 
-    public Row getRow(int index) {
-        return (Row) rows.get(index);
+    public M getRow(int index) {
+        return (M) rows.get(index);
     }
 
     public Results setRow(int index, M row) {

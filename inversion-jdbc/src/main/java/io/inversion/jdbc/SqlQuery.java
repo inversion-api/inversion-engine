@@ -27,44 +27,46 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Composes and executes a SQL SELECT based on supplied RQL <code>Terms</code>.
  */
 public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Select, SqlQuery>, SqlQuery>, From<From<From, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>> {
-    protected char stringQuote = '\'';
-    protected char columnQuote = '"';
 
-    String type = null;
+    protected char              stringQuote = '\'';
+    protected char              columnQuote = '"';
+
+    String                      type        = null;
 
     LinkedHashMap<String, Term> joins;
 
-    public SqlQuery() {
-
-    }
+//    public SqlQuery() {
+//
+//    }
 
     public SqlQuery(D db, Collection table, List<Term> terms) {
         super(db, table, terms, "_query");
+        
+        //-- this is done in the super call but this second call 
+        //-- is required to set the columnQuote after member variable
+        //-- initialization happens AFTER the super call.
+        withDb(db);
     }
 
     protected boolean addTerm(String token, Term term) {
+
         if (term.hasToken("eq")) {
             String name = term.getToken(0);
 
+            //TODO document this
             if (name.endsWith(".select"))
                 return true;
-
-            //ignore extraneous name=value pairs if 'name' is not a column
-            if (name.indexOf(".") < 0)// && collection != null)
-            {
-                if (!db.filterOutJsonProperty(collection, name))
-                    return true;
-            }
         }
 
         if (term.hasToken("join")) {
             if (joins == null)
-                joins = new LinkedHashMap();
+                joins = new LinkedHashMap<>();
 
             //a map is used to avoid adding duplicate joins
             String key = term.toString();
@@ -79,11 +81,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
     @Override
     public Results doSelect() throws ApiException {
-        JdbcDb db  = (JdbcDb) getDb();
+        JdbcDb db = (JdbcDb) getDb();
         String sql = getPreparedStmt();
 
         Results results = new Results(this);
-        List    values  = getColValues();
+        List values = getColValues();
 
         //-- for test cases and query explain
         String debug = getClass().getSimpleName() + " " + getType() + ": " + sql + " args=" + values;
@@ -99,11 +101,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             //-- generation of the prepared statement above
 
             try {
-                Rows rows      = JdbcUtils.selectRows(conn, sql, values);
-                int  foundRows = rows.size();
+                Rows rows = JdbcUtils.selectRows(conn, sql, values);
+                int foundRows = rows.size();
 
                 int limit = getPage().getLimit();
-                int page  = getPage().getOffset();
+                int page = getPage().getOffset();
 
                 //-- don't query for total row count if the DB returned fewer that
                 //-- the max number of rows on the first page...foundRows must be
@@ -125,8 +127,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 results.withFoundRows(foundRows);
                 results.withRows(rows);
             } catch (Exception ex) {
-                //System.out.println(sql);
-                //ex.printStackTrace();
+                System.out.println(sql);
+                ex.printStackTrace();
                 ApiException.throw500InternalServerError(ex);
             }
         }
@@ -186,9 +188,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         String initialSelect = (String) find("_query", 0);
 
         if (initialSelect == null) {
-            String  expression = getFrom().getSubquery();
-            String  alias      = quoteCol(getFrom().getAlias());
-            boolean distinct   = getSelect().isDistinct();
+            String expression = getFrom().getSubquery();
+            String alias = quoteCol(getFrom().getAlias());
+            boolean distinct = getSelect().isDistinct();
 
             if (expression != null) {
                 initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM (" + expression + ")";
@@ -265,7 +267,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 }
 
                 //inserts the select list before the *
-                int    idx       = parts.select.substring(0, star).indexOf(" ");
+                int idx = parts.select.substring(0, star).indexOf(" ");
                 String newSelect = parts.select.substring(0, idx) + cols + parts.select.substring(star + 1, parts.select.length());
                 parts.select = newSelect;
             } else {
@@ -713,7 +715,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             //String s = "COUNT (1)";
             //sql.append(s);
 
-            String pt   = printTableAlias() + ".*";
+            String pt = printTableAlias() + ".*";
             String acol = preparedStmtChildText.get(0);
             if (pt.equals(acol))//reset count(table.*) to count(*)
                 acol = "*";
@@ -725,7 +727,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             //TODO: what do you do with this as a function????
         } else if ("sum".equalsIgnoreCase(token) || "min".equalsIgnoreCase(token) || "max".equalsIgnoreCase(token)) {
             String acol = preparedStmtChildText.get(0);
-            String s    = token.toUpperCase() + "(" + acol + ")";
+            String s = token.toUpperCase() + "(" + acol + ")";
             sql.append(s);
         } else if (Utils.in(token.toLowerCase(), "_exists", "_notexists")) {
             if ("_notexists".equalsIgnoreCase(token))
@@ -746,10 +748,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             if (rel == null)
                 ApiException.throw400BadRequest("Unable to find relationship for term '{}'", term);
 
-            String relTbl   = rel.getRelated().getTableName();
+            String relTbl = rel.getRelated().getTableName();
             String relAlias = "~~relTbl_" + relTbl;
 
-            String lnkTbl   = rel.getFk1Col1().getCollection().getTableName();
+            String lnkTbl = rel.getFk1Col1().getCollection().getTableName();
             String lnkAlias = "~~lnkTbl_" + lnkTbl;
 
             sql.append(quoteCol(relTbl)).append(" ").append(quoteCol(relAlias));
@@ -766,9 +768,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
             if (rel.isManyToOne()) {
                 for (int i = 0; i < fk1.size(); i++) {
-                    Property prop   = fk1.getProperty(i);
-                    String   pkName = prop.getPk().getColumnName();
-                    String   fkName = prop.getColumnName();
+                    Property prop = fk1.getProperty(i);
+                    String pkName = prop.getPk().getColumnName();
+                    String fkName = prop.getColumnName();
                     sql.append(printTableAlias()).append(".").append(quoteCol(fkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(pkName));
 
                     if (i < fk1.size() - 1)
@@ -776,27 +778,27 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 }
             } else if (rel.isOneToMany()) {
                 for (int i = 0; i < fk1.size(); i++) {
-                    Property prop   = fk1.getProperty(i);
-                    String   pkName = prop.getPk().getColumnName();
-                    String   fkName = prop.getColumnName();
+                    Property prop = fk1.getProperty(i);
+                    String pkName = prop.getPk().getColumnName();
+                    String fkName = prop.getColumnName();
                     sql.append(printTableAlias()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(fkName));
                     if (i < fk1.size() - 1)
                         sql.append(" AND ");
                 }
             } else if (rel.isManyToMany()) {
                 for (int i = 0; i < fk1.size(); i++) {
-                    Property prop   = fk1.getProperty(i);
-                    String   pkName = prop.getPk().getColumnName();
-                    String   fkName = prop.getColumnName();
+                    Property prop = fk1.getProperty(i);
+                    String pkName = prop.getPk().getColumnName();
+                    String fkName = prop.getColumnName();
                     sql.append(printTableAlias()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(lnkAlias)).append(".").append(quoteCol(fkName));
                     sql.append(" AND ");
                 }
 
                 Index fk2 = rel.getFkIndex2();
                 for (int i = 0; i < fk2.size(); i++) {
-                    Property prop   = fk2.getProperty(i);
-                    String   pkName = prop.getPk().getColumnName();
-                    String   fkName = prop.getColumnName();
+                    Property prop = fk2.getProperty(i);
+                    String pkName = prop.getPk().getColumnName();
+                    String fkName = prop.getColumnName();
                     sql.append(quoteCol(lnkAlias)).append(".").append(quoteCol(fkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(pkName));
 
                     if (i < fk2.size() - 1)
@@ -878,8 +880,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     public String quoteCol(String str) {
-        StringBuffer buff  = new StringBuffer();
-        String[]     parts = str.split("\\.");
+        StringBuffer buff = new StringBuffer();
+        String[] parts = str.split("\\.");
         for (int i = 0; i < parts.length; i++) {
             if ("*".equals(parts[i])) {
                 buff.append(parts[i]);
@@ -931,8 +933,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     protected String asString(Term term) {
-        String token  = term.token;
-        Term   parent = term.getParent();
+        String token = term.token;
+        Term parent = term.getParent();
         if (parent != null && parent.hasToken("eq", "ne", "w", "sw", "ew", "like", "wo")) {
             if (parent.hasToken("w") || parent.hasToken("wo")) {
                 if (!token.startsWith("*"))
@@ -1014,6 +1016,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     public class Parts {
+
         public String select = null;
         public String from   = null;
         public String where  = null;
@@ -1055,7 +1058,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                     case "limit":
                         limit = clause;
                         continue;
-                    default:
+                    default :
                         throw new RuntimeException("Unable to parse: \"" + clause + "\" - \"" + sql + "\"");
                 }
             }

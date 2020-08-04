@@ -549,7 +549,7 @@ public class Engine extends Rule<Engine> {
                             afterEndpointPath = new Path(parts);
 
                             for (Collection collection : api.getCollections()) {
-                                Db<Db> db = collection.getDb();
+                                Db db = collection.getDb();
                                 if (db != null && db.getEndpointPath() != null && !db.getEndpointPath().matches(endpointPath))
                                     continue;
 
@@ -558,6 +558,8 @@ public class Engine extends Rule<Engine> {
                                     collectionPath = collectionPath.extract(pathParams, parts, true);
                                     req.withCollection(collection, collectionPath);
 
+                                    db.getEndpointPath().extract(pathParams, afterApiPath, true);
+                                    
                                     break;
                                 }
                             }

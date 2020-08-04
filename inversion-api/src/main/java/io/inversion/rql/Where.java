@@ -16,16 +16,22 @@
  */
 package io.inversion.rql;
 
-import io.inversion.ApiException;
-import io.inversion.Index;
-import io.inversion.utils.Rows.Row;
-import io.inversion.utils.Utils;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Collection;
+import io.inversion.Db;
+import io.inversion.Index;
+import io.inversion.Relationship;
+import io.inversion.utils.Rows.Row;
+import io.inversion.utils.Utils;
 
 public class Where<T extends Where, P extends Query> extends Builder<T, P> {
+
     Set<String>         existsFunctions    = Utils.asSet("eq", "nn", "gt", "ge", "lt", "le", "like", "sw", "ew", "in", "w");
     Set<String>         notExistsFunctions = Utils.asSet("ne", "n", "out", "wo", "emp");
     Map<String, String> notExistsMap       = Utils.asMap("ne", "eq", "n", "nn", "out", "in", "wo", "w", "emp", "nemp");
@@ -36,8 +42,19 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
     }
 
     protected boolean addTerm(String token, Term term) {
-        if (functions.contains(token)) {
+
+        String function = term.getToken();
+        if (!term.isLeaf() && functions.contains(function)) {
+
             term = transform(term);
+
+            List<Term> unknownCols = term.stream().filter(t -> isInvalidColumn(t)).collect(Collectors.toList());
+            if (unknownCols.size() > 0) {
+                Chain.debug("Ignoring query terms with unknown columns: " + unknownCols);
+                //System.err.println("Ignoring query terms with unknown columns: " + unknownCols);
+                return true;
+            }
+
             if (term.getParent() == null && term.hasToken("and"))//"unwrap" root and terms as redundant
             {
                 for (Term t : term.getTerms()) {
@@ -52,6 +69,64 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
             return super.addTerm(token, term);
         }
 
+    }
+
+    /**
+     * Checks to see if a column referenced by a function call is valid.
+     * <p>
+     * This function only validates the first leaf child of the supplied token in (FUNCTIN(COLUMN,...) format) and does not recurse. 
+     * <p>
+     * To be considered valid the column name must match a Collection Properties' column name 
+     * OR the Collection must be null and the column name must only contain alphanumeric characters and underscores and can not start with an underscore. 
+     * <p>
+     * For example:
+     * <ul>
+     *  <li>in(COLUMN_NAME,1,2,3,4,5) - returns false if the collection has a property with the column name or if the collection is null
+     *  <li>in(COLUMN-NAME,1,2,3,4,5) - returns false only if the collection has a property with the column name
+     *  <li>in(_COLUMN_NAME,1,2,3,4,5)  - returns false only if the collection has a property with the column name
+     *  <li>'like' - any single token will return false as it is not in the FUNCTION(COLUMN,...) format
+     *  <li>or(eq(COLUMN_NAME,5), eq(COLUMN_NAME, 10)) - will return false as it si not on FUNCTION(COLUMN,...) format 
+     * </ul>
+     * <p>
+     * IMPLEMENTATION NOTE: You may want to override this if you are using a document store (such as Azure Cosmos) that does not require
+     * each column to be defined.
+     * <p>
+     * IMPLEMENTATION NOTE: Terms that are passed into this function presumably have already been filtered by the Db object for known restricted columns.
+     * {@link Db#reservedParams}
+     * 
+     * @param t the term to check for valid column references
+     * @return false if the first child is a leaf with an invalid column name
+     */
+    protected boolean isInvalidColumn(Term t) {
+
+        if (t.isLeaf() || !t.getTerm(0).isLeaf())
+            return false;
+
+        Collection collection = getParent().getCollection();
+        String function = t.getToken();
+        String column = t.getToken(0);
+
+        //-- support for special case functions that don't take a column arg
+        if (function.equalsIgnoreCase("_key"))
+            return false;
+        //-- end special cases
+
+        //-- columns with "." are join filters
+        if (column.indexOf(".") > 0 && collection != null) {
+            String relName = Utils.substringBefore(column, ".");
+            Relationship relationship = collection.getRelationship(relName);
+            if (relationship != null) {
+                collection = relationship.getRelated();
+                column = Utils.substringAfter(column, ".");
+            } else {
+                return false;
+            }
+        }
+
+        if (collection == null)
+            return column.startsWith("_") || !column.matches("^[a-zA-Z0-9_]+$");
+        else
+            return collection.getPropertyByColumnName(column) == null;
     }
 
     protected Term transform(Term parent) {
@@ -99,7 +174,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
                 ApiException.throw400BadRequest("You can't use the _key() function unless your table has a unique index");
 
             if (index.size() == 1) {
-                Term       t        = Term.term(null, "in", index.getProperty(0).getColumnName());
+                Term t = Term.term(null, "in", index.getProperty(0).getColumnName());
                 List<Term> children = parent.getTerms();
                 for (int i = 1; i < children.size(); i++) {
                     Term child = children.get(i);
@@ -114,7 +189,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
                 //keys(valCol1~valCol2,valCol1~valCol2,valCol1~valCol2)
 
                 //or( and(eq(col1,val),eq(col2,val)), and(eq(col1,val),eq(col2,val)), and(eq(col1val), eq(col2,val))
-                Term       or       = Term.term(null, "or");
+                Term or = Term.term(null, "or");
                 List<Term> children = parent.getTerms();
                 transformed = or;
 
@@ -123,8 +198,8 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
                     if (!child.isLeaf())
                         ApiException.throw400BadRequest("Resource key value is not a leaf node: {}", child);
 
-                    Row  keyParts = getParent().getCollection().decodeResourceKey(index, child.getToken());
-                    Term and      = Term.term(or, "and");
+                    Row keyParts = getParent().getCollection().decodeResourceKey(index, child.getToken());
+                    Term and = Term.term(or, "and");
                     for (String key : keyParts.keySet()) {
                         and.withTerm(Term.term(and, "eq", key, keyParts.get(key).toString()));
                     }

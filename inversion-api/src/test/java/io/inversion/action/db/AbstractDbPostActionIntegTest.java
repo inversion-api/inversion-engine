@@ -61,6 +61,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
 
         res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.regions"));
 
+        res.dump();
         JSNode employee5 = res.findNode("data.0");
 
         engine.put(employee5.getString("href"), employee5).assertOk();

@@ -31,35 +31,36 @@ import java.util.*;
  * Matching relies heavily on variablized Path matching via {@link io.inversion.Path.match}
  */
 public abstract class Rule<R extends Rule> implements Comparable<R> {
-    protected final transient Logger log = LoggerFactory.getLogger(getClass().getName());
+
+    protected final transient Logger log             = LoggerFactory.getLogger(getClass().getName());
 
     /**
      * The name used for configuration and debug purposes.
      */
-    protected String name = null;
+    protected String                 name            = null;
 
     /**
      * Rules are always processed in sequence sorted by ascending order.
      */
-    protected int order = 1000;
+    protected int                    order           = 1000;
 
     /**
      * Method/path combinations that would cause this Rule to be included in the relevant processing.
      */
-    protected List<RuleMatcher> includeMatchers = new ArrayList();
+    protected List<RuleMatcher>      includeMatchers = new ArrayList();
 
     /**
      * Method/path combinations that would cause this Rule to be excluded from the relevant processing.
      */
-    protected List<RuleMatcher> excludeMatchers = new ArrayList();
+    protected List<RuleMatcher>      excludeMatchers = new ArrayList();
 
     /**
      * {@code JSNode} is used because it implements a case insensitive map without modifying the keys
      */
-    protected transient JSNode configMap = new JSNode();
-    protected           String configStr = null;
+    protected transient JSNode       configMap       = new JSNode();
+    protected String                 configStr       = null;
 
-    transient boolean lazyConfiged = false;
+    transient boolean                lazyConfiged    = false;
 
     public void checkLazyConfig() {
         //-- reluctant lazy config defaultIncludes if no other
@@ -329,14 +330,14 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
             buff.append(":").append(name);
         }
 
-        buff.append(" -");
+        if (includeMatchers.size() > 0 || excludeMatchers.size() > 0) {
+            buff.append(" -");
+            if (includeMatchers.size() > 0)
+                buff.append(" includes: ").append(includeMatchers);
 
-        if (includeMatchers.size() > 0)
-            buff.append(" includes: ").append(includeMatchers);
-
-        if (excludeMatchers.size() > 0)
-            buff.append(" exclude: ").append(excludeMatchers);
-
+            if (excludeMatchers.size() > 0)
+                buff.append(" exclude: ").append(excludeMatchers);
+        }
         return buff.toString();
     }
 
@@ -355,6 +356,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     public static class RuleMatcher {
+
         protected Set<String> methods = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
         protected List<Path>  paths   = new ArrayList();
 

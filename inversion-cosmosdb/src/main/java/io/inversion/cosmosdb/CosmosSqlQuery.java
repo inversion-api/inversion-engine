@@ -33,21 +33,18 @@ import java.util.List;
  * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started
  */
 public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
-    public CosmosSqlQuery() {
-
-    }
 
     public CosmosSqlQuery(CosmosDb db, Collection table, List<Term> terms) {
         super(db, table, terms);
-        super.withDb(db);
     }
 
     protected Where createWhere() {
         return new Where(this) {
+
             protected Term transform(Term parent) {
                 if (parent.hasToken("like")) {
                     String text = parent.getToken(1);
-                    int    idx  = text.indexOf("*");
+                    int idx = text.indexOf("*");
 
                     if (!(idx == 0 || idx == text.length() - 1) || idx != text.lastIndexOf("*"))
                         ApiException.throw400BadRequest("The 'like' RQL operator for CosmosDb expects a single wildcard at the beginning OR the end of a value.  CosmosDb does not really support 'like' but compatible 'like' statements are turned into 'sw' or 'ew' statments that are supported.");
@@ -69,8 +66,8 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
     }
 
     public Results doSelect() throws ApiException {
-        Results  results = new Results(this);
-        CosmosDb db      = getDb();
+        Results results = new Results(this);
+        CosmosDb db = getDb();
 
         String collectionUri = db.getCollectionUri(collection);
 
@@ -80,17 +77,17 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
         SqlParameterCollection params = new SqlParameterCollection();
         for (int i = 0; i < values.size(); i++) {
-            KeyValue kv      = values.get(i);
-            String   varName = asVariableName(i);
+            KeyValue kv = values.get(i);
+            String varName = asVariableName(i);
             params.add(new SqlParameter(varName, kv.getValue()));
         }
 
         SqlQuerySpec querySpec = new SqlQuerySpec(sql, params);
-        FeedOptions  options   = new FeedOptions();
+        FeedOptions options = new FeedOptions();
 
-        Object partKey    = null;
+        Object partKey = null;
         String partKeyCol = null;
-        Index  partKeyIdx = collection.getIndex("PartitionKey");
+        Index partKeyIdx = collection.getIndex("PartitionKey");
         if (partKeyIdx != null) {
             //-- the only way to turn cross partition querying off is to
             //-- have a single partition key identified in your query.
@@ -108,13 +105,14 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
             }
         }
 
+        boolean partKeyMissing = false;
         if (partKey != null) {
             partKey = getDb().cast(partKeyIdx.getProperty(0), partKey);
             options.setEnableCrossPartitionQuery(false);
             options.setPartitionKey(new PartitionKey(partKey));
         } else {
-            if (!isDryRun() && getDb() != null && !getDb().isAllowCrossPartitionQueries())
-                ApiException.throw400BadRequest("CosmosSqlQuery.allowCrossPartitionQueries is false.");
+            if (getDb() != null && !getDb().isAllowCrossPartitionQueries())
+                partKeyMissing = true;
 
             options.setEnableCrossPartitionQuery(true);
         }
@@ -127,16 +125,21 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         Chain.debug(debug);
         results.withTestQuery(debug);
 
+        if (partKeyMissing)
+            ApiException.throw400BadRequest("CosmosSqlQuery.allowCrossPartitionQueries is false.");
+
         //-- end test case debug stuff
 
         if (!isDryRun()) {
-            DocumentClient         cosmos       = db.getDocumentClient();
+            DocumentClient cosmos = db.getDocumentClient();
             FeedResponse<Document> queryResults = null;
             try {
                 queryResults = cosmos.queryDocuments(collectionUri, querySpec, options);
             } catch (Exception ex) {
-                System.err.println(ex.getMessage());
-                System.err.println(debug);
+                
+                ApiException.throw500InternalServerError(ex);
+                //System.err.println(ex.getMessage());
+                //System.err.println(debug);
 
                 throw ex;
             }
@@ -230,8 +233,8 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
     }
 
     protected String printExpression(Term term, List<String> dynamicSqlChildText, List<String> preparedStmtChildText) {
-        String       token = term.getToken();
-        StringBuffer sql   = new StringBuffer("");
+        String token = term.getToken();
+        StringBuffer sql = new StringBuffer("");
         if ("n".equalsIgnoreCase(token)) {
             sql.append(" IS_NULL (");
             for (int i = 0; i < preparedStmtChildText.size(); i++) {
