@@ -19,7 +19,11 @@ package io.inversion.rql;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.inversion.Collection;
+import io.inversion.Index;
+
 public class Select<T extends Select, P extends Query> extends Builder<T, P> {
+
     public Select(P query) {
         super(query);
         withFunctions("as", "includes", "excludes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
@@ -35,7 +39,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
 
         if (term.hasToken("function", "aggregate")) {
             String func = term.getTerm(0).getToken();
-            String col  = term.getTerm(1).getToken();
+            String col = term.getTerm(1).getToken();
 
             getParent().withTerm("group", col);
 
@@ -52,7 +56,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
 
         if (term.hasToken("countascol")) {
             //this is done as a transformation here instead of in SqlRql.print because it requires the addition of a select and where clause
-            String     col   = term.getToken(0);
+            String col = term.getToken(0);
             List<Term> terms = term.getTerms();
 
             for (int i = 1; i < terms.size(); i++) {
@@ -68,6 +72,19 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
 
             return true;
 
+        }
+
+        //-- make sure we always select each part of the primary index...even it may be filtered out downstream.
+        if (term.hasToken("includes")) {
+            Collection coll = getParent().getCollection();
+            if (coll != null) {
+                Index idx = coll.getPrimaryIndex();
+                for (String idxCol : idx.getColumnNames()) {
+                    if (!term.hasChildLeafToken(idxCol)) {
+                        term.withTerm(Term.term(term, idxCol));
+                    }
+                }
+            }
         }
 
         if (functions.contains(token.toLowerCase()) && !term.hasToken("as", "includes", "excludes", "distinct")) {

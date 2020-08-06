@@ -96,7 +96,7 @@ public class Collection extends Rule<Collection> implements Serializable {
     protected boolean exclude = false;
 
     public Collection() {
-        System.out.println("Collection <init>");
+        
     }
 
     public Collection(String defaultName) {

@@ -21,7 +21,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import io.inversion.Db;
 import io.inversion.rql.AbstractRqlTest;
-import io.inversion.rql.RqlValidationSuite;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class CosmosRqlUnitTest extends AbstractRqlTest {

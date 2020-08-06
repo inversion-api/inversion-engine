@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class Term implements Comparable<Term> {
+
     public Term       parent = null;
     public char       quote  = 0;
     public String     token  = null;
@@ -83,6 +84,17 @@ public class Term implements Comparable<Term> {
 
         for (int i = 0; tokens != null && i < tokens.length; i++) {
             if (token.equalsIgnoreCase(tokens[i]))
+                return true;
+        }
+        return false;
+    }
+
+    public boolean hasChildLeafToken(String... tokens) {
+        if (token == null)
+            return false;
+
+        for (Term child : terms) {
+            if (child.isLeaf() && child.hasToken(tokens))
                 return true;
         }
         return false;
@@ -248,7 +260,7 @@ public class Term implements Comparable<Term> {
     }
 
     public static Term term(Term parent, String token, Object... terms) {
-        Term newTerm       = new Term(parent, token);
+        Term newTerm = new Term(parent, token);
         List deconstructed = deconstructed(new ArrayList(), terms);
         for (Object aTerm : deconstructed) {
             if (aTerm instanceof Term) {

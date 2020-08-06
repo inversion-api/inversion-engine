@@ -32,20 +32,21 @@ import java.util.stream.Collectors;
  * Matches inbound Request Url paths to an Api Endpoint and executes associated Actions.
  */
 public class Engine extends Rule<Engine> {
+
     /**
      * The last {@code Response} served by this Engine, primarily used for writing test cases.
      */
-    protected transient volatile Response lastResponse = null;
+    protected transient volatile Response    lastResponse      = null;
 
     /**
      * Listeners that will receive Engine and Api lifecycle, request, and error callbacks.
      */
-    protected transient List<EngineListener> listeners = new ArrayList();
+    protected transient List<EngineListener> listeners         = new ArrayList();
 
     /**
      * The {@code Api}s being service by this Engine
      */
-    protected List<Api> apis = new Vector();
+    protected List<Api>                      apis              = new Vector();
 
     /**
      * Base value for the CORS "Access-Control-Allow-Headers" response header.
@@ -55,24 +56,24 @@ public class Engine extends Rule<Engine> {
      * <p>
      * Unless you are really doing something specific with browser security you probably won't need to customize this list.
      */
-    protected String corsAlloweHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
+    protected String                         corsAlloweHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,Content-Type,host,user-agent,x-auth-token";
 
     /**
      * Optional override for the configPath sys/env prop used by Config to locate configuration property files
      *
      * @see Config.loadConfiguration
      */
-    protected String configPath = null;
+    protected String                         configPath        = null;
 
     /**
      * Optional override for the sys/env prop used by Config to determine which profile specific configuration property files to load
      *
      * @see Config.loadConfiguration
      */
-    protected String configProfile = null;
+    protected String                         configProfile     = null;
 
-    transient volatile boolean started  = false;
-    transient volatile boolean starting = false;
+    transient volatile boolean               started           = false;
+    transient volatile boolean               starting          = false;
 
     static {
         ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
@@ -84,6 +85,7 @@ public class Engine extends Rule<Engine> {
      * per request and per error callback notifications.
      */
     public static interface EngineListener extends ApiListener {
+
         /**
          * Notified when the Engine is starting prior to accepting
          * any requests which allows listeners to perform additional configuration.
@@ -112,7 +114,6 @@ public class Engine extends Rule<Engine> {
             for (Api api : apis)
                 withApi(api);
     }
-
 
     /**
      * Convenient pre-startup hook for subclasses guaranteed to only be called once.
@@ -453,7 +454,7 @@ public class Engine extends Rule<Engine> {
             //--
             //-- CORS header setup
             //--
-            String allowedHeaders    = new String(this.corsAlloweHeaders);
+            String allowedHeaders = new String(this.corsAlloweHeaders);
             String corsRequestHeader = req.getHeader("Access-Control-Request-Header");
             if (corsRequestHeader != null) {
                 List<String> headers = Arrays.asList(corsRequestHeader.split(","));
@@ -507,10 +508,9 @@ public class Engine extends Rule<Engine> {
                 }
             }
 
-
             String method = req.getMethod();
 
-            Path                parts      = new Path(url.getPath());
+            Path parts = new Path(url.getPath());
             Map<String, String> pathParams = new HashMap();
 
             Path containerPath = match(method, parts);
@@ -522,8 +522,8 @@ public class Engine extends Rule<Engine> {
                 containerPath = containerPath.extract(pathParams, parts);
 
             Path afterContainerPath = new Path(parts);
-            Path afterApiPath       = null;
-            Path afterEndpointPath  = null;
+            Path afterApiPath = null;
+            Path afterEndpointPath = null;
 
             for (Api api : apis) {
                 Path apiPath = api.match(method, parts);
@@ -558,8 +558,9 @@ public class Engine extends Rule<Engine> {
                                     collectionPath = collectionPath.extract(pathParams, parts, true);
                                     req.withCollection(collection, collectionPath);
 
-                                    db.getEndpointPath().extract(pathParams, afterApiPath, true);
-                                    
+                                    if (db != null && db.getEndpointPath() != null)
+                                        db.getEndpointPath().extract(pathParams, afterApiPath, true);
+
                                     break;
                                 }
                             }
@@ -671,7 +672,7 @@ public class Engine extends Rule<Engine> {
             }
 
             res.withStatus(status);
-            String message  = ex.getMessage();
+            String message = ex.getMessage();
             JSNode response = new JSNode("message", message);
             if (Status.SC_500_INTERNAL_SERVER_ERROR.equals(status))
                 response.put("error", Utils.getShortCause(ex));
@@ -746,7 +747,7 @@ public class Engine extends Rule<Engine> {
     }
 
     void writeResponse(Request req, Response res) throws ApiException {
-        boolean debug   = req != null && req.isDebug();
+        boolean debug = req != null && req.isDebug();
         boolean explain = req != null && req.isExplain();
 
         String method = req != null ? req.getMethod() : null;
@@ -779,8 +780,8 @@ public class Engine extends Rule<Engine> {
 
             if (debug) {
                 for (String key : res.getHeaders().keySet()) {
-                    List         values = res.getHeaders().get(key);
-                    StringBuffer buff   = new StringBuffer();
+                    List values = res.getHeaders().get(key);
+                    StringBuffer buff = new StringBuffer();
                     for (int i = 0; i < values.size(); i++) {
                         buff.append(values.get(i));
                         if (i < values.size() - 1)

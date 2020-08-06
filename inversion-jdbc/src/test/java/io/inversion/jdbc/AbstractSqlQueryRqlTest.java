@@ -17,7 +17,6 @@
 package io.inversion.jdbc;
 
 import io.inversion.rql.AbstractRqlTest;
-import io.inversion.rql.RqlValidationSuite;
 
 public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements AbstractJdbcDbEngineTest {
 

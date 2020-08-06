@@ -27,12 +27,12 @@ import org.junit.jupiter.api.Test;
 
 public abstract class AbstractRqlTest implements AbstractEngineTest {
 
-    protected String    urlPrefix         = null;
-    protected Engine    engine            = null;
-    protected String    type              = null;
+    protected String              urlPrefix         = null;
+    protected Engine              engine            = null;
+    protected String              type              = null;
 
-    Map<String, String> testRequests      = new LinkedHashMap<>();
-    Map<String, String> expectedResponses = new HashMap<>();
+    protected Map<String, String> testRequests      = new LinkedHashMap<>();
+    protected Map<String, String> expectedResponses = new HashMap<>();
 
     public AbstractRqlTest(String urlPrefix, String type) {
         setUrlPrefix(urlPrefix);
@@ -180,9 +180,6 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
 
             Results.LAST_QUERY = null;
 
-            if ("w".equals(testKey))
-                System.out.println("asdf");
-
             Response res = runTest(getEngine(), urlPrefix, testKey, queryString);
 
             String maybeMatch = !Utils.empty(Results.LAST_QUERY) ? Results.LAST_QUERY : res.findString("message");
@@ -210,7 +207,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
                     failure = failure.substring(idx + 12, idx2);
                 }
 
-                System.out.println("  - " + key + " - " + failure);
+                System.out.println("  - " + key + " - " + testRequests.get(key) + " - " + failure);
             }
 
             throw new RuntimeException("Failed...");
@@ -242,9 +239,10 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
      */
     protected boolean verifyTest(String testKey, String queryString, String expectedMatch, Response res) {
 
-        if (isIntegTest())
-            if (!res.hasStatus(200, 404))
+        if (isIntegTest()) {
+            if (!res.hasStatus(200, 404) && !expectedMatch.startsWith(res.getStatusCode() + " "))
                 return false;
+        }
 
         String debug = res.getDebug();
         if (debug == null)
@@ -254,62 +252,6 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
 
         return debug.indexOf(expectedMatch.toLowerCase()) > -1;
     }
-
-    //    protected void customizeUnitTestTables(RqlValidationSuite suite) {
-    //        Collection orders = new Collection("orders");s
-    //                                                    .withProperty("orderId", "VARCHAR");
-    //                                                    .withProperty("customerId", "INTEGER");
-    //                                                    .withProperty("employeeId", "INTEGER");
-    //                                                    .withProperty("orderDate", "DATETIME");
-    //                                                    .withProperty("requiredDate", "DATETIME");
-    //                                                    .withProperty("shippedDate", "DATETIME");
-    //                                                    .withProperty("shipVia", "INTEGER");
-    //                                                    .withProperty("freight", "DECIMAL");
-    //                                                    .withProperty("shipName", "VARCHAR");
-    //                                                    .withProperty("shipAddress", "VARCHAR");
-    //                                                    .withProperty("shipCity", "VARCHAR");
-    //                                                    .withProperty("shipRegion", "VARCHAR");
-    //                                                    .withProperty("shipPostalCode", "VARCHAR");
-    //                                                    .withProperty("shipCountry", "VARCHAR");
-    //                                                    .withIndex("PK_Orders", "primary", true, "orderId");
-    //
-    //        Collection orderDetails = new Collection("orderDetails").withProperty("employeeId", "INTEGER");
-    //                                                                .withProperty("orderId", "INTEGER");
-    //                                                                .withProperty("productId", "INTEGER");
-    //                                                                .withProperty("quantity", "INTEGER");
-    //                                                                .withIndex("PK_orderDetails", "primary", true, "orderId", "productId");
-    //
-    //        orderDetails.getProperty("orderId").withPk(orders.getProperty("orderId"));
-    //
-    //        Collection employees = new Collection("employees").withProperty("employeeId", "INTEGER");
-    //                                                          .withProperty("firstName", "VARCHAR");
-    //                                                          .withProperty("lastName", "VARCHAR");
-    //                                                          .withProperty("reportsTo", "INTEGER");
-    //                                                          .withIndex("PK_Employees", "primary", true, "employeeId");
-    //
-    //        employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
-    //        employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
-    //
-    //        employees.withRelationship(new Relationship("reportsTo", Relationship.REL_MANY_TO_ONE, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
-    //        employees.withRelationship(new Relationship("employees", Relationship.REL_ONE_TO_MANY, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
-    //
-    //        Collection employeeOrderDetails = new Collection("employeeOrderDetails");
-    //                                                                                .withProperty("employeeId", "INTEGER");
-    //                                                                                .withProperty("orderId", "INTEGER");
-    //                                                                                .withProperty("productId", "INTEGER");
-    //                                                                                .withIndex("PK_EmployeeOrderDetails", "primary", true, "employeeId", "orderId", "productId");
-    //
-    //        employeeOrderDetails.getProperty("employeeId").withPk(employees.getProperty("employeeId"));
-    //        employeeOrderDetails.getProperty("orderId").withPk(orderDetails.getProperty("orderId"));
-    //        employeeOrderDetails.getProperty("productId").withPk(orderDetails.getProperty("productId"));
-    //
-    //        employeeOrderDetails.withIndex("FK_EOD_employeeId", "FOREIGN_KEY", false, "employeeId");
-    //        employeeOrderDetails.withIndex("FK_EOD_orderdetails", "FOREIGN_KEY", false, "orderId", "productId");
-    //
-    //        employees.withRelationship(new Relationship("orderdetails", Relationship.REL_MANY_TO_MANY, employees, orderDetails, employeeOrderDetails.getIndex("FK_EOD_employeeId"), employeeOrderDetails.getIndex("FK_EOD_orderdetails")));
-    //
-    //        suite.withCollections(orders, orderDetails, employees, employeeOrderDetails);
-    //    }
 
     public AbstractRqlTest withTestRequest(String testKey, String testRql) {
         testRequests.put(testKey, testRql);

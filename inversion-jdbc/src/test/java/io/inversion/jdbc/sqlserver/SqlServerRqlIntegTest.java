@@ -16,7 +16,6 @@
  */
 package io.inversion.jdbc.sqlserver;
 
-import io.inversion.rql.RqlValidationSuite;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 

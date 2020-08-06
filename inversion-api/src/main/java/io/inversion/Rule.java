@@ -309,7 +309,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
 
     @Override
     public int compareTo(Rule a) {
-        int compare = order == a.order ? 0 : order < a.order ? -1 : 1;
+        int compare = getOrder() == a.getOrder() ? 0 : getOrder() < a.getOrder() ? -1 : 1;
         return compare;
     }
 

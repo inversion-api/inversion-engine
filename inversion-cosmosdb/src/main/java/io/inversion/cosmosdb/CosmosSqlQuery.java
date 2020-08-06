@@ -16,18 +16,32 @@
  */
 package io.inversion.cosmosdb;
 
-import com.microsoft.azure.documentdb.*;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.collections4.KeyValue;
+
+import com.microsoft.azure.documentdb.Document;
+import com.microsoft.azure.documentdb.DocumentClient;
+import com.microsoft.azure.documentdb.DocumentClientException;
+import com.microsoft.azure.documentdb.FeedOptions;
+import com.microsoft.azure.documentdb.FeedResponse;
+import com.microsoft.azure.documentdb.PartitionKey;
+import com.microsoft.azure.documentdb.SqlParameter;
+import com.microsoft.azure.documentdb.SqlParameterCollection;
+import com.microsoft.azure.documentdb.SqlQuerySpec;
+
+import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Collection;
 import io.inversion.Index;
-import io.inversion.*;
+import io.inversion.Results;
 import io.inversion.jdbc.SqlQuery;
 import io.inversion.rql.Order.Sort;
 import io.inversion.rql.Term;
 import io.inversion.rql.Where;
 import io.inversion.utils.JSNode;
-import org.apache.commons.collections4.KeyValue;
-
-import java.util.Arrays;
-import java.util.List;
+import io.inversion.utils.Utils;
 
 /**
  * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started
@@ -136,8 +150,8 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
             try {
                 queryResults = cosmos.queryDocuments(collectionUri, querySpec, options);
             } catch (Exception ex) {
-                
-                ApiException.throw500InternalServerError(ex);
+
+                ApiException.throw500InternalServerError(Utils.getCause(ex).getMessage());
                 //System.err.println(ex.getMessage());
                 //System.err.println(debug);
 

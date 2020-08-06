@@ -224,12 +224,8 @@ public abstract class Db<T extends Db> {
             List<Term> illegalTerms = term.stream().filter(t -> t.isLeaf() && reservedParams.contains(t.getToken())).collect(Collectors.toList());
             if (illegalTerms.size() > 0) {
                 Chain.debug("Ignoring RQL terms with reserved tokens: " + illegalTerms);
-                //System.err.println("Ignoring RQL terms with reserved tokens: " + illegalTerms);
                 continue;
             }
-
-            //if (filterOutQueryTerm(collection, term))
-            //    continue;
 
             if (term.hasToken("eq") && term.getTerm(0).hasToken("includes")) {
                 //THIS IS AN OPTIMIZATION...the rest action can pull stuff OUT of the results based on
@@ -247,23 +243,24 @@ public abstract class Db<T extends Db> {
                 if (dottedInclude)
                     continue;
 
-                //TODO: need test cases
+                //-- if the users requets eq(includes, href...) you have to replace "href" with the primary index column names
                 for (Term child : term.getTerms()) {
                     if (child.hasToken("href") && collection != null) {
-                        term.removeTerm(child);
-
                         Index pk = collection.getPrimaryIndex();
-                        for (int i = 0; i < pk.size(); i++) {
-                            Property c = pk.getProperty(i);
-                            boolean includesPkCol = false;
-                            for (Term col : term.getTerms()) {
-                                if (col.hasToken(c.getColumnName())) {
-                                    includesPkCol = true;
-                                    break;
+                        if (pk != null) {
+                            term.removeTerm(child);
+                            for (int i = 0; i < pk.size(); i++) {
+                                Property c = pk.getProperty(i);
+                                boolean includesPkCol = false;
+                                for (Term col : term.getTerms()) {
+                                    if (col.hasToken(c.getColumnName())) {
+                                        includesPkCol = true;
+                                        break;
+                                    }
                                 }
+                                if (!includesPkCol)
+                                    term.withTerm(Term.term(term, c.getColumnName()));
                             }
-                            if (!includesPkCol)
-                                term.withTerm(Term.term(term, c.getColumnName()));
                         }
                         break;
                     }
@@ -326,8 +323,7 @@ public abstract class Db<T extends Db> {
                         }
 
                         //------------------------------------------------
-                        // finally make sure the resource key is encoded as
-                        // the href
+                        // finally make sure the resource key is encoded as the href
                         String href = node.getString("href");
                         if (Utils.empty(href)) {
                             href = Chain.buildLink(collection, resourceKey, null);

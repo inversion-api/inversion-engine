@@ -123,6 +123,10 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
             }
         }
 
+        return isInvalidColumn(collection, column);
+    }
+
+    protected boolean isInvalidColumn(Collection collection, String column) {
         if (collection == null)
             return column.startsWith("_") || !column.matches("^[a-zA-Z0-9_]+$");
         else

@@ -16,10 +16,10 @@
  */
 package io.inversion.jdbc.mysql;
 
-import io.inversion.jdbc.AbstractSqlQueryRqlTest;
-import io.inversion.rql.RqlValidationSuite;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+
+import io.inversion.jdbc.AbstractSqlQueryRqlTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class MySqlRqlUnitTest extends AbstractSqlQueryRqlTest {
