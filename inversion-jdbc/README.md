@@ -11,6 +11,8 @@ docker exec -it mysql57 bash
 mysql -h localhost -u root -p
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'password' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
+quite;
+exit;
 ```
 
 Then run:

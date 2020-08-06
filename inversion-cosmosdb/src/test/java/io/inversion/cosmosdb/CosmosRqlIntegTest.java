@@ -16,21 +16,10 @@
  */
 package io.inversion.cosmosdb;
 
-import io.inversion.Db;
-import io.inversion.Engine;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class CosmosRqlIntegTest extends CosmosRqlUnitTest {
-    public Engine buildEngine(Db db) {
-        Engine engine = null;
-        try {
-            engine = CosmosDbFactory.buildEngine((CosmosDb) db);
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return engine;
-    }
+
 }

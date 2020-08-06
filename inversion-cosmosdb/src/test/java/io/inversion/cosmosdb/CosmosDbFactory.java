@@ -29,56 +29,58 @@ import java.util.List;
 import java.util.Set;
 
 public class CosmosDbFactory {
+
     protected static CosmosDb buildDb() {
         return new NorthwindCosmosDb();
     }
 
     static class NorthwindCosmosDb extends CosmosDb {
-        NorthwindCosmosDb() {
-            super("cosmos");
+
+        public NorthwindCosmosDb() {
+            withName("cosmos");
         }
 
         @Override
         public void configDb() throws ApiException {
             withDb("inversion-testing-cosmos1");
-            withEndpointPath(new Path("cosmos/"));
+            withEndpointPath(new Path("cosmosdb/[:type]/*"));
 
             Collection customersTbl = new Collection("customers").withTableName("Northwind")//
 
-                    .withProperty("type", "string", false)//
-                    .withProperty("customerId", "string")//
-                    .withIndex("primaryIndex", "primary", true, "type", "customerId")//
-                    .withIndex("PartitionKey", "PartitionKey", false, "type")//
+                                                                 .withProperty("type", "string", false)//
+                                                                 .withProperty("customerId", "string")//
+                                                                 .withIndex("primaryIndex", "primary", true, "type", "customerId")//
+                                                                 .withIndex("PartitionKey", "PartitionKey", false, "type")//
 
-                    .withProperty("companyName", "string")//
-                    .withProperty("contactName", "string")//
-                    .withProperty("contactTitle", "string")//
-                    .withProperty("address", "string")//
-                    .withProperty("city", "string")//
-                    .withProperty("region", "string")//
-                    .withProperty("postalCode", "string")//
-                    .withProperty("country", "string")//
-                    .withProperty("phone", "string")//
-                    .withProperty("fax", "string");
+                                                                 .withProperty("companyName", "string")//
+                                                                 .withProperty("contactName", "string")//
+                                                                 .withProperty("contactTitle", "string")//
+                                                                 .withProperty("address", "string")//
+                                                                 .withProperty("city", "string")//
+                                                                 .withProperty("region", "string")//
+                                                                 .withProperty("postalCode", "string")//
+                                                                 .withProperty("country", "string")//
+                                                                 .withProperty("phone", "string")//
+                                                                 .withProperty("fax", "string");
 
             Collection employeesTbl = new Collection("employees").withTableName("Northwind")//
 
-                    .withProperty("type", "string", false)//
-                    .withProperty("employeeId", "number")//
-                    .withIndex("primaryIndex", "primary", true, "type", "employeeId")//
-                    .withIndex("PartitionKey", "PartitionKey", false, "type")//
+                                                                 .withProperty("type", "string", false)//
+                                                                 .withProperty("employeeId", "number")//
+                                                                 .withIndex("primaryIndex", "primary", true, "type", "employeeId")//
+                                                                 .withIndex("PartitionKey", "PartitionKey", false, "type")//
 
-                    .withProperty("lastName", "string")//
-                    .withProperty("firstName", "string")//
-                    .withProperty("title", "string")//
-                    .withProperty("titleOfCourtesy", "string")//
-                    .withProperty("birthDate", "string")//
-                    .withProperty("hireDate", "string")//
-                    .withProperty("homePhone", "string")//
-                    .withProperty("extension", "string")//
-                    .withProperty("notes", "string")//
-                    .withProperty("reportsTo", "number")//
-                    .withProperty("salary", "number");
+                                                                 .withProperty("lastName", "string")//
+                                                                 .withProperty("firstName", "string")//
+                                                                 .withProperty("title", "string")//
+                                                                 .withProperty("titleOfCourtesy", "string")//
+                                                                 .withProperty("birthDate", "string")//
+                                                                 .withProperty("hireDate", "string")//
+                                                                 .withProperty("homePhone", "string")//
+                                                                 .withProperty("extension", "string")//
+                                                                 .withProperty("notes", "string")//
+                                                                 .withProperty("reportsTo", "number")//
+                                                                 .withProperty("salary", "number");
 
             //         employeesTbl.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "type", "reportsTo");
             //         employeesTbl.getProperty("type").withPk(employeesTbl.getProperty("type"));
@@ -86,25 +88,25 @@ public class CosmosDbFactory {
 
             Collection ordersTbl = new Collection("orders").withTableName("Northwind")//
 
-                    .withProperty("type", "string", false)//
-                    .withProperty("orderId", "number")//
-                    .withIndex("primaryIndex", "primary", true, "type", "orderId")//
-                    .withIndex("PartitionKey", "PartitionKey", false, "type")//
+                                                           .withProperty("type", "string", false)//
+                                                           .withProperty("orderId", "number")//
+                                                           .withIndex("primaryIndex", "primary", true, "type", "orderId")//
+                                                           .withIndex("PartitionKey", "PartitionKey", false, "type")//
 
-                    //these are order fields
-                    .withProperty("customerId", "string")//
-                    .withProperty("employeeId", "number")//
-                    .withProperty("orderDate", "string")//
-                    .withProperty("requiredDate", "string")//
-                    .withProperty("shippedDate", "string")//
-                    //.withColumn("ShipVia", "number")//
-                    .withProperty("freight", "number")//
-                    .withProperty("shipName", "string")//
-                    .withProperty("shipAddress", "string")//
-                    .withProperty("shipCity", "string")//
-                    .withProperty("shipRegion", "string")//
-                    .withProperty("shipPostalCode", "string")//
-                    .withProperty("shipCountry", "string");
+                                                           //these are order fields
+                                                           .withProperty("customerId", "string")//
+                                                           .withProperty("employeeId", "number")//
+                                                           .withProperty("orderDate", "string")//
+                                                           .withProperty("requiredDate", "string")//
+                                                           .withProperty("shippedDate", "string")//
+                                                           //.withColumn("ShipVia", "number")//
+                                                           .withProperty("freight", "number")//
+                                                           .withProperty("shipName", "string")//
+                                                           .withProperty("shipAddress", "string")//
+                                                           .withProperty("shipCity", "string")//
+                                                           .withProperty("shipRegion", "string")//
+                                                           .withProperty("shipPostalCode", "string")//
+                                                           .withProperty("shipCountry", "string");
 
             //                  Table orderDetailsTbl = new Table("orderDetails").withActualName("Northwind")//
             //
@@ -160,34 +162,35 @@ public class CosmosDbFactory {
         final Api api = new Api("northwind");
 
         api.withDb(cosmosdb);
-        api.withEndpoint("GET,PUT,POST,DELETE", "cosmos/*", new Action() {
-                    public void run(Request req, Response res) throws ApiException {
-                        String collectionKey = req.getCollectionKey().toLowerCase();
+        api.withEndpoint("GET,PUT,POST,DELETE", "cosmosdb/*", new Action() {
 
-                        if (req.isGet()) {
-                            req.getUrl().withParam("Type", collectionKey.toLowerCase());
-                        }
+            public void run(Request req, Response res) throws ApiException {
+                String collectionKey = req.getCollectionKey().toLowerCase();
 
-                        JSNode json = req.getJson();
-                        if (json != null) {
-                            json.asNodeList().forEach(node -> node.put("type", collectionKey.toLowerCase()));
-                        }
-                    }
-                }//
+                if (req.isGet()) {
+                    req.getUrl().withParam("Type", collectionKey.toLowerCase());
+                }
+
+                JSNode json = req.getJson();
+                if (json != null) {
+                    json.asNodeList().forEach(node -> node.put("type", collectionKey.toLowerCase()));
+                }
+            }
+        }//
                 , new DbAction());
 
         Engine dstEngine = new Engine(api);
 
         Engine srcEngine = new Engine().withApi(new Api("northwind") //
-                .withEndpoint("*", "source" + "/*", new DbAction())//
-                .withDb(JdbcDbFactory.bootstrapH2("cosmos_source")));
+                                                                    .withEndpoint("*", "source" + "/*", new DbAction())//
+                                                                    .withDb(JdbcDbFactory.bootstrapH2("cosmos_source")));
 
         //if (rebuildCosmos)
         {
-            deleteAll(dstEngine, "/northwind/cosmos/orders");
-            //deleteAll(e, "/northwind/cosmos/orderDetails");
-            deleteAll(dstEngine, "/northwind/cosmos/customers");
-            deleteAll(dstEngine, "/northwind/cosmos/employees");
+            deleteAll(dstEngine, "/northwind/cosmosdb/orders");
+            //deleteAll(e, "/northwind/cosmosdb/orderDetails");
+            deleteAll(dstEngine, "/northwind/cosmosdb/customers");
+            deleteAll(dstEngine, "/northwind/cosmosdb/employees");
 
             Response res = null;
 
@@ -196,7 +199,7 @@ public class CosmosDbFactory {
             res = srcEngine.get("/northwind/source/orders?limit=25").assertOk();
 
             res.dump();
-            Set orderIds    = new HashSet();
+            Set orderIds = new HashSet();
             Set customerIds = new HashSet();
 
             for (JSNode order : res.getData().asNodeList()) {
@@ -214,7 +217,7 @@ public class CosmosDbFactory {
                     details.remove("orderid");
                 }
                 order.put("orderDetails", res.getData());
-                dstEngine.post("/northwind/cosmos/orders", order).assertOk();
+                dstEngine.post("/northwind/cosmosdb/orders", order).assertOk();
             }
 
             //            String getOrderDetails = "/northwind/source/orderdetails?in(orderid," + Utils.implode(",", orderIds) + ")";
@@ -222,21 +225,21 @@ public class CosmosDbFactory {
             //            for (JSNode node : res.data().asNodeList())
             //            {
             //               cleanSourceNode("orderDetails", node);
-            //               e.post("/northwind/cosmos/orderdetails", node).assertOk();
+            //               e.post("/northwind/cosmosdb/orderdetails", node).assertOk();
             //            }
 
             String getCustomers = "/northwind/source/customers?in(customerid," + Utils.implode(",", customerIds) + ")";
             res = srcEngine.get(getCustomers).assertOk();
             for (JSNode customer : res.getData().asNodeList()) {
                 cleanSourceNode("customers", customer);
-                dstEngine.post("/northwind/cosmos/customers", customer).assertOk();
+                dstEngine.post("/northwind/cosmosdb/customers", customer).assertOk();
             }
 
             res = srcEngine.get("/northwind/source/employees").assertOk();
             for (JSNode employee : res.getData().asNodeList()) {
                 employee.remove("employees");
                 cleanSourceNode("employees", employee);
-                dstEngine.post("/northwind/cosmos/employees", employee).dump().assertOk();
+                dstEngine.post("/northwind/cosmosdb/employees", employee).dump().assertOk();
             }
         }
 
@@ -273,8 +276,8 @@ public class CosmosDbFactory {
     }
 
     protected static void deleteAll(Engine e, String url) {
-        int      safetyCounter = 0;
-        Response res           = null;
+        int safetyCounter = 0;
+        Response res = null;
         do {
             safetyCounter += 1;
 
@@ -288,8 +291,7 @@ public class CosmosDbFactory {
             }
             break;
 
-        }
-        while (res.findString("meta.next") != null);
+        } while (res.findString("meta.next") != null);
     }
 
 }

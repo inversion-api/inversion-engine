@@ -94,7 +94,8 @@ import java.util.*;
  * @see <a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a>
  */
 public class Configurator {
-    static final Logger log = LoggerFactory.getLogger(Configurator.class);
+
+    static final Logger log            = LoggerFactory.getLogger(Configurator.class);
 
     static final String ROOT_BEAN_NAME = "inversion";
 
@@ -108,8 +109,8 @@ public class Configurator {
      */
     public synchronized void configure(Engine engine, Configuration configuration) {
         try {
-            Properties       props = new Properties();
-            Iterator<String> keys  = configuration.getKeys();
+            Properties props = new Properties();
+            Iterator<String> keys = configuration.getKeys();
             while (keys.hasNext()) {
                 String key = keys.next();
                 props.put(key, configuration.getString(key));
@@ -137,7 +138,7 @@ public class Configurator {
                         if (propKey.toString().startsWith(beanName + ".")) {
                             Object propVal = props.getProperty(propKey.toString());
 
-                            Object bean      = beans.get(beanName);
+                            Object bean = beans.get(beanName);
                             String fieldName = propKey.toString().substring(beanName.length() + 1);
                             try {
                                 Field field = Utils.getField(fieldName, bean.getClass());
@@ -175,6 +176,7 @@ public class Configurator {
 
     void loadConfig(Engine engine, Properties properties) throws Exception {
         Decoder decoder = new Decoder() {
+
             //IMPORTANT IMPORTANT IMPORTANT
             // add special case exceptions here for cases where users may add unclean data
             // that should not be set directly on bean fields but should be passed the approperiate setter
@@ -235,8 +237,8 @@ public class Configurator {
 
         for (String name : decoder.beans.keySet()) {
             if (name.startsWith("_anonymous_")) {
-                Object bean      = decoder.beans.get(name);
-                Field  nameField = Utils.getField("name", bean.getClass());
+                Object bean = decoder.beans.get(name);
+                Field nameField = Utils.getField("name", bean.getClass());
                 if (nameField != null)
                     nameField.set(bean, null);
             }
@@ -298,16 +300,18 @@ public class Configurator {
     }
 
     static class AllIncluder extends DefaultIncluder {
+
         public AllIncluder() {
             excludeTypes = new ArrayList(Arrays.asList(Logger.class));
         }
     }
 
     static class DefaultIncluder implements Includer {
-        List<Field> excludes = new ArrayList();                                                                 //TODO:  why was api.actions excluded?  //List<Field> excludes     =  Arrays.asList(Utils.getField("actions", Api.class));
 
-        List excludeTypes = new ArrayList(Arrays.asList(Logger.class,                                        //don't care to persist info on loggers
-                Action.class, Endpoint.class, Rule.class, Path.class));                                               //these are things that must be supplied by manual config so don't write them out.
+        List<Field> excludes     = new ArrayList();                                                                 //TODO:  why was api.actions excluded?  //List<Field> excludes     =  Arrays.asList(Utils.getField("actions", Api.class));
+
+        List        excludeTypes = new ArrayList(Arrays.asList(Logger.class,                                        //don't care to persist info on loggers
+                Action.class, Endpoint.class, Rule.class, Path.class));                                             //these are things that must be supplied by manual config so don't write them out.
 
         @Override
         public boolean include(Field field) {
@@ -340,9 +344,9 @@ public class Configurator {
             } else if (Map.class.isAssignableFrom(c)) {
                 Type t = field.getGenericType();
                 if (t instanceof ParameterizedType) {
-                    ParameterizedType pt        = (ParameterizedType) t;
-                    Class             keyType   = (Class) pt.getActualTypeArguments()[0];
-                    Class             valueType = (Class) pt.getActualTypeArguments()[1];
+                    ParameterizedType pt = (ParameterizedType) t;
+                    Class keyType = (Class) pt.getActualTypeArguments()[0];
+                    Class valueType = (Class) pt.getActualTypeArguments()[1];
 
                     return !excludeTypes.contains(keyType) && !excludeTypes.contains(valueType);
                 } else {
@@ -360,10 +364,11 @@ public class Configurator {
     }
 
     static class DefaultNamer implements Namer {
+
         @Override
         public String getName(Object o) throws Exception {
-            Object name  = null;
-            Class  clazz = o.getClass();
+            Object name = null;
+            Class clazz = o.getClass();
             if (o instanceof Api) {
                 name = ((Api) o).getName();
             } else if (o instanceof Db)// || o instanceof Action || o instanceof Endpoint)
@@ -398,10 +403,11 @@ public class Configurator {
     }
 
     static class Decoder {
-        Properties      props    = new Properties();
-        TreeSet<String> propKeys = new TreeSet<String>();
 
-        Map<String, Object> beans = new HashMap();
+        Properties          props    = new Properties();
+        TreeSet<String>     propKeys = new TreeSet<String>();
+
+        Map<String, Object> beans    = new HashMap();
 
         //designed to be overridden
         public void onLoad(String name, Object bean, Map<String, Object> properties) throws Exception {
@@ -460,9 +466,9 @@ public class Configurator {
         }
 
         List<String> getKeys(String beanName) {
-            Set<String>       keys       = new HashSet<String>();
-            String            beanPrefix = beanName + ".";
-            SortedSet<String> keySet     = propKeys.tailSet(beanPrefix);
+            Set<String> keys = new HashSet<String>();
+            String beanPrefix = beanName + ".";
+            SortedSet<String> keySet = propKeys.tailSet(beanPrefix);
             for (String key : keySet) {
                 if (!key.startsWith(beanPrefix)) {
                     break;
@@ -502,6 +508,7 @@ public class Configurator {
         public static List<String> sort(java.util.Collection keys) {
             List<String> sorted = new ArrayList(keys);
             Collections.sort(sorted, new Comparator<String>() {
+
                 @Override
                 public int compare(String o1, String o2) {
                     int count1 = o1.length() - o1.replace(".", "").length();
@@ -535,8 +542,8 @@ public class Configurator {
                 String key = (String) p;
                 if (key.endsWith(".class") || key.endsWith(".className")) {
                     String name = key.substring(0, key.lastIndexOf("."));
-                    String cn   = (String) props.get(key);
-                    Object obj  = null;
+                    String cn = (String) props.get(key);
+                    Object obj = null;
                     try {
                         obj = Class.forName(cn).newInstance();
                     } catch (Exception ex) {
@@ -564,8 +571,8 @@ public class Configurator {
                 boolean isFirstPassSoLoadOnlyPrimitives = i == 0;
 
                 for (String beanName : keys) {
-                    Object obj      = beans.get(beanName);
-                    List   beanKeys = getKeys(beanName);
+                    Object obj = beans.get(beanName);
+                    List beanKeys = getKeys(beanName);
                     for (Object p : beanKeys) {
                         String key = (String) p;
 
@@ -573,7 +580,7 @@ public class Configurator {
                             continue;
 
                         if ((key.startsWith(beanName + ".") && key.lastIndexOf(".") == beanName.length())) {
-                            String prop  = key.substring(key.lastIndexOf(".") + 1, key.length());
+                            String prop = key.substring(key.lastIndexOf(".") + 1, key.length());
                             String value = getProperty(key);
 
                             if (value != null)
@@ -624,11 +631,11 @@ public class Configurator {
             // - Perform implicit setters based on nested paths of keys
 
             for (String beanName : keys) {
-                Object obj   = beans.get(beanName);
-                int    count = beanName.length() - beanName.replace(".", "").length();
+                Object obj = beans.get(beanName);
+                int count = beanName.length() - beanName.replace(".", "").length();
                 if (count > 0) {
                     String parentKey = beanName.substring(0, beanName.lastIndexOf("."));
-                    String propKey   = beanName.substring(beanName.lastIndexOf(".") + 1);
+                    String propKey = beanName.substring(beanName.lastIndexOf(".") + 1);
                     if (beans.containsKey(parentKey)) {
                         //               Object parent = beans.get(parentKey);
                         //               System.out.println(parent);
@@ -665,8 +672,8 @@ public class Configurator {
             }
 
             for (String name : loaded.keySet()) {
-                Object bean       = beans.get(name);
-                Map    loadedPros = loaded.get(name);
+                Object bean = beans.get(name);
+                Map loadedPros = loaded.get(name);
                 onLoad(name, bean, loadedPros);
             }
 
@@ -743,15 +750,18 @@ public class Configurator {
     }
 
     static class Encoder {
+
         Properties                  props    = null;
         Map<Object, String>         names    = null;
         MultiKeyMap<String, String> defaults = null;
 
         static interface Namer {
+
             public String getName(Object o) throws Exception;
         }
 
         static interface Includer {
+
             public boolean include(Field field);
         }
 
@@ -793,7 +803,7 @@ public class Configurator {
                             continue;
 
                         try {
-                            Object clean        = object.getClass().newInstance();
+                            Object clean = object.getClass().newInstance();
                             Object defaultValue = field.get(clean);
 
                             if (defaultValue != null && WRAPPER_TYPES.contains(defaultValue.getClass()))
@@ -838,7 +848,7 @@ public class Configurator {
                                 continue;
 
                             for (Object mapKey : map.keySet()) {
-                                String encodedKey   = encode(mapKey, props, namer, includer, names, defaults);
+                                String encodedKey = encode(mapKey, props, namer, includer, names, defaults);
                                 String encodedValue = encode(map.get(mapKey), props, namer, includer, names, defaults);
                                 if (name != null)
                                     props.put(fieldKey + "." + encodedKey, encodedValue);
@@ -938,8 +948,8 @@ public class Configurator {
                 subtype = (Class) ((((ParameterizedType) field.getGenericType()).getActualTypeArguments())[0]);
             }
 
-            java.util.Collection list  = java.util.Set.class.isAssignableFrom(type) ? new HashSet() : new ArrayList();
-            String[]             parts = stringVal.split(",");
+            java.util.Collection list = java.util.Set.class.isAssignableFrom(type) ? new HashSet() : new ArrayList();
+            String[] parts = stringVal.split(",");
             for (String part : parts) {
                 part = part.trim();
 
@@ -956,7 +966,7 @@ public class Configurator {
 
             return (T) list;
         } else if (Map.class.isAssignableFrom(type)) {
-            Map      map   = new HashMap();
+            Map map = new HashMap();
             String[] parts = stringVal.split(",");
             for (String part : parts) {
                 Object val = beans.get(part);
@@ -976,7 +986,7 @@ public class Configurator {
     }
 
     static Class getArrayElementClass(Class arrayClass) throws ClassNotFoundException {
-        Class  subtype = null;
+        Class subtype = null;
         String typeStr = arrayClass.toString();
 
         if (typeStr.startsWith("class [Z")) {
@@ -1015,6 +1025,7 @@ public class Configurator {
         //properties are sorted based on the number of "." segments they contain so that "shallow"
         //depth properties can be set before deeper depth properties.
         Properties sorted = new Properties() {
+
             public Enumeration keys() {
                 Vector v = new Vector(Decoder.sort(keySet()));
                 return v.elements();

@@ -16,10 +16,28 @@
  */
 package io.inversion.rql;
 
+import io.inversion.utils.Utils;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class RqlParser {
+
+
+    public static Term parse(String paramName, String paramValue) {
+        String termStr = null;
+        if (Utils.empty(paramValue) && paramName.indexOf("(") > -1) {
+            termStr = paramName;
+        } else {
+            if (Utils.empty(paramValue))
+                paramValue = "true";
+
+            termStr = "eq(" + paramName + "," + paramValue + ")";
+        }
+        Term term = RqlParser.parse(termStr);
+        return term;
+    }
+
     public static Term parse(String clause) {
         TermBuilder  tb = new TermBuilder();
         RqlTokenizer t  = new RqlTokenizer(clause);

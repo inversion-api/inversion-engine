@@ -16,84 +16,75 @@
  */
 package io.inversion.cosmosdb;
 
-import io.inversion.Db;
-import io.inversion.rql.AbstractRqlTest;
-import io.inversion.rql.RqlValidationSuite;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+
+import io.inversion.Db;
+import io.inversion.rql.AbstractRqlTest;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class CosmosRqlUnitTest extends AbstractRqlTest {
 
     public CosmosRqlUnitTest() {
-        super(CosmosSqlQuery.class.getName(), "cosmos");
+        super("northwind/cosmosdb/", "cosmosdb");
+
+        withExpectedResult("eq", "SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"orderId\\\"] = @orderId1 AND Northwind[\\\"shipCountry\\\"] = @shipCountry2 AND Northwind[\\\"type\\\"] = @type3 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@orderId1\",\"value\":10248},{\"name\":\"@shipCountry2\",\"value\":\"France\"},{\"name\":\"@type3\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("ne", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND (NOT (Northwind[\\\"shipCountry\\\"] = @shipCountry2)) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCountry2\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("n", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND IS_NULL (Northwind[\\\"shipRegion\\\"]) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("nn", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND Northwind[\\\"shipRegion\\\"] <> null ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("emp", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE (Northwind[\\\"shipRegion\\\"] IS NULL OR Northwind[\\\"shipRegion\\\"] = '') AND Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("nemp", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND (Northwind[\\\"shipRegion\\\"] IS NOT NULL AND Northwind[\\\"shipRegion\\\"] != '') ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("likeMiddle", "400 Bad Request - The 'like' RQL operator for CosmosDb expects a single wildcard at the beginning OR the end of a value.  CosmosDb does not really support 'like' but compatible 'like' statements are turned into 'sw' or 'ew' statments that are supported.");
+        withExpectedResult("likeStartsWith", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND STARTSWITH (Northwind[\\\"shipCountry\\\"], @shipCountry2) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCountry2\",\"value\":\"Franc\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("likeEndsWith", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND ENDSWITH (Northwind[\\\"shipCountry\\\"], @shipCountry2) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCountry2\",\"value\":\"ance\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("sw", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND STARTSWITH (Northwind[\\\"shipCountry\\\"], @shipCountry2) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCountry2\",\"value\":\"Franc\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("ew", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND ENDSWITH (Northwind[\\\"shipCountry\\\"], @shipCountry2) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCountry2\",\"value\":\"nce\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("w", "400 Bad Request - CosmosDb supports 'sw' and 'ew' but not 'w' or 'wo' functions.");
+        withExpectedResult("wo", "400 Bad Request - CosmosDb supports 'sw' and 'ew' but not 'w' or 'wo' functions.");
+        withExpectedResult("lt", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND Northwind[\\\"freight\\\"] < @freight2 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@freight2\",\"value\":10}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("le", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND Northwind[\\\"freight\\\"] <= @freight2 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@freight2\",\"value\":10}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("gt", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND Northwind[\\\"freight\\\"] > @freight2 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@freight2\",\"value\":3.67}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("ge", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND Northwind[\\\"freight\\\"] >= @freight2 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@freight2\",\"value\":3.67}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("in", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND Northwind[\\\"shipCity\\\"] IN(@shipCity2, @shipCity3) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCity2\",\"value\":\"Reims\"},{\"name\":\"@shipCity3\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("out", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND Northwind[\\\"shipCity\\\"] NOT IN(@shipCity2, @shipCity3) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCity2\",\"value\":\"Reims\"},{\"name\":\"@shipCity3\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("and", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"shipCity\\\"] = @shipCity1 AND Northwind[\\\"shipCountry\\\"] = @shipCountry2 AND Northwind[\\\"type\\\"] = @type3 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Lyon\"},{\"name\":\"@shipCountry2\",\"value\":\"France\"},{\"name\":\"@type3\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("or", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND (Northwind[\\\"shipCity\\\"] = @shipCity2 OR Northwind[\\\"shipCity\\\"] = @shipCity3) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCity2\",\"value\":\"Reims\"},{\"name\":\"@shipCity3\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("not", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND NOT ((Northwind[\\\"shipCity\\\"] = @shipCity2 OR Northwind[\\\"shipCity\\\"] = @shipCity3)) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCity2\",\"value\":\"Reims\"},{\"name\":\"@shipCity3\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("as", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT *, Northwind[\\\"orderId\\\"] AS \\\"order_identifier\\\" FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("includes", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT Northwind[\\\"shipCountry\\\"], Northwind[\\\"shipCity\\\"], Northwind[\\\"type\\\"], Northwind[\\\"orderId\\\"] FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        
+        
+        withExpectedResult("distinct", "SqlQuerySpec={\"query\":\"SELECT DISTINCT Northwind[\\\"shipCountry\\\"], Northwind[\\\"type\\\"], Northwind[\\\"orderId\\\"] FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        
+        withExpectedResult("count1", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT COUNT(*) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("count2", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT COUNT(@null1) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type2 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@null1\",\"value\":\"1\"},{\"name\":\"@type2\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("count3", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT COUNT(Northwind[\\\"shipRegion\\\"]) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("countAs", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT COUNT(*) AS \\\"countOrders\\\" FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("sum", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT SUM(Northwind[\\\"freight\\\"]) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("sumAs", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT SUM(Northwind[\\\"freight\\\"]) AS \\\"Sum Freight\\\" FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("sumIf", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT SUM(CASE WHEN Northwind[\\\"shipCountry\\\"] = @shipCountry1 THEN 1 ELSE 0 END) AS \\\"French Orders\\\" FROM Northwind WHERE Northwind[\\\"type\\\"] = @type2 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"France\"},{\"name\":\"@type2\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("min", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT MIN(Northwind[\\\"freight\\\"]) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("max", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT MAX(Northwind[\\\"freight\\\"]) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("groupCount", "SqlQuerySpec={\"query\":\"SELECT Northwind[\\\"shipCountry\\\"], COUNT(*) AS \\\"countryCount\\\", Northwind[\\\"type\\\"], Northwind[\\\"orderId\\\"] FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 GROUP BY Northwind[\\\"shipCountry\\\"] ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("offset", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("limit", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("page", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("pageNum", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("after", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("sort", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"shipCountry\\\"] DESC, Northwind[\\\"shipCity\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+        withExpectedResult("order", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"shipCountry\\\"] ASC, Northwind[\\\"shipCity\\\"] DESC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
+
+        withExpectedResult("onToManyExistsEq", "UNSUPPORTED");
+        withExpectedResult("onToManyNotExistsNe", "UNSUPPORTED");
+        withExpectedResult("manyToOneExistsEq", "UNSUPPORTED");
+        withExpectedResult("manyToOneNotExistsNe", "UNSUPPORTED");
+        withExpectedResult("manyTManyNotExistsNe", "UNSUPPORTED");
+        withExpectedResult("eqNonexistantColumn", "UNSUPPORTED");
     }
 
     @Override
-    public void initializeDb() {
-        Db db = getDb();
-        if (db == null) {
-            db = CosmosDbFactory.buildDb();
-            setDb(db);
-        }
-    }
-
-    @Override
-    protected void customizeUnitTestSuite(RqlValidationSuite suite) {
-
-        suite//
-                .withResult("eq", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"orderID\\\"] = @orderID1 AND orders[\\\"shipCountry\\\"] = @shipCountry2 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@orderID1\",\"value\":\"10248\"},{\"name\":\"@shipCountry2\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("ne", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE (NOT (orders[\\\"shipCountry\\\"] = @shipCountry1)) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("n", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE IS_NULL (orders[\\\"shipRegion\\\"]) ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("nn", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"shipRegion\\\"] <> null ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("emp", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE (orders[\\\"shipRegion\\\"] IS NULL OR orders[\\\"shipRegion\\\"] = '') ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("nemp", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE (orders[\\\"shipRegion\\\"] IS NOT NULL AND orders[\\\"shipRegion\\\"] != '') ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("likeMiddle", "400 Bad Request - The 'like' RQL operator for CosmosDb expects a single wildcard at the beginning OR the end of a value.  CosmosDb does not really support 'like' but compatible 'like' statements are turned into 'sw' or 'ew' statments that are supported.")//
-                .withResult("likeStartsWith", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE STARTSWITH (orders[\\\"shipCountry\\\"], @shipCountry1) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"Franc\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("likeEndsWith", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE ENDSWITH (orders[\\\"shipCountry\\\"], @shipCountry1) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"ance\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("sw", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE STARTSWITH (orders[\\\"shipCountry\\\"], @shipCountry1) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"Franc\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("ew", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE ENDSWITH (orders[\\\"shipCountry\\\"], @shipCountry1) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"nce\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("w", "400 Bad Request - CosmosDb supports 'sw' and 'ew' but not 'w' or 'wo' functions.")//
-                .withResult("wo", "400 Bad Request - CosmosDb supports 'sw' and 'ew' but not 'w' or 'wo' functions.")//
-                .withResult("lt", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"freight\\\"] < @freight1 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@freight1\",\"value\":10}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("le", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"freight\\\"] <= @freight1 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@freight1\",\"value\":10}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("gt", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"freight\\\"] > @freight1 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@freight1\",\"value\":3.67}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("ge", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"freight\\\"] >= @freight1 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@freight1\",\"value\":3.67}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("in", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"shipCity\\\"] IN(@shipCity1, @shipCity2) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Reims\"},{\"name\":\"@shipCity2\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("out", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"shipCity\\\"] NOT IN(@shipCity1, @shipCity2) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Reims\"},{\"name\":\"@shipCity2\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("and", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"shipCity\\\"] = @shipCity1 AND orders[\\\"shipCountry\\\"] = @shipCountry2 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Lyon\"},{\"name\":\"@shipCountry2\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("or", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE (orders[\\\"shipCity\\\"] = @shipCity1 OR orders[\\\"shipCity\\\"] = @shipCity2) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Reims\"},{\"name\":\"@shipCity2\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("not", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE NOT ((orders[\\\"shipCity\\\"] = @shipCity1 OR orders[\\\"shipCity\\\"] = @shipCity2)) ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCity1\",\"value\":\"Reims\"},{\"name\":\"@shipCity2\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("as", "SqlQuerySpec={\"query\":\"SELECT *, orders[\\\"orderid\\\"] AS \\\"order_identifier\\\" FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("includes", "SqlQuerySpec={\"query\":\"SELECT orders[\\\"shipCountry\\\"], orders[\\\"shipCity\\\"], orders[\\\"orderId\\\"] FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("distinct", "SqlQuerySpec={\"query\":\"SELECT DISTINCT orders[\\\"shipCountry\\\"] FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("count1", "SqlQuerySpec={\"query\":\"SELECT COUNT(*) FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("count2", "SqlQuerySpec={\"query\":\"SELECT COUNT(@null1) FROM orders ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@null1\",\"value\":\"1\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("count3", "SqlQuerySpec={\"query\":\"SELECT COUNT(orders[\\\"shipRegion\\\"]) FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("countAs", "SqlQuerySpec={\"query\":\"SELECT COUNT(*) AS \\\"countOrders\\\" FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("sum", "SqlQuerySpec={\"query\":\"SELECT SUM(orders[\\\"freight\\\"]) FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("sumAs", "SqlQuerySpec={\"query\":\"SELECT SUM(orders[\\\"freight\\\"]) AS \\\"Sum Freight\\\" FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("sumIf", "SqlQuerySpec={\"query\":\"SELECT SUM(CASE WHEN orders[\\\"shipCountry\\\"] = @shipCountry1 THEN 1 ELSE 0 END) AS \\\"French Orders\\\" FROM orders ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@shipCountry1\",\"value\":\"France\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("min", "SqlQuerySpec={\"query\":\"SELECT MIN(orders[\\\"freight\\\"]) FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("max", "SqlQuerySpec={\"query\":\"SELECT MAX(orders[\\\"freight\\\"]) FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("groupCount", "SqlQuerySpec={\"query\":\"SELECT orders[\\\"shipCountry\\\"], COUNT(*) AS \\\"countryCount\\\" FROM orders GROUP BY orders[\\\"shipCountry\\\"] ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("offset", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("limit", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("page", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("pageNum", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("after", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"id\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("sort", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"shipCountry\\\"] DESC, orders[\\\"shipCity\\\"] ASC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-                .withResult("order", "SqlQuerySpec={\"query\":\"SELECT * FROM orders ORDER BY orders[\\\"shipCountry\\\"] ASC, orders[\\\"shipCity\\\"] DESC\"} FeedOptions={enableCrossPartitionQuery=true}")//
-
-                .withResult("onToManyExistsEq", "UNSUPPORTED")//
-                .withResult("onToManyNotExistsNe", "UNSUPPORTED")//
-                .withResult("manyToOneExistsEq", "UNSUPPORTED")//
-                .withResult("manyToOneNotExistsNe", "UNSUPPORTED")//
-                .withResult("manyTManyNotExistsNe", "UNSUPPORTED")//
-
-                .withResult("eqNonexistantColumn", "SqlQuerySpec={\"query\":\"SELECT * FROM orders WHERE orders[\\\"orderId\\\"] >= @orderId1 ORDER BY orders[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@orderId1\",\"value\":\"1000\"}]} FeedOptions={enableCrossPartitionQuery=true}")//
-
-        ;
+    public Db buildDb() {
+        return CosmosDbFactory.buildDb();
     }
 
 }

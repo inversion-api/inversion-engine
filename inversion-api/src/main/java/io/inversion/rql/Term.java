@@ -19,9 +19,10 @@ package io.inversion.rql;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class Term implements Comparable<Term> {
+
     public Term       parent = null;
     public char       quote  = 0;
     public String     token  = null;
@@ -83,6 +84,17 @@ public class Term implements Comparable<Term> {
 
         for (int i = 0; tokens != null && i < tokens.length; i++) {
             if (token.equalsIgnoreCase(tokens[i]))
+                return true;
+        }
+        return false;
+    }
+
+    public boolean hasChildLeafToken(String... tokens) {
+        if (token == null)
+            return false;
+
+        for (Term child : terms) {
+            if (child.isLeaf() && child.hasToken(tokens))
                 return true;
         }
         return false;
@@ -248,7 +260,7 @@ public class Term implements Comparable<Term> {
     }
 
     public static Term term(Term parent, String token, Object... terms) {
-        Term newTerm       = new Term(parent, token);
+        Term newTerm = new Term(parent, token);
         List deconstructed = deconstructed(new ArrayList(), terms);
         for (Object aTerm : deconstructed) {
             if (aTerm instanceof Term) {
@@ -281,25 +293,21 @@ public class Term implements Comparable<Term> {
     }
 
     /**
-     * Returns true if <code>toFind</code> is in <code>values</code>
-     * ignoring case.
+     * Returns a stream containing all Terms recursively.
      *
-     * @param toFind
-     * @param values
-     * @return
+     * @return this term and all children recursively
      */
-    public static boolean in(String toFind, String... values) {
-        toFind = toFind.toLowerCase();
-        for (String val : values) {
-            if (toFind.equals(val.toLowerCase()))
-                return true;
-        }
-        return false;
+    public Stream<Term> stream() {
+        List<Term> list = new ArrayList();
+        collect(list);
+        return list.stream();
     }
 
-    public void stream(Consumer action) {
-        action.accept(token);
-        for (Term child : terms)
-            child.stream(action);
+    void collect(List list) {
+        list.add(this);
+        for (Term child : terms) {
+            child.collect(list);
+        }
     }
+
 }

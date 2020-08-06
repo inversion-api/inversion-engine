@@ -25,13 +25,9 @@ import io.inversion.Api;
 import io.inversion.Engine;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.rql.RqlTokenizer;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Adapter to run an Inversion API as an Azure Function
@@ -76,28 +72,9 @@ public class AzureFunctionHttpTriggerHandler {
         if (!url.endsWith("/"))
             url = url + "/";
 
-        Map safeParams = new HashMap();
-
-        for (String key : request.getQueryParameters().keySet()) {
-            boolean skip = false;
-
-            if (key.indexOf("_") > 0) {
-                //-- RQL expressions with tokens that start with an "_" are not for public use at this time.
-                List illegals = new RqlTokenizer(key).stream().filter(s -> s.startsWith("_")).collect(Collectors.toList());
-                if (illegals.size() > 0) {
-                    skip = true;
-                }
-            }
-
-            if (!skip) {
-                String val = request.getQueryParameters().get(key);
-                safeParams.put(key, val);
-            }
-        }
-
         String body = request.getBody().isPresent() ? request.getBody().get() : null;
 
-        Request req = new Request(method, url, request.getHeaders(), safeParams, body);
+        Request req = new Request(method, url, request.getHeaders(), request.getQueryParameters(), body);
         return req;
     }
 

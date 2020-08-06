@@ -38,6 +38,7 @@ import java.util.*;
  * Exposes the tables of a JDBC data source as REST <code>Collections</code>.
  */
 public class JdbcDb extends Db<JdbcDb> {
+
     static Map<String, String> DEFAULT_DRIVERS = new HashMap();
 
     static {
@@ -47,15 +48,15 @@ public class JdbcDb extends Db<JdbcDb> {
         DEFAULT_DRIVERS.put("sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
     }
 
-    static Map<Db, DataSource> pools = new Hashtable();
+    static Map<Db, DataSource> pools                    = new Hashtable();
 
-    protected char stringQuote = '\'';
-    protected char columnQuote = '"';
+    protected char             stringQuote              = '\'';
+    protected char             columnQuote              = '"';
 
     /**
      * The JDBC driver class name.
      */
-    protected String driver = null;
+    protected String           driver                   = null;
 
     /**
      * The JDBC url.
@@ -66,7 +67,7 @@ public class JdbcDb extends Db<JdbcDb> {
      * @see Config
      * @see Configuration
      */
-    protected String url = null;
+    protected String           url                      = null;
 
     /**
      * The JDBC username.
@@ -77,7 +78,7 @@ public class JdbcDb extends Db<JdbcDb> {
      * @see Config
      * @see Configuration
      */
-    protected String user = null;
+    protected String           user                     = null;
 
     /**
      * The JDBC password.
@@ -88,14 +89,14 @@ public class JdbcDb extends Db<JdbcDb> {
      * @see Config
      * @see Configuration
      */
-    protected String pass = null;
+    protected String           pass                     = null;
 
     /**
      * The maximum number of connections in the JDBC Connection pool, defaults to 50.
      */
-    protected int poolMax = 50;
+    protected int              poolMax                  = 50;
 
-    protected int idleConnectionTestPeriod = 3600;           // in seconds
+    protected int              idleConnectionTestPeriod = 3600;           // in seconds
 
     /**
      * Should the JDBC connection be set to autoCommit.
@@ -103,20 +104,21 @@ public class JdbcDb extends Db<JdbcDb> {
      * By default, autoCommit is false because the system is setup to execute all sql statements for a single Request
      * inside of one transaction that commits just before the root Response is returned to the caller.
      */
-    protected boolean autoCommit = false;
+    protected boolean          autoCommit               = false;
 
     /**
      * For MySQL only, set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
      */
-    protected boolean calcRowsFound = true;
+    protected boolean          calcRowsFound            = true;
 
     /**
      * Urls to DDL files that should be executed on startup of this Db.
      */
-    protected List<String> ddlUrls = new ArrayList();
+    protected List<String>     ddlUrls                  = new ArrayList();
 
     static {
         JdbcUtils.addSqlListener(new SqlListener() {
+
             ch.qos.logback.classic.Logger log = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(JdbcDb.class);
 
             @Override
@@ -234,12 +236,13 @@ public class JdbcDb extends Db<JdbcDb> {
     }
 
     protected void doShutdown() {
-        if (isType("h2")) {
+        if (isType("h2") && getUrl() != null) {
             try {
                 String url = getUrl().toUpperCase();
                 if (url.indexOf(":MEM:") > 0 && url.indexOf("DB_CLOSE_DELAY=-1") > 0) {
                     JdbcUtils.execute(getConnection(), "SHUTDOWN");
                 }
+
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -470,7 +473,7 @@ public class JdbcDb extends Db<JdbcDb> {
         System.out.println("CREATING CONNECTION POOL: " + getUser() + "@" + getUrl());
 
         HikariConfig config = new HikariConfig();
-        String       driver = getDriver();
+        String driver = getDriver();
         config.setDriverClassName(driver);
         config.setJdbcUrl(getUrl());
         config.setUsername(getUser());
@@ -523,9 +526,14 @@ public class JdbcDb extends Db<JdbcDb> {
             //-- have to do the fk loop second becuase the reference pk
             //-- object needs to exist so that it can be set on the fk Col
 
+            List<String> schemaGuesses = Utils.asList("public", null);
+
             if (isType("sqlserver")) {
+
+                schemaGuesses.add(0, "dbo");
+
                 String schema = getUrl();
-                int    idx    = schema.toLowerCase().indexOf("databasename=");
+                int idx = schema.toLowerCase().indexOf("databasename=");
                 if (idx > -1) {
                     idx = idx + "databasename=".length();
                 }
@@ -536,28 +544,32 @@ public class JdbcDb extends Db<JdbcDb> {
                     }
                 }
                 if (idx > 0) {
-
                     schema = schema.substring(idx);
                     schema = Utils.substringBefore(schema, ";");
                     schema = Utils.substringBefore(schema, "&");
-                } else {
-                    schema = "dbo";
+                    schemaGuesses.add(0, schema);
                 }
-                rs = dbmd.getTables(conn.getCatalog(), schema, "%", new String[]{"TABLE", "VIEW"});
-            } else
-                rs = dbmd.getTables(conn.getCatalog(), "public", "%", new String[]{"TABLE", "VIEW"});
-            //ResultSet rs = dbmd.getTables(null, "public", "%", new String[]{"TABLE", "VIEW"});
-            boolean hasNext = rs.next();
-            if (!hasNext) {
-                rs = dbmd.getTables(conn.getCatalog(), null, "%", new String[]{"TABLE", "VIEW"});
-                hasNext = rs.next();
             }
+
+            boolean hasNext = false;
+            for (String schema : schemaGuesses) {
+                rs = dbmd.getTables(conn.getCatalog(), schema, "%", new String[]{"TABLE", "VIEW"});
+                hasNext = rs.next();
+                if (hasNext)
+                    break;
+            }
+
             if (hasNext)
                 do {
-                    String tableCat   = rs.getString("TABLE_CAT");
+                    String tableCat = rs.getString("TABLE_CAT");
                     String tableSchem = rs.getString("TABLE_SCHEM");
-                    String tableName  = rs.getString("TABLE_NAME");
-                    //String tableType = rs.getString("TABLE_TYPE");
+                    String tableName = rs.getString("TABLE_NAME");
+
+                    //-- double check not to add system tables in sqlserver
+                    if (isType("sqlserver")) {
+                        if (tableSchem.equalsIgnoreCase("sys") || tableSchem.equalsIgnoreCase("INFORMATION_SCHEMA"))
+                            continue;
+                    }
 
                     if (includeTables.size() > 0 && !includeTables.containsKey(tableName))
                         continue;
@@ -569,7 +581,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
                     while (colsRs.next()) {
                         String colName = colsRs.getString("COLUMN_NAME");
-                        Object type    = colsRs.getString("DATA_TYPE");
+                        Object type = colsRs.getString("DATA_TYPE");
                         String colType = types.get(type);
 
                         boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
@@ -602,9 +614,9 @@ public class JdbcDb extends Db<JdbcDb> {
                                 idxType = "Statistic";
                         }
 
-                        Property column    = table.getProperty(colName);
-                        Object   nonUnique = indexMd.getObject("NON_UNIQUE") + "";
-                        boolean  unique    = !(nonUnique.equals("true") || nonUnique.equals("1"));
+                        Property column = table.getProperty(colName);
+                        Object nonUnique = indexMd.getObject("NON_UNIQUE") + "";
+                        boolean unique = !(nonUnique.equals("true") || nonUnique.equals("1"));
 
                         //this looks like it only supports single column indexes but if
                         //an index with this name already exists, that means this is another
@@ -614,8 +626,7 @@ public class JdbcDb extends Db<JdbcDb> {
                     }
                     indexMd.close();
 
-                }
-                while (rs.next());
+                } while (rs.next());
             rs.close();
 
             //-- now link all of the fks to pks
@@ -648,9 +659,9 @@ public class JdbcDb extends Db<JdbcDb> {
                         //String pkName = keyMd.getString("PK_NAME");
                         String fkName = keyMd.getString("FK_NAME");
 
-                        String fkTableName  = keyMd.getString("FKTABLE_NAME");
+                        String fkTableName = keyMd.getString("FKTABLE_NAME");
                         String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
-                        String pkTableName  = keyMd.getString("PKTABLE_NAME");
+                        String pkTableName = keyMd.getString("PKTABLE_NAME");
                         String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
 
                         Property fk = getProperty(fkTableName, fkColumnName);
@@ -665,8 +676,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
                     }
                     keyMd.close();
-                }
-                while (rs.next());
+                } while (rs.next());
 
             rs.close();
         } catch (Exception ex) {
