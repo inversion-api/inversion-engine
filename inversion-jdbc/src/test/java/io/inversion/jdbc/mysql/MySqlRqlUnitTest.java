@@ -51,7 +51,7 @@ public class MySqlRqlUnitTest extends AbstractSqlQueryRqlTest {
         withExpectedResult("not", "SELECT `orders`.* FROM `orders` WHERE NOT ((`orders`.`shipCity` = ? OR `orders`.`shipCity` = ?)) ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[Reims, Charleroi]");
         withExpectedResult("as", "SELECT `orders`.*, `orders`.`orderid` AS 'order_identifier' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
         withExpectedResult("includes", "SELECT `orders`.`shipCountry`, `orders`.`shipCity`, `orders`.`orderId` FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
-        withExpectedResult("distinct", "SELECT DISTINCT `orders`.`shipCountry` FROM `orders` ORDER BY `orders`.`shipCountry` ASC LIMIT 100 args=[]");
+        withExpectedResult("distinct", "SELECT DISTINCT `orders`.`shipCountry`, `orders`.`orderId` FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
         withExpectedResult("count1", "SELECT `orders`.*, COUNT(*) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
         withExpectedResult("count2", "SELECT `orders`.*, COUNT(?) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[1]");
         withExpectedResult("count3", "SELECT `orders`.*, COUNT(`orders`.`shipRegion`) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
@@ -61,7 +61,7 @@ public class MySqlRqlUnitTest extends AbstractSqlQueryRqlTest {
         withExpectedResult("sumIf", "SELECT `orders`.*, SUM(IF(`orders`.`shipCountry` = ?, 1, 0)) AS 'French Orders' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[France]");
         withExpectedResult("min", "SELECT `orders`.*, MIN(`orders`.`freight`) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
         withExpectedResult("max", "SELECT `orders`.*, MAX(`orders`.`freight`) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
-        withExpectedResult("groupCount", "SELECT `orders`.`shipCountry`, COUNT(*) AS 'countryCount' FROM `orders` GROUP BY `orders`.`shipCountry` ORDER BY `orders`.`shipCountry` ASC LIMIT 100 args=[]");
+        withExpectedResult("groupCount", "SELECT `orders`.`shipCountry`, COUNT(*) AS 'countryCount', `orders`.`orderId` FROM `orders` GROUP BY `orders`.`shipCountry` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
         withExpectedResult("offset", "SELECT `orders`.* FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 3, 100 args=[]");
         withExpectedResult("limit", "SELECT `orders`.* FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 7 args=[]");
         withExpectedResult("page", "SELECT `orders`.* FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 14, 7 args=[]");
