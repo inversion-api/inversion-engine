@@ -27,13 +27,11 @@ public abstract class AbstractJdbcDbPostActionIntegTest extends AbstractDbPostAc
 
     @BeforeEach
     public void beforeEach() {
-        beforeAll_initializeDb();
         beforeAll_initializeEngine();
     }
 
     @AfterEach
     public void afterEach() {
-        afterAll_finalizeDb();
         afterAll_finalizeEngine();
     }
 }

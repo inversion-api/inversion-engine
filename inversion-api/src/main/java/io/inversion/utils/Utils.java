@@ -39,18 +39,19 @@ import java.util.regex.Pattern;
  * java programming less verbose
  */
 public class Utils {
-    public static final int  KB  = 1048;
-    public static final int  MB  = 1048576;
-    public static final long GB  = 1073741824;
-    public static final int  K64 = 65536;
 
-    public static final long HOUR  = 1000 * 60 * 60;
-    public static final long DAY   = 1000 * 60 * 60 * 24;
-    public static final long MONTH = 1000 * 60 * 60 * 24 * 31;
-    public static final long WEEK  = 1000 * 60 * 60 * 24 * 7;
-    public static final long YEAR  = 1000 * 60 * 60 * 24 * 365;
+    public static final int         KB                 = 1048;
+    public static final int         MB                 = 1048576;
+    public static final long        GB                 = 1073741824;
+    public static final int         K64                = 65536;
 
-    protected static final String NEW_LINE = System.getProperty("line.separator");
+    public static final long        HOUR               = 1000 * 60 * 60;
+    public static final long        DAY                = 1000 * 60 * 60 * 24;
+    public static final long        MONTH              = 1000 * 60 * 60 * 24 * 31;
+    public static final long        WEEK               = 1000 * 60 * 60 * 24 * 7;
+    public static final long        YEAR               = 1000 * 60 * 60 * 24 * 365;
+
+    protected static final String   NEW_LINE           = System.getProperty("line.separator");
 
     protected static final String[] EMPTY_STRING_ARRAY = new String[0];
 
@@ -171,12 +172,12 @@ public class Utils {
      */
     public static List<String> split(String string, char splitOn, char... quoteChars) {
         List<String> strings = new ArrayList();
-        Set          quotes  = new HashSet();
+        Set quotes = new HashSet();
         for (char c : quoteChars)
             quotes.add(c);
 
-        boolean      quoted = false;
-        StringBuffer buff   = new StringBuffer("");
+        boolean quoted = false;
+        StringBuffer buff = new StringBuffer("");
         for (int i = 0; i < string.length(); i++) {
             char c = string.charAt(i);
 
@@ -234,26 +235,25 @@ public class Utils {
         return map;
     }
 
-    public static List asList(Object... objects) {
-        return Arrays.asList(objects);
+    public static ArrayList asList(Object... objects) {
+        return new ArrayList(Arrays.asList(objects));
     }
 
-    public static Set asSet(Object... objects) {
+    public static HashSet asSet(Object... objects) {
         return new HashSet(Arrays.asList(objects));
     }
 
-    public static Map asMap(Object... objects) {
-        Map map = new HashMap();
+    public static HashMap asMap(Object... objects) {
+        HashMap map = new HashMap();
         for (int i = 0; objects != null && i < objects.length - 1; i += 2) {
             map.put(objects[i], objects[i + 1]);
         }
         return map;
     }
 
-    
-    static final String CONTAINS_TOKEN_PLACEHOLDER = "INVERSIONREPLACEDINVERSION";
-    static final Pattern CONTAINS_TOKEN_PATTERN = Pattern.compile("\\b\\Q" + CONTAINS_TOKEN_PLACEHOLDER + "\\E\\b", Pattern.CASE_INSENSITIVE);
-    
+    static final String  CONTAINS_TOKEN_PLACEHOLDER = "INVERSIONREPLACEDINVERSION";
+    static final Pattern CONTAINS_TOKEN_PATTERN     = Pattern.compile("\\b\\Q" + CONTAINS_TOKEN_PLACEHOLDER + "\\E\\b", Pattern.CASE_INSENSITIVE);
+
     /**
      * Checks for a whole word case insensitive match of <code>findThisToken</code>
      * in <code>inThisString</code>
@@ -265,10 +265,10 @@ public class Utils {
      * @param inThisString
      */
     public static boolean containsToken(String findThisToken, String inThisString) {
-        
+
         findThisToken = findThisToken.toLowerCase();
         inThisString = inThisString.toLowerCase();
-        inThisString = inThisString.replace(findThisToken,  CONTAINS_TOKEN_PLACEHOLDER);
+        inThisString = inThisString.replace(findThisToken, CONTAINS_TOKEN_PLACEHOLDER);
         return CONTAINS_TOKEN_PATTERN.matcher(inThisString).find();
     }
 
@@ -545,23 +545,22 @@ public class Utils {
 
     }
 
-    public static boolean testCompare(String str1, String str2) {
-        str1 = str1 != null ? str1 : "";
-        str2 = str2 != null ? str2 : "";
+    public static boolean testCompare(String expected, String actual) {
+        expected = expected != null ? expected : "";
+        actual = actual != null ? actual : "";
 
-        str1 = str1.replaceAll("\\s+", " ").trim();
-        str2 = str2.replaceAll("\\s+", " ").trim();
+        expected = expected.replaceAll("\\s+", " ").trim();
+        actual = actual.replaceAll("\\s+", " ").trim();
 
-        if (!str1.equals(str2)) {
-            if (!str1.equals(str2)) {
-                System.out.println("\r\n");
-                System.out.println("\r\n");
-                System.out.println(str1);
-                System.out.println(str2);
+        if (!expected.equals(actual)) {
+            if (!expected.equals(actual)) {
+                System.out.println("EXPECTED : " + expected);
+                System.out.println("ACTUAL   : " + actual);
 
-                for (int i = 0; i < str1.length() && i < str2.length(); i++) {
-                    if (str1.charAt(i) == str2.charAt(i)) {
-                        System.out.print(" ");
+                for (int i = 0; i < expected.length() && i < actual.length(); i++) {
+                    if (expected.charAt(i) == actual.charAt(i)) {
+                        System.out.print("           ");
+                        
                     } else {
                         System.out.println("X");
                         break;
@@ -661,7 +660,7 @@ public class Utils {
 
     public static List<String> getStackTraceLines(Throwable stackTrace) {
         ByteArrayOutputStream baos = null;
-        PrintWriter           writer;
+        PrintWriter writer;
 
         baos = new ByteArrayOutputStream();
         writer = new PrintWriter(baos);
@@ -678,9 +677,9 @@ public class Utils {
 
         writer.close();
 
-        List     lines = new ArrayList();
-        String   s     = new String(baos.toByteArray());
-        String[] sArr  = s.split("\n");
+        List lines = new ArrayList();
+        String s = new String(baos.toByteArray());
+        String[] sArr = s.split("\n");
         lines.addAll(new ArrayList(Arrays.asList(sArr)));
 
         return lines;
@@ -688,7 +687,7 @@ public class Utils {
 
     public static String getStackTraceString(Throwable stackTrace) {
         ByteArrayOutputStream baos = null;
-        PrintWriter           writer;
+        PrintWriter writer;
 
         baos = new ByteArrayOutputStream();
         writer = new PrintWriter(baos);
@@ -772,7 +771,7 @@ public class Utils {
 
     public static final String limitLines(String text, int limit) {
         StringBuffer buffer = new StringBuffer("");
-        String[]     lines  = splitLines(text);
+        String[] lines = splitLines(text);
         for (int i = 0; i < lines.length && i < limit; i++) {
             if (i == limit - 1 && i != lines.length - 1) {
                 buffer.append("..." + (lines.length - i) + " more");
@@ -840,9 +839,9 @@ public class Utils {
      * @return
      */
     public static List<Field> getFields(Class clazz) {
-        Class       inClass = clazz;
-        Set         found   = new HashSet();
-        List<Field> fields  = new ArrayList();
+        Class inClass = clazz;
+        Set found = new HashSet();
+        List<Field> fields = new ArrayList();
 
         do {
             if (clazz.getName().startsWith("java"))
@@ -861,8 +860,7 @@ public class Utils {
                 }
             }
             clazz = clazz.getSuperclass();
-        }
-        while (clazz != null && !Object.class.equals(clazz));
+        } while (clazz != null && !Object.class.equals(clazz));
 
         return fields;
     }
@@ -901,8 +899,7 @@ public class Utils {
             if (clazz != null) {
                 clazz = clazz.getSuperclass();
             }
-        }
-        while (clazz != null && !Object.class.equals(clazz));
+        } while (clazz != null && !Object.class.equals(clazz));
 
         return null;
     }
@@ -929,7 +926,6 @@ public class Utils {
         }
         return null;
     }
-
 
     /**
      * Finds an input stream for <code>resource</code> and reads it into a string
@@ -967,7 +963,7 @@ public class Utils {
      */
     public static String read(File file) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        FileInputStream       in  = new FileInputStream(file);
+        FileInputStream in = new FileInputStream(file);
         pipe(in, out);
         return new String(out.toByteArray());
     }
@@ -1012,7 +1008,7 @@ public class Utils {
     public static void pipe(InputStream src, OutputStream dest) throws Exception {
         try {
             boolean isBlocking = true;
-            byte[]  buf        = new byte[K64];
+            byte[] buf = new byte[K64];
 
             int nread;
             int navailable;
@@ -1166,7 +1162,7 @@ public class Utils {
                     s.append("\\");
                     s.append(c);
                     break;
-                default:
+                default :
                     s.append(c);
                     break;
             }
@@ -1392,7 +1388,7 @@ public class Utils {
                         return json;
                     }
 
-                default:
+                default :
                     ApiException.throw500InternalServerError("Error casting '{}' as type '{}'", value, type);
             }
         } catch (Exception ex) {

@@ -22,8 +22,8 @@ import io.inversion.Engine;
 import io.inversion.Response;
 
 public abstract class AbstractDbActionIntegTest implements AbstractEngineTest {
+
     protected Engine engine = null;
-    protected Db     db     = null;
     protected String type   = null;
 
     public AbstractDbActionIntegTest(String type) {
@@ -36,17 +36,6 @@ public abstract class AbstractDbActionIntegTest implements AbstractEngineTest {
 
     protected String collectionPath() {
         return "northwind/" + type + "/";
-    }
-
-    @Override
-    public Db getDb() {
-        return db;
-    }
-
-    @Override
-    public void setDb(Db db) {
-        this.db = db;
-
     }
 
     @Override

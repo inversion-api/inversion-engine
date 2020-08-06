@@ -151,7 +151,8 @@ public class DbGetAction extends Action<DbGetAction> {
 
             int foundRows = results.getFoundRows();
 
-            if (foundRows < 0 && results.size() > 0 && offest <= 0 && results.size() < limit)
+            //if (foundRows < 0 && results.size() > 0 && offest <= 0 && results.size() < limit)
+            if (foundRows < 0 && results.size() >= 0 && offest <= 0 && results.size() < limit)
                 foundRows = results.size();
 
             if (foundRows >= 0) {

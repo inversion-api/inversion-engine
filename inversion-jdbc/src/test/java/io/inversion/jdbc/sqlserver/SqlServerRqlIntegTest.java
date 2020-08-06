@@ -16,21 +16,15 @@
  */
 package io.inversion.jdbc.sqlserver;
 
-import io.inversion.rql.RqlValidationSuite;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class SqlServerRqlIntegTest extends SqlServerRqlUnitTest {
+
     public SqlServerRqlIntegTest() throws Exception {
         super();
-    }
-
-    @Override
-    protected void customizeIntegTestSuite(RqlValidationSuite suite) {
-        super.customizeIntegTestSuite(suite);
-        suite.withResult("manyTManyNotExistsNe",
-                "SELECT \"Employees\".* FROM \"Employees\" WHERE NOT EXISTS (SELECT 1 FROM \"Order Details\" \"~~relTbl_Order Details\", \"employeeorderdetails\" \"~~lnkTbl_employeeorderdetails\" WHERE \"Employees\".\"EmployeeID\" = \"~~lnkTbl_employeeorderdetails\".\"EmployeeID\" AND \"~~lnkTbl_employeeorderdetails\".\"OrderID\" = \"~~relTbl_Order Details\".\"OrderID\" AND \"~~lnkTbl_employeeorderdetails\".\"ProductID\" = \"~~relTbl_Order Details\".\"ProductID\" AND \"~~relTbl_Order Details\".\"Quantity\" = ?) ORDER BY \"Employees\".\"EmployeeID\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[12]")//
-        ;
+        withExpectedResult("manyTManyNotExistsNe",
+                "SELECT \"Employees\".* FROM \"Employees\" WHERE NOT EXISTS (SELECT 1 FROM \"Order Details\" \"~~relTbl_Order Details\", \"employeeorderdetails\" \"~~lnkTbl_employeeorderdetails\" WHERE \"Employees\".\"EmployeeID\" = \"~~lnkTbl_employeeorderdetails\".\"EmployeeID\" AND \"~~lnkTbl_employeeorderdetails\".\"OrderID\" = \"~~relTbl_Order Details\".\"OrderID\" AND \"~~lnkTbl_employeeorderdetails\".\"ProductID\" = \"~~relTbl_Order Details\".\"ProductID\" AND \"~~relTbl_Order Details\".\"Quantity\" = ?) ORDER BY \"Employees\".\"EmployeeID\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[12]");
     }
 }

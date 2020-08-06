@@ -16,52 +16,57 @@
  */
 package io.inversion.dynamodb;
 
-import io.inversion.Db;
-import io.inversion.action.db.AbstractDbGetActionIntegTest;
-import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+
+import io.inversion.action.db.AbstractDbGetActionIntegTest;
 
 /**
  * @see README.md
  */
 @TestInstance(Lifecycle.PER_CLASS)
-public class DynamoDbGetActionIntegTest extends AbstractDbGetActionIntegTest {
+public class DynamoDbGetActionIntegTest extends AbstractDbGetActionIntegTest implements AbstractDynamoTest {
 
     public DynamoDbGetActionIntegTest() {
-        super("dynamo");
+        super("DynamoDb");
     }
 
-    @Override
-    public void initializeDb() {
-        Db db = getDb();
-        if (db == null) {
-            try {
-                db = DynamoDbFactory.buildNorthwindDynamoDb();
-            } catch (Exception e) {
-                Utils.rethrow(e);
-            }
-            setDb(db);
-        }
-    }
-
-    protected String collectionPath() {
-        return "northwind/dynamodb/";
-    }
-
-    protected String url(String path) {
-        String url = super.url(path);
-        if (path.indexOf("/orders") > 0 && path.indexOf("type") < 0) {
-            if (url.indexOf("?") < 0)
-                url += "?";
-            else
-                url += "&";
-
-            url += "type=ORDER";
-        }
-        return url;
-    }
+    //    @Override
+    //    public Db buildDb() {
+    //        // TODO Auto-generated method stub
+    //        return null;
+    //    }
+    //
+    //    @Override
+    //    public void initializeDb() {
+    //        Db db = getDb();
+    //        if (db == null) {
+    //            try {
+    //                db = DynamoDbFactory.buildNorthwindDynamoDb();
+    //            } catch (Exception e) {
+    //                Utils.rethrow(e);
+    //            }
+    //            setDb(db);
+    //        }
+    //    }
+    //
+    //    protected String collectionPath() {
+    //        return "northwind/dynamodb/";
+    //    }
+    //
+    //    protected String url(String path) {
+    //        String url = super.url(path);
+    //        if (path.indexOf("/orders") > 0 && path.indexOf("type") < 0) {
+    //            if (url.indexOf("?") < 0)
+    //                url += "?";
+    //            else
+    //                url += "&";
+    //
+    //            url += "type=ORDER";
+    //        }
+    //        return url;
+    //    }
 
     @Test
     @Override

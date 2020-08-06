@@ -25,6 +25,11 @@ import java.util.List;
 import java.util.Map;
 
 public class Request {
+
+    public static final String COLLECTION_KEY   = "_collection";
+    public static final String RESOURCE_KEY     = "_resource";
+    public static final String RELATIONSHIP_KEY = "_relationship";
+
     protected Chain chain = null;
 
     protected String                                 referrer   = null;
@@ -383,18 +388,18 @@ public class Request {
      * @return the collectionKey
      */
     public String getCollectionKey() {
-        return url.getParam("collection");
+        return url.getParam(COLLECTION_KEY);
     }
 
     /**
      * @return the resourceKey
      */
     public String getResourceKey() {
-        return url.getParam("resource");
+        return url.getParam(RESOURCE_KEY);
     }
 
     public String getRelationshipKey() {
-        return url.getParam("relationship");
+        return url.getParam(RELATIONSHIP_KEY);
     }
 
     public Request withApi(Api api, Path apiPath) {
@@ -497,10 +502,12 @@ public class Request {
      * Implemented by different runtimes, for example a servlet vs a lambda, to enable different file upload mechanisms.
      */
     public interface Uploader {
+
         public List<Upload> getUploads();
     }
 
     public static class Upload {
+
         String      fileName    = null;
         long        fileSize    = 0;
         String      requestPath = null;
@@ -570,6 +577,7 @@ public class Request {
      * @see Request#validate(String, String)
      */
     public static class Validation {
+
         Object value              = null;
         String customErrorMessage = null;
         String propOrPath         = null;

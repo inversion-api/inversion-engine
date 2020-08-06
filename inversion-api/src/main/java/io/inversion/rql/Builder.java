@@ -348,7 +348,7 @@ public class Builder<T, P extends Builder> {
             return null;
 
         for (Term term : getTerms()) {
-            if (term.hasToken(parentFunctions)) {
+            if (parentFunctions == null || parentFunctions.length == 0 || term.hasToken(parentFunctions)) {
                 for (Term child : term.getTerms()) {
                     if (child.hasToken(childToken) && child.isLeaf())
                         return term;

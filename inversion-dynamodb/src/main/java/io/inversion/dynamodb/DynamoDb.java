@@ -172,17 +172,17 @@ public class DynamoDb extends Db<DynamoDb> {
         //         }
         //      }
 
-        addTableIndex(PRIMARY_INDEX_TYPE, PRIMARY_INDEX_NAME, keySchema, coll);
+        addTableIndex(PRIMARY_INDEX_TYPE, PRIMARY_INDEX_NAME, keySchema, coll, true);
 
         if (tableDescription.getGlobalSecondaryIndexes() != null) {
             for (GlobalSecondaryIndexDescription indexDesc : tableDescription.getGlobalSecondaryIndexes()) {
-                addTableIndex(GLOBAL_SECONDARY_INDEX_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), coll);
+                addTableIndex(GLOBAL_SECONDARY_INDEX_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), coll, false);
             }
         }
 
         if (tableDescription.getLocalSecondaryIndexes() != null) {
             for (LocalSecondaryIndexDescription indexDesc : tableDescription.getLocalSecondaryIndexes()) {
-                addTableIndex(LOCAL_SECONDARY_INDEX_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), coll);
+                addTableIndex(LOCAL_SECONDARY_INDEX_TYPE, indexDesc.getIndexName(), indexDesc.getKeySchema(), coll, false);
             }
         }
 
@@ -208,8 +208,8 @@ public class DynamoDb extends Db<DynamoDb> {
     //      return collection;
     //   }
 
-    protected void addTableIndex(String type, String indexName, List<KeySchemaElement> keySchemaList, Collection table) {
-        Index index = new Index(indexName, type, false);
+    protected void addTableIndex(String type, String indexName, List<KeySchemaElement> keySchemaList, Collection table, boolean unique) {
+        Index index = new Index(indexName, type, unique);
 
         for (KeySchemaElement keyInfo : keySchemaList) {
             Property property = table.getProperty(keyInfo.getAttributeName());

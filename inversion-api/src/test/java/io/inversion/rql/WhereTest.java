@@ -14,26 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.jdbc;
+package io.inversion.rql;
 
-import io.inversion.action.db.AbstractDbDeleteActionIntegTest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class AbstractJdbcDbDeleteActionIntegTest extends AbstractDbDeleteActionIntegTest implements AbstractJdbcDbEngineTest {
+import org.junit.jupiter.api.Test;
 
-    public AbstractJdbcDbDeleteActionIntegTest(String dbType) {
-        super(dbType);
-    }
+public class WhereTest {
 
-    @BeforeEach
-    public void beforeEach() {
-        beforeAll_initializeEngine();
-    }
-
-    @AfterEach
-    public void afterEach() {
-        afterAll_finalizeEngine();
+    @Test
+    public void isInvalidColumn() {
+        Where where = new Where(new Query());
+        assertFalse(where.isInvalidColumn(RqlParser.parse("function(column,1,2,3)")));
+        assertFalse(where.isInvalidColumn(RqlParser.parse("function(column_name,1,2,3)")));
+        assertTrue(where.isInvalidColumn(RqlParser.parse("function(_column,1,2,3)")));
+        assertTrue(where.isInvalidColumn(RqlParser.parse("function(col-umn,1,2,3)")));
     }
 
 }

@@ -36,39 +36,39 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testIncludes0() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
 
         //--
         //-- gets a sorted list of all hrefs
         res = engine.get(url("orders?includes=customerid,orderid"));
-
+        res.dump();
         assertEquals(3, res.findNode("data.0").size());
         assertTrue(res.findNode("data.0").hasProperty("href"));
         assertTrue(res.findNode("data.0").hasProperty("customerid"));
         assertTrue(res.findNode("data.0").hasProperty("ORDERID"));
     }
 
-//   @Test
-//   public void testExcludes02() throws Exception
-//   {
-//      Engine engine = engine();
-//      Response res = null;
-//
-//      //--
-//      //-- gets a sorted list of all hrefs
-//      res = engine.get(url("orders?excludes=customerid,orderid"));
-//
-//      assertEquals(3, res.findNode("data.0").size());
-//      assertTrue(res.findNode("data.0").hasProperty("href"));
-//      assertTrue(res.findNode("data.0").hasProperty("customerid"));
-//      assertTrue(res.findNode("data.0").hasProperty("ORDERID"));
-//   }
+    //   @Test
+    //   public void testExcludes02() throws Exception
+    //   {
+    //      Engine engine = engine();
+    //      Response res = null;
+    //
+    //      //--
+    //      //-- gets a sorted list of all hrefs
+    //      res = engine.get(url("orders?excludes=customerid,orderid"));
+    //
+    //      assertEquals(3, res.findNode("data.0").size());
+    //      assertTrue(res.findNode("data.0").hasProperty("href"));
+    //      assertTrue(res.findNode("data.0").hasProperty("customerid"));
+    //      assertTrue(res.findNode("data.0").hasProperty("ORDERID"));
+    //   }
 
     @Test
     public void testExcludes0() throws Exception {
-        Response res    = null;
-        Engine   engine = engine();
+        Response res = null;
+        Engine engine = engine();
 
         //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia");
         res = engine.get(url("orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia")).assertOk();
@@ -83,14 +83,14 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         assertTrue(!node.hasProperty("shipvia"));
     }
 
-
     @Test
     public void testLimit01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
-        JSNode   json   = null;
+        Engine engine = engine();
+        Response res = null;
+        JSNode json = null;
 
         res = engine.get(url("orders?limit=5")).assertOk();
+        res.dump();
         json = res.getJson();
 
         assertEquals(5, json.find("meta.pageSize"));
@@ -99,8 +99,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testSort01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
 
         String url = url("orders?limit=2&sort=orderid");
         res = engine.get(url);
@@ -110,6 +110,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         assertTrue(href.indexOf("/orders/10248") > 0);
 
         res = engine.get(url("orders?limit=2&sort=-orderid"));
+        res.dump();
         assertEquals(2, res.getData().length());
 
         href = res.findString("data.0.href");
@@ -118,8 +119,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testPagination01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
 
         //--
         //-- gets a sorted list of all hrefs
@@ -128,7 +129,6 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         res.dump();
 
         assertEquals(1, res.findNode("data.0").size());
-
 
         List<String> hrefs = new ArrayList();
         res.getData().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
@@ -146,7 +146,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         int pages = 0;
 
         String start = url("orders?limit=3&sort=orderId");
-        String next  = start;
+        String next = start;
 
         Set alreadyFound = new HashSet();
         do {
@@ -163,8 +163,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
                 break;
 
             //makes sure the indexing is correct
-            int    idx      = pages * 3;
-            String found    = res.findString("data.0.href");
+            int idx = pages * 3;
+            String found = res.findString("data.0.href");
             String shouldBe = hrefs.get(idx);
             if (!shouldBe.equals(found)// 
                     || alreadyFound.contains(found)) {
@@ -192,8 +192,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
                 assertEquals(3, res.getData().length());
                 assertEquals(3, res.find("meta.pageSize"));
             }
-        }
-        while (pages < 200 && next != null);
+        } while (pages < 200 && next != null);
 
         assertEquals(9, pages);
         assertEquals(25, total);
@@ -201,8 +200,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testEq01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
         res = engine.get(url("orders?eq(orderid,10257)"));
         res.dump();
         assertEquals(1, res.getData().size());
@@ -217,9 +216,9 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testLike02() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
-        JSNode   json   = null;
+        Engine engine = engine();
+        Response res = null;
+        JSNode json = null;
 
         res = engine.get(url("orders?limit=5&like(customerId,*ZZ*)")).assertOk();
         json = res.getJson();
@@ -228,8 +227,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testW01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
         res = engine.get(url("employees?w(city,ondo)")).assertOk();
 
         assertEquals(4, res.getData().length());
@@ -248,9 +247,9 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testWo01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
-        JSNode   json   = null;
+        Engine engine = engine();
+        Response res = null;
+        JSNode json = null;
 
         res = engine.get(url("orders?eq(employeeid,5)"));
         json = res.getJson();
@@ -265,8 +264,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testSw01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
         res = engine.get(url("orders?limit=5&sw(customerId,VI)")).assertOk();
 
         JSArray data = res.getData();
@@ -282,13 +281,14 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
     @Test
     public void testSw_noRecordsShouldMatch() throws Exception {
         Engine engine = engine();
-        assertEquals(0, engine.get(url("orders?limit=5&sw(customerId,Z)")).assertOk().getFoundRows());
+        Response res =  engine.get(url("orders?limit=5&sw(customerId,Z)")).assertOk().dump();
+        assertEquals(0, res.getFoundRows());
     }
 
     @Test
     public void testEw01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
         res = engine.get(url("orders?ew(shipname,Chevalier)"));
 
         JSArray data = res.getData();
@@ -309,11 +309,12 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testN01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
-        JSNode   json   = null;
-        JSArray  data   = null;
+        Engine engine = engine();
+        Response res = null;
+        JSNode json = null;
+        JSArray data = null;
         res = engine.get(url("orders?n(shipregion)"));
+        res.dump();
         res.assertOk();
         json = res.getJson();
         data = json.getArray("data");
@@ -337,10 +338,10 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testEmp01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
 
-        res = engine.get(url("orders?limit=1&emp(shipregion)"));
+        res = engine.get(url("orders?emp(shipregion)"));
         res.dump();
         assertEquals(15, res.getFoundRows());
 
@@ -351,13 +352,13 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testNn01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
-        JSNode   json   = null;
-        JSArray  data   = null;
+        Engine engine = engine();
+        Response res = null;
+        JSNode json = null;
+        JSArray data = null;
 
         res = engine.get(url("orders?limit=500&nn(shipregion)")).assertOk();
-
+        res.dump();
         json = res.getJson();
         data = json.getArray("data");
         assertTrue(data.length() > 0);
@@ -368,10 +369,11 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testNemp01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
 
-        res = engine.get(url("orders?limit=1&nemp(shipregion)"));
+        res = engine.get(url("orders?nemp(shipregion)"));
+        res.dump();
         assertEquals(10, res.getFoundRows());
 
         for (JSNode result : res.getData().asNodeList()) {
@@ -381,11 +383,11 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testIn01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
         res = engine.get(url("orders?in(orderid,10249,10258,10252)"));
-
-        JSArray      data = res.getData();
+        res.dump();
+        JSArray data = res.getData();
         List<String> list = Arrays.asList("10249", "10258", "10252");
         assertEquals(3, data.length());
         for (Object obj : data) {
@@ -395,8 +397,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testOut01() throws Exception {
-        Engine   engine = engine();
-        Response res    = engine.get(url("orders?out(orderid,10249,10258,10252)"));
+        Engine engine = engine();
+        Response res = engine.get(url("orders?out(orderid,10249,10258,10252)"));
 
         Set ids = new HashSet(Utils.explode(",", "10249,10258,10252"));
         assertTrue(res.getFoundRows() == 22);
@@ -407,8 +409,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testLt01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
 
         res = engine.get(url("orders?lt(freight,3.25)"));
 
@@ -423,8 +425,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
     @Test
     public void testLe01() throws Exception {
-        Engine   engine = engine();
-        Response res    = null;
+        Engine engine = engine();
+        Response res = null;
 
         res = engine.get(url("orders?le(freight,3.2500)"));
         assertEquals(2, res.getFoundRows());

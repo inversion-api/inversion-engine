@@ -262,8 +262,13 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
         return values;
     }
 
+    /**
+     * Test if this query sould actually be run or just planned.
+     * 
+     * @return true if dryRun is true or db.isDryRun is true 
+     */
     public boolean isDryRun() {
-        return dryRun;
+        return dryRun || (db != null && db.isDryRun());
     }
 
     public T withDryRun(boolean dryRun) {

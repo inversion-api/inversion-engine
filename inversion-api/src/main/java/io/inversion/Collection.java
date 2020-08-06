@@ -96,7 +96,7 @@ public class Collection extends Rule<Collection> implements Serializable {
     protected boolean exclude = false;
 
     public Collection() {
-
+        
     }
 
     public Collection(String defaultName) {
@@ -105,11 +105,14 @@ public class Collection extends Rule<Collection> implements Serializable {
     }
 
     /**
-     * @return the default collection match rule: "{collection:" + getName() + "}/[:resource]/[:relationship]/*"
+     * @return the default collection match rule: "{_collection:" + getName() + "}/[:_resource]/[:_relationship]/*"
+     * @see Request.COLLECTION_KEY
+     * @see Request.RESOURCE_KEY
+     * @see Request.RELATIONSHIP_KEY
      */
     @Override
     protected RuleMatcher getDefaultIncludeMatch() {
-        return new RuleMatcher(null, new Path("{collection:" + getName() + "}/[:resource]/[:relationship]/*"));
+        return new RuleMatcher(null, new Path("{" + Request.COLLECTION_KEY + ":" + getName() + "}/[:" + Request.RESOURCE_KEY + "]/[:" + Request.RELATIONSHIP_KEY + "]/*"));
     }
 
     /**
@@ -189,6 +192,13 @@ public class Collection extends Rule<Collection> implements Serializable {
             if (columnName.equalsIgnoreCase(col.getColumnName()))
                 return col;
         }
+        return null;
+    }
+
+    public String getColumnName(String jsonName) {
+        Property prop = getPropertyByJsonName(jsonName);
+        if (prop != null)
+            return prop.getColumnName();
         return null;
     }
 

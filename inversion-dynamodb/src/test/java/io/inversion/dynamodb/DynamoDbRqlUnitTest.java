@@ -1,16 +1,9 @@
 package io.inversion.dynamodb;
 
-import io.inversion.Collection;
-import io.inversion.Db;
-import io.inversion.Index;
-import io.inversion.Relationship;
-import io.inversion.rql.AbstractRqlTest;
-import io.inversion.rql.RqlValidationSuite;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import java.util.ArrayList;
-import java.util.List;
+import io.inversion.rql.AbstractRqlTest;
 
 /**
  * Implements supported RQL test cases and adds extended cases to support
@@ -51,7 +44,7 @@ import java.util.List;
  * |  F   |  =     |  >     |        |        |        |        |        |        |  >     |        |        |          | Query - PRIMARY   | eq(orderId, 12345)&gt(type, 'AAAAA')&gt(shipCity,Atlanta)
  * |  G   |  =     |  sw    |        |        |        |        |        |        |        |        |        |          | Query - PRIMARY   | eq(orderId, 12345)&sw(type, 'ORD')
  * |  H   |  =     |  sw    |        |        |        |        |        |        |  =     |        |        |          | Query - LS1       | eq(orderId, 12345)&sw(type, 'ORD')&eq(shipCity,Atlanta)
- * SHOULDNT THIS BE A GET???  |  I   |  =     |  sw    |  =     |   =    |        |        |        |        |        |        |        |          | Query - GS1       | eq(orderId, 12345)&sw(type, 'ORD')&eq(customerId,9999)&eq(orderDate,'2013-01-08')
+ * |  I   |  =     |  sw    |  =     |   =    |        |        |        |        |        |        |        |          | Query - GS1       | eq(orderId, 12345)&sw(type, 'ORD')&eq(customerId,9999)&eq(orderDate,'2013-01-08')
  * |  J   |  =     |  sw    | =      | sw     |  =     |  =     |        |        |        |        |        |          | Query - GS2       |
  * |  K   |  gt    |  =     |        |        |        |        |        |        |        |        |        |          | Query - GS3       | gt(orderId, 12345)&eq(type, 'ORDER")
  * |  L   |  gt    |  sw    | =      |        |        |        |        |        |        |        |        |          | ????              |
@@ -60,98 +53,13 @@ import java.util.List;
  * </pre>
  */
 @TestInstance(Lifecycle.PER_CLASS)
-public class DynamoDbRqlUnitTest extends AbstractRqlTest {
+public class DynamoDbRqlUnitTest extends AbstractRqlTest implements AbstractDynamoTest {
 
     public DynamoDbRqlUnitTest() {
-        super(DynamoDbQuery.class.getName(), "dynamo");
-        urlPrefix = "northwind/dynamodb/";
-    }
+        super("northwind/dynamodb/", "dynamodb");
 
-    @Override
-    public void initializeDb() {
-        Db db = getDb();
-        if (db == null) {
-            db = new DynamoDb().withName("bad_name_missing_env_props_on_purpose");
-            setDb(db);
-        }
-    }
-
-    protected void customizeUnitTestTables(RqlValidationSuite suite) {
-        super.customizeUnitTestTables(suite);
-
-        Collection orders = suite.getCollection("orders");
-        orders.withProperty("type", "S");
-
-        Collection orderDetails         = suite.getCollection("orderDetails");
-        Collection employees            = suite.getCollection("employees");
-        Collection employeeOrderDetails = suite.getCollection("employeeOrderDetails");
-
-        for (Index index : orders.getIndexes())
-            orders.removeIndex(index);
-
-        for (Index index : orderDetails.getIndexes())
-            orderDetails.removeIndex(index);
-
-        for (Index index : employees.getIndexes())
-            employees.removeIndex(index);
-
-        for (Index index : employeeOrderDetails.getIndexes())
-            employeeOrderDetails.removeIndex(index);
-
-        for (Relationship r : orders.getRelationships())
-            orders.removeRelationship(r);
-
-        for (Relationship r : orderDetails.getRelationships())
-            orderDetails.removeRelationship(r);
-
-        for (Relationship r : employees.getRelationships())
-            employees.removeRelationship(r);
-
-        for (Relationship r : employeeOrderDetails.getRelationships())
-            employeeOrderDetails.removeRelationship(r);
-
-        orders.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "orderId", "type");
-        orders.withIndex("ls1", DynamoDb.LOCAL_SECONDARY_INDEX_TYPE, false, "orderId", "shipCity");
-        orders.withIndex("ls2", DynamoDb.LOCAL_SECONDARY_INDEX_TYPE, false, "orderId", "shipName");
-        orders.withIndex("ls3", DynamoDb.LOCAL_SECONDARY_INDEX_TYPE, false, "orderId", "requiredDate");
-        orders.withIndex("gs1", DynamoDb.GLOBAL_SECONDARY_INDEX_TYPE, false, "employeeId", "orderDate");
-        orders.withIndex("gs2", DynamoDb.GLOBAL_SECONDARY_INDEX_TYPE, false, "customerId", "requiredDate");
-        orders.withIndex("gs3", DynamoDb.GLOBAL_SECONDARY_INDEX_TYPE, false, "type", "orderId");
-
-        orderDetails.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "orderId", "productId");
-        orderDetails.getProperty("orderId").withPk(orders.getProperty("orderId"));
-
-        employees.withProperty("type", "S");
-        employees.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "employeeId", "type");
-        employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
-        employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
-        employees.withRelationship(new Relationship("reportsTo", Relationship.REL_MANY_TO_ONE, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
-        employees.withRelationship(new Relationship("employees", Relationship.REL_ONE_TO_MANY, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
-
-        employeeOrderDetails.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "employeeId", "orderId", "productId");
-        employeeOrderDetails.getProperty("employeeId").withPk(employees.getProperty("employeeId"));
-        employeeOrderDetails.getProperty("orderId").withPk(orderDetails.getProperty("orderId"));
-        employeeOrderDetails.getProperty("productId").withPk(orderDetails.getProperty("productId"));
-
-        employeeOrderDetails.withIndex("FK_EOD_employeeId", "FOREIGN_KEY", false, "employeeId");
-        employeeOrderDetails.withIndex("FK_EOD_orderdetails", "FOREIGN_KEY", false, "orderId", "productId");
-
-        employees.withRelationship(new Relationship("orderdetails", Relationship.REL_MANY_TO_MANY, employees, orderDetails, employeeOrderDetails.getIndex("FK_EOD_employeeId"), employeeOrderDetails.getIndex("FK_EOD_orderdetails")));
-
-        suite.withCollections(orders, orderDetails, employees, employeeOrderDetails);
-
-    }
-
-    /**
-     * The majority of these should be postgres/h2 compatible.  Mysql and MsSQL
-     * will probably have to customize most of these.
-     */
-    @Override
-    protected void customizeUnitTestSuite(RqlValidationSuite suite) {
-        super.customizeUnitTestSuite(suite);
-
-        for (String testKey : (List<String>) new ArrayList(suite.getTests().keySet())) {
-            String queryString = suite.getTests().get(testKey);
+        for (String testKey : testRequests.keySet()) {
+            String queryString = testRequests.get(testKey);
 
             if (queryString == null)
                 continue;
@@ -164,105 +72,173 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest {
 
                 if (queryString.startsWith("orders")) {
                     queryString += "type=ORDER";
-                    suite.withTest(testKey, queryString);
+                    withTestRequest(testKey, queryString);
                 }
-
             }
         }
 
-        suite//
-                .withResult("eq", "GetItemSpec:'Primary Index' key: [{orderID: 10248}, {type: ORDER}]")//
-                .withResult("ne", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=France} filterExpression='(#var2 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("n", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='(attribute_not_exists(#var2) or (#var3 = :val2))' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("nn", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("emp", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='(attribute_not_exists(#var2) or (#var3 = :val2))' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("nemp", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("likeMiddle", "400 Bad Request - DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.")//contains operator
-                .withResult("likeStartsWith", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//startswith
-                .withResult("likeEndsWith", "400 Bad Request - DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.")//
-                .withResult("sw", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("ew", "UNSUPPORTED")//
-                .withResult("w", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=ance} filterExpression='contains(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'")//contains
-                .withResult("wo", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=ance} filterExpression='(NOT contains(#var2,:val2))' keyConditionExpression='(#var1 = :val1)'")//not contains
-                .withResult("lt", "QuerySpec:'gs3' nameMap={#var1=type, #var2=freight} valueMap={:val1=ORDER, :val2=10} filterExpression='(#var2 < :val2)' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("le", "QuerySpec:'gs3' nameMap={#var1=type, #var2=freight} valueMap={:val1=ORDER, :val2=10} filterExpression='(#var2 <= :val2)' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("gt", "QuerySpec:'gs3' nameMap={#var1=type, #var2=freight} valueMap={:val1=ORDER, :val2=3.67} filterExpression='(#var2 > :val2)' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("ge", "QuerySpec:'gs3' nameMap={#var1=type, #var2=freight} valueMap={:val1=ORDER, :val2=3.67} filterExpression='(#var2 >= :val2)' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("in", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity} valueMap={:val1=ORDER, :val2=Reims, :val3=Charleroi} filterExpression='(#var2 IN (:val2, :val3))' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("out", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity} valueMap={:val1=ORDER, :val2=Reims, :val3=Charleroi} filterExpression='(NOT #var2 IN (:val2, :val3))' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("and", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity, #var3=shipCountry} valueMap={:val1=ORDER, :val2=Lyon, :val3=France} filterExpression='(#var2 = :val2) and (#var3 = :val3)' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("or", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity, #var3=shipCity} valueMap={:val1=ORDER, :val2=Reims, :val3=Charleroi} filterExpression='((#var2 = :val2) or (#var3 = :val3))' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("not", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity, #var3=shipCity} valueMap={:val1=ORDER, :val2=Reims, :val3=Charleroi} filterExpression='(NOT ((#var2 = :val2) or (#var3 = :val3)))' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("as", "UNSUPPORTED")//
-                .withResult("includes", "QuerySpec:'gs3' nameMap={#var1=type} valueMap={:val1=ORDER} projectionExpression='shipCountry,shipCity' keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("distinct", "UNSUPPORTED")//
-                .withResult("count1", "UNSUPPORTED")//
-                .withResult("count2", "UNSUPPORTED")//
-                .withResult("count3", "UNSUPPORTED")//
-                .withResult("countAs", "UNSUPPORTED")//
-                .withResult("sum", "UNSUPPORTED")//
-                .withResult("sumAs", "UNSUPPORTED")//
-                .withResult("sumIf", "UNSUPPORTED")//
-                .withResult("min", "UNSUPPORTED")//
-                .withResult("max", "UNSUPPORTED")//
-                .withResult("groupCount", "UNSUPPORTED")//
-                .withResult("offset", "UNSUPPORTED")//
-                .withResult("limit", "QuerySpec:'gs3' maxResultSize=7 nameMap={#var1=type} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)'")//
-                .withResult("page", "UNSUPPORTED")//
-                .withResult("pageNum", "UNSUPPORTED")//
+        withExpectedResult("eq", "GetItemSpec:'Primary Index' key: [{orderID: 10248}, {type: ORDER}]");
+        withExpectedResult("ne", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=France} filterExpression='(#var2 <> :val2)' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("n", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='(attribute_not_exists(#var2) or (#var3 = :val2))' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("nn", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("emp", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='(attribute_not_exists(#var2) or (#var3 = :val2))' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("nemp", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipRegion, #var3=shipRegion} valueMap={:val1=ORDER, :val2=null} filterExpression='attribute_exists(#var2) and (#var3 <> :val2)' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("likeMiddle", "400 Bad Request - DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.");//contains operator
+        withExpectedResult("likeStartsWith", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'");//startswith
+        withExpectedResult("likeEndsWith", "400 Bad Request - DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.");
+        withExpectedResult("sw", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=Franc} filterExpression='begins_with(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("ew", "UNSUPPORTED");
+        withExpectedResult("w", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=ance} filterExpression='contains(#var2,:val2)' keyConditionExpression='(#var1 = :val1)'");//contains
+        withExpectedResult("wo", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCountry} valueMap={:val1=ORDER, :val2=ance} filterExpression='(NOT contains(#var2,:val2))' keyConditionExpression='(#var1 = :val1)'");//not contains
+        withExpectedResult("lt", "QuerySpec:'gs3' nameMap={#var1=type, #var2=freight} valueMap={:val1=ORDER, :val2=10} filterExpression='(#var2 < :val2)' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("le", "QuerySpec:'gs3' nameMap={#var1=type, #var2=freight} valueMap={:val1=ORDER, :val2=10} filterExpression='(#var2 <= :val2)' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("gt", "QuerySpec:'gs3' nameMap={#var1=type, #var2=freight} valueMap={:val1=ORDER, :val2=3.67} filterExpression='(#var2 > :val2)' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("ge", "QuerySpec:'gs3' nameMap={#var1=type, #var2=freight} valueMap={:val1=ORDER, :val2=3.67} filterExpression='(#var2 >= :val2)' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("in", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity} valueMap={:val1=ORDER, :val2=Reims, :val3=Charleroi} filterExpression='(#var2 IN (:val2, :val3))' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("out", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity} valueMap={:val1=ORDER, :val2=Reims, :val3=Charleroi} filterExpression='(NOT #var2 IN (:val2, :val3))' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("and", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity, #var3=shipCountry} valueMap={:val1=ORDER, :val2=Lyon, :val3=France} filterExpression='(#var2 = :val2) and (#var3 = :val3)' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("or", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity, #var3=shipCity} valueMap={:val1=ORDER, :val2=Reims, :val3=Charleroi} filterExpression='((#var2 = :val2) or (#var3 = :val3))' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("not", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity, #var3=shipCity} valueMap={:val1=ORDER, :val2=Reims, :val3=Charleroi} filterExpression='(NOT ((#var2 = :val2) or (#var3 = :val3)))' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("as", "UNSUPPORTED");
+        withExpectedResult("includes", "QuerySpec:'gs3' nameMap={#var1=type} valueMap={:val1=ORDER} projectionExpression='shipCountry,shipCity,orderId,type' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("distinct", "UNSUPPORTED");
+        withExpectedResult("count1", "UNSUPPORTED");
+        withExpectedResult("count2", "UNSUPPORTED");
+        withExpectedResult("count3", "UNSUPPORTED");
+        withExpectedResult("countAs", "UNSUPPORTED");
+        withExpectedResult("sum", "UNSUPPORTED");
+        withExpectedResult("sumAs", "UNSUPPORTED");
+        withExpectedResult("sumIf", "UNSUPPORTED");
+        withExpectedResult("min", "UNSUPPORTED");
+        withExpectedResult("max", "UNSUPPORTED");
+        withExpectedResult("groupCount", "UNSUPPORTED");
+        withExpectedResult("offset", "UNSUPPORTED");
+        withExpectedResult("limit", "QuerySpec:'gs3' maxResultSize=7 nameMap={#var1=type} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("page", "UNSUPPORTED");
+        withExpectedResult("pageNum", "UNSUPPORTED");
 
-                .withTest("after", "orders?type=ORDER&after(type,ORDER,orderId,10254)")//
-                .withResult("after", "QuerySpec:'gs3' nameMap={#var1=type} valueMap={:val1=ORDER} exclusiveStartKey='[{type: ORDER}, {orderId: 10254}] keyConditionExpression='(#var1 = :val1)'")//
+        withTestRequest("after", "orders?type=ORDER&after(type,ORDER,orderId,10254)");
+        withExpectedResult("after", "QuerySpec:'gs3' nameMap={#var1=type} valueMap={:val1=ORDER} exclusiveStartKey='[{type: ORDER}, {orderId: 10254}] keyConditionExpression='(#var1 = :val1)'");
 
-                .withTest("sort", "orders?eq(type,ORDER)&sort(-orderId)")//
-                .withResult("sort", "QuerySpec:'gs3' nameMap={#var1=type} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' scanIndexForward=false")//
+        withTestRequest("sort", "orders?eq(type,ORDER)&sort(-orderId)");
+        withExpectedResult("sort", "QuerySpec:'gs3' nameMap={#var1=type} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' scanIndexForward=false");
 
-                .withTest("order", "orders?eq(customerId,12345)&order(-requiredDate)")//
-                .withResult("order", "QuerySpec:'gs2' nameMap={#var1=customerId} valueMap={:val1=12345} keyConditionExpression='(#var1 = :val1)' scanIndexForward=false")//
+        withTestRequest("order", "orders?eq(customerId,12345)&order(-requiredDate)");
+        withExpectedResult("order", "QuerySpec:'gs2' nameMap={#var1=customerId} valueMap={:val1=12345} keyConditionExpression='(#var1 = :val1)' scanIndexForward=false");
 
-                .withResult("onToManyExistsEq", "UNSUPPORTED")//
-                .withResult("onToManyNotExistsNe", "UNSUPPORTED")//
-                .withResult("manyToOneExistsEq", "UNSUPPORTED")//
-                .withResult("manyToOneNotExistsNe", "UNSUPPORTED")//
-                .withResult("manyTManyNotExistsNe", "UNSUPPORTED")//
+        withExpectedResult("onToManyExistsEq", "UNSUPPORTED");
+        withExpectedResult("onToManyNotExistsNe", "UNSUPPORTED");
+        withExpectedResult("manyToOneExistsEq", "UNSUPPORTED");
+        withExpectedResult("manyToOneNotExistsNe", "UNSUPPORTED");
+        withExpectedResult("manyTManyNotExistsNe", "UNSUPPORTED");
 
-                .withResult("eqNonexistantColumn", "QuerySpec:'gs3' nameMap={#var1=type, #var2=orderId, #var3=nonexistantColumn} valueMap={:val1=ORDER, :val2=1000, :val3=12} filterExpression='(#var3 = :val3)' keyConditionExpression='(#var1 = :val1) and (#var2 >= :val2)'")//
+        withExpectedResult("eqNonexistantColumn", "QuerySpec:'gs3' nameMap={#var1=type, #var2=orderId, #var3=nonexistantColumn} valueMap={:val1=ORDER, :val2=1000, :val3=12} filterExpression='(#var3 = :val3)' keyConditionExpression='(#var1 = :val1) and (#var2 >= :val2)'");
 
-                .withTest("A_scanWhenUnindexedFieldProvided", "orders?shipPostalCode=30305")//
-                .withResult("A_scanWhenUnindexedFieldProvided", "ScanSpec nameMap={#var1=shipPostalCode} valueMap={:val1=30305} filterExpression='(#var1 = :val1)'")//
+        withTestRequest("A_scanWhenUnindexedFieldProvided", "orders?shipPostalCode=30305");
+        withExpectedResult("A_scanWhenUnindexedFieldProvided", "ScanSpec nameMap={#var1=shipPostalCode} valueMap={:val1=30305} filterExpression='(#var1 = :val1)'");
 
-                .withTest("B_scanWhenOnlyLocalSecondaryProvided", "orders?eq(shipName,something)")//
-                .withResult("B_scanWhenOnlyLocalSecondaryProvided", "ScanSpec nameMap={#var1=shipName} valueMap={:val1=something} filterExpression='(#var1 = :val1)'")//
+        withTestRequest("B_scanWhenOnlyLocalSecondaryProvided", "orders?eq(shipName,something)");
+        withExpectedResult("B_scanWhenOnlyLocalSecondaryProvided", "ScanSpec nameMap={#var1=shipName} valueMap={:val1=something} filterExpression='(#var1 = :val1)'");
 
-                .withTest("C_queryPIWhenHashKeyProvided", "orders?eq(orderId, 12345)")//
-                .withResult("C_queryPIWhenHashKeyProvided", "QuerySpec:'Primary Index' nameMap={#var1=orderId} valueMap={:val1=12345} keyConditionExpression='(#var1 = :val1)'")//
+        withTestRequest("C_queryPIWhenHashKeyProvided", "orders?eq(orderId, 12345)");
+        withExpectedResult("C_queryPIWhenHashKeyProvided", "QuerySpec:'Primary Index' nameMap={#var1=orderId} valueMap={:val1=12345} keyConditionExpression='(#var1 = :val1)'");
 
-                .withTest("D_getWhenHashAndSortProvided", "orders?eq(orderId, 12345)&eq(type, 'ORDER')")//
-                .withResult("D_getWhenHashAndSortProvided", "GetItemSpec:'Primary Index' key: [{orderId: 12345}, {type: ORDER}]")//
+        withTestRequest("D_getWhenHashAndSortProvided", "orders?eq(orderId, 12345)&eq(type, 'ORDER')");
+        withExpectedResult("D_getWhenHashAndSortProvided", "GetItemSpec:'Primary Index' key: [{orderId: 12345}, {type: ORDER}]");
 
-                .withTest("E_queryPi", "orders?eq(orderId, 12345)&gt(type, 'AAAAA')")//
-                .withResult("E_queryPi", "QuerySpec:'Primary Index' nameMap={#var1=orderId, #var2=type} valueMap={:val1=12345, :val2=AAAAA} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)'")//
+        withTestRequest("E_queryPi", "orders?eq(orderId, 12345)&gt(type, 'AAAAA')");
+        withExpectedResult("E_queryPi", "QuerySpec:'Primary Index' nameMap={#var1=orderId, #var2=type} valueMap={:val1=12345, :val2=AAAAA} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)'");
 
-                .withTest("F_queryPi", "orders?eq(orderId, 12345)&gt(type, 'AAAAA')&gt(ShipCity,Atlanta)")//
-                .withResult("F_queryPi", "QuerySpec:'Primary Index' nameMap={#var1=orderId, #var2=type, #var3=ShipCity} valueMap={:val1=12345, :val2=AAAAA, :val3=Atlanta} filterExpression='(#var3 > :val3)' keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)'")
+        withTestRequest("F_queryPi", "orders?eq(orderId, 12345)&gt(type, 'AAAAA')&gt(ShipCity,Atlanta)");
+        withExpectedResult("F_queryPi", "QuerySpec:'Primary Index' nameMap={#var1=orderId, #var2=type, #var3=ShipCity} valueMap={:val1=12345, :val2=AAAAA, :val3=Atlanta} filterExpression='(#var3 > :val3)' keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)'");
 
-                .withTest("G_queryPi", "orders?eq(orderId, 12345)&sw(type, 'ORD')")//
-                .withResult("G_queryPi", "QuerySpec:'Primary Index' nameMap={#var1=orderId, #var2=type} valueMap={:val1=12345, :val2=ORD} keyConditionExpression='(#var1 = :val1) and begins_with(#var2,:val2)'")//
+        withTestRequest("G_queryPi", "orders?eq(orderId, 12345)&sw(type, 'ORD')");
+        withExpectedResult("G_queryPi", "QuerySpec:'Primary Index' nameMap={#var1=orderId, #var2=type} valueMap={:val1=12345, :val2=ORD} keyConditionExpression='(#var1 = :val1) and begins_with(#var2,:val2)'");
 
-                .withTest("H_queryLs1WhenHkEqAndLs1Eq", "orders?eq(orderId, 12345)&sw(type, 'ORD')&eq(ShipCity,Atlanta)")//
-                .withResult("H_queryLs1WhenHkEqAndLs1Eq", "QuerySpec:'ls1' nameMap={#var1=orderId, #var2=ShipCity, #var3=type} valueMap={:val1=12345, :val2=Atlanta, :val3=ORD} filterExpression='begins_with(#var3,:val3)' keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)'")//
+        withTestRequest("H_queryLs1WhenHkEqAndLs1Eq", "orders?eq(orderId, 12345)&sw(type, 'ORD')&eq(ShipCity,Atlanta)");
+        withExpectedResult("H_queryLs1WhenHkEqAndLs1Eq", "QuerySpec:'ls1' nameMap={#var1=orderId, #var2=ShipCity, #var3=type} valueMap={:val1=12345, :val2=Atlanta, :val3=ORD} filterExpression='begins_with(#var3,:val3)' keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)'");
 
-                .withTest("I_queryGs1When", "orders?eq(orderId, 12345)&sw(type,ORD)&eq(employeeId,9999)&eq(orderDate,'2013-01-08')")//
-                .withResult("I_queryGs1When", "QuerySpec:'gs1' nameMap={#var4=type, #var1=employeeId, #var2=orderDate, #var3=orderId} valueMap={:val1=9999, :val2=2013-01-08, :val3=12345, :val4=ORD} filterExpression='(#var3 = :val3) and begins_with(#var4,:val4)' keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)'")//
+        withTestRequest("I_queryGs1When", "orders?eq(orderId, 12345)&sw(type,ORD)&eq(employeeId,9999)&eq(orderDate,'2013-01-08')");
+        withExpectedResult("I_queryGs1When", "QuerySpec:'gs1' nameMap={#var4=type, #var1=employeeId, #var2=orderDate, #var3=orderId} valueMap={:val1=9999, :val2=2013-01-08, :val3=12345, :val4=ORD} filterExpression='(#var3 = :val3) and begins_with(#var4,:val4)' keyConditionExpression='(#var1 = :val1) and (#var2 = :val2)'");
 
-                .withTest("K_queryGs3", "orders?gt(orderId, 12345)&eq(type,ORDER)")//
-                .withResult("K_queryGs3", "QuerySpec:'gs3' nameMap={#var1=type, #var2=orderId} valueMap={:val1=ORDER, :val2=12345} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)'")//
+        withTestRequest("K_queryGs3", "orders?gt(orderId, 12345)&eq(type,ORDER)");
+        withExpectedResult("K_queryGs3", "QuerySpec:'gs3' nameMap={#var1=type, #var2=orderId} valueMap={:val1=ORDER, :val2=12345} keyConditionExpression='(#var1 = :val1) and (#var2 > :val2)'");
 
-                .withTest("M_queryGs2WhenGs2HkEq", "orders?eq(customerId,1234)")//
-                .withResult("M_queryGs2WhenGs2HkEq", "QuerySpec:'gs2' nameMap={#var1=customerId} valueMap={:val1=1234} keyConditionExpression='(#var1 = :val1)'")//
-
-        ;
-
+        withTestRequest("M_queryGs2WhenGs2HkEq", "orders?eq(customerId,1234)");
+        withExpectedResult("M_queryGs2WhenGs2HkEq", "QuerySpec:'gs2' nameMap={#var1=customerId} valueMap={:val1=1234} keyConditionExpression='(#var1 = :val1)'");
     }
+
+    //    @Override
+    //    public Db buildDb() {
+    //        Db db = new DynamoDb().withName("bad_name_missing_env_props_on_purpose");
+    //        if (isIntegTest()) {
+    //            db = DynamoDbFactory.buildNorthwindDynamoDb();
+    //        } else {
+    //            configureDefaultModel(db);
+    //
+    //            Collection orders = db.getCollectionByTableName("orders");
+    //            orders.withProperty("type", "S");
+    //
+    //            Collection orderDetails = db.getCollectionByTableName("orderDetails");
+    //            Collection employees = db.getCollectionByTableName("employees");
+    //            Collection employeeOrderDetails = db.getCollectionByTableName("employeeOrderDetails");
+    //
+    //            for (Index index : orders.getIndexes())
+    //                orders.removeIndex(index);
+    //
+    //            for (Index index : orderDetails.getIndexes())
+    //                orderDetails.removeIndex(index);
+    //
+    //            for (Index index : employees.getIndexes())
+    //                employees.removeIndex(index);
+    //
+    //            for (Index index : employeeOrderDetails.getIndexes())
+    //                employeeOrderDetails.removeIndex(index);
+    //
+    //            for (Relationship r : orders.getRelationships())
+    //                orders.removeRelationship(r);
+    //
+    //            for (Relationship r : orderDetails.getRelationships())
+    //                orderDetails.removeRelationship(r);
+    //
+    //            for (Relationship r : employees.getRelationships())
+    //                employees.removeRelationship(r);
+    //
+    //            for (Relationship r : employeeOrderDetails.getRelationships())
+    //                employeeOrderDetails.removeRelationship(r);
+    //
+    //            orders.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "orderId", "type");
+    //            orders.withIndex("ls1", DynamoDb.LOCAL_SECONDARY_INDEX_TYPE, false, "orderId", "shipCity");
+    //            orders.withIndex("ls2", DynamoDb.LOCAL_SECONDARY_INDEX_TYPE, false, "orderId", "shipName");
+    //            orders.withIndex("ls3", DynamoDb.LOCAL_SECONDARY_INDEX_TYPE, false, "orderId", "requiredDate");
+    //            orders.withIndex("gs1", DynamoDb.GLOBAL_SECONDARY_INDEX_TYPE, false, "employeeId", "orderDate");
+    //            orders.withIndex("gs2", DynamoDb.GLOBAL_SECONDARY_INDEX_TYPE, false, "customerId", "requiredDate");
+    //            orders.withIndex("gs3", DynamoDb.GLOBAL_SECONDARY_INDEX_TYPE, false, "type", "orderId");
+    //
+    //            orderDetails.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "orderId", "productId");
+    //            orderDetails.getProperty("orderId").withPk(orders.getProperty("orderId"));
+    //
+    //            employees.withProperty("type", "S");
+    //            employees.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "employeeId", "type");
+    //            employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
+    //            employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
+    //            employees.withRelationship(new Relationship("reportsTo", Relationship.REL_MANY_TO_ONE, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
+    //            employees.withRelationship(new Relationship("employees", Relationship.REL_ONE_TO_MANY, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
+    //
+    //            employeeOrderDetails.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "employeeId", "orderId", "productId");
+    //            employeeOrderDetails.getProperty("employeeId").withPk(employees.getProperty("employeeId"));
+    //            employeeOrderDetails.getProperty("orderId").withPk(orderDetails.getProperty("orderId"));
+    //            employeeOrderDetails.getProperty("productId").withPk(orderDetails.getProperty("productId"));
+    //
+    //            employeeOrderDetails.withIndex("FK_EOD_employeeId", "FOREIGN_KEY", false, "employeeId");
+    //            employeeOrderDetails.withIndex("FK_EOD_orderdetails", "FOREIGN_KEY", false, "orderId", "productId");
+    //
+    //            employees.withRelationship(new Relationship("orderdetails", Relationship.REL_MANY_TO_MANY, employees, orderDetails, employeeOrderDetails.getIndex("FK_EOD_employeeId"), employeeOrderDetails.getIndex("FK_EOD_orderdetails")));
+    //
+    //            db.withCollections(orders, orderDetails, employees, employeeOrderDetails);
+    //        }
+    //
+    //        return db;
+    //    }
 
 }
