@@ -26,8 +26,8 @@ jobs:
       script: "./gradlew build"
 
     # publish snapshot to oss.jfrog.org
-    - stage: snapshot
-      script: "./gradlew artifactoryPublish -x test -Dbintray.user=inversion -Dbintray.key=$BINTRAY_API_KEY -Dbuild.number=$TRAVIS_BUILD_NUMBER -Dsnapshot=true --refresh-dependencies"
+    # - stage: snapshot
+    #  script: "./gradlew artifactoryPublish -x test -Dbintray.user=inversion -Dbintray.key=$BINTRAY_API_KEY -Dbuild.number=$TRAVIS_BUILD_NUMBER -Dsnapshot=true --refresh-dependencies"
 
     # release a new stable version to bintray
     - stage: release
