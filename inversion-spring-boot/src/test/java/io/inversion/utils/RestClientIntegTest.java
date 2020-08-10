@@ -33,7 +33,7 @@ public class RestClientIntegTest {
             }
         }));
 
-        RestClient client = new RestClient().withGzipRequest(true);
+        RestClient client = new RestClient();
         Response resp = client.post("http://localhost:8080/testme", new JSNode("testing", "yep")).get();
         resp.dump().assertOk();
         assertTrue("yep".equals(resp.find("testing")));
