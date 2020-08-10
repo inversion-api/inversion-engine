@@ -151,11 +151,15 @@ public class RestClient {
 
     /**
      * Indicates that a request body should be gzipped and the content-encoding header should be sent with value "gzip".
+     * <p>
+     * Default value is true.
      */
     protected boolean                                useCompression           = true;
 
     /**
-     * If <code>compression</code> is true, anything over this size in bytes will be compressed.
+     * If <code>useCompression</code> is true, anything over this size in bytes will be compressed.
+     * <p>
+     * Default value is 1024.
      */
     protected int                                    compressionMinSize    = 1024;
 
