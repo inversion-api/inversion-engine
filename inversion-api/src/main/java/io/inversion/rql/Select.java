@@ -16,11 +16,11 @@
  */
 package io.inversion.rql;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.inversion.Collection;
 import io.inversion.Index;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Select<T extends Select, P extends Query> extends Builder<T, P> {
 
@@ -39,7 +39,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
 
         if (term.hasToken("function", "aggregate")) {
             String func = term.getTerm(0).getToken();
-            String col = term.getTerm(1).getToken();
+            String col  = term.getTerm(1).getToken();
 
             getParent().withTerm("group", col);
 
@@ -56,7 +56,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
 
         if (term.hasToken("countascol")) {
             //this is done as a transformation here instead of in SqlRql.print because it requires the addition of a select and where clause
-            String col = term.getToken(0);
+            String     col   = term.getToken(0);
             List<Term> terms = term.getTerms();
 
             for (int i = 1; i < terms.size(); i++) {

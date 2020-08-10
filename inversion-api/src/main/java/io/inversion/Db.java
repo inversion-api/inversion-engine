@@ -52,61 +52,61 @@ import java.util.stream.Collectors;
  */
 public abstract class Db<T extends Db> {
 
-    protected final Logger          log            = LoggerFactory.getLogger(getClass());
+    protected final Logger                log            = LoggerFactory.getLogger(getClass());
     /**
      * The Collections that are the REST interface to the backend tables (or buckets, folders, containers etc.) this Db exposes through an Api.
      */
-    protected ArrayList<Collection> collections    = new ArrayList<>();
+    protected       ArrayList<Collection> collections    = new ArrayList<>();
     /**
      * A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflicitive Collection creation.
      */
-    protected Map<String, String>   includeTables  = new HashMap<>();
+    protected       Map<String, String>   includeTables  = new HashMap<>();
     /**
      * Indicates that this Db should reflectively create and configure Collections to represent its underlying tables.
      * <p>
      * This would be false when an Api designer wants to very specifically configure an Api probably when the underlying db does not support the type of
      * reflection required.  For example, you may want to put specific Property and Relationship structure on top of an unstructured JSON document store.
      */
-    protected boolean               bootstrap      = true;
+    protected       boolean               bootstrap      = true;
     /**
      * The name of his Db used for "name.property" style autowiring.
      */
-    protected String                name           = null;
+    protected       String                name           = null;
     /**
      * A property that can be used to disambiguate different backends supported by a single subclass.
      * <p>
      * For example type might be "mysql" for a JdbcDb.
      */
-    protected String                type           = null;
+    protected       String                type           = null;
     /**
      * Used to differentiate which Collection is being referred by a Request when an Api supports Collections with the same name from different Dbs.
      */
-    protected Path                  endpointPath   = null;
+    protected       Path                  endpointPath   = null;
     /**
      * OPTIONAL column names that should be included in RQL queries, upserts and patches.
      *
      * @see #filterOutJsonProperty(Collection, String)
      */
-    protected Set<String>           includeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    protected       Set<String>           includeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     /**
      * OPTIONAL column names that should be excluded from RQL queries, upserts and patches.
      *
      * @see #filterOutJsonProperty(Collection, String)
      */
-    protected Set<String>           excludeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    protected       Set<String>           excludeColumns = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     /**
      * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves
      */
-    protected Set<String>           reservedParams = new TreeSet<String>(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
+    protected       Set<String>           reservedParams = new TreeSet<String>(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
 
-    transient Set<Api>              runningApis    = new HashSet<>();
-    transient boolean               firstStartup   = true;
-    transient boolean               shutdown       = false;
+    transient Set<Api> runningApis  = new HashSet<>();
+    transient boolean  firstStartup = true;
+    transient boolean  shutdown     = false;
 
     /**
      * When set to true the Db will do everything it can to "work offline" logging commands it would have run but not actually running them.
      */
-    protected boolean               dryRun         = false;
+    protected boolean dryRun = false;
 
     public Db() {
     }
@@ -250,8 +250,8 @@ public abstract class Db<T extends Db> {
                         if (pk != null) {
                             term.removeTerm(child);
                             for (int i = 0; i < pk.size(); i++) {
-                                Property c = pk.getProperty(i);
-                                boolean includesPkCol = false;
+                                Property c             = pk.getProperty(i);
+                                boolean  includesPkCol = false;
                                 for (Term col : term.getTerms()) {
                                     if (col.hasToken(c.getColumnName())) {
                                         includesPkCol = true;
@@ -336,7 +336,7 @@ public abstract class Db<T extends Db> {
                     //extra columns they will be copied over last
                     for (Property attr : collection.getProperties()) {
                         String attrName = attr.getJsonName();
-                        String colName = attr.getColumnName();
+                        String colName  = attr.getColumnName();
 
                         boolean rowHas = row.containsKey(colName);
                         if (rowHas)
@@ -413,7 +413,7 @@ public abstract class Db<T extends Db> {
                     copied.add(colName.toLowerCase());
 
                     Object attrValue = node.get(attrName);
-                    Object colValue = collection.getDb().cast(attr, attrValue);
+                    Object colValue  = collection.getDb().cast(attr, attrValue);
                     mapped.put(colName, colValue);
                 }
             }
@@ -423,7 +423,7 @@ public abstract class Db<T extends Db> {
                 if (rel.isManyToOne() && node.get(rel.getName()) != null) {
                     if (rel.getFkIndex1().size() == 1 && rel.getRelated().getPrimaryIndex().size() > 1) {
                         String jsonName = rel.getFkIndex1().getJsonNames().get(0);
-                        String colName = rel.getFkIndex1().getColumnName(0);
+                        String colName  = rel.getFkIndex1().getColumnName(0);
 
                         Object value = node.get(jsonName);
 
@@ -512,7 +512,7 @@ public abstract class Db<T extends Db> {
 
             if (srcCols != destCols) {
                 for (int i = 0; i < srcCols.size(); i++) {
-                    String key = srcCols.getProperty(i).getColumnName();
+                    String key   = srcCols.getProperty(i).getColumnName();
                     Object value = srcRow.remove(key);
                     srcRow.put(destCols.getProperty(i).getColumnName(), value);
                 }
@@ -1015,7 +1015,7 @@ public abstract class Db<T extends Db> {
             while (token.startsWith("-") || token.startsWith("+"))
                 token = token.substring(1, token.length());
 
-            String name = "";
+            String   name  = "";
             String[] parts = token.split("\\.");
 
             //         if (parts.length > 2)//this could be a literal
@@ -1104,7 +1104,7 @@ public abstract class Db<T extends Db> {
      */
     public T withIncludeTables(String includeTables) {
         for (String pair : Utils.explode(",", includeTables)) {
-            String tableName = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
+            String tableName      = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
             String collectionName = pair.indexOf('|') < 0 ? pair : pair.substring(pair.indexOf("|") + 1);
             withIncludeTable(tableName, collectionName);
         }
@@ -1286,31 +1286,31 @@ public abstract class Db<T extends Db> {
      */
     static class Pluralizer {
 
-        private static final String[] CATEGORY_EX_ICES  = {"codex", "murex", "silex",};
-        private static final String[] CATEGORY_IX_ICES  = {"radix", "helix",};
-        private static final String[] CATEGORY_UM_A     = {"bacterium", "agendum", "desideratum", "erratum", "stratum", "datum", "ovum", "extremum", "candelabrum",};
+        private static final String[]   CATEGORY_EX_ICES  = {"codex", "murex", "silex",};
+        private static final String[]   CATEGORY_IX_ICES  = {"radix", "helix",};
+        private static final String[]   CATEGORY_UM_A     = {"bacterium", "agendum", "desideratum", "erratum", "stratum", "datum", "ovum", "extremum", "candelabrum",};
         // Always us -> i
-        private static final String[] CATEGORY_US_I     = {"alumnus", "alveolus", "bacillus", "bronchus", "locus", "nucleus", "stimulus", "meniscus", "thesaurus",};
-        private static final String[] CATEGORY_ON_A     = {"criterion", "perihelion", "aphelion", "phenomenon", "prolegomenon", "noumenon", "organon", "asyndeton", "hyperbaton",};
-        private static final String[] CATEGORY_A_AE     = {"alumna", "alga", "vertebra", "persona"};
+        private static final String[]   CATEGORY_US_I     = {"alumnus", "alveolus", "bacillus", "bronchus", "locus", "nucleus", "stimulus", "meniscus", "thesaurus",};
+        private static final String[]   CATEGORY_ON_A     = {"criterion", "perihelion", "aphelion", "phenomenon", "prolegomenon", "noumenon", "organon", "asyndeton", "hyperbaton",};
+        private static final String[]   CATEGORY_A_AE     = {"alumna", "alga", "vertebra", "persona"};
         // Always o -> os
-        private static final String[] CATEGORY_O_OS     = {"albino", "archipelago", "armadillo", "commando", "crescendo", "fiasco", "ditto", "dynamo", "embryo", "ghetto", "guano", "inferno", "jumbo", "lumbago", "magneto", "manifesto", "medico", "octavo", "photo", "pro", "quarto", "canto", "lingo", "generalissimo", "stylo", "rhino", "casino", "auto", "macro", "zero", "todo"};
+        private static final String[]   CATEGORY_O_OS     = {"albino", "archipelago", "armadillo", "commando", "crescendo", "fiasco", "ditto", "dynamo", "embryo", "ghetto", "guano", "inferno", "jumbo", "lumbago", "magneto", "manifesto", "medico", "octavo", "photo", "pro", "quarto", "canto", "lingo", "generalissimo", "stylo", "rhino", "casino", "auto", "macro", "zero", "todo"};
         // Classical o -> i  (normally -> os)
-        private static final String[] CATEGORY_O_I      = {"solo", "soprano", "basso", "alto", "contralto", "tempo", "piano", "virtuoso",};
-        private static final String[] CATEGORY_EN_INA   = {"stamen", "foramen", "lumen"};
+        private static final String[]   CATEGORY_O_I      = {"solo", "soprano", "basso", "alto", "contralto", "tempo", "piano", "virtuoso",};
+        private static final String[]   CATEGORY_EN_INA   = {"stamen", "foramen", "lumen"};
         // -a to -as (anglicized) or -ata (classical)
-        private static final String[] CATEGORY_A_ATA    = {"anathema", "enema", "oedema", "bema", "enigma", "sarcoma", "carcinoma", "gumma", "schema", "charisma", "lemma", "soma", "diploma", "lymphoma", "stigma", "dogma", "magma", "stoma", "drama", "melisma", "trauma", "edema", "miasma"};
-        private static final String[] CATEGORY_IS_IDES  = {"iris", "clitoris"};
+        private static final String[]   CATEGORY_A_ATA    = {"anathema", "enema", "oedema", "bema", "enigma", "sarcoma", "carcinoma", "gumma", "schema", "charisma", "lemma", "soma", "diploma", "lymphoma", "stigma", "dogma", "magma", "stoma", "drama", "melisma", "trauma", "edema", "miasma"};
+        private static final String[]   CATEGORY_IS_IDES  = {"iris", "clitoris"};
         // -us to -uses (anglicized) or -us (classical)
-        private static final String[] CATEGORY_US_US    = {"apparatus", "impetus", "prospectus", "cantus", "nexus", "sinus", "coitus", "plexus", "status", "hiatus"};
-        private static final String[] CATEGORY_NONE_I   = {"afreet", "afrit", "efreet"};
-        private static final String[] CATEGORY_NONE_IM  = {"cherub", "goy", "seraph"};
-        private static final String[] CATEGORY_EX_EXES  = {"apex", "latex", "vertex", "cortex", "pontifex", "vortex", "index", "simplex"};
-        private static final String[] CATEGORY_IX_IXES  = {"appendix"};
-        private static final String[] CATEGORY_S_ES     = {"acropolis", "chaos", "lens", "aegis", "cosmos", "mantis", "alias", "dais", "marquis", "asbestos", "digitalis", "metropolis", "atlas", "epidermis", "pathos", "bathos", "ethos", "pelvis", "bias", "gas", "polis", "caddis", "glottis", "rhinoceros", "cannabis", "glottis", "sassafras", "canvas", "ibis", "trellis"};
-        private static final String[] CATEGORY_MAN_MANS = {"human", "Alabaman", "Bahaman", "Burman", "German", "Hiroshiman", "Liman", "Nakayaman", "Oklahoman", "Panaman", "Selman", "Sonaman", "Tacoman", "Yakiman", "Yokohaman", "Yuman"};
-        private static Pluralizer     inflector         = new Pluralizer();
-        private final List<Rule>      rules             = new ArrayList<Rule>();
+        private static final String[]   CATEGORY_US_US    = {"apparatus", "impetus", "prospectus", "cantus", "nexus", "sinus", "coitus", "plexus", "status", "hiatus"};
+        private static final String[]   CATEGORY_NONE_I   = {"afreet", "afrit", "efreet"};
+        private static final String[]   CATEGORY_NONE_IM  = {"cherub", "goy", "seraph"};
+        private static final String[]   CATEGORY_EX_EXES  = {"apex", "latex", "vertex", "cortex", "pontifex", "vortex", "index", "simplex"};
+        private static final String[]   CATEGORY_IX_IXES  = {"appendix"};
+        private static final String[]   CATEGORY_S_ES     = {"acropolis", "chaos", "lens", "aegis", "cosmos", "mantis", "alias", "dais", "marquis", "asbestos", "digitalis", "metropolis", "atlas", "epidermis", "pathos", "bathos", "ethos", "pelvis", "bias", "gas", "polis", "caddis", "glottis", "rhinoceros", "cannabis", "glottis", "sassafras", "canvas", "ibis", "trellis"};
+        private static final String[]   CATEGORY_MAN_MANS = {"human", "Alabaman", "Bahaman", "Burman", "German", "Hiroshiman", "Liman", "Nakayaman", "Oklahoman", "Panaman", "Selman", "Sonaman", "Tacoman", "Yakiman", "Yokohaman", "Yuman"};
+        private static       Pluralizer inflector         = new Pluralizer();
+        private final        List<Rule> rules             = new ArrayList<Rule>();
 
         public Pluralizer() {
             this(MODE.ENGLISH_ANGLICIZED);
@@ -1558,8 +1558,8 @@ public abstract class Db<T extends Db> {
 
             @Override
             public String getPlural(String word) {
-                StringBuffer buffer = new StringBuffer();
-                Matcher matcher = singular.matcher(word);
+                StringBuffer buffer  = new StringBuffer();
+                Matcher      matcher = singular.matcher(word);
                 if (matcher.find()) {
                     matcher.appendReplacement(buffer, plural);
                     matcher.appendTail(buffer);

@@ -16,20 +16,22 @@
  */
 package io.inversion.rql;
 
-import io.inversion.*;
+import io.inversion.AbstractEngineTest;
+import io.inversion.Engine;
+import io.inversion.Response;
+import io.inversion.Results;
 import io.inversion.utils.Utils;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.junit.jupiter.api.Test;
-
 public abstract class AbstractRqlTest implements AbstractEngineTest {
 
-    protected String              urlPrefix         = null;
-    protected Engine              engine            = null;
-    protected String              type              = null;
+    protected String urlPrefix = null;
+    protected Engine engine    = null;
+    protected String type      = null;
 
     protected Map<String, String> testRequests      = new LinkedHashMap<>();
     protected Map<String, String> expectedResponses = new HashMap<>();
@@ -217,7 +219,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
 
     /**
      * Override me to add custom test execution handling.
-     * 
+     *
      * @param engine
      * @param urlPrefix
      * @param testKey

@@ -17,7 +17,6 @@
 package io.inversion.action.db;
 
 import io.inversion.AbstractEngineTest;
-import io.inversion.Db;
 import io.inversion.Engine;
 import io.inversion.Response;
 

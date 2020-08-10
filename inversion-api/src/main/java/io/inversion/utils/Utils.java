@@ -40,18 +40,18 @@ import java.util.regex.Pattern;
  */
 public class Utils {
 
-    public static final int         KB                 = 1048;
-    public static final int         MB                 = 1048576;
-    public static final long        GB                 = 1073741824;
-    public static final int         K64                = 65536;
+    public static final int  KB  = 1048;
+    public static final int  MB  = 1048576;
+    public static final long GB  = 1073741824;
+    public static final int  K64 = 65536;
 
-    public static final long        HOUR               = 1000 * 60 * 60;
-    public static final long        DAY                = 1000 * 60 * 60 * 24;
-    public static final long        MONTH              = 1000 * 60 * 60 * 24 * 31;
-    public static final long        WEEK               = 1000 * 60 * 60 * 24 * 7;
-    public static final long        YEAR               = 1000 * 60 * 60 * 24 * 365;
+    public static final long HOUR  = 1000 * 60 * 60;
+    public static final long DAY   = 1000 * 60 * 60 * 24;
+    public static final long MONTH = 1000 * 60 * 60 * 24 * 31;
+    public static final long WEEK  = 1000 * 60 * 60 * 24 * 7;
+    public static final long YEAR  = 1000 * 60 * 60 * 24 * 365;
 
-    protected static final String   NEW_LINE           = System.getProperty("line.separator");
+    protected static final String NEW_LINE = System.getProperty("line.separator");
 
     protected static final String[] EMPTY_STRING_ARRAY = new String[0];
 
@@ -172,12 +172,12 @@ public class Utils {
      */
     public static List<String> split(String string, char splitOn, char... quoteChars) {
         List<String> strings = new ArrayList();
-        Set quotes = new HashSet();
+        Set          quotes  = new HashSet();
         for (char c : quoteChars)
             quotes.add(c);
 
-        boolean quoted = false;
-        StringBuffer buff = new StringBuffer("");
+        boolean      quoted = false;
+        StringBuffer buff   = new StringBuffer("");
         for (int i = 0; i < string.length(); i++) {
             char c = string.charAt(i);
 
@@ -560,7 +560,7 @@ public class Utils {
                 for (int i = 0; i < expected.length() && i < actual.length(); i++) {
                     if (expected.charAt(i) == actual.charAt(i)) {
                         System.out.print("           ");
-                        
+
                     } else {
                         System.out.println("X");
                         break;
@@ -660,7 +660,7 @@ public class Utils {
 
     public static List<String> getStackTraceLines(Throwable stackTrace) {
         ByteArrayOutputStream baos = null;
-        PrintWriter writer;
+        PrintWriter           writer;
 
         baos = new ByteArrayOutputStream();
         writer = new PrintWriter(baos);
@@ -677,9 +677,9 @@ public class Utils {
 
         writer.close();
 
-        List lines = new ArrayList();
-        String s = new String(baos.toByteArray());
-        String[] sArr = s.split("\n");
+        List     lines = new ArrayList();
+        String   s     = new String(baos.toByteArray());
+        String[] sArr  = s.split("\n");
         lines.addAll(new ArrayList(Arrays.asList(sArr)));
 
         return lines;
@@ -687,7 +687,7 @@ public class Utils {
 
     public static String getStackTraceString(Throwable stackTrace) {
         ByteArrayOutputStream baos = null;
-        PrintWriter writer;
+        PrintWriter           writer;
 
         baos = new ByteArrayOutputStream();
         writer = new PrintWriter(baos);
@@ -771,7 +771,7 @@ public class Utils {
 
     public static final String limitLines(String text, int limit) {
         StringBuffer buffer = new StringBuffer("");
-        String[] lines = splitLines(text);
+        String[]     lines  = splitLines(text);
         for (int i = 0; i < lines.length && i < limit; i++) {
             if (i == limit - 1 && i != lines.length - 1) {
                 buffer.append("..." + (lines.length - i) + " more");
@@ -839,9 +839,9 @@ public class Utils {
      * @return
      */
     public static List<Field> getFields(Class clazz) {
-        Class inClass = clazz;
-        Set found = new HashSet();
-        List<Field> fields = new ArrayList();
+        Class       inClass = clazz;
+        Set         found   = new HashSet();
+        List<Field> fields  = new ArrayList();
 
         do {
             if (clazz.getName().startsWith("java"))
@@ -963,7 +963,7 @@ public class Utils {
      */
     public static String read(File file) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        FileInputStream in = new FileInputStream(file);
+        FileInputStream       in  = new FileInputStream(file);
         pipe(in, out);
         return new String(out.toByteArray());
     }
@@ -1008,7 +1008,7 @@ public class Utils {
     public static void pipe(InputStream src, OutputStream dest) throws Exception {
         try {
             boolean isBlocking = true;
-            byte[] buf = new byte[K64];
+            byte[]  buf        = new byte[K64];
 
             int nread;
             int navailable;
@@ -1162,7 +1162,7 @@ public class Utils {
                     s.append("\\");
                     s.append(c);
                     break;
-                default :
+                default:
                     s.append(c);
                     break;
             }
@@ -1388,7 +1388,7 @@ public class Utils {
                         return json;
                     }
 
-                default :
+                default:
                     ApiException.throw500InternalServerError("Error casting '{}' as type '{}'", value, type);
             }
         } catch (Exception ex) {
