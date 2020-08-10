@@ -33,6 +33,7 @@ import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -41,6 +42,7 @@ import org.apache.http.ssl.TrustStrategy;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -52,6 +54,8 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * An HttpClient wrapper designed specifically to run inside of an Inversion {@code io.inversion.Action} with some superpowers.
@@ -143,6 +147,11 @@ public class RestClient {
      * Indicates the headers from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted headers.
      */
     protected boolean forwardHeaders = false;
+
+    /**
+     * Indicates that a request body should be gzipped and the content-encoding header should be sent with value "gzip".
+     */
+    protected boolean gzipRequest = false;
 
     /**
      * Always forward these headers.
@@ -548,7 +557,22 @@ public class RestClient {
             }
             if (request.getBody() != null && req instanceof HttpEntityEnclosingRequestBase) {
                 response.debug("\r\n--request body--------");
-                ((HttpEntityEnclosingRequestBase) req).setEntity(new StringEntity(request.getBody(), "UTF-8"));
+
+                if (isGzipRequest()) {
+                    req.setHeader("Content-Encoding", "gzip");
+                    ByteArrayOutputStream obj  = new ByteArrayOutputStream();
+                    GZIPOutputStream      gzip = new GZIPOutputStream(obj);
+                    gzip.write(request.getBody().getBytes("UTF-8"));
+                    gzip.flush();
+                    gzip.close();
+                    ((HttpEntityEnclosingRequestBase) req).setEntity(new ByteArrayEntity(obj.toByteArray()));
+                } else {
+                    ((HttpEntityEnclosingRequestBase) req).setEntity(new StringEntity(request.getBody(), "UTF-8"));
+                }
+            }
+
+            if (Utils.empty(request.getHeader("Accept-Encoding"))) {
+                req.setHeader("Accept-Encoding", "gzip");
             }
 
             RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(socketTimeout).setConnectTimeout(connectTimeout).setConnectionRequestTimeout(requestTimeout).build();
@@ -857,6 +881,15 @@ public class RestClient {
 
     public RestClient withName(String name) {
         this.name = name;
+        return this;
+    }
+
+    public boolean isGzipRequest() {
+        return gzipRequest;
+    }
+
+    public RestClient withGzipRequest(boolean gzipRequest) {
+        this.gzipRequest = gzipRequest;
         return this;
     }
 

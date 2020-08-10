@@ -322,6 +322,7 @@ public class Request {
     }
 
     public String getHeader(String key) {
+        key = key.toLowerCase();
         List<String> vals = headers.get(key);
         if (vals != null && vals.size() > 0)
             return vals.get(0);
@@ -329,6 +330,7 @@ public class Request {
     }
 
     public void removeHeader(String key) {
+        key = key.toLowerCase();
         headers.remove(key);
     }
 
@@ -340,6 +342,7 @@ public class Request {
     }
 
     public void withHeader(String key, String value) {
+        key = key.toLowerCase();
         if (!headers.containsMapping(key, value))
             headers.put(key, value);
     }
