@@ -135,56 +135,55 @@ import java.util.zip.GZIPOutputStream;
  */
 public class RestClient {
 
-    static Log                                       log              = LogFactory.getLog(RestClient.class);
+    static Log                                       log                = LogFactory.getLog(RestClient.class);
 
-    protected String                                 name             = null;
+    protected String                                 name               = null;
 
     /**
      * Optional base url that will be prepended to the url arg of any calls assuming that the url arg supplied is a relative path and not an absolute url.
      */
-    protected String                                 url              = null;
+    protected String                                 url                = null;
 
     /**
      * Indicates the headers from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted headers.
      */
-    protected boolean                                forwardHeaders   = false;
+    protected boolean                                forwardHeaders     = false;
 
     /**
      * Indicates that a request body should be gzipped and the content-encoding header should be sent with value "gzip".
-     * <p>
-     * Valid values include "on", "off", "force" or the number of bytes of content that should trigger compression.
-     * <p>
-     * The default value is "1024" which implies "on" for anything over 1KB.
-     * <p>
-     * This property is modeled off of {@see org.apache.coyote.CompressionConfig.setCompression()}.
      */
-    protected String                                 compression      = "1024";
+    protected boolean                                compression        = true;
+
+    /**
+     * If <code>compression</code> is true, anything over this size in bytes will be compressed.
+     */
+    protected int                                    compressionMinSize = 1024;
 
     /**
      * Always forward these headers.
      *
      * @see #shouldForwardHeader(String)
      */
-    protected Set                                    whitelistHeaders = new HashSet(Arrays.asList("authorization", "cookie", "x-forwarded-host", " x-forwarded-proto"));
+    protected Set                                    whitelistHeaders   = new HashSet(Arrays.asList("authorization", "cookie", "x-forwarded-host", " x-forwarded-proto"));
 
     /**
      * Never forward these headers.
      *
      * @see #shouldForwardHeader(String)
      */
-    protected Set                                    blacklistHeaders = new HashSet(Arrays.asList("content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host"));
+    protected Set                                    blacklistHeaders   = new HashSet(Arrays.asList("content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host"));
 
     /**
      * Headers that are always sent regardless of <code>forwardHeaders</code>, <code>whitelistHeaders</code> and <code>blacklistHeaders</code> state.
      * <p>
      * These headers will overwrite any caller supplied or forwarded header with the same key, not append to the value list.
      */
-    protected ArrayListValuedHashMap<String, String> forcedHeaders    = new ArrayListValuedHashMap();
+    protected ArrayListValuedHashMap<String, String> forcedHeaders      = new ArrayListValuedHashMap();
 
     /**
      * Indicates the params from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted params.
      */
-    protected boolean                                forwardParams    = false;
+    protected boolean                                forwardParams      = false;
 
     /**
      * Always forward these params.
@@ -192,7 +191,7 @@ public class RestClient {
      *
      * @see #shouldForwardParam(String)
      */
-    protected Set<String>                            whitelistParams  = new HashSet();
+    protected Set<String>                            whitelistParams    = new HashSet();
 
     /**
      * Never forward these params.
@@ -200,19 +199,19 @@ public class RestClient {
      *
      * @see #shouldForwardParam(String)
      */
-    protected Set<String>                            blacklistParams  = new HashSet();
+    protected Set<String>                            blacklistParams    = new HashSet();
 
     /**
      * The thread pool executor used to make asynchronous requests
      */
-    protected Executor                               executor         = null;
+    protected Executor                               executor           = null;
 
     /**
      * The default maximum number of times to retry a request
      * <p>
      * The default value is zero meaning by default, failed requests will not be retried
      */
-    protected int                                    retryMax         = 0;
+    protected int                                    retryMax           = 0;
 
     /**
      * The length of time before the first retry.
@@ -221,45 +220,45 @@ public class RestClient {
      *
      * @see #computeTimeout(Request)
      */
-    protected int                                    retryTimeoutMin  = 10;
+    protected int                                    retryTimeoutMin    = 10;
 
     /**
      * The maximum amount of time to wait before a single retry.
      *
      * @see #computeTimeout(Request)
      */
-    protected int                                    retryTimeoutMax  = 1000;
+    protected int                                    retryTimeoutMax    = 1000;
 
     /**
      * Parameter for default HttpClient configuration
      *
      * @see org.apache.http.client.config.RequstConfig.setSocketTimeout
      */
-    protected int                                    socketTimeout    = 30000;
+    protected int                                    socketTimeout      = 30000;
 
     /**
      * Parameter for default HttpClient configuration
      *
      * @see org.apache.http.client.config.RequstConfig.setConnectTimeout
      */
-    protected int                                    connectTimeout   = 30000;
+    protected int                                    connectTimeout     = 30000;
 
     /**
      * Parameter for default HttpClient configuration
      *
      * @see org.apache.http.client.config.RequstConfig.setConnectionRequestTimeout
      */
-    protected int                                    requestTimeout   = 30000;
+    protected int                                    requestTimeout     = 30000;
 
     /**
      * The underlying HttpClient use for all network comms.
      */
-    protected HttpClient                             httpClient       = null;
+    protected HttpClient                             httpClient         = null;
 
     /**
      * The timer used it trigger retries.
      */
-    Timer                                            timer            = null;
+    Timer                                            timer              = null;
 
     public RestClient() {
 
@@ -568,12 +567,7 @@ public class RestClient {
 
                 byte[] bytes = request.getBody().getBytes("UTF-8");
 
-                boolean doCompress = "force".equalsIgnoreCase(compression);
-                if (!doCompress && !"off".equalsIgnoreCase("compression")) {
-                    if (bytes.length >= Long.parseLong(compression))
-                        doCompress = true;
-                }
-                if (doCompress) {
+                if (compression && bytes.length >= compressionMinSize) {
                     req.setHeader("Content-Encoding", "gzip");
                     ByteArrayOutputStream obj = new ByteArrayOutputStream();
                     GZIPOutputStream gzip = new GZIPOutputStream(obj);
@@ -902,12 +896,21 @@ public class RestClient {
         return this;
     }
 
-    public String getCompression() {
+    public boolean hasCompression() {
         return compression;
     }
 
-    public RestClient withCompression(String compression) {
+    public RestClient withCompression(boolean compression) {
         this.compression = compression;
+        return this;
+    }
+
+    public int getCompressionMinSize() {
+        return compressionMinSize;
+    }
+
+    public RestClient withCompressionMinSize(int compressionMinSize) {
+        this.compressionMinSize = compressionMinSize;
         return this;
     }
 
