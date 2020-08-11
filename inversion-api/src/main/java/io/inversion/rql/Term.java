@@ -260,7 +260,7 @@ public class Term implements Comparable<Term> {
     }
 
     public static Term term(Term parent, String token, Object... terms) {
-        Term newTerm = new Term(parent, token);
+        Term newTerm       = new Term(parent, token);
         List deconstructed = deconstructed(new ArrayList(), terms);
         for (Object aTerm : deconstructed) {
             if (aTerm instanceof Term) {

@@ -1,7 +1,7 @@
 {
-	"href": "http://localhost/crm/identifiers/10",
-	"identifier": "new_one_val_1_updated",
-	"customer": {
-		"lastName": "Tester2"
-	}
+  "href": "http://localhost/crm/identifiers/10",
+  "identifier": "new_one_val_1_updated",
+  "customer": {
+    "lastName": "Tester2"
+  }
 }

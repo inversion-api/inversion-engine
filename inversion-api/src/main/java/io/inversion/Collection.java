@@ -96,7 +96,7 @@ public class Collection extends Rule<Collection> implements Serializable {
     protected boolean exclude = false;
 
     public Collection() {
-        
+
     }
 
     public Collection(String defaultName) {

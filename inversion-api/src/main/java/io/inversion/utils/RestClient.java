@@ -33,6 +33,7 @@ import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -41,6 +42,7 @@ import org.apache.http.ssl.TrustStrategy;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -52,6 +54,8 @@ import java.util.concurrent.*;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * An HttpClient wrapper designed specifically to run inside of an Inversion {@code io.inversion.Action} with some superpowers.
@@ -130,45 +134,60 @@ import java.util.regex.Pattern;
  * </pre>
  */
 public class RestClient {
-    static Log log = LogFactory.getLog(RestClient.class);
 
-    protected String name = null;
+    static Log                                       log                   = LogFactory.getLog(RestClient.class);
+
+    protected String                                 name                  = null;
 
     /**
      * Optional base url that will be prepended to the url arg of any calls assuming that the url arg supplied is a relative path and not an absolute url.
      */
-    protected String url = null;
+    protected String                                 url                   = null;
 
     /**
      * Indicates the headers from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted headers.
      */
-    protected boolean forwardHeaders = false;
+    protected boolean                                forwardHeaders        = false;
+
+    /**
+     * Indicates that a request body should be gzipped and the content-encoding header should be sent with value "gzip".
+     * <p>
+     * Default value is true.
+     */
+    protected boolean                                useCompression           = true;
+
+    /**
+     * If <code>useCompression</code> is true, anything over this size in bytes will be compressed.
+     * <p>
+     * Default value is 1024.
+     */
+    protected int                                    compressionMinSize    = 1024;
 
     /**
      * Always forward these headers.
      *
      * @see #shouldForwardHeader(String)
      */
-    protected Set whitelistHeaders = new HashSet(Arrays.asList("authorization", "cookie", "x-forwarded-host", " x-forwarded-proto"));
+    protected Set                                    includeForwardHeaders = new HashSet(Arrays.asList("authorization", "cookie", "x-forwarded-host", " x-forwarded-proto"));
 
     /**
      * Never forward these headers.
      *
      * @see #shouldForwardHeader(String)
      */
-    protected Set blacklistHeaders = new HashSet(Arrays.asList("content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host"));
+    protected Set                                    excludeForwardHeaders = new HashSet(Arrays.asList("content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host"));
 
     /**
-     * Headers that are always sent regardless of <code>forwardHeaders</code>, <code>whitelistHeaders</code> and <code>blacklistHeaders</code> state.
+     * Headers that are always sent regardless of <code>forwardHeaders</code>, <code>includeForwardHeaders</code> and <code>excludeForwardHeaders</code> state.
      * <p>
      * These headers will overwrite any caller supplied or forwarded header with the same key, not append to the value list.
      */
-    protected ArrayListValuedHashMap<String, String> forcedHeaders = new ArrayListValuedHashMap();
+    protected ArrayListValuedHashMap<String, String> forcedHeaders         = new ArrayListValuedHashMap();
 
     /**
      * Indicates the params from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted params.
      */
-    protected boolean forwardParams = false;
+    protected boolean                                forwardParams         = false;
 
     /**
      * Always forward these params.
@@ -176,7 +195,7 @@ public class RestClient {
      *
      * @see #shouldForwardParam(String)
      */
-    protected Set<String> whitelistParams = new HashSet();
+    protected Set<String>                            whitelistParams       = new HashSet();
 
     /**
      * Never forward these params.
@@ -184,19 +203,19 @@ public class RestClient {
      *
      * @see #shouldForwardParam(String)
      */
-    protected Set<String> blacklistParams = new HashSet();
+    protected Set<String>                            blacklistParams       = new HashSet();
 
     /**
      * The thread pool executor used to make asynchronous requests
      */
-    protected Executor executor = null;
+    protected Executor                               executor              = null;
 
     /**
      * The default maximum number of times to retry a request
      * <p>
      * The default value is zero meaning by default, failed requests will not be retried
      */
-    protected int retryMax = 0;
+    protected int                                    retryMax              = 0;
 
     /**
      * The length of time before the first retry.
@@ -205,45 +224,45 @@ public class RestClient {
      *
      * @see #computeTimeout(Request)
      */
-    protected int retryTimeoutMin = 10;
+    protected int                                    retryTimeoutMin       = 10;
 
     /**
      * The maximum amount of time to wait before a single retry.
      *
      * @see #computeTimeout(Request)
      */
-    protected int retryTimeoutMax = 1000;
+    protected int                                    retryTimeoutMax       = 1000;
 
     /**
      * Parameter for default HttpClient configuration
      *
      * @see org.apache.http.client.config.RequstConfig.setSocketTimeout
      */
-    protected int socketTimeout = 30000;
+    protected int                                    socketTimeout         = 30000;
 
     /**
      * Parameter for default HttpClient configuration
      *
      * @see org.apache.http.client.config.RequstConfig.setConnectTimeout
      */
-    protected int connectTimeout = 30000;
+    protected int                                    connectTimeout        = 30000;
 
     /**
      * Parameter for default HttpClient configuration
      *
      * @see org.apache.http.client.config.RequstConfig.setConnectionRequestTimeout
      */
-    protected int requestTimeout = 30000;
+    protected int                                    requestTimeout        = 30000;
 
     /**
      * The underlying HttpClient use for all network comms.
      */
-    protected HttpClient httpClient = null;
+    protected HttpClient                             httpClient            = null;
 
     /**
      * The timer used it trigger retries.
      */
-    Timer timer = null;
+    Timer                                            timer                 = null;
 
     public RestClient() {
 
@@ -342,7 +361,7 @@ public class RestClient {
      * @param params                optional additional query string params that will overwrite any that may be on url as composed from {@link #buildUrl(String)}
      * @param body                  optional json body
      * @param retryMax              how many times the client should retry if the Request is not successful, if less than zero then this.retriesMax is used
-     * @param headers               headers that will always be sent regardless of {@link #whitelistHeaders}, {@link #blacklistHeaders} but may be overwritten by {@link #forcedHeaders}
+     * @param headers               headers that will always be sent regardless of {@link #includeForwardHeaders}, {@link #excludeForwardHeaders} but may be overwritten by {@link #forcedHeaders}
      * @return a FutureResponse that will asynchronously resolve to a Result
      */
     public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, int retryMax, ArrayListValuedHashMap<String, String> headers) {
@@ -361,8 +380,8 @@ public class RestClient {
             params = newParams;
         }
 
-        Request        request = buildRequest(method, url, params, (body != null ? body.toString() : null), headers, retryMax);
-        FutureResponse future  = buildFuture(request);
+        Request request = buildRequest(method, url, params, (body != null ? body.toString() : null), headers, retryMax);
+        FutureResponse future = buildFuture(request);
 
         submit(future);
 
@@ -377,8 +396,8 @@ public class RestClient {
         if (forwardHeaders) {
             Chain chain = Chain.first();//gets the root chain
             if (chain != null) {
-                Request                                originalInboundRequest = chain.getRequest();
-                ArrayListValuedHashMap<String, String> inboundHeaders         = originalInboundRequest.getHeaders();
+                Request originalInboundRequest = chain.getRequest();
+                ArrayListValuedHashMap<String, String> inboundHeaders = originalInboundRequest.getHeaders();
                 if (inboundHeaders != null) {
                     for (String key : inboundHeaders.keySet()) {
                         if (shouldForwardHeader(key)) {
@@ -402,8 +421,8 @@ public class RestClient {
         if (forwardParams) {
             Chain chain = Chain.first();
             if (chain != null) {
-                Request             originalInboundRequest = chain.getRequest();
-                Map<String, String> origionalParams        = originalInboundRequest.getUrl().getParams();
+                Request originalInboundRequest = chain.getRequest();
+                Map<String, String> origionalParams = originalInboundRequest.getUrl().getParams();
                 if (origionalParams.size() > 0) {
                     for (String key : origionalParams.keySet()) {
                         if (shouldForwardParam(key)) {
@@ -420,6 +439,7 @@ public class RestClient {
 
     FutureResponse buildFuture(Request request) {
         final FutureResponse future = new FutureResponse(request) {
+
             public void run() {
                 Response response = null;
                 try {
@@ -487,7 +507,7 @@ public class RestClient {
      * @return
      */
     protected Response doRequest(Request request) {
-        String   url      = request.getUrl().toString();
+        String url = request.getUrl().toString();
         Response response = new Response(url);
 
         try {
@@ -500,15 +520,15 @@ public class RestClient {
     }
 
     Response doRequest0(Request request) throws Exception {
-        String          m        = request.getMethod();
-        HttpRequestBase req      = null;
-        File            tempFile = null;
+        String m = request.getMethod();
+        HttpRequestBase req = null;
+        File tempFile = null;
 
-        String   url      = request.getUrl().toString();
+        String url = request.getUrl().toString();
         Response response = new Response(url);
 
         try {
-            HttpClient   h  = getHttpClient();
+            HttpClient h = getHttpClient();
             HttpResponse hr = null;
 
             response.debug("--request header------");
@@ -548,7 +568,24 @@ public class RestClient {
             }
             if (request.getBody() != null && req instanceof HttpEntityEnclosingRequestBase) {
                 response.debug("\r\n--request body--------");
-                ((HttpEntityEnclosingRequestBase) req).setEntity(new StringEntity(request.getBody(), "UTF-8"));
+
+                byte[] bytes = request.getBody().getBytes("UTF-8");
+
+                if (useCompression && bytes.length >= compressionMinSize) {
+                    req.setHeader("Content-Encoding", "gzip");
+                    ByteArrayOutputStream obj = new ByteArrayOutputStream();
+                    GZIPOutputStream gzip = new GZIPOutputStream(obj);
+                    gzip.write(bytes);
+                    gzip.flush();
+                    gzip.close();
+                    bytes = obj.toByteArray();
+                }
+
+                ((HttpEntityEnclosingRequestBase) req).setEntity(new ByteArrayEntity(bytes));
+            }
+
+            if (Utils.empty(request.getHeader("Accept-Encoding"))) {
+                req.setHeader("Accept-Encoding", "gzip");
             }
 
             RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(socketTimeout).setConnectTimeout(connectTimeout).setConnectionRequestTimeout(requestTimeout).build();
@@ -569,7 +606,7 @@ public class RestClient {
             log.debug("RESPONSE CODE ** " + response.getStatusCode() + "   (" + response.getStatus() + ")");
             log.debug("CONTENT RANGE RESPONSE HEADER ** " + response.getHeader("Content-Range"));
 
-            Url    u        = new Url(url);
+            Url u = new Url(url);
             String fileName = u.getFile();
             if (fileName == null)
                 fileName = Utils.slugify(u.toString());
@@ -674,9 +711,9 @@ public class RestClient {
                 || ex instanceof org.apache.http.NoHttpResponseException //
                 || ex instanceof java.net.ConnectException //
                 || ex instanceof java.net.SocketTimeoutException //
-                //|| ex instanceof java.net.NoRouteToHostException //
-                //|| ex instanceof java.net.UnknownHostException //
-                ;
+        //|| ex instanceof java.net.NoRouteToHostException //
+        //|| ex instanceof java.net.UnknownHostException //
+        ;
     }
 
     synchronized void submit(FutureResponse future) {
@@ -689,6 +726,7 @@ public class RestClient {
         }
 
         timer.schedule(new TimerTask() {
+
             @Override
             public void run() {
                 submit(future);
@@ -717,6 +755,7 @@ public class RestClient {
             // setup a Trust Strategy that allows all certificates.
             //
             SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy() {
+
                 public boolean isTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
                     return true;
                 }
@@ -736,7 +775,7 @@ public class RestClient {
 
             // now, we create connection-manager using our Registry.
             //      -- allows multi-threaded use
-            PoolingHttpClientConnectionManager connMgr = new PoolingHttpClientConnectionManager(RegistryBuilder.<ConnectionSocketFactory>create().register("http", PlainConnectionSocketFactory.getSocketFactory()).register("https", sslSocketFactory).build());
+            PoolingHttpClientConnectionManager connMgr = new PoolingHttpClientConnectionManager(RegistryBuilder.<ConnectionSocketFactory> create().register("http", PlainConnectionSocketFactory.getSocketFactory()).register("https", sslSocketFactory).build());
 
             b.setConnectionManager(connMgr);
 
@@ -751,6 +790,7 @@ public class RestClient {
     }
 
     static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase {
+
         static final String methodName = "DELETE";
 
         @Override
@@ -802,10 +842,10 @@ public class RestClient {
             Request request = Chain.peek().getRequest();
 
             StringBuffer buff = new StringBuffer("");
-            Pattern      p    = Pattern.compile("\\$\\{([^\\}]*)\\}");
-            Matcher      m    = p.matcher(url);
+            Pattern p = Pattern.compile("\\$\\{([^\\}]*)\\}");
+            Matcher m = p.matcher(url);
             while (m.find()) {
-                String key   = m.group(1);
+                String key = m.group(1);
                 String param = request.getUrl().getParam(key);
                 if (param == null)//replacement value was not there
                     param = "${" + key + "}";
@@ -857,6 +897,24 @@ public class RestClient {
 
     public RestClient withName(String name) {
         this.name = name;
+        return this;
+    }
+
+    public boolean isUseCompression() {
+        return useCompression;
+    }
+
+    public RestClient withUseCompression(boolean useCompression) {
+        this.useCompression = useCompression;
+        return this;
+    }
+
+    public int getCompressionMinSize() {
+        return compressionMinSize;
+    }
+
+    public RestClient withCompressionMinSize(int compressionMinSize) {
+        this.compressionMinSize = compressionMinSize;
         return this;
     }
 
@@ -954,8 +1012,8 @@ public class RestClient {
 
     protected boolean shouldForwardHeader(String headerKey) {
         return forwardHeaders //
-                && (whitelistHeaders.size() == 0 || whitelistHeaders.contains(headerKey.toLowerCase())) //
-                && (!blacklistHeaders.contains(headerKey.toLowerCase()));
+                && (includeForwardHeaders.size() == 0 || includeForwardHeaders.contains(headerKey.toLowerCase())) //
+                && (!excludeForwardHeaders.contains(headerKey.toLowerCase()));
     }
 
     public RestClient withForwardHeaders(boolean forwardHeaders) {
@@ -963,19 +1021,35 @@ public class RestClient {
         return this;
     }
 
-    public Set getWhitelistHeaders() {
-        return new HashSet(whitelistHeaders);
+    public Set<String> getIncludeForwardHeaders() {
+        return new HashSet(includeForwardHeaders);
     }
 
-    public RestClient withWhitelistedHeaders(String... headerKeys) {
+    public RestClient withIncludeForwardHeaders(String... headerKeys) {
         for (int i = 0; headerKeys != null && i < headerKeys.length; i++)
-            whitelistHeaders.add(headerKeys[i].toLowerCase());
+            includeForwardHeaders.add(headerKeys[i].toLowerCase());
         return this;
     }
 
-    public RestClient removeWhitelistHeader(String headerKey) {
+    public RestClient removeIncludeForwardHeader(String headerKey) {
         if (headerKey != null)
-            whitelistHeaders.remove(headerKey.toString());
+            includeForwardHeaders.remove(headerKey.toString());
+        return this;
+    }
+
+    public Set getExcludeForwardHeaders() {
+        return new HashSet(excludeForwardHeaders);
+    }
+
+    public RestClient withExcludeForwardHeaders(String... headerKeys) {
+        for (int i = 0; headerKeys != null && i < headerKeys.length; i++)
+            excludeForwardHeaders.add(headerKeys[i].toLowerCase());
+        return this;
+    }
+
+    public RestClient removeExcludeForwardHeader(String headerKey) {
+        if (headerKey != null)
+            excludeForwardHeaders.remove(headerKey.toString());
         return this;
     }
 
@@ -1068,6 +1142,7 @@ public class RestClient {
      * </pre>
      */
     public abstract class FutureResponse implements RunnableFuture<Response> {
+
         Request                  request           = null;
         Response                 response          = null;
         List<Consumer<Response>> successListeners  = new ArrayList();
@@ -1303,24 +1378,25 @@ public class RestClient {
      * be completed by the time <code>submit</code> returns.
      */
     public static class Executor {
+
         /**
          * The thread pool will be dynamically contracted to this minimum number of worker threads as the queue length shrinks.
          */
-        protected int threadsMin = 1;
+        protected int              threadsMin   = 1;
 
         /**
          * The thread pool will by dynamically expanded up to this max number of worker threads as the queue length grows.
          * <p>
          * If this number is less than 1, then tasks will be executed synchronously in the calling thread, not asynchronously.
          */
-        protected int threadsMax = 50;
+        protected int              threadsMax   = 50;
 
-        protected int queueMax = 500;
+        protected int              queueMax     = 500;
 
-        LinkedList<RunnableFuture> queue   = new LinkedList();
-        Vector<Thread>             threads = new Vector();
+        LinkedList<RunnableFuture> queue        = new LinkedList();
+        Vector<Thread>             threads      = new Vector();
 
-        String threadPrefix = "executor";
+        String                     threadPrefix = "executor";
 
         public Executor() {
 
@@ -1328,9 +1404,10 @@ public class RestClient {
 
         public synchronized Future submit(final Runnable task) {
             return submit(new RunnableFuture() {
-                boolean started = false;
+
+                boolean started  = false;
                 boolean canceled = false;
-                boolean done = false;
+                boolean done     = false;
 
                 @Override
                 public void run() {
@@ -1407,6 +1484,7 @@ public class RestClient {
         synchronized boolean checkStartThread() {
             if (queue.size() > 0 && threads.size() < threadsMax) {
                 Thread t = new Thread(new Runnable() {
+
                     public void run() {
                         processQueue();
                     }
@@ -1470,8 +1548,7 @@ public class RestClient {
                     do {
                         RunnableFuture task = take();
                         task.run();
-                    }
-                    while (queue.size() > 0);
+                    } while (queue.size() > 0);
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();

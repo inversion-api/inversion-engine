@@ -1,20 +1,25 @@
 package io.inversion.spring;
 
-import io.inversion.Engine;
-import io.inversion.EngineServlet;
-import io.inversion.utils.Path;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.catalina.Context;
+import org.apache.catalina.connector.Connector;
 import org.apache.catalina.core.StandardContext;
+import org.apache.coyote.http11.AbstractHttp11Protocol;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer;
 import org.springframework.boot.web.embedded.tomcat.TomcatContextCustomizer;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 
-import java.util.ArrayList;
-import java.util.List;
+import io.inversion.Engine;
+import io.inversion.EngineServlet;
+import io.inversion.utils.Path;
 
 @Configuration
 public class InversionServletConfig {
@@ -75,6 +80,17 @@ public class InversionServletConfig {
                 ((StandardContext) context).setAllowCasualMultipartParsing(true);
             }
         });
+        
+        tomcat.addConnectorCustomizers(new TomcatConnectorCustomizer() {
+            @Override
+            public void customize(Connector connector) {
+                AbstractHttp11Protocol httpProtocol = (AbstractHttp11Protocol) connector.getProtocolHandler();
+                httpProtocol.setCompressibleMimeType("text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json");
+                httpProtocol.setCompression("1024");//compresses responses over 1KB.
+            }
+        });
+        
+        
 
         return tomcat;
     }

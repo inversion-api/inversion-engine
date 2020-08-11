@@ -1,28 +1,28 @@
 {
-	"data": [
-		{
-			"basket": {
-				"loyaltyCard": "8018782603900002665855",
-				"lineItems": [
-					{
-						"code": "123"
-					},
-					{
-						"code": "456"
-					}
-				],
-				"mobileNumber": "4048400305"
-			}
-		}
-	],
-	"basket": {
-		"lineItems": [
-			{
-				"code": "789"
-			}
-		]
-	},
-	"lineItems": {
-		"code": "789"
-	}
+  "data": [
+    {
+      "basket": {
+        "loyaltyCard": "8018782603900002665855",
+        "lineItems": [
+          {
+            "code": "123"
+          },
+          {
+            "code": "456"
+          }
+        ],
+        "mobileNumber": "4048400305"
+      }
+    }
+  ],
+  "basket": {
+    "lineItems": [
+      {
+        "code": "789"
+      }
+    ]
+  },
+  "lineItems": {
+    "code": "789"
+  }
 }

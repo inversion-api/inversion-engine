@@ -18,7 +18,6 @@ package io.inversion;
 
 import io.inversion.rql.Query;
 import io.inversion.rql.Term;
-import io.inversion.utils.Rows.Row;
 
 import java.util.ArrayList;
 import java.util.Iterator;

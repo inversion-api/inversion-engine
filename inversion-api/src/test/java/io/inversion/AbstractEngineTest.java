@@ -30,45 +30,45 @@ public interface AbstractEngineTest extends AbstractDbTest {
 
         return buildDefaultApi(db);
     }
-    
+
     public default Api buildDefaultApi(Db db) {
 
         return new Api("northwind") //
-                                   .withEndpoint("*", db.getType() + "/*", new DbAction())//
-                                   .withDb(db);
+                .withEndpoint("*", db.getType() + "/*", new DbAction())//
+                .withDb(db);
     }
-    
+
 
     public default void configureDefaultModel(Db db) {
         Collection orders = new Collection("orders").withProperty("orderId", "VARCHAR")//
-                                                    .withProperty("customerId", "INTEGER")//
-                                                    .withProperty("employeeId", "INTEGER")//
-                                                    .withProperty("orderDate", "DATETIME")//
-                                                    .withProperty("requiredDate", "DATETIME")//
-                                                    .withProperty("shippedDate", "DATETIME")//
-                                                    .withProperty("shipVia", "INTEGER")//
-                                                    .withProperty("freight", "DECIMAL")//
-                                                    .withProperty("shipName", "VARCHAR")//
-                                                    .withProperty("shipAddress", "VARCHAR")//
-                                                    .withProperty("shipCity", "VARCHAR")//
-                                                    .withProperty("shipRegion", "VARCHAR")//
-                                                    .withProperty("shipPostalCode", "VARCHAR")//
-                                                    .withProperty("shipCountry", "VARCHAR")//
-                                                    .withIndex("PK_Orders", "primary", true, "orderId");
+                .withProperty("customerId", "INTEGER")//
+                .withProperty("employeeId", "INTEGER")//
+                .withProperty("orderDate", "DATETIME")//
+                .withProperty("requiredDate", "DATETIME")//
+                .withProperty("shippedDate", "DATETIME")//
+                .withProperty("shipVia", "INTEGER")//
+                .withProperty("freight", "DECIMAL")//
+                .withProperty("shipName", "VARCHAR")//
+                .withProperty("shipAddress", "VARCHAR")//
+                .withProperty("shipCity", "VARCHAR")//
+                .withProperty("shipRegion", "VARCHAR")//
+                .withProperty("shipPostalCode", "VARCHAR")//
+                .withProperty("shipCountry", "VARCHAR")//
+                .withIndex("PK_Orders", "primary", true, "orderId");
 
         Collection orderDetails = new Collection("orderDetails").withProperty("employeeId", "INTEGER")//
-                                                                .withProperty("orderId", "INTEGER")//
-                                                                .withProperty("productId", "INTEGER")//
-                                                                .withProperty("quantity", "INTEGER")//
-                                                                .withIndex("PK_orderDetails", "primary", true, "orderId", "productId");
+                .withProperty("orderId", "INTEGER")//
+                .withProperty("productId", "INTEGER")//
+                .withProperty("quantity", "INTEGER")//
+                .withIndex("PK_orderDetails", "primary", true, "orderId", "productId");
 
         orderDetails.getProperty("orderId").withPk(orders.getProperty("orderId"));
 
         Collection employees = new Collection("employees").withProperty("employeeId", "INTEGER")//
-                                                          .withProperty("firstName", "VARCHAR")//
-                                                          .withProperty("lastName", "VARCHAR")//
-                                                          .withProperty("reportsTo", "INTEGER")//
-                                                          .withIndex("PK_Employees", "primary", true, "employeeId");
+                .withProperty("firstName", "VARCHAR")//
+                .withProperty("lastName", "VARCHAR")//
+                .withProperty("reportsTo", "INTEGER")//
+                .withIndex("PK_Employees", "primary", true, "employeeId");
 
         employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
         employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
@@ -77,9 +77,9 @@ public interface AbstractEngineTest extends AbstractDbTest {
         employees.withRelationship(new Relationship("employees", Relationship.REL_ONE_TO_MANY, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
 
         Collection employeeOrderDetails = new Collection("employeeOrderDetails").withProperty("employeeId", "INTEGER")//
-                                                                                .withProperty("orderId", "INTEGER")//
-                                                                                .withProperty("productId", "INTEGER")//
-                                                                                .withIndex("PK_EmployeeOrderDetails", "primary", true, "employeeId", "orderId", "productId");
+                .withProperty("orderId", "INTEGER")//
+                .withProperty("productId", "INTEGER")//
+                .withIndex("PK_EmployeeOrderDetails", "primary", true, "employeeId", "orderId", "productId");
 
         employeeOrderDetails.getProperty("employeeId").withPk(employees.getProperty("employeeId"));
         employeeOrderDetails.getProperty("orderId").withPk(orderDetails.getProperty("orderId"));

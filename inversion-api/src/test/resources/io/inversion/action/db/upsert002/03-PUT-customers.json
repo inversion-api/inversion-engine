@@ -1,12 +1,12 @@
 {
-	"href": "http://localhost:8080/crm/customers/3",
-	"lastName": "Tester1",
-	"identifiers": [
-		{
-			"href": "http://localhost/crm/identifiers/10",
-			"providerCode": "new_one_1",
-			"type": "customerId",
-			"identifier": "new_one_val_1_updated"
-		}
-	]
+  "href": "http://localhost:8080/crm/customers/3",
+  "lastName": "Tester1",
+  "identifiers": [
+    {
+      "href": "http://localhost/crm/identifiers/10",
+      "providerCode": "new_one_1",
+      "type": "customerId",
+      "identifier": "new_one_val_1_updated"
+    }
+  ]
 }

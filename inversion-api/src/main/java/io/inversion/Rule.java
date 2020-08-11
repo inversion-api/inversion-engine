@@ -32,35 +32,35 @@ import java.util.*;
  */
 public abstract class Rule<R extends Rule> implements Comparable<R> {
 
-    protected final transient Logger log             = LoggerFactory.getLogger(getClass().getName());
+    protected final transient Logger log = LoggerFactory.getLogger(getClass().getName());
 
     /**
      * The name used for configuration and debug purposes.
      */
-    protected String                 name            = null;
+    protected String name = null;
 
     /**
      * Rules are always processed in sequence sorted by ascending order.
      */
-    protected int                    order           = 1000;
+    protected int order = 1000;
 
     /**
      * Method/path combinations that would cause this Rule to be included in the relevant processing.
      */
-    protected List<RuleMatcher>      includeMatchers = new ArrayList();
+    protected List<RuleMatcher> includeMatchers = new ArrayList();
 
     /**
      * Method/path combinations that would cause this Rule to be excluded from the relevant processing.
      */
-    protected List<RuleMatcher>      excludeMatchers = new ArrayList();
+    protected List<RuleMatcher> excludeMatchers = new ArrayList();
 
     /**
      * {@code JSNode} is used because it implements a case insensitive map without modifying the keys
      */
-    protected transient JSNode       configMap       = new JSNode();
-    protected String                 configStr       = null;
+    protected transient JSNode configMap = new JSNode();
+    protected           String configStr = null;
 
-    transient boolean                lazyConfiged    = false;
+    transient boolean lazyConfiged = false;
 
     public void checkLazyConfig() {
         //-- reluctant lazy config defaultIncludes if no other
