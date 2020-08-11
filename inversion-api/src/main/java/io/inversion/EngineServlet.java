@@ -16,9 +16,17 @@
  */
 package io.inversion;
 
-import io.inversion.Request.Upload;
-import io.inversion.Request.Uploader;
-import io.inversion.utils.Utils;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -26,8 +34,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import java.io.*;
-import java.util.*;
+
+import io.inversion.Request.Upload;
+import io.inversion.Request.Uploader;
+import io.inversion.utils.Utils;
 
 public class EngineServlet extends HttpServlet {
     static class EngineServletLocal {
@@ -171,6 +181,8 @@ public class EngineServlet extends HttpServlet {
         try {
             InputStream inputStream = request.getInputStream();
             if (inputStream != null) {
+                if ("gzip".equalsIgnoreCase(request.getHeader("Content-Encoding")))
+                    inputStream = new GZIPInputStream(inputStream, 1024);
                 bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
                 char[] charBuffer = new char[128];
                 int    bytesRead  = -1;
@@ -220,7 +232,7 @@ public class EngineServlet extends HttpServlet {
                 byte[] bytes       = res.getOutput().getBytes();
 
                 http.setContentType(contentType);
-                res.withHeader("Content-Length", bytes.length + "");
+                http.setContentLength(bytes.length);
                 res.debug("Content-Length " + bytes.length + "");
 
                 out.write(bytes);

@@ -16,13 +16,15 @@
  */
 package io.inversion.spring;
 
-import io.inversion.Api;
-import io.inversion.Engine;
-import io.inversion.utils.Utils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+
+import io.inversion.Api;
+import io.inversion.Engine;
+import io.inversion.utils.Utils;
 
 /**
  * Launches your Api in an SpringBoot embedded Tomcat.
@@ -32,10 +34,23 @@ import org.springframework.context.annotation.Bean;
  * way, please check out <code>io.inversion.service.spring.config.EnableInversion</code>
  */
 public class InversionMain {
-    static Engine engine = null;
+
+    protected static Engine             engine  = null;
+
+    protected static ApplicationContext context = null;
 
     public static void main(String[] args) {
         run(new Engine());
+    }
+
+    public static void exit() {
+        if (context != null)
+            SpringApplication.exit(context);
+        context = null;
+    }
+
+    public ApplicationContext getContext() {
+        return context;
     }
 
     /**
@@ -52,14 +67,18 @@ public class InversionMain {
      *
      * @param api
      */
-    public static void run(Api api) {
-        run(new Engine().withApi(api));
+    public static ApplicationContext run(Api api) {
+        return run(new Engine().withApi(api));
     }
 
-    public static void run(Engine engine) {
+    public static ApplicationContext run(Engine engine) {
         try {
+
+            if (context != null)
+                exit();
+
             InversionMain.engine = engine;
-            SpringApplication.run(InversionMain.class);
+            context = SpringApplication.run(InversionMain.class);
         } catch (Throwable e) {
             e = Utils.getCause(e);
             if (Utils.getStackTraceString(e).indexOf("A child container failed during start") > -1) {
@@ -87,6 +106,8 @@ public class InversionMain {
             }
             Utils.rethrow(e);
         }
+
+        return context;
     }
 
     @Bean
