@@ -113,9 +113,9 @@ import java.util.zip.GZIPOutputStream;
  *      }
  *
  *      client.get("/some/relative/path")
- *          .onSuccess(response -> System.out.println("Success:" + res.toString()))
- *          .onFailure(response -> System.out.println("Failure:" + res.toString()))
- *          .onResponse(response -> System.out.println(res.getStatus()));
+ *          .onSuccess(response -@gt; System.out.println("Success:" + res.toString()))
+ *          .onFailure(response -@gt; System.out.println("Failure:" + res.toString()))
+ *          .onResponse(response -@gt; System.out.println(res.getStatus()));
  *
  *
  *      //-- instead of using the success/failure callbacks as above
@@ -222,35 +222,35 @@ public class RestClient {
      * <p>
      * Incremental retries receive progressively more of a timeout up to <code>retryTimeoutMax</code>.
      *
-     * @see #computeTimeout(Request)
+     * @see #computeTimeout(Request, Response)
      */
     protected int                                    retryTimeoutMin       = 10;
 
     /**
      * The maximum amount of time to wait before a single retry.
      *
-     * @see #computeTimeout(Request)
+     * @see #computeTimeout(Request, Response)
      */
     protected int                                    retryTimeoutMax       = 1000;
 
     /**
      * Parameter for default HttpClient configuration
      *
-     * @see org.apache.http.client.config.RequstConfig.setSocketTimeout
+     * @see org.apache.http.client.config.RequestConfig.Builder#setSocketTimeout(int)
      */
     protected int                                    socketTimeout         = 30000;
 
     /**
      * Parameter for default HttpClient configuration
      *
-     * @see org.apache.http.client.config.RequstConfig.setConnectTimeout
+     * @see org.apache.http.client.config.RequestConfig.Builder#setConnectTimeout(int)
      */
     protected int                                    connectTimeout        = 30000;
 
     /**
      * Parameter for default HttpClient configuration
      *
-     * @see org.apache.http.client.config.RequstConfig.setConnectionRequestTimeout
+     * @see org.apache.http.client.config.RequestConfig.Builder#setConnectionRequestTimeout(int)
      */
     protected int                                    requestTimeout        = 30000;
 
@@ -288,7 +288,7 @@ public class RestClient {
      * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set, can have a query string or not
-     * @param queryString           additional query string params in name=value&name2=value2 style
+     * @param queryString           additional query string params in name=value@amp;name2=value2 style
      */
     public FutureResponse get(String fullUrlOrRelativePath, String queryString) {
         return call("GET", fullUrlOrRelativePath, Utils.parseQueryString(queryString), (JSNode) null, this.retryMax, null);
@@ -311,7 +311,7 @@ public class RestClient {
      * @param queryStringNameValuePairs additional query string name/value pairs
      */
     public FutureResponse get(String fullUrlOrRelativePath, String... queryStringNameValuePairs) {
-        return call("GET", fullUrlOrRelativePath, Utils.addToMap(new HashMap(), queryStringNameValuePairs), null, this.retryMax, null);
+        return call("GET", fullUrlOrRelativePath, Utils.addToMap(new HashMap<>(), queryStringNameValuePairs), null, this.retryMax, null);
     }
 
     /**
@@ -480,7 +480,6 @@ public class RestClient {
      * <pre>
      * protected RestClient client = new RestClient("myservice"){
      *
-     *  @Override
      *  protected Response doRequest(Request request)
      *  {
      *      if(checkMyCondition(request))
@@ -746,7 +745,7 @@ public class RestClient {
      * an error is not thrown.
      *
      * @throws Exception
-     * @see http://literatejava.com/networks/ignore-ssl-certificate-errors-apache-httpclient-4-4/
+     * @see <a href="http://literatejava.com/networks/ignore-ssl-certificate-errors-apache-httpclient-4-4/">Ignore SSL Certificate Errors</a>
      */
     protected HttpClient buildHttpClient() throws Exception {
         if (httpClient == null) {
@@ -1109,9 +1108,9 @@ public class RestClient {
      * <pre>
      *
      *     client.get("/some/relative/path")
-     *          .onSuccess(response -> System.out.println("Success:" + res.toString()))
-     *          .onFailure(response -> System.out.println("Failure:" + res.toString()))
-     *          .onResponse(response -> System.out.println("I get called on success or failure: " + res.getStatus()));
+     *          .onSuccess(response -@gt; System.out.println("Success:" + res.toString()))
+     *          .onFailure(response -@gt; System.out.println("Failure:" + res.toString()))
+     *          .onResponse(response -@gt; System.out.println("I get called on success or failure: " + res.getStatus()));
      *
      *
      *      //-- instead of using the success/failure callbacks as above
@@ -1145,9 +1144,9 @@ public class RestClient {
 
         Request                  request           = null;
         Response                 response          = null;
-        List<Consumer<Response>> successListeners  = new ArrayList();
-        List<Consumer<Response>> failureListeners  = new ArrayList();
-        List<Consumer<Response>> responseListeners = new ArrayList();
+        List<Consumer<Response>> successListeners  = new ArrayList<>();
+        List<Consumer<Response>> failureListeners  = new ArrayList<>();
+        List<Consumer<Response>> responseListeners = new ArrayList<>();
 
         FutureResponse(Request request) {
             this.request = request;

@@ -89,7 +89,7 @@ import java.util.*;
  * <p>
  * By default, the <code>configuration</code> is going to the global default CombinedConfiguration from Config.
  *
- * @see io.inversion.Engine.startup()
+ * @see Engine#startup()
  * @see Config
  * @see <a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a>
  */
@@ -104,7 +104,7 @@ public class Configurator {
      *
      * @param engine        the engine to be configured
      * @param configuration the name/value pairs used to wire up the Api's that will be added to <code>engine</code>.
-     * @see io.inversion.Engine.startup()
+     * @see Engine#startup()
      * @see Config
      */
     public synchronized void configure(Engine engine, Configuration configuration) {
@@ -127,7 +127,7 @@ public class Configurator {
 
                 //dump(encoder.props);
 
-                Map<String, Object> beans = new HashMap();
+                Map<String, Object> beans = new HashMap<>();
                 for (Object bean : encoder.names.keySet()) {
                     String key = encoder.names.get(bean);
                     beans.put(key, bean);
@@ -164,7 +164,7 @@ public class Configurator {
                 loadConfig(engine, props);
             }
         } catch (Exception e) {
-            ApiException.throw500InternalServerError(e, "Error loading configuration.");
+            throw ApiException.new500InternalServerError(e, "Error loading configuration.");
         }
     }
 
@@ -195,7 +195,7 @@ public class Configurator {
 
             @Override
             public void onLoad(String name, Object module, Map<String, Object> props) throws Exception {
-                Field field = getField("name", module.getClass());
+                Field field = Utils.getField("name", module.getClass());
                 if (field != null && field.get(module) == null)
                     field.set(module, name);
             }
@@ -308,7 +308,7 @@ public class Configurator {
 
     static class DefaultIncluder implements Includer {
 
-        List<Field> excludes = new ArrayList();                                                                 //TODO:  why was api.actions excluded?  //List<Field> excludes     =  Arrays.asList(Utils.getField("actions", Api.class));
+        List<Field> excludes = new ArrayList<>();                                                                 //TODO:  why was api.actions excluded?  //List<Field> excludes     =  Arrays.asList(Utils.getField("actions", Api.class));
 
         List excludeTypes = new ArrayList(Arrays.asList(Logger.class,                                        //don't care to persist info on loggers
                 Action.class, Endpoint.class, Rule.class, Path.class));                                             //these are things that must be supplied by manual config so don't write them out.
@@ -407,7 +407,7 @@ public class Configurator {
         Properties      props    = new Properties();
         TreeSet<String> propKeys = new TreeSet<String>();
 
-        Map<String, Object> beans = new HashMap();
+        Map<String, Object> beans = new HashMap<>();
 
         //designed to be overridden
         public void onLoad(String name, Object bean, Map<String, Object> properties) throws Exception {
@@ -551,7 +551,7 @@ public class Configurator {
                         throw ex;
                     }
 
-                    loaded.put(name, new HashMap());
+                    loaded.put(name, new HashMap<>());
                     beans.put(name, obj);
                     //System.out.println(name + "->" + cn);
                 }
@@ -602,7 +602,7 @@ public class Configurator {
                             if (handleProp(obj, prop, value)) {
                                 //do nothing, already handled
                             } else {
-                                Field field = getField(prop, obj.getClass());
+                                Field field = Utils.getField(prop, obj.getClass());
                                 if (field != null) {
                                     Class type = field.getType();
 
@@ -646,7 +646,7 @@ public class Configurator {
 
                         Object parent = beans.get(parentKey);
                         if (parent != null) {
-                            Field field = getField(propKey, parent.getClass());
+                            Field field = Utils.getField(propKey, parent.getClass());
                             if (field != null) {
                                 if (Map.class.isAssignableFrom(field.getType())) {
                                     Map map = (Map) field.get(parent);
@@ -688,7 +688,7 @@ public class Configurator {
         }
 
         public <T> List<T> getBeans(Class<T> type) {
-            List found = new ArrayList();
+            List found = new ArrayList<>();
             for (Object bean : beans.values()) {
                 if (type.isAssignableFrom(bean.getClass()))
                     found.add(bean);
@@ -705,33 +705,12 @@ public class Configurator {
         }
 
         public List findBeans(Class type) {
-            List matches = new ArrayList();
+            List matches = new ArrayList<>();
             for (Object bean : beans.values()) {
                 if (type.isAssignableFrom(bean.getClass()))
                     matches.add(bean);
             }
             return matches;
-        }
-
-        public static Field getField(String fieldName, Class clazz) {
-            if (fieldName == null || clazz == null) {
-                return null;
-            }
-
-            Field[] fields = clazz.getDeclaredFields();
-            for (int i = 0; i < fields.length; i++) {
-                if (fields[i].getName().equals(fieldName)) {
-                    Field field = fields[i];
-                    field.setAccessible(true);
-                    return field;
-                }
-            }
-
-            if (clazz.getSuperclass() != null && !clazz.equals(clazz.getSuperclass())) {
-                return getField(fieldName, clazz.getSuperclass());
-            }
-
-            return null;
         }
 
         protected Object cast0(String str) {
@@ -767,7 +746,7 @@ public class Configurator {
 
         public Properties encode(Namer namer, Includer includer, Object... objects) throws Exception {
             props = new Properties();
-            names = new HashMap();
+            names = new HashMap<>();
             defaults = new MultiKeyMap();
 
             for (Object object : objects) {
@@ -835,7 +814,7 @@ public class Configurator {
                             if (((java.util.Collection) value).size() == 0)
                                 continue;
 
-                            List values = new ArrayList();
+                            List values = new ArrayList<>();
                             for (Object child : ((java.util.Collection) value)) {
                                 String childKey = encode(child, props, namer, includer, names, defaults);
                                 values.add(childKey);
@@ -948,7 +927,7 @@ public class Configurator {
                 subtype = (Class) ((((ParameterizedType) field.getGenericType()).getActualTypeArguments())[0]);
             }
 
-            java.util.Collection list  = java.util.Set.class.isAssignableFrom(type) ? new HashSet() : new ArrayList();
+            java.util.Collection list  = java.util.Set.class.isAssignableFrom(type) ? new HashSet() : new ArrayList<>();
             String[]             parts = stringVal.split(",");
             for (String part : parts) {
                 part = part.trim();
@@ -966,7 +945,7 @@ public class Configurator {
 
             return (T) list;
         } else if (Map.class.isAssignableFrom(type)) {
-            Map      map   = new HashMap();
+            Map      map   = new HashMap<>();
             String[] parts = stringVal.split(",");
             for (String part : parts) {
                 Object val = beans.get(part);

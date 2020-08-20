@@ -27,9 +27,9 @@ class SqlTokenizer {
     char[] chars = null;
     int    head  = 0;
 
-    StringBuffer clause = new StringBuffer("");
+    StringBuilder clause = new StringBuilder();
 
-    StringBuffer token = new StringBuffer("");
+    StringBuilder token = new StringBuilder();
 
     boolean escape      = false;
     boolean doubleQuote = false;
@@ -60,7 +60,7 @@ class SqlTokenizer {
             if (keywords.contains(nextToken.toLowerCase())) {
                 if (clause.length() > 0) {
                     toReturn = clause.toString();
-                    clause = new StringBuffer(nextToken);
+                    clause = new StringBuilder(nextToken);
                     return toReturn;
                 }
             }
@@ -69,7 +69,7 @@ class SqlTokenizer {
 
         if (clause.length() > 0) {
             toReturn = clause.toString();
-            clause = new StringBuffer("");
+            clause = new StringBuilder();
         }
 
         return toReturn;
@@ -203,7 +203,7 @@ class SqlTokenizer {
             }
         }
         String str = token.toString();
-        token = new StringBuffer();
+        token = new StringBuilder();
         return str;
     }
 

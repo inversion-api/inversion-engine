@@ -123,7 +123,7 @@ public class DynamoDbFactory {
             keys.add(new KeySchemaElement().withAttributeName("hk").withKeyType(KeyType.HASH));
             keys.add(new KeySchemaElement().withAttributeName("sk").withKeyType(KeyType.RANGE));
 
-            List<LocalSecondaryIndex> lsxs = new ArrayList();
+            List<LocalSecondaryIndex> lsxs = new ArrayList<>();
             lsxs.add(new LocalSecondaryIndex().withIndexName("ls1").withKeySchema(new KeySchemaElement().withAttributeName("hk").withKeyType(KeyType.HASH)//
                     , new KeySchemaElement().withAttributeName("ls1").withKeyType(KeyType.RANGE)));
 
@@ -133,7 +133,7 @@ public class DynamoDbFactory {
             lsxs.add(new LocalSecondaryIndex().withIndexName("ls3").withKeySchema(new KeySchemaElement().withAttributeName("hk").withKeyType(KeyType.HASH)//
                     , new KeySchemaElement().withAttributeName("ls3").withKeyType(KeyType.RANGE)));
 
-            List<GlobalSecondaryIndex> gsxs = new ArrayList();
+            List<GlobalSecondaryIndex> gsxs = new ArrayList<>();
             gsxs.add(new GlobalSecondaryIndex().withIndexName("gs1").withKeySchema(new KeySchemaElement().withAttributeName("gs1hk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("gs1sk").withKeyType(KeyType.RANGE)));
             gsxs.add(new GlobalSecondaryIndex().withIndexName("gs2").withKeySchema(new KeySchemaElement().withAttributeName("gs2hk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("ls3").withKeyType(KeyType.RANGE)));
             gsxs.add(new GlobalSecondaryIndex().withIndexName("gs3").withKeySchema(new KeySchemaElement().withAttributeName("sk").withKeyType(KeyType.HASH), new KeySchemaElement().withAttributeName("hk").withKeyType(KeyType.RANGE)));

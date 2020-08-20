@@ -103,7 +103,7 @@ public class EngineServlet extends HttpServlet {
                 urlstr += "?" + query;
             }
 
-            Map                 headers    = new HashMap();
+            Map                 headers    = new HashMap<>();
             Enumeration<String> headerEnum = httpReq.getHeaderNames();
             while (headerEnum.hasMoreElements()) {
                 String key = headerEnum.nextElement();
@@ -111,7 +111,7 @@ public class EngineServlet extends HttpServlet {
                 headers.put(key, val);
             }
 
-            Map                 params       = new HashMap();
+            Map                 params       = new HashMap<>();
             Enumeration<String> paramsEnumer = httpReq.getParameterNames();
             while (paramsEnumer.hasMoreElements()) {
                 String key = paramsEnumer.nextElement();
@@ -148,7 +148,7 @@ public class EngineServlet extends HttpServlet {
                             }
                         }
 
-                        List uploads = new ArrayList();
+                        List uploads = new ArrayList<>();
 
                         if (inputStream != null) {
                             uploads.add(new Upload(fileName, fileSize, requestPath, inputStream));
@@ -193,7 +193,7 @@ public class EngineServlet extends HttpServlet {
                 stringBuilder.append("");
             }
         } catch (Exception ex) {
-            ApiException.throw400BadRequest(ex, "Unable to read request body");
+            throw ApiException.new400BadRequest(ex, "Unable to read request body");
         } finally {
             if (bufferedReader != null) {
                 try {
@@ -216,7 +216,7 @@ public class EngineServlet extends HttpServlet {
         try {
             for (String key : res.getHeaders().keySet()) {
                 List         values = res.getHeaders().get(key);
-                StringBuffer buff   = new StringBuffer();
+                StringBuilder buff   = new StringBuilder();
                 for (int i = 0; i < values.size(); i++) {
                     buff.append(values.get(i));
                     if (i < values.size() - 1)

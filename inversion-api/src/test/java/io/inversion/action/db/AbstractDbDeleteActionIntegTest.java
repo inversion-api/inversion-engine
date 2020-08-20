@@ -32,6 +32,9 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 
     @Test
     public void testSingleDelete() throws Exception {
+        if(!isIntegTest())
+            return;
+
         Response res    = null;
         Engine   engine = engine();
 
@@ -49,6 +52,9 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 
     @Test
     public void testBatchHrefDelete() throws Exception {
+        if(!isIntegTest())
+            return;
+
         Response res    = null;
         Engine   engine = engine();
 

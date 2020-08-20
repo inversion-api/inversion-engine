@@ -27,6 +27,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Looks up a <code>User</code> from the configured <code>JdbcDb</code> supporting user/group/role/permissioning.
+ * Looks up a <code>User</code> from the configured <code>JdbcDb</code> supporting user/group/role permissioning.
  * <p>
  * Usage requires a password encryption "salt" value be
  * configured either explicitly or via a $name.salt
@@ -52,8 +53,8 @@ import java.util.List;
  *  <li>user-to-role-to-permission
  *  <li>user-to-group-to-role-to-permission
  * </ol>
- *
- * @see users-h2.ddl for full underlying schema
+ * <p>
+ * See users-h2.ddl for full underlying schema
  */
 public class JdbcDbUserDao extends JwtUserDao {
     /**
@@ -72,10 +73,40 @@ public class JdbcDbUserDao extends JwtUserDao {
         withDb(db);
     }
 
+    public static String strongHash(Object salt, String password) throws ApiException {
+        try {
+            int           iterationNb = 1000;
+            MessageDigest digest      = MessageDigest.getInstance("SHA-512");
+            digest.reset();
+            digest.update(salt.toString().getBytes());
+            byte[] input = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+            for (int i = 0; i < iterationNb; i++) {
+                digest.reset();
+                input = digest.digest(input);
+            }
+
+            return Base64.encodeBase64String(input).trim();
+        } catch (Exception ex) {
+            throw new ApiException(ex);
+        }
+    }
+
+    public static String weakHash(String password) {
+        try {
+            byte[]        byteArr = password.getBytes();
+            MessageDigest digest  = MessageDigest.getInstance("MD5");
+            digest.update(byteArr);
+            byte[] bytes = digest.digest();
+            return (new HexBinaryAdapter()).marshal(bytes);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     protected boolean checkPassword(String actual, String supplied) {
         String salt = getSalt();
         if (salt == null) {
-            ApiException.throw500InternalServerError("You must configure a salt value for password hashing.");
+            throw ApiException.new500InternalServerError("You must configure a salt value for password hashing.");
         }
 
         String strongHash = strongHash(salt, supplied);
@@ -87,11 +118,9 @@ public class JdbcDbUserDao extends JwtUserDao {
     public User getUser(AuthAction action, String username, String suppliedPassword, String apiName, String tenant) throws ApiException {
         User user = null;
         try {
-            List   params = new ArrayList();
             String sql    = "";
 
             if (username != null) {
-                params.add(username);
                 sql += " SELECT DISTINCT u.*";
                 sql += " FROM User u   ";
                 sql += " WHERE (u.revoked IS NULL OR u.revoked != 1) ";
@@ -104,7 +133,7 @@ public class JdbcDbUserDao extends JwtUserDao {
 
             Row userRow = JdbcUtils.selectRow(conn, sql, username);
             if (userRow != null) {
-                CaseInsensitiveMap<String, Object> map = new CaseInsensitiveMap(userRow);
+                CaseInsensitiveMap<String, Object> map = new CaseInsensitiveMap<>(userRow);
 
                 String actualPassword = (String) map.get("password");
                 if (checkPassword(actualPassword, suppliedPassword)) {
@@ -125,45 +154,10 @@ public class JdbcDbUserDao extends JwtUserDao {
                 }
             }
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
 
         return user;
-    }
-
-    public static String strongHash(Object salt, String password) throws ApiException {
-        try {
-            int           iterationNb = 1000;
-            MessageDigest digest      = MessageDigest.getInstance("SHA-512");
-            digest.reset();
-            digest.update(salt.toString().getBytes());
-            byte[] input = digest.digest(password.getBytes("UTF-8"));
-            for (int i = 0; i < iterationNb; i++) {
-                digest.reset();
-                input = digest.digest(input);
-            }
-
-            String encoded = Base64.encodeBase64String(input).trim();
-            return encoded;
-        } catch (Exception ex) {
-            ApiException.throwEx(null, ex, null);
-        }
-        return null;
-    }
-
-    public static String weakHash(String password) {
-        try {
-            byte[]        byteArr = password.getBytes();
-            MessageDigest digest  = MessageDigest.getInstance("MD5");
-            digest.update(byteArr);
-            byte[] bytes = digest.digest();
-
-            String hex = (new HexBinaryAdapter()).marshal(bytes);
-
-            return hex;
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
     }
 
     void populateGRP(User user, Rows rows) {
@@ -187,10 +181,10 @@ public class JdbcDbUserDao extends JwtUserDao {
     }
 
     /**
-     * user -> permission
-     * user -> group -> permission
-     * user -> role -> permission
-     * user -> group -> role -> permission
+     * user -@gt; permission
+     * user -@gt; group -@gt; permission
+     * user -@gt; role -@gt; permission
+     * user -@gt; group -@gt; role -@gt; permission
      * <p>
      * UserPermission
      * GroupPermission
@@ -200,7 +194,7 @@ public class JdbcDbUserDao extends JwtUserDao {
      * GroupRole
      */
     protected Rows findGRP(Connection conn, int userId, String api, String tenant) throws Exception {
-        List vals = new ArrayList();
+        List<Object> values = new ArrayList<>();
 
         String sql = "";
 
@@ -211,11 +205,11 @@ public class JdbcDbUserDao extends JwtUserDao {
         sql += "\r\n    FROM Permission p";
         sql += "\r\n    JOIN UserPermission u ON p.id = u.permissionId";
         sql += "\r\n    WHERE u.userId = ?";
-        vals.add(userId);
+        values.add(userId);
 
         sql += "\r\n     AND ((p.api is null OR p.api = ?) AND (p.tenant is null OR p.tenant = ?))";
         sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
-        vals.addAll(Arrays.asList(api, tenant, api, tenant));
+        values.addAll(Arrays.asList(api, tenant, api, tenant));
 
         //-- user -> group -> permission
         sql += "\r\n                                                           ";
@@ -230,7 +224,7 @@ public class JdbcDbUserDao extends JwtUserDao {
         sql += "\r\n     AND ((g.api is null OR g.api = ?) AND (g.tenant is null OR g.tenant = ?))";
         sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
 
-        vals.addAll(Arrays.asList(userId, api, tenant, api, tenant, api, tenant));
+        values.addAll(Arrays.asList(userId, api, tenant, api, tenant, api, tenant));
 
         //-- user -> role -> permission
         sql += "\r\n                                                           ";
@@ -245,7 +239,7 @@ public class JdbcDbUserDao extends JwtUserDao {
         sql += "\r\n     AND ((r.api is null OR r.api = ?) AND (r.tenant is null OR r.tenant = ?))";
         sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
 
-        vals.addAll(Arrays.asList(userId, api, tenant, api, tenant, api, tenant));
+        values.addAll(Arrays.asList(userId, api, tenant, api, tenant, api, tenant));
 
         //-- user -> group -> role -> permission
         sql += "\r\n                                                           ";
@@ -263,7 +257,7 @@ public class JdbcDbUserDao extends JwtUserDao {
         sql += "\r\n     AND ((g.api is null OR g.api = ?) AND (g.tenant is null OR g.tenant = ?))";
         sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
 
-        vals.addAll(Arrays.asList(userId, api, tenant, api, tenant, api, tenant, api, tenant));
+        values.addAll(Arrays.asList(userId, api, tenant, api, tenant, api, tenant, api, tenant));
 
         //-- user -> group
         sql += "\r\n                                                           ";
@@ -274,7 +268,7 @@ public class JdbcDbUserDao extends JwtUserDao {
         sql += "\r\n    JOIN UserGroup u ON g.id = u.groupId";
         sql += "\r\n    WHERE u.userId = ?";
         sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
-        vals.addAll(Arrays.asList(userId, api, tenant));
+        values.addAll(Arrays.asList(userId, api, tenant));
 
         //-- user -> role
         sql += "\r\n                                                           ";
@@ -285,12 +279,12 @@ public class JdbcDbUserDao extends JwtUserDao {
         sql += "\r\n    JOIN UserRole u ON r.id = u.roleId";
         sql += "\r\n    WHERE u.userId = ?";
         sql += "\r\n     AND ((u.api is null OR u.api = ?) AND (u.tenant is null OR u.tenant = ?))";
-        vals.addAll(Arrays.asList(userId, api, tenant));
+        values.addAll(Arrays.asList(userId, api, tenant));
 
         sql += " ) as q ORDER BY type, name, via";
 
-        System.out.println(sql + " -> " + vals);
-        return JdbcUtils.selectRows(conn, sql, vals);
+        System.out.println(sql + " -> " + values);
+        return JdbcUtils.selectRows(conn, sql, values);
     }
 
     public JdbcDbUserDao withDb(JdbcDb db) {
@@ -300,6 +294,10 @@ public class JdbcDbUserDao extends JwtUserDao {
 
     public JdbcDb getDb() {
         return db;
+    }
+
+    public void setDb(JdbcDb db) {
+        this.db = db;
     }
 
     public JdbcDbUserDao withSalt(String salt) {
@@ -317,10 +315,6 @@ public class JdbcDbUserDao extends JwtUserDao {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setDb(JdbcDb db) {
-        this.db = db;
     }
 
 }

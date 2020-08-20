@@ -112,7 +112,7 @@ public class Config {
      * If <code>configPath</code> is null, it will be looked up via Utils.findProperty with the following keys:
      * <ol>
      *   <li>"inversion.configPath"
-     *   </li>"configPath"
+     *   <li>"configPath"
      * </ol>
      *
      * <p>
@@ -128,7 +128,7 @@ public class Config {
      * @param configPath    the path use to locate 'inversion.properties' files via <code>getResource</code>
      * @param configProfile the runtime profile used to load some inversion-${configProfile}-[0-100].properties files and not others.
      * @see #getResource(String)
-     * @see Utils.findProperty
+     * @see Utils#findProperty(String...)
      */
     public static synchronized void loadConfiguration(String configPath, String configProfile) {
         configPath = !Utils.empty(configPath) ? configPath : Utils.findProperty("inversion.configPath", "configPath");
@@ -198,7 +198,7 @@ public class Config {
                 }
             }
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
 
         Config.configuration = configuration;

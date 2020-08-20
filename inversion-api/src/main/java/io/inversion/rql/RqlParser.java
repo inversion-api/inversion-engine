@@ -79,7 +79,7 @@ public class RqlParser {
 
     static class TermBuilder {
         Term       root  = null;
-        List<Term> terms = new ArrayList();
+        List<Term> terms = new ArrayList<>();
 
         public Term top() {
             if (terms.size() == 0) {

@@ -25,12 +25,15 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.text.ParseException;
-import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -40,27 +43,17 @@ import java.util.regex.Pattern;
  */
 public class Utils {
 
-    public static final int  KB  = 1048;
-    public static final int  MB  = 1048576;
-    public static final long GB  = 1073741824;
-    public static final int  K64 = 65536;
-
-    public static final long HOUR  = 1000 * 60 * 60;
-    public static final long DAY   = 1000 * 60 * 60 * 24;
-    public static final long MONTH = 1000 * 60 * 60 * 24 * 31;
-    public static final long WEEK  = 1000 * 60 * 60 * 24 * 7;
-    public static final long YEAR  = 1000 * 60 * 60 * 24 * 365;
-
-    protected static final String NEW_LINE = System.getProperty("line.separator");
-
-    protected static final String[] EMPTY_STRING_ARRAY = new String[0];
+    static final String   NEW_LINE                   = System.getProperty("line.separator");
+    static final String[] EMPTY_STRING_ARRAY         = new String[0];
+    static final String   CONTAINS_TOKEN_PLACEHOLDER = "INVERSIONREPLACEDINVERSION";
+    static final Pattern  CONTAINS_TOKEN_PATTERN     = Pattern.compile("\\b\\Q" + CONTAINS_TOKEN_PLACEHOLDER + "\\E\\b", Pattern.CASE_INSENSITIVE);
 
     /**
      * A null safe loose equality checker.
      *
-     * @param obj1
-     * @param obj2
-     * @return Test for strict == equality, then .equals() equality, then .toString().equals() equality.  Either param can be null.
+     * @param obj1 an object
+     * @param obj2 an object to compare to obj1
+     * @return true when args are strictly equal or toString equal
      */
     public static boolean equal(Object obj1, Object obj2) {
         if (obj1 == obj2)
@@ -69,9 +62,17 @@ public class Utils {
         if (obj1 == null || obj2 == null)
             return false;
 
+        if (obj1.equals(obj2))
+            return true;
+
         return obj1.toString().equals(obj2.toString());
     }
 
+    /**
+     * Checks to see if <code>toFind</code> is in <code>values</code> array using loose equality checking
+     *
+     * @return true if toFind is loosely equal to any of <code>values</code>
+     */
     public static boolean in(Object toFind, Object... values) {
         for (Object val : values) {
             if (equal(toFind, val))
@@ -81,7 +82,7 @@ public class Utils {
     }
 
     /**
-     * @return true if any args are not null with a toString().length() > 0
+     * @return true if any args are not null with a toString().length() @gt; 0
      */
     public static boolean empty(Object... arr) {
         boolean empty = true;
@@ -106,27 +107,45 @@ public class Utils {
     }
 
     /**
-     * @param glue
-     * @param pieces
-     * @return Concatenates pieces[0] + glue + pieces[n]... Intelligently recurses through Collections
+     * Fluent utility method for adding items to a list
+     *
+     * @param list  the list to add items to
+     * @param items the items to add
+     * @param <T>   a subclass of List
+     * @return the list passed in
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends List> T add(T list, Object... items) {
+        if (items != null)
+            Collections.addAll(list, items);
+        return list;
+    }
+
+    /**
+     * Concatenates non empty <code>pieces</code> separated by <code>glue</code> and
+     * intelligently flattens collections.
+     *
+     * @param glue   the joining string
+     * @param pieces the pieces to join
+     * @return a concatenation of pieces separated by glue
      */
     public static String implode(String glue, Object... pieces) {
         if (pieces != null && pieces.length == 1 && pieces[0] instanceof Collection)
             pieces = ((Collection) pieces[0]).toArray();
 
-        StringBuffer str = new StringBuffer("");
+        StringBuilder str = new StringBuilder();
         for (int i = 0; pieces != null && i < pieces.length; i++) {
             if (pieces[i] != null) {
                 String piece = pieces[i] instanceof Collection ? implode(glue, pieces[i]) : pieces[i].toString();
 
                 if (piece.length() > 0) {
-                    List<String> subpieces = explode(glue, piece);
+                    List<String> subPieces = explode(glue, piece);
 
-                    for (String subpiece : subpieces) {
-                        if (subpiece.length() > 0) {
+                    for (String subPiece : subPieces) {
+                        if (subPiece.length() > 0) {
                             if (str.length() > 0)
                                 str.append(glue);
-                            str.append(subpiece);
+                            str.append(subPiece);
                         }
                     }
                 }
@@ -136,22 +155,24 @@ public class Utils {
     }
 
     /**
-     * @param delim
-     * @param pieces
-     * @return Same as String.split() but performs a trim() on each piece and returns an list instead of an array
+     * Similar to String.split but trims whitespace and excludes empty strings
+     *
+     * @param delimiter the split delimiter
+     * @param pieces    the strings to split
+     * @return all non empty strings from all pieces
      */
-    public static List<String> explode(String delim, String... pieces) {
-        if (".".equals(delim))
-            delim = "\\.";
+    public static List<String> explode(String delimiter, String... pieces) {
+        if (".".equals(delimiter))
+            delimiter = "\\.";
 
-        List exploded = new ArrayList();
+        List<String> exploded = new ArrayList<>();
         for (int i = 0; pieces != null && i < pieces.length; i++) {
             if (Utils.empty(pieces[i]))
                 continue;
 
-            String[] parts = pieces[i].split(delim);
-            for (int j = 0; j < parts.length; j++) {
-                String part = parts[j].trim();
+            String[] parts = pieces[i].split(delimiter);
+            for (String s : parts) {
+                String part = s.trim();
                 if (!Utils.empty(part)) {
                     exploded.add(part);
                 }
@@ -162,29 +183,29 @@ public class Utils {
     }
 
     /**
-     * Breaks the string on <code>splitOn</code> but when inside a <code>quoteChars</code>
+     * Breaks the string on <code>splitOn</code> but not when inside a <code>quoteChars</code>
      * quoted string.
      *
-     * @param string
-     * @param splitOn
-     * @param quoteChars
-     * @return
+     * @param string     the string to split
+     * @param splitOn    the character to split on
+     * @param quoteChars quote chars that invalidate the instance of slit char
+     * @return the split parts
      */
     public static List<String> split(String string, char splitOn, char... quoteChars) {
-        List<String> strings = new ArrayList();
-        Set          quotes  = new HashSet();
+        List<String>   strings = new ArrayList<>();
+        Set<Character> quotes  = new HashSet<>();
         for (char c : quoteChars)
             quotes.add(c);
 
-        boolean      quoted = false;
-        StringBuffer buff   = new StringBuffer("");
+        boolean       quoted = false;
+        StringBuilder buff   = new StringBuilder();
         for (int i = 0; i < string.length(); i++) {
             char c = string.charAt(i);
 
             if (c == splitOn && !quoted) {
                 if (buff.length() > 0) {
                     strings.add(buff.toString());
-                    buff = new StringBuffer("");
+                    buff = new StringBuilder();
                 }
                 continue;
             } else if (quotes.contains(c)) {
@@ -215,7 +236,17 @@ public class Utils {
         return string;
     }
 
-    public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap map, String... keyValuePairs) {
+    public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap<String, String> multiMap, String... kvPairs) {
+        if (kvPairs != null && kvPairs.length % 2 > 0)
+            throw new RuntimeException("kvPairs.length must be evenly divisible by 2.");
+
+        for (int i = 0; kvPairs != null && i < kvPairs.length - 1; i += 2)
+            multiMap.put(kvPairs[i], kvPairs[i + 1]);
+
+        return multiMap;
+    }
+
+    public static <M extends Map<String, String>> M addToMap(M map, String... keyValuePairs) {
         if (keyValuePairs != null && keyValuePairs.length % 2 > 0)
             throw new RuntimeException("keyValuePairs.length must be evenly divisible by 2.");
 
@@ -225,34 +256,50 @@ public class Utils {
         return map;
     }
 
-    public static <M extends Map> M addToMap(M map, String... keyValuePairs) {
-        if (keyValuePairs != null && keyValuePairs.length % 2 > 0)
-            throw new RuntimeException("keyValuePairs.length must be evenly divisible by 2.");
-
-        for (int i = 0; keyValuePairs != null && i < keyValuePairs.length - 1; i += 2)
-            map.put(keyValuePairs[i], keyValuePairs[i + 1]);
-
-        return map;
-    }
-
+    /**
+     * Similar to Arrays.asList but with raw ArrayList return type assuming that
+     * all objects don't have to be the same type.
+     *
+     * @param objects the objects to add
+     * @return a new ArrayList containing <code>objects</code>
+     */
     public static ArrayList asList(Object... objects) {
-        return new ArrayList(Arrays.asList(objects));
+        ArrayList<Object> list = new ArrayList<>(objects != null ? objects.length : 0);
+        if (objects != null) {
+            Collections.addAll(list, objects);
+        }
+        return list;
     }
 
+    /**
+     * Similar to Arrays.asList but returning a raw HashSet assuming that
+     * all objects don't have to be the same type.
+     *
+     * @param objects the objects to add
+     * @return a new HashSet containing <code>objects</code>
+     */
     public static HashSet asSet(Object... objects) {
-        return new HashSet(Arrays.asList(objects));
+        HashSet<Object> set = new HashSet<>();
+        if (objects != null) {
+            Collections.addAll(set, objects);
+        }
+        return set;
     }
 
-    public static HashMap asMap(Object... objects) {
-        HashMap map = new HashMap();
-        for (int i = 0; objects != null && i < objects.length - 1; i += 2) {
-            map.put(objects[i], objects[i + 1]);
+    /**
+     * Adds each even and old object as a key/value pair to a HashMap
+     *
+     * @param keyValuePairs a list of key/value pairs that should have an even number of elements
+     * @return a new HashMap containing keyValuePairs
+     */
+    @SuppressWarnings("unchecked")
+    public static HashMap asMap(Object... keyValuePairs) {
+        HashMap map = new HashMap<>();
+        for (int i = 0; keyValuePairs != null && i < keyValuePairs.length - 1; i += 2) {
+            map.put(keyValuePairs[i], keyValuePairs[i + 1]);
         }
         return map;
     }
-
-    static final String  CONTAINS_TOKEN_PLACEHOLDER = "INVERSIONREPLACEDINVERSION";
-    static final Pattern CONTAINS_TOKEN_PATTERN     = Pattern.compile("\\b\\Q" + CONTAINS_TOKEN_PLACEHOLDER + "\\E\\b", Pattern.CASE_INSENSITIVE);
 
     /**
      * Checks for a whole word case insensitive match of <code>findThisToken</code>
@@ -261,13 +308,15 @@ public class Utils {
      * https://www.baeldung.com/java-regexp-escape-char
      * https://stackoverflow.com/questions/7459263/regex-whole-word
      *
-     * @param findThisToken
-     * @param inThisString
+     * @param findThisToken the string to find
+     * @param inThisString  in this other string
+     * @return true if findThisToken exists as a whole world in inThisString
      */
     public static boolean containsToken(String findThisToken, String inThisString) {
-
         findThisToken = findThisToken.toLowerCase();
         inThisString = inThisString.toLowerCase();
+        //-- this replacement is done so that <code>findThisToken</code> can itself contain
+        //-- special chars and word brakes etc that will throw off the whole word regex.
         inThisString = inThisString.replace(findThisToken, CONTAINS_TOKEN_PLACEHOLDER);
         return CONTAINS_TOKEN_PATTERN.matcher(inThisString).find();
     }
@@ -276,13 +325,19 @@ public class Utils {
      * Removes all matching pairs of '"` characters from the
      * start and end of a string.
      *
-     * @param str
-     * @return
+     * @param str the string to dequote
+     * @return str with matched pairs of leading/trailing '"` characters removed
      */
     public static String dequote(String str) {
         return dequote(str, new char[]{'\'', '"', '`'});
     }
 
+    /**
+     * Removes all matching pairs of leading/trailing <code>quoteChars</code> from the start and end of a string.
+     *
+     * @param str the string to dequote
+     * @return str with matched pairs of leading/trailing quoteChars removed
+     */
     public static String dequote(String str, char[] quoteChars) {
         if (str == null)
             return null;
@@ -290,8 +345,8 @@ public class Utils {
         while (str.length() >= 2 && str.charAt(0) == str.charAt(str.length() - 1))// && (str.charAt(0) == '\'' || str.charAt(0) == '"' || str.charAt(0) == '`'))
         {
             boolean changed = false;
-            for (int i = 0; i < quoteChars.length; i++) {
-                if (str.charAt(0) == quoteChars[i]) {
+            for (char quoteChar : quoteChars) {
+                if (str.charAt(0) == quoteChar) {
                     str = str.substring(1, str.length() - 1);
                     changed = true;
                     break;
@@ -306,15 +361,15 @@ public class Utils {
 
     /**
      * Turns a double value into a rounded double with 2 digits of precision
-     * 12.3334 -> 12.33
-     * 23.0 -> 23.00
-     * 45.677 -> 45.68
+     * 12.3334 -@gt; 12.33
+     * 23.0 -@gt; 23.00
+     * 45.677 -@gt; 45.68
      *
-     * @param amount
-     * @return
+     * @param amount the amount to round
+     * @return the amount rounded to two decimal places
      */
     public static BigDecimal toDollarAmount(double amount) {
-        return new BigDecimal(amount).setScale(2, BigDecimal.ROUND_HALF_UP);
+        return new BigDecimal(amount).setScale(2, RoundingMode.HALF_UP);
     }
 
     public static int roundUp(int num, int divisor) {
@@ -384,10 +439,10 @@ public class Utils {
     }
 
     /**
-     * returns a lowercased url safe string
+     * returns a lowercase url safe string
      *
-     * @param str
-     * @return
+     * @param str the string to slugify
+     * @return the slugified string
      */
     public static String slugify(String str) {
         if (str == null) {
@@ -410,7 +465,7 @@ public class Utils {
     }
 
     /**
-     * @param bytes
+     * @param bytes the bytes to hash
      * @return Hash the bytes with SHA-1
      */
     public static String sha1(byte[] bytes) {
@@ -418,7 +473,7 @@ public class Utils {
     }
 
     /**
-     * @param bytes
+     * @param bytes the bytes to hash
      * @return Hash the bytes with MD5
      */
     public static String md5(byte[] bytes) {
@@ -426,19 +481,16 @@ public class Utils {
     }
 
     /**
-     * @param byteArr
-     * @param algorithm
+     * @param bytes     the bytes to hash
+     * @param algorithm the hash algorithm
      * @return Hash the bytes with the given algorithm
      */
-    public static String hash(byte[] byteArr, String algorithm) {
+    public static String hash(byte[] bytes, String algorithm) {
         try {
             MessageDigest digest = MessageDigest.getInstance(algorithm);
-            digest.update(byteArr);
-            byte[] bytes = digest.digest();
-
-            String hex = (new HexBinaryAdapter()).marshal(bytes);
-
-            return hex;
+            digest.update(bytes);
+            bytes = digest.digest();
+            return (new HexBinaryAdapter()).marshal(bytes);
         } catch (Exception ex) {
             rethrow(ex);
         }
@@ -452,20 +504,16 @@ public class Utils {
         return System.currentTimeMillis();
     }
 
-    //   public static String formatDate(Date date)
-    //   {
-    //      TimeZone tz = TimeZone.getTimeZone("UTC");
-    //      DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mmZ");
-    //      df.setTimeZone(tz);
-    //      return df.format(date);
-    //   }
-
-    public static Date parseIso8601(String date) throws ParseException {
-        return ISO8601Utils.parse(date, new ParsePosition(0));
+    public static Date parseIso8601(String date) {
+        //return ISO8601Utils.parse(date, new ParsePosition(0));
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_DATE_TIME;
+        TemporalAccessor  accessor      = timeFormatter.parse(date);
+        return Date.from(Instant.from(accessor));
     }
 
     public static String formatIso8601(Date date) {
         return ISO8601Utils.format(date);
+        //return DateTimeFormatter.ISO_DATE_TIME.format(date.toInstant());
     }
 
     /**
@@ -477,10 +525,11 @@ public class Utils {
     }
 
     /**
-     * Faster way to apply a SimpleDateForamt without having to catch ParseException
+     * Faster way to apply a SimpleDateFormat without having to catch ParseException
      *
-     * @param date
-     * @param format
+     * @param date   the date string to format
+     * @param format the format string
+     * @return the formatted date
      */
     public static Date date(String date, String format) {
         try {
@@ -494,31 +543,36 @@ public class Utils {
     }
 
     /**
-     * Attempts an ISO8601 data as yyyy-MM-dd|yyyyMMdd][T(hh:mm[:ss[.sss]]|hhmm[ss[.sss]])]?[Z|[+-]hh[:]mm],
-     * then yyyy-MM-dd,
-     * then MM/dd/yy,
-     * then MM/dd/yyyy,
-     * then yyyyMMdd
+     * Attempts to parse a date with several usual formats.
+     * <p>
+     * Formats attempted:
+     * <ol>
+     *  <li>an ISO8601 data
+     *  <li>then yyyy-MM-dd
+     *  <li>then MM/dd/yy
+     *  <li>then MM/dd/yyyy
+     *  <li>then yyyyMMdd
+     * </ol>
      *
-     * @param date
-     * @return
+     * @param date the date string to parse
+     * @return the parsed date
+     * @see #cast(String, Object)
      */
     public static Date date(String date) {
         try {
-            //not supported in JDK 1.6
-            //         DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_DATE_TIME;
-            //         TemporalAccessor accessor = timeFormatter.parse(date);
-            //         return Date.from(Instant.from(accessor));
-            return ISO8601Utils.parse(date, new ParsePosition(0));
+            return parseIso8601(date);
+//            DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_DATE_TIME;
+//            TemporalAccessor  accessor      = timeFormatter.parse(date);
+//            return Date.from(Instant.from(accessor));
         } catch (Exception ex) {
-
+            //do nothing
         }
         try {
             SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
             return f.parse(date);
 
         } catch (Exception ex) {
-
+            //do nothing
         }
 
         try {
@@ -528,12 +582,10 @@ public class Utils {
             if (lastSlash > 0 && lastSlash == date.length() - 5) {
                 f = new SimpleDateFormat("MM/dd/yyyy");
             }
-            Date d = f.parse(date);
-            //System.out.println(d);
-            return d;
+            return f.parse(date);
 
         } catch (Exception ex) {
-
+            //do nothing
         }
 
         try {
@@ -553,33 +605,32 @@ public class Utils {
         actual = actual.replaceAll("\\s+", " ").trim();
 
         if (!expected.equals(actual)) {
-            if (!expected.equals(actual)) {
-                System.out.println("EXPECTED : " + expected);
-                System.out.println("ACTUAL   : " + actual);
+            System.out.println("EXPECTED : " + expected);
+            System.out.println("ACTUAL   : " + actual);
+            for (int i = 0; i < expected.length() && i < actual.length(); i++) {
+                if (expected.charAt(i) == actual.charAt(i)) {
+                    System.out.print("           ");
 
-                for (int i = 0; i < expected.length() && i < actual.length(); i++) {
-                    if (expected.charAt(i) == actual.charAt(i)) {
-                        System.out.print("           ");
-
-                    } else {
-                        System.out.println("X");
-                        break;
-                    }
+                } else {
+                    System.out.println("X");
+                    break;
                 }
-                System.out.println(" ");
-                return false;
             }
+            System.out.println(" ");
+            return false;
+
         }
         return true;
     }
 
     /**
-     * Tries to \"unwrap\" nested exceptions looking for the root cause
+     * Tries to unwrap nested exceptions looking for the root cause
      *
-     * @param t
+     * @param t the error to investigate
+     * @return the recursively root cause
      */
     public static Throwable getCause(Throwable t) {
-        Throwable origional = t;
+        Throwable original = t;
 
         int guard = 0;
         while (t != null && t.getCause() != null && t.getCause() != t && guard < 100) {
@@ -588,7 +639,7 @@ public class Utils {
         }
 
         if (t == null) {
-            t = origional;
+            t = original;
         }
 
         return t;
@@ -596,53 +647,59 @@ public class Utils {
 
     /**
      * Shortcut for throw new RuntimeException(message);
+     *
+     * @throws RuntimeException always
      */
-    public static void error(String message) {
+    public static void error(String message) throws RuntimeException {
         throw new RuntimeException(message);
     }
 
     /**
-     * Throws the root cause of e as a RuntimeException
+     * Throws the root cause of <code>error</code> as a RuntimeException
      *
-     * @param e
+     * @param error error to rethrow
+     * @throws RuntimeException always
      */
-    public static void rethrow(Throwable e) {
-        rethrow(null, e);
+    public static void rethrow(Throwable error) throws RuntimeException {
+        rethrow(null, error);
     }
 
     /**
      * Throws the root cause of e as a RuntimeException
      *
-     * @param e
+     * @param message the optional message to include in the RuntimeException
+     * @param error   the error to rethrow
+     * @throws RuntimeException always
      */
-    public static void rethrow(String message, Throwable e) {
-        Throwable cause = e;
+    public static void rethrow(String message, Throwable error) throws RuntimeException {
+        Throwable cause = error;
 
-        while (cause.getCause() != null && cause.getCause() != e)
+        while (cause.getCause() != null && cause.getCause() != error)
             cause = cause.getCause();
 
         if (cause instanceof RuntimeException) {
             throw (RuntimeException) cause;
         }
 
-        if (e instanceof RuntimeException)
-            throw (RuntimeException) e;
+        if (error instanceof RuntimeException)
+            throw (RuntimeException) error;
 
         if (!empty(message)) {
-            throw new RuntimeException(message, e);
+            throw new RuntimeException(message, error);
         } else {
-            throw new RuntimeException(e);
+            throw new RuntimeException(error);
         }
     }
 
     /**
      * Easy way to call Thread.sleep(long) without worrying about try/catch for InterruptedException
      *
-     * @param millis
+     * @param milliseconds the number of milliseconds to sleep
+     * @throws RuntimeException if InterruptedException is thrown
      */
-    public static void sleep(long millis) {
+    public static void sleep(long milliseconds) throws RuntimeException {
         try {
-            Thread.sleep(millis);
+            Thread.sleep(milliseconds);
         } catch (InterruptedException e) {
             rethrow(e);
         }
@@ -659,11 +716,8 @@ public class Utils {
     }
 
     public static List<String> getStackTraceLines(Throwable stackTrace) {
-        ByteArrayOutputStream baos = null;
-        PrintWriter           writer;
-
-        baos = new ByteArrayOutputStream();
-        writer = new PrintWriter(baos);
+        ByteArrayOutputStream baos   = new ByteArrayOutputStream();
+        PrintWriter           writer = new PrintWriter(baos);
 
         if (stackTrace != null) {
             stackTrace.printStackTrace(writer);
@@ -677,20 +731,14 @@ public class Utils {
 
         writer.close();
 
-        List     lines = new ArrayList();
-        String   s     = new String(baos.toByteArray());
-        String[] sArr  = s.split("\n");
-        lines.addAll(new ArrayList(Arrays.asList(sArr)));
-
-        return lines;
+        String   s    = new String(baos.toByteArray());
+        String[] sArr = s.split("\n");
+        return new ArrayList<>(Arrays.asList(sArr));
     }
 
     public static String getStackTraceString(Throwable stackTrace) {
-        ByteArrayOutputStream baos = null;
-        PrintWriter           writer;
-
-        baos = new ByteArrayOutputStream();
-        writer = new PrintWriter(baos);
+        ByteArrayOutputStream baos   = new ByteArrayOutputStream();
+        PrintWriter           writer = new PrintWriter(baos);
 
         boolean createNewTrace = false;
 
@@ -728,8 +776,8 @@ public class Utils {
 
         boolean chop = false;
         if (stackTrace.indexOf("Caused by: ") > 0) {
-            for (int i = 0; i < ignoredCauses.length; i++) {
-                if (lines[0].indexOf(ignoredCauses[i]) > -1) {
+            for (String ignoredCause : ignoredCauses) {
+                if (lines[0].contains(ignoredCause)) {
                     chop = true;
                     break;
                 }
@@ -740,7 +788,7 @@ public class Utils {
         if (chop) {
             for (int i = 0; i < lines.length; i++) {
                 if (lines[i].startsWith("Caused by:")) {
-                    lines[i] = lines[i].substring(10, lines[i].length());
+                    lines[i] = lines[i].substring(10);
                     break;
                 }
 
@@ -748,7 +796,7 @@ public class Utils {
             }
         }
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         for (int i = start; i < lines.length; i++) {
             buffer.append(lines[i]).append("\r\n");
         }
@@ -765,16 +813,16 @@ public class Utils {
             return EMPTY_STRING_ARRAY;
         }
 
-        String lineSeparator = text.indexOf(NEW_LINE) >= 0 ? NEW_LINE : "\n";
+        String lineSeparator = text.contains(NEW_LINE) ? NEW_LINE : "\n";
         return text.split(lineSeparator);
     }
 
-    public static final String limitLines(String text, int limit) {
-        StringBuffer buffer = new StringBuffer("");
-        String[]     lines  = splitLines(text);
+    public static String limitLines(String text, int limit) {
+        StringBuilder buffer = new StringBuilder();
+        String[]      lines  = splitLines(text);
         for (int i = 0; i < lines.length && i < limit; i++) {
             if (i == limit - 1 && i != lines.length - 1) {
-                buffer.append("..." + (lines.length - i) + " more");
+                buffer.append("...").append(lines.length - i).append(" more");
             } else {
                 buffer.append(lines[i]).append(NEW_LINE);
             }
@@ -783,43 +831,20 @@ public class Utils {
         return buffer.toString();
     }
 
-    //   /**
-    //    * Same as calling Class.getMethod but it returns null intead of throwing a NoSuchMethodException
-    //    * @param clazz
-    //    * @param name
-    //    * @param args
-    //    * @return
-    //    */
-    //   public static Method getMethod(Class clazz, String name, Class... args)
-    //   {
-    //      try
-    //      {
-    //         return clazz.getMethod(name, args);
-    //      }
-    //      catch (NoSuchMethodException ex)
-    //      {
-    //
-    //      }
-    //      return null;
-    //   }
-    //
-
     /**
-     * Searches the inheritance hierarchy for a field with the the given name and makes sure it is settable via Field.setAccesible
+     * Searches the inheritance hierarchy for a field with the the given name and makes sure it is settable via Field.setAccessible().
      *
-     * @param fieldName
-     * @param clazz
-     * @return
+     * @param fieldName the field to find
+     * @param clazz     the class to find it in
+     * @return the first Field found with name
      */
     public static Field getField(String fieldName, Class clazz) {
         if (fieldName == null || clazz == null) {
             return null;
         }
 
-        Field[] fields = clazz.getDeclaredFields();
-        for (int i = 0; i < fields.length; i++) {
-            if (fields[i].getName().equals(fieldName)) {
-                Field field = fields[i];
+        for (Field field : clazz.getDeclaredFields()) {
+            if (field.getName().equals(fieldName)) {
                 field.setAccessible(true);
                 return field;
             }
@@ -833,30 +858,27 @@ public class Utils {
     }
 
     /**
-     * Gets all the fields from from all classes in the inheritance hierarchy EXCEPT for any class who's packages starts with \"java\"
+     * Gets all the fields from from all classes in the inheritance hierarchy EXCEPT for any class who's packages starts with "java*".
      *
-     * @param clazz
-     * @return
+     * @param clazz the class to search
+     * @return all Fields in the inheritance hierarchy other "java*" packages classes.
      */
     public static List<Field> getFields(Class clazz) {
-        Class       inClass = clazz;
-        Set         found   = new HashSet();
-        List<Field> fields  = new ArrayList();
+        Set<String> found  = new HashSet<>();
+        List<Field> fields = new ArrayList<>();
 
         do {
             if (clazz.getName().startsWith("java"))
                 break;
 
             Field[] farr = clazz.getDeclaredFields();
-            if (farr != null) {
-                for (Field f : farr) {
-                    if (!found.contains(f.getName())) {
-                        f.setAccessible(true);
-                        found.add(f.getName());
-                        fields.add(f);
-                    } else {
-                        System.out.println("This super class property is being skipped because it is being hidden by a child class property with the same name...is this a design mistake? " + f);
-                    }
+            for (Field f : farr) {
+                if (!found.contains(f.getName())) {
+                    f.setAccessible(true);
+                    found.add(f.getName());
+                    fields.add(f);
+                } else {
+                    System.out.println("This super class property is being skipped because it is being hidden by a child class property with the same name...is this a design mistake? " + f);
                 }
             }
             clazz = clazz.getSuperclass();
@@ -865,41 +887,23 @@ public class Utils {
         return fields;
     }
 
-    //
-    //   /**
-    //    * Finds the Field in the inheritance heirarchy and sets it
-    //    * @param name
-    //    * @param value
-    //    * @param o
-    //    * @throws NoSuchFieldException
-    //    * @throws IllegalAccessException
-    //    */
-    //   public static void setField(String name, Object value, Object o) throws NoSuchFieldException, IllegalAccessException
-    //   {
-    //      Field f = getField(name, o.getClass());
-    //      f.setAccessible(true);
-    //      f.set(o, value);
-    //   }
-    //
-
     /**
-     * Searches the inheritance hierarchy for the first method of the given name (ignores case).  No distinction is made for overloaded method names.
+     * Searches the inheritance hierarchy for the first method of the given name (ignores case).
+     * <p>
+     * No distinction is made for overloaded method names.
      *
-     * @param clazz
-     * @param name
-     * @return
+     * @param clazz the class to search
+     * @param name  the name of a method to find
+     * @return the first method with name
      */
     public static Method getMethod(Class clazz, String name) {
-        do {
+        while (clazz != null && !Object.class.equals(clazz)) {
             for (Method m : clazz.getMethods()) {
                 if (m.getName().equalsIgnoreCase(name))
                     return m;
             }
-
-            if (clazz != null) {
-                clazz = clazz.getSuperclass();
-            }
-        } while (clazz != null && !Object.class.equals(clazz));
+            clazz = clazz.getSuperclass();
+        }
 
         return null;
     }
@@ -907,9 +911,9 @@ public class Utils {
     /**
      * Tries to find a bean property getter then defaults to returning the Field value
      *
-     * @param name
-     * @param object
-     * @return
+     * @param name   the bean property value to find
+     * @param object the object to find it in
+     * @return the value of the bean property with name
      */
     public static Object getProperty(String name, Object object) {
         try {
@@ -928,22 +932,24 @@ public class Utils {
     }
 
     /**
-     * Finds an input stream for <code>resource</code> and reads it into a string
+     * Finds an input stream for <code>fileOrUrl</code> and reads it into a string
      *
-     * @param resource
+     * @param fileOrUrl the resource to read
      * @return the content of <code>code</code> as a String
+     * @see #findInputStream(String)
      */
-    public static String read(String resource) {
-        return read(findInputStream(resource));
+    public static String read(String fileOrUrl) {
+        return read(findInputStream(fileOrUrl));
     }
 
     /**
-     * Read all of the stream to a string and close the stream.  Throws RuntimeException instead of IOException
+     * Read all of the stream to a string and close the stream.
      *
-     * @param in
-     * @return
+     * @param in the data to stringify
+     * @return the data from in as a string
+     * @throws RuntimeException when an IOException is thrown
      */
-    public static String read(InputStream in) {
+    public static String read(InputStream in) throws RuntimeException {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             pipe(in, out);
@@ -955,44 +961,43 @@ public class Utils {
     }
 
     /**
-     * Read teh contents of a file to a string
+     * Read the contents of a file to a string
      *
-     * @param file
-     * @return
-     * @throws ApiException
+     * @param file the file to read and stringify
+     * @return the file text
+     * @throws RuntimeException when an IOException is thrown
+     * @see #read(InputStream)
      */
-    public static String read(File file) throws Exception {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        FileInputStream       in  = new FileInputStream(file);
-        pipe(in, out);
-        return new String(out.toByteArray());
+    public static String read(File file) throws IOException {
+        return read(new BufferedInputStream(new FileInputStream(file)));
     }
 
     /**
      * Write the string value to a file
      *
-     * @param file
-     * @param text
-     * @throws ApiException
+     * @param file the file to write
+     * @param text the content to write
+     * @throws IOException if unable to create the parent directory or when IO fails
      */
-    public static void write(File file, String text) throws Exception {
-        if (!file.exists())
-            file.getParentFile().mkdirs();
+    public static void write(File file, String text) throws IOException {
+        File dir = file.getParentFile();
+        if (!dir.exists())
+            if (!dir.mkdirs())
+                throw new IOException("Unable to create the parent directory");
 
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"));
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8));
         bw.write(text);
         bw.flush();
         bw.close();
     }
 
     /**
-     * Write the string value to a file
+     * Convenience overloading of write(File, String)
      *
-     * @param file
-     * @param text
-     * @throws ApiException
+     * @throws IOException when thrown
+     * @see #write(File, String)
      */
-    public static void write(String file, String text) throws Exception {
+    public static void write(String file, String text) throws IOException {
         if (text == null)
             return;
         write(new File(file), text);
@@ -1001,32 +1006,19 @@ public class Utils {
     /**
      * Copy all data from src to dst and close the streams
      *
-     * @param src
-     * @param dest
-     * @throws ApiException
+     * @param in  the data to be written
+     * @param out where the data should be written to
+     * @throws IOException when thrown
      */
-    public static void pipe(InputStream src, OutputStream dest) throws Exception {
-        try {
-            boolean isBlocking = true;
-            byte[]  buf        = new byte[K64];
-
-            int nread;
-            int navailable;
-            //int total = 0;
-            synchronized (src) {
-                while ((navailable = isBlocking ? Integer.MAX_VALUE : src.available()) > 0 //
-                        && (nread = src.read(buf, 0, Math.min(buf.length, navailable))) >= 0) {
-                    dest.write(buf, 0, nread);
-                    //total += nread;
-                }
-            }
-            dest.flush();
-
-        } finally {
-            close(src);
-            close(dest);
+    public static void pipe(InputStream in, OutputStream out) throws IOException {
+        int    read;
+        byte[] buffer = new byte[1024];
+        while ((read = in.read(buffer)) > -1) {
+            out.write(buffer, 0, read);   // Don't allow any extra bytes to creep in, final write
         }
+        out.close();
     }
+
 
     public static File createTempFile(String fileName) throws IOException {
         if (empty(fileName))
@@ -1039,7 +1031,7 @@ public class Utils {
             fileName = "working.tmp";
         } else {
             if (fileName.lastIndexOf('/') > 0) {
-                fileName = fileName.substring(fileName.lastIndexOf('/') + 1, fileName.length());
+                fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
             }
         }
 
@@ -1049,7 +1041,7 @@ public class Utils {
         fileName = slugify(fileName);
         if (fileName.lastIndexOf('.') > 0) {
             String prefix = fileName.substring(0, fileName.lastIndexOf('.'));
-            String suffix = fileName.substring(fileName.lastIndexOf('.'), fileName.length());
+            String suffix = fileName.substring(fileName.lastIndexOf('.'));
 
             return File.createTempFile(prefix + "-", suffix);
         } else {
@@ -1060,19 +1052,20 @@ public class Utils {
     /**
      * Attempts to locate the stream as a file, url, or classpath resource
      *
-     * @param fileOrUrl
-     * @return
+     * @param fileOrUrl a stream resource identifier
+     * @return an input stream reading fileOrUrl
+     * @throws RuntimeException when and IOException is thrown
      */
-    public static InputStream findInputStream(String fileOrUrl) {
+    public static InputStream findInputStream(String fileOrUrl) throws RuntimeException {
         try {
             if (fileOrUrl.startsWith("file:/")) {
                 fileOrUrl = URLDecoder.decode(fileOrUrl, "UTF-8");
             }
             if (fileOrUrl.startsWith("file:///")) {
-                fileOrUrl = fileOrUrl.substring(7, fileOrUrl.length());
+                fileOrUrl = fileOrUrl.substring(7);
             }
             if (fileOrUrl.startsWith("file:/")) {
-                fileOrUrl = fileOrUrl.substring(5, fileOrUrl.length());
+                fileOrUrl = fileOrUrl.substring(5);
             }
 
             if (fileOrUrl.indexOf(':') >= 0) {
@@ -1082,23 +1075,22 @@ public class Utils {
             } else {
                 return Thread.currentThread().getContextClassLoader().getResourceAsStream(fileOrUrl);
             }
-        } catch (Exception ex) {
-            if (ex instanceof RuntimeException)
-                throw (RuntimeException) ex;
-
-            throw new RuntimeException(ex);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
     }
 
     /**
-     * Returns true if the string contains a * or a ?
+     * @return true if the string contains a * or a ?
      */
     public static boolean isWildcard(String str) {
         return str.indexOf('*') >= 0 || str.indexOf('?') >= 0;
     }
 
     /**
-     * Pattern matches the string using ? to indicate any one single value and * to indicate any 0-n multiple values
+     * Pattern matches the string using ? to indicate any one single value and * to indicate any 0-n multiple value
+     *
+     * @return true if string matches wildcard
      */
     public static boolean wildcardMatch(String wildcard, String string) {
         if (wildcard.equals("*"))
@@ -1110,33 +1102,19 @@ public class Utils {
         if (!isWildcard(wildcard))
             return wildcard.equals(string);
         else
-            return regexMatch(wildcardToRegex(wildcard), string);
-    }
-
-    /**
-     * Performs string.matches() but also checks for null
-     *
-     * @param regex
-     * @param string
-     * @return
-     */
-    public static boolean regexMatch(String regex, String string) {
-        if (empty(regex) || empty(string))
-            return false;
-
-        return string.matches(regex);
+            return string.matches(wildcardToRegex(wildcard));
     }
 
     /**
      * Converts a * and ? wildcard style patterns into regex style pattern
      *
-     * @param wildcard
-     * @return
-     * @see http://www.rgagnon.com/javadetails/java-0515.html
+     * @param wildcard the wildcard expression to convert to a regex
+     * @return a wildcard pattern converted to a regex
+     * @see <a href="http://www.rgagnon.com/javadetails/java-0515.html">Code example found here</a>
      */
     public static String wildcardToRegex(String wildcard) {
         wildcard = wildcard.replace("**", "*");
-        StringBuffer s = new StringBuffer(wildcard.length());
+        StringBuilder s = new StringBuilder(wildcard.length());
         s.append('^');
         for (int i = 0, is = wildcard.length(); i < is; i++) {
             char c = wildcard.charAt(i);
@@ -1172,7 +1150,7 @@ public class Utils {
     }
 
     public static LinkedHashMap<String, String> parseQueryString(String query) {
-        LinkedHashMap params = new LinkedHashMap();
+        LinkedHashMap<String, String> params = new LinkedHashMap<>();
 
         if (query != null) {
             try {
@@ -1209,50 +1187,8 @@ public class Utils {
         return params;
     }
 
-    //   /**
-    //    * @param name - name to look for in sysprops and envprops
-    //    * @param defaultValue - will be returned if prop not found
-    //    * @return first not null of sysprop(name) || envprop(name) || defaultValue
-    //    */
-    //   public static String getSysEnvPropStr(String name, Object defaultValue)
-    //   {
-    //      Object obj = getSysEnvProp(name, defaultValue);
-    //      if (obj != null)
-    //         return obj.toString();
-    //      return null;
-    //   }
-    //
-    //   public static int getSysEnvPropInt(String name, Object defaultValue)
-    //   {
-    //      Object obj = getSysEnvProp(name, defaultValue);
-    //      if (obj != null)
-    //         return Integer.parseInt(obj.toString());
-    //      return -1;
-    //   }
-    //
-    //   public static boolean getSysEnvPropBool(String name, Object defaultValue)
-    //   {
-    //      Object obj = getSysEnvProp(name, defaultValue);
-    //      if (obj != null)
-    //         return "true".equalsIgnoreCase(obj.toString());
-    //      return false;
-    //   }
-    //
-    //   /**
-    //    * @param name - name to look for in sysprops and envprops if 'value' is null;
-    //    * @param defaultValue - will be returned if not found on sys or env
-    //    * @return first not null of sysprop(name) || envprop(name) || 'defaultValue'
-    //    */
-    //   public static Object getSysEnvProp(String name, Object defaultValue)
-    //   {
-    //      Object value = getProperty(name);
-    //
-    //      return null == value ? defaultValue : value;
-    //   }
-    //
-
     public static String findProperty(String... names) {
-        String value = null;
+        String value;
         for (String name : names) {
             value = getProperty(name);
             if (value != null)
@@ -1298,7 +1234,7 @@ public class Utils {
 
             if (type == null) {
                 try {
-                    if (value.toString().indexOf(".") < 0) {
+                    if (!value.toString().contains(".")) {
                         return Long.parseLong(value.toString());
                     } else {
                         return Double.parseDouble(value.toString());
@@ -1325,7 +1261,7 @@ public class Utils {
                 case "number":
                 case "numeric":
                 case "decimal":
-                    if (value.toString().indexOf(".") < 0)
+                    if (!value.toString().contains("."))
                         return Long.parseLong(value.toString());
                     else
                         return Double.parseDouble(value.toString());
@@ -1359,7 +1295,7 @@ public class Utils {
                 case "binary":
                 case "varbinary":
                 case "longvarbinary":
-                    throw new UnsupportedOperationException("Binary types are currently unsupporrted");
+                    throw new UnsupportedOperationException("Binary types are currently unsupported");
 
                 case "date":
                 case "datetime":
@@ -1389,7 +1325,7 @@ public class Utils {
                     }
 
                 default:
-                    ApiException.throw500InternalServerError("Error casting '{}' as type '{}'", value, type);
+                    throw ApiException.new500InternalServerError("Error casting '{}' as type '{}'", value, type);
             }
         } catch (Exception ex) {
             Utils.rethrow(ex);
@@ -1400,9 +1336,9 @@ public class Utils {
     }
 
     /**
-     * Utility to call a close() method on supplied objects if it exists and completely ignore any exceptions
+     * Utility to call a close() method on supplied objects if it exists and completely ignore any exceptions.
      *
-     * @param toClose
+     * @param toClose the object to close.
      */
     public static void close(Object... toClose) {
         for (Object o : toClose) {
@@ -1412,14 +1348,12 @@ public class Utils {
                         ((Closeable) o).close();
                     } else {
                         Method m = o.getClass().getMethod("close");
-                        if (m != null) {
-                            m.invoke(o);
-                        }
+                        m.invoke(o);
                     }
-                } catch (NoSuchMethodException nsme) {
-                    //nsme.printStackTrace();
+                    //} catch (NoSuchMethodException ex) {
+                    //ignore
                 } catch (Exception ex) {
-                    //ex.printStackTrace();
+                    //ignore
                 }
             }
         }

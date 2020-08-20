@@ -48,20 +48,20 @@ public class CosmosDb extends Db<CosmosDb> {
     /**
      * Finds the resource keys on the other side of the relationship
      *
-     * @param relationship
-     * @param sourceResourceKeys
-     * @return Map<sourceResourceKey, relatedResourceKey>
+     * @param collection
+     * @param columnMappedTerms
+     * @return Map key=sourceResourceKey, value=relatedResourceKey
      * @throws ApiException
      */
     @Override
-    public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException {
-        CosmosSqlQuery query = new CosmosSqlQuery(this, table, columnMappedTerms);
+    public Results doSelect(Collection collection, List<Term> columnMappedTerms) throws ApiException {
+        CosmosSqlQuery query = new CosmosSqlQuery(this, collection, columnMappedTerms);
         return query.doSelect();
     }
 
     @Override
     public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
-        List keys = new ArrayList();
+        List keys = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             keys.add(upsertRow(table, row));
         }
@@ -76,7 +76,7 @@ public class CosmosDb extends Db<CosmosDb> {
             if (id == null) {
                 id = table.encodeResourceKey(columnMappedTermsRow);
                 if (id == null)
-                    ApiException.throw400BadRequest("Your record does not contain the required key fields.");
+                    throw ApiException.new400BadRequest("Your record does not contain the required key fields.");
                 doc.putFirst("id", id);
             }
 
@@ -103,18 +103,17 @@ public class CosmosDb extends Db<CosmosDb> {
 
             int statusCode = response.getStatusCode();
             if (statusCode > 299) {
-                ApiException.throw400BadRequest("Unexpected http status code returned from database: '{}'", statusCode);
+                throw ApiException.new400BadRequest("Unexpected http status code returned from database: '{}'", statusCode);
             }
 
             String returnedId = response.getResource().getId();
             if (!Utils.equal(id, returnedId))
-                ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '{}' vs. '{}'", id, returnedId);
+                throw ApiException.new500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '{}' vs. '{}'", id, returnedId);
 
             return id;
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
-        return null;
     }
 
     @Override
@@ -132,8 +131,7 @@ public class CosmosDb extends Db<CosmosDb> {
      * @param table
      * @param indexValues
      * @throws ApiException
-     * @see https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
-     * @see
+     * @see <a href="https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest">CosmosDb Resource URI Syntax</a>
      */
     protected void deleteRow(Collection table, Map<String, Object> indexValues) throws ApiException {
         Object id                = table.encodeResourceKey(indexValues);
@@ -150,7 +148,7 @@ public class CosmosDb extends Db<CosmosDb> {
 
             int statusCode = response.getStatusCode();
             if (statusCode >= 400) {
-                ApiException.throw500InternalServerError("Unexpected http status code returned from database: {}", statusCode);
+                throw ApiException.new500InternalServerError("Unexpected http status code returned from database: {}", statusCode);
             }
         } catch (DocumentClientException ex) {
             ex.printStackTrace();
@@ -158,7 +156,7 @@ public class CosmosDb extends Db<CosmosDb> {
             if (statusCode == 404) {
                 //ignore attempts to delete things that don't exist
             } else {
-                ApiException.throw500InternalServerError(ex);
+                throw ApiException.new500InternalServerError(ex);
             }
         }
     }
@@ -230,7 +228,7 @@ public class CosmosDb extends Db<CosmosDb> {
             error += "You could call CosmosDocumentDb.withUri() and CosmosDocumentDb.withKey() directly in your code but compiling these ";
             error += "values into your code is strongly discouraged as a poor security practice.";
 
-            ApiException.throw500InternalServerError(error);
+            throw ApiException.new500InternalServerError(error);
         }
 
         DocumentClient client = new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);

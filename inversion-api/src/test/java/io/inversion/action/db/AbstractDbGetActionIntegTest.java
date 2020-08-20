@@ -72,6 +72,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
         //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia");
         res = engine.get(url("orders?limit=5&sort=orderid&excludes=href,shipname,orderdetails,customer,employee,shipvia")).assertOk();
+        JSNode json = res.getJson();
+        System.out.println("RESPONSE: " + res.getJson());
         res.dump();
         JSNode node = res.findNode("data.0");
 
@@ -130,7 +132,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
         assertEquals(1, res.findNode("data.0").size());
 
-        List<String> hrefs = new ArrayList();
+        List<String> hrefs = new ArrayList<>();
         res.getData().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
         //makes sure they are all unqique

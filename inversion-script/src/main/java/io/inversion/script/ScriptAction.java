@@ -145,7 +145,7 @@ public class ScriptAction extends Action<ScriptAction> {
     }
 
     void runScripts(Request req, Response res, LinkedHashMap<String, JSNode> scripts) throws ApiException {
-        Map<String, Object> contexts = new HashMap();
+        Map<String, Object> contexts = new HashMap<>();
 
         try {
             String content = null;
@@ -262,7 +262,7 @@ public class ScriptAction extends Action<ScriptAction> {
                 }
             }
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         } finally {
             for (Object context : contexts.values()) {
                 if (context instanceof Context)
@@ -272,8 +272,8 @@ public class ScriptAction extends Action<ScriptAction> {
     }
 
     public LinkedHashMap<String, JSNode> findScripts(Engine engine, Chain chain, Request req) throws ApiException {
-        Map<JSNode, String> paths   = new HashMap();
-        List<JSNode>        scripts = new ArrayList();
+        Map<JSNode, String> paths   = new HashMap<>();
+        List<JSNode>        scripts = new ArrayList<>();
 
         String subpath = req.getSubpath().toString();
 
@@ -282,7 +282,7 @@ public class ScriptAction extends Action<ScriptAction> {
         JSNode script = null;
         String path   = null;
 
-        List<String> guesses = new ArrayList();
+        List<String> guesses = new ArrayList<>();
         if (parts.size() > 1) {
             if (ext(parts.get(1)) == null) {
                 guesses.add(Utils.implode("/", parts.get(0), "switch"));
@@ -316,7 +316,7 @@ public class ScriptAction extends Action<ScriptAction> {
 
             parts = Utils.explode("/", path);
 
-            List<JSNode> settings = new ArrayList();
+            List<JSNode> settings = new ArrayList<>();
 
             for (int i = 0; i < parts.size(); i++) {
                 String base = i == 0 ? "" : Utils.implode("/", parts.subList(0, i - 1));
@@ -370,13 +370,13 @@ public class ScriptAction extends Action<ScriptAction> {
         String scriptsDir        = chain.getConfig("scriptsDir", handler.scriptsDir);
         String scriptsCollection = chain.getConfig("scriptsCollection", handler.scriptsCollection);
 
-        List<String> exts = new ArrayList();
+        List<String> exts = new ArrayList<>();
         if (ext != null)
             exts.add(ext);
         else
             exts.addAll(handler.scriptTypes.keySet());
 
-        List<String> paths = new ArrayList();
+        List<String> paths = new ArrayList<>();
         if (ext != null) {
             paths.add(path);
         } else {
@@ -502,19 +502,19 @@ public class ScriptAction extends Action<ScriptAction> {
 
     public static class Util {
         public void throwApiException(String status, String message) {
-            ApiException.throw500InternalServerError(status, message);
+            throw ApiException.new500InternalServerError(status, message);
         }
 
         public void throwBadRequest(String message) {
-            ApiException.throw400BadRequest(message);
+            throw ApiException.new400BadRequest(message);
         }
 
         public void throwNotFound(String message) {
-            ApiException.throw404NotFound(message);
+            throw ApiException.new404NotFound(message);
         }
 
         public void throwServerError(String message) {
-            ApiException.throw500InternalServerError(message);
+            throw ApiException.new500InternalServerError(message);
         }
 
         public List<Object> list(Object obj) {

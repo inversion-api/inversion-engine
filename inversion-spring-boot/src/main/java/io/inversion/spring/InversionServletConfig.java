@@ -44,7 +44,7 @@ public class InversionServletConfig {
      * shared by all Engine includesPaths.
      */
     public static String buildServletMapping(Engine engine) {
-        List    parts = new ArrayList();
+        List    parts = new ArrayList<>();
         boolean done  = false;
         for (int i = 0; i < 100 && !done; i++) {
             String part = null;

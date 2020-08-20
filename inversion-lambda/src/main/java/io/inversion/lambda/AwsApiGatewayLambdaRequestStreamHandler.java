@@ -89,12 +89,12 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
             Response res = null;
             Request  req = null;
 
-            Map    headers     = new HashMap();
+            Map    headers     = new HashMap<>();
             JSNode jsonHeaders = json.getNode("headers");
             if (jsonHeaders != null)
                 headers = jsonHeaders.asMap();
 
-            Map    params     = new HashMap();
+            Map    params     = new HashMap<>();
             JSNode jsonParams = json.getNode("queryStringParameters");
             if (jsonParams != null) {
                 params = jsonParams.asMap();
@@ -152,7 +152,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
      * If <code>api</code> is null, it calls buildApi() which by default does nothing and is itself designed as an override hook.
      *
      * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator.
-     * @see #buildApi()
+     * @see #buildApi
      */
     protected Engine buildEngine(String configProfile, String servletPath) {
         Engine engine = new Engine();
@@ -191,7 +191,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
 
         for (String key : res.getHeaders().keySet()) {
             List         values = res.getHeaders().get(key);
-            StringBuffer buff   = new StringBuffer();
+            StringBuilder buff   = new StringBuilder();
             for (int i = 0; i < values.size(); i++) {
                 buff.append(values.get(i));
                 if (i < values.size() - 1)

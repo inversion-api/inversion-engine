@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * The primary job of a Db subclass is to:
  * <ol>
  *  <li>reflectively generate Collections to represent their underlying tables (or buckets, folders, containers etc.) columns, indexes, and relationships, during {@code #doStartup(Api)}.
- *  <li>implement REST CRUD support by implementing {@link #select(Collection, List)}, {@link #upsert(Collection, List)}, {@link #delete(Collection, List)}.
+ *  <li>implement REST CRUD support by implementing {@link #select(Collection, Map)}, {@link #upsert(Collection, List)}, {@link #delete(Collection, List)}.
  * </ol>
  * <p>
  * Actions such as DbGetAction then:
@@ -209,13 +209,15 @@ public abstract class Db<T extends Db> {
      * delegating the work to {@link #doSelect(Collection, List)} where all ins and outs are based on columnName.
      *
      * @param collection
-     * @param queryTerms RQL terms that have been translated to use Property jsonNames
+     * @param params RQL terms that have been translated to use Property jsonNames
      * @return A list of maps with keys as Property jsonNames
      * @throws ApiException
+     *
+     * TODO: update/correct this javadoc
      */
     public final Results select(Collection collection, Map<String, String> params) throws ApiException {
 
-        List<Term> terms = new ArrayList();
+        List<Term> terms = new ArrayList<>();
 
         for (String key : params.keySet()) {
 
@@ -274,7 +276,7 @@ public abstract class Db<T extends Db> {
         //-- query text dependable so you can write better tests.
         Collections.sort(terms);
 
-        List<Term> mappedTerms = new ArrayList();
+        List<Term> mappedTerms = new ArrayList<>();
         terms.forEach(term -> mappedTerms.addAll(mapToColumnNames(collection, term.copy())));
 
         Results results = doSelect(collection, mappedTerms);
@@ -387,9 +389,9 @@ public abstract class Db<T extends Db> {
     public abstract Results doSelect(Collection collection, List<Term> queryTerms) throws ApiException;
 
     public final List<String> upsert(Collection collection, List<Map<String, Object>> rows) throws ApiException {
-        List<Map<String, Object>> upsertMaps = new ArrayList();
+        List<Map<String, Object>> upsertMaps = new ArrayList<>();
         for (Map<String, Object> node : rows) {
-            Map<String, Object> mapped = new HashMap();
+            Map<String, Object> mapped = new HashMap<>();
             upsertMaps.add(mapped);
 
             String href = node.get("href") != null ? node.get("href").toString() : null;
@@ -505,7 +507,7 @@ public abstract class Db<T extends Db> {
             srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
         } else {
             if (srcCols.size() != destCols.size())
-                ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
+                throw ApiException.new500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
 
             if (srcRow == null)
                 return Collections.EMPTY_MAP;
@@ -552,14 +554,14 @@ public abstract class Db<T extends Db> {
      * The default implementation simply calls upsert().
      *
      * @param collection
-     * @param rows       the key/value pairs to update on existing records
+     * @param nodes       the key/value pairs to update on existing records
      * @throws ApiException
      */
     //TODO: all rows need to be have a resourceKey
     public List<String> patch(Collection collection, List<Map<String, Object>> nodes) throws ApiException {
-        List<Map<String, Object>> rows = new ArrayList();
+        List<Map<String, Object>> rows = new ArrayList<>();
 
-        List<String> resourceKeys = new ArrayList();
+        List<String> resourceKeys = new ArrayList<>();
         for (Map<String, Object> node : nodes) {
             if (node.size() == 1)
                 continue;//patching an "href" only so no changes.
@@ -594,7 +596,7 @@ public abstract class Db<T extends Db> {
                                     }
                                 }
                             } else {
-                                ApiException.throw400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related resource.");
+                                throw ApiException.new400BadRequest("You can't patch ONE_TO_MANY or MANY_TO_MANY properties.  You can patch the related resource.");
                             }
                         } else {
                             row.put(jsonProp, value);
@@ -628,7 +630,7 @@ public abstract class Db<T extends Db> {
      * for each row should uniquely identify the row, however there is no guarantee
      * that each row will reference the same index.
      *
-     * @param table
+     * @param collection
      * @param indexValues
      * @throws ApiException
      */
@@ -705,7 +707,7 @@ public abstract class Db<T extends Db> {
      * A MANY_TO_ONE also creates a ONE_TO_MANY and vice versa and there are always two for a MANY_TO_MANY modeling the relationship from both sides.
      */
     protected void buildRelationships() {
-        List<String> relationshipStrs = new ArrayList();
+        List<String> relationshipStrs = new ArrayList<>();
 
         for (Collection coll : getCollections()) {
             if (coll.isLinkTbl()) {
@@ -768,7 +770,7 @@ public abstract class Db<T extends Db> {
                             relationshipStrs.add(r.toString());
                         }
                     } catch (Exception ex) {
-                        ApiException.throw500InternalServerError(ex, "Error creating relationship for index: {}", fkIdx);
+                        throw ApiException.new500InternalServerError(ex, "Error creating relationship for index: {}", fkIdx);
                     }
                 }
             }
@@ -850,7 +852,7 @@ public abstract class Db<T extends Db> {
      *
      * @param name the to beautify
      * @return a camelCased version of <code>name</code>
-     * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables
+     * @see <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables">JSON property name</a>
      */
     protected String beautifyName(String name) {
         //all upper case...U.G.L.Y you ain't got on alibi you UGLY, hay hay you UGLY
@@ -858,7 +860,7 @@ public abstract class Db<T extends Db> {
             name = name.toLowerCase();
         }
 
-        StringBuffer buff = new StringBuffer("");
+        StringBuilder buff = new StringBuilder();
 
         boolean nextUpper = false;
         for (int i = 0; i < name.length(); i++) {
@@ -965,7 +967,7 @@ public abstract class Db<T extends Db> {
      * @param property
      * @param value
      * @return <code>value</code> cast to <code>Property.type</code>
-     * @see io.inversion.utils.Utils.cast(String, Object)
+     * @see Utils#cast(String, Object)
      */
     public Object cast(Property property, Object value) {
         return Utils.cast(property != null ? property.getType() : null, value);
@@ -977,7 +979,7 @@ public abstract class Db<T extends Db> {
      * @param type
      * @param value
      * @return <code>value</code> cast to <code>type</code>
-     * @see io.inversion.utils.Utils.cast(String, Object)
+     * @see Utils#cast(String, Object)
      */
     public Object cast(String type, Object value) {
         return Utils.cast(type, value);
@@ -1126,9 +1128,9 @@ public abstract class Db<T extends Db> {
     /**
      * @param collections to include (add not replace)
      */
-    public T withCollections(Collection... colls) {
-        for (Collection coll : colls)
-            withCollection(coll);
+    public T withCollections(Collection... collections) {
+        for (Collection collection : collections)
+            withCollection(collection);
 
         return (T) this;
     }
@@ -1153,7 +1155,7 @@ public abstract class Db<T extends Db> {
      * This does not prevent the underlying Property from being part of a Collection object model and the names here don't actually have to be Properties.
      *
      * @param collection
-     * @param columnName
+     * @param name
      * @return
      */
     public boolean filterOutJsonProperty(Collection collection, String name) {

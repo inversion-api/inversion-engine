@@ -33,9 +33,10 @@ import java.util.Optional;
  * Adapter to run an Inversion API as an Azure Function
  * <p>
  * TODO: multipart post is not yet supported but could be implemented: https://stackoverflow.com/questions/54473126/azure-functions-how-to-use-the-multiparthttpservletrequest-class-from-the-de
+ * <p>
+ * Similar functionality for AWS Lambdas is provided by io.inversion.lambda.AwsApiGatewayLambdaRequestStreamHandler
  *
- * @see Similar functionality for AWS Lambdas is provided by io.inversion.lambda.AwsApiGatewayLambdaRequestStreamHandler
- * @see https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-azure-function-azure-cli?tabs=bash%2Cbrowser&pivots=programming-language-java
+ * @see <a href="https://docs.microsoft.com/en-us/azure/azure-functions/functions-create-first-azure-function-azure-cli?tabs=bash%2Cbrowser&pivots=programming-language-java">Java Azure Functions</a>
  */
 public class AzureFunctionHttpTriggerHandler {
     protected Engine engine = null;
@@ -83,7 +84,7 @@ public class AzureFunctionHttpTriggerHandler {
 
         for (String key : res.getHeaders().keySet()) {
             List         values = res.getHeaders().get(key);
-            StringBuffer buff   = new StringBuffer();
+            StringBuilder buff   = new StringBuilder();
             for (int i = 0; i < values.size(); i++) {
                 buff.append(values.get(i));
                 if (i < values.size() - 1)
@@ -115,7 +116,7 @@ public class AzureFunctionHttpTriggerHandler {
      * If <code>api</code> is null, it calls buildApi() which by default does nothing and is itself designed as an override hook.
      *
      * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator.
-     * @see #buildApi()
+     * @see #buildApi(HttpRequestMessage, ExecutionContext)
      */
     protected Engine buildEngine(HttpRequestMessage<Optional<String>> request, final ExecutionContext context) {
         Engine engine = new Engine();

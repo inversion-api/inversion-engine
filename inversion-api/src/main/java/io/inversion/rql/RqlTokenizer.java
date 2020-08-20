@@ -28,7 +28,7 @@ public class RqlTokenizer {
     char    quote    = 0;
     int     function = 0;
 
-    StringBuffer next = new StringBuffer();
+    StringBuilder next = new StringBuilder();
 
     public RqlTokenizer(String chars) {
         this.chars = chars.toCharArray();
@@ -39,7 +39,7 @@ public class RqlTokenizer {
     }
 
     public List<String> asList() {
-        List<String> list = new ArrayList();
+        List<String> list = new ArrayList<>();
         String       next = null;
         while ((next = next()) != null)
             list.add(next);
@@ -126,7 +126,7 @@ public class RqlTokenizer {
             error("Looks like you are missing a closing ')'");
 
         String str = next.toString().trim();
-        next = new StringBuffer();
+        next = new StringBuilder();
         return str;
     }
 

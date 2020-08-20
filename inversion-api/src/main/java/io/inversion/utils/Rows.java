@@ -118,7 +118,7 @@ public class Rows extends ArrayList<Row> {
      *
      * @param map the key/values to add to the new Row
      * @return the new Row
-     * @see {@link #addRow(int, Map)}
+     * @see #addRow
      */
     public Row addRow(Map map) {
         return addRow(-1, map);
@@ -134,7 +134,7 @@ public class Rows extends ArrayList<Row> {
      * @param index the position to insert the new Row or -1 to indicate the 'at the end'
      * @param map   the key/values to add to the new Row
      * @return the new Row
-     * @see {@link #addRow(int, Object[])
+     * @see #addRow(int, Object[])
      */
     public Row addRow(int index, Map map) {
         if (keys == null || keys.size() == 0) {
@@ -155,7 +155,7 @@ public class Rows extends ArrayList<Row> {
      *
      * @param values the values to add to the new Row
      * @return the new Row
-     * @see {@link #addRow(int, Object[])}
+     * @see #addRow(int, Object[])
      */
     public Row addRow(List values) {
         return addRow(-1, values.toArray());
@@ -167,7 +167,7 @@ public class Rows extends ArrayList<Row> {
      * @param index  the position to insert the new Row or -1 to indicate the 'at the end'
      * @param values the values to add to the new Row
      * @return the new Row
-     * @see {@link #addRow(int, Object[])}
+     * @see #addRow(int, Object[])
      */
     public Row addRow(int index, List values) {
         return addRow(index, values.toArray());
@@ -178,7 +178,7 @@ public class Rows extends ArrayList<Row> {
      *
      * @param values the values to add to the new Row
      * @return the new Row
-     * @see {@link #addRow(int, Object[])}
+     * @see #addRow(int, Object[])
      */
     public Row addRow(Object[] values) {
         return addRow(-1, values);
@@ -192,7 +192,7 @@ public class Rows extends ArrayList<Row> {
      * @param index  the position to insert the new Row or -1 to indicate the 'at the end'
      * @param values the values to add to the new Row
      * @return the new Row
-     * @see {@link #addRow(int, Object[])}
+     * @see #addRow(int, Object[])
      */
     public Row addRow(int index, Object[] values) {
         lastRow = new Row(keys, values);
@@ -233,7 +233,7 @@ public class Rows extends ArrayList<Row> {
      * will not be the same.  Instead all key/values are copied into a new Row.
      *
      * @param row a map containing the key/values to add
-     * @see {@link #addRow(Map)}
+     * @see #addRow(Map)
      */
     @Override
     public boolean add(Row row) {
@@ -285,7 +285,7 @@ public class Rows extends ArrayList<Row> {
 
         public Row() {
             this.keys = new RowKeys();
-            this.values = new ArrayList();
+            this.values = new ArrayList<>();
         }
 
         Row(RowKeys keys) {
@@ -417,7 +417,7 @@ public class Rows extends ArrayList<Row> {
         }
 
         public String toString() {
-            StringBuffer buff = new StringBuffer("{");
+            StringBuilder buff = new StringBuilder("{");
             for (int i = 0; i < keys.size(); i++) {
                 buff.append(keys.getKey(i)).append("=").append(values.get(i));
                 if (i < keys.size() - 1)
@@ -554,7 +554,7 @@ public class Rows extends ArrayList<Row> {
          * instances and the iteration order and number of keys/columns
          * needs to be the same for all of them.
          *
-         * @param keyOrIndex the String key or an Integer index to remove.
+         * @param key the String key or an Integer index to remove.
          */
         @Override
         public Object remove(Object key) {
@@ -608,7 +608,7 @@ public class Rows extends ArrayList<Row> {
 
         /**
          * @return the RowKeys keySet which is common to all Row instances in this Rows.
-         * @see io.inversion.utils.Rows.RowKeys.keySet()
+         * @see RowKeys#keySet()
          */
         @Override
         public Set<String> keySet() {
@@ -678,12 +678,12 @@ public class Rows extends ArrayList<Row> {
          * <p>
          * The values in this list preserver the case of the first entered occurrence of each case insensitive string.
          */
-        List<String> keys = new ArrayList();
+        List<String> keys = new ArrayList<>();
 
         /**
          * A map of lowercase key strings to their position in <code>keys</code>
          */
-        Map<String, Integer> lc = new HashMap();
+        Map<String, Integer> lc = new HashMap<>();
 
         /**
          * A reusable return value for {@code Rows#keySet()}

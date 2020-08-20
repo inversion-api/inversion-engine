@@ -34,7 +34,7 @@ public class RqlParserTest {
     public void test1() throws Exception {
         RqlParser parser = new RqlParser();
 
-        List<List> tests = new ArrayList();
+        List<List> tests = new ArrayList<>();
 
         add(tests, "eq(column,String)", "column=String");
         add(tests, "eq(column,string)", "column=    string");

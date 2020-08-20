@@ -33,7 +33,7 @@ public class JSArray extends JSNode implements Iterable {
      * <p>
      * This replaces the use of the JSNode.properties map from the superclass.
      */
-    protected List objects = new ArrayList();
+    protected List objects = new ArrayList<>();
 
     public JSArray(Object... objects) {
         if (objects != null && objects.length == 1 && objects[0].getClass().isArray()) {
@@ -48,7 +48,7 @@ public class JSArray extends JSNode implements Iterable {
 
     /**
      * @return true
-     * @see JSNode.isArray()
+     * @see JSNode#isArray()
      */
     @Override
     public boolean isArray() {
@@ -90,7 +90,7 @@ public class JSArray extends JSNode implements Iterable {
      * @param index
      * @param value
      * @return the prior value at <code>index</code> if it exists
-     * @throws ArrayIndexOutOfBoundsException only if index is < 0
+     * @throws ArrayIndexOutOfBoundsException only if index is @lt; 0
      */
     public Object set(int index, Object value) throws ArrayIndexOutOfBoundsException {
         if (index < 0)
@@ -179,7 +179,7 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(int)}
      *
-     * @param name
+     * @param index
      * @return the value at <code>index</code> cast to a JSNode if exists else null
      * @throws ClassCastException if the object found is not a JSNode
      * @see #get(Object)
@@ -191,8 +191,8 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
-     * @return the value at <cod>index</code> cast to a JSArray if exists else null
+     * @param index
+     * @return the value at <code>index</code> cast to a JSArray if exists else null
      * @throws ClassCastException if the object found is not a JSArray
      * @see #get(Object)
      */
@@ -203,7 +203,7 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
+     * @param index
      * @return the value of property <code>name</code> stringified if it exists else null
      * @see #get(Object)
      */
@@ -217,8 +217,8 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
-     * @return the value at <cod>index</code> stringified and parsed as an int if it exists else -1
+     * @param index
+     * @return the value at <code>index</code> stringified and parsed as an int if it exists else -1
      * @see #get(Object)
      */
     public int getInt(int index) {
@@ -231,9 +231,7 @@ public class JSArray extends JSNode implements Iterable {
 
     /**
      * Convenience overloading of {@link #get(Object)}
-     *
-     * @param name
-     * @return the value at <cod>index</code> stringified and parsed as a double if it exists else -1
+     * @return the value at <code>index</code> stringified and parsed as a double if it exists else -1
      * @see #get(Object)
      */
     public double getDouble(int index) {
@@ -247,8 +245,7 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(int)}
      *
-     * @param name
-     * @return the value at <cod>index</code> stringified and parsed as a boolean if it exists else false
+     * @return the value at <code>index</code> stringified and parsed as a boolean if it exists else false
      * @see #get(Object)
      */
     public boolean getBoolean(int index) {
@@ -276,8 +273,22 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * @return simply returns 'this';
      */
+    @Override
     public JSArray asArray() {
         return this;
+    }
+
+    /**
+     * @return a map of array index as strings to their value
+     */
+    @Override
+    public Map asMap() {
+        Map map = new LinkedHashMap();
+        for(int i=0; i<objects.size(); i++)
+        {
+            map.put(i + "", objects.get(i));
+        }
+        return map;
     }
 
     public boolean contains(Object object) {

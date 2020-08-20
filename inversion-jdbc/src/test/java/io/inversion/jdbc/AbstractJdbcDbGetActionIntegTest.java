@@ -165,7 +165,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     @Test
     public void testCollections() throws Exception {
         List<String> c1 = new ArrayList(Arrays.asList("categories", "customercustomerdemoes", "customerdemographics", "customers", "employeeorderdetails", "employees", "employeeterritories", "indexlogs", "orderdetails", "orders", "products", "regions", "shippers", "suppliers", "territories", "urls"));
-        List<String> c2 = new ArrayList();
+        List<String> c2 = new ArrayList<>();
 
         Api api = engine().getApi("northwind");
 

@@ -32,7 +32,7 @@ public class RqlTokenizerTest {
 
     @Test
     public void test1() throws Throwable {
-        List<List> tests = new ArrayList();
+        List<List> tests = new ArrayList<>();
 
         add(tests, "this is a test", "this is a test");
         add(tests, "  this is a test    ", "this is a test");
@@ -92,7 +92,7 @@ public class RqlTokenizerTest {
             }
         }
 
-        List<String> fails = new ArrayList();
+        List<String> fails = new ArrayList<>();
         fails.add("'hanging quote");
         fails.add("\"hanging quote");
         fails.add("hanging escape\\");

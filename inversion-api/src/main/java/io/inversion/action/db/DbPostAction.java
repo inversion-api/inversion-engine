@@ -44,7 +44,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         } else if (req.isMethod("PATCH")) {
             patch(req, res);
         } else {
-            ApiException.throw400BadRequest("Method '%' is not supported by RestPostHandler");
+            throw ApiException.new400BadRequest("Method '%' is not supported by RestPostHandler");
         }
 
     }
@@ -63,7 +63,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         JSNode body = req.getJson();
         if (body.isArray()) {
             if (!Utils.empty(req.getResourceKey())) {
-                ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
+                throw ApiException.new400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
             }
         } else {
             String href = body.getString("href");
@@ -71,7 +71,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                 if (href == null)
                     body.put("href", Utils.substringBefore(req.getUrl().toString(), "?"));
                 else if (!req.getUrl().toString().startsWith(href))
-                    ApiException.throw400BadRequest("You are PATCHING-ing an resource with a different href property than the resource URL you are PATCHING-ing to.");
+                    throw ApiException.new400BadRequest("You are PATCHING-ing an resource with a different href property than the resource URL you are PATCHING-ing to.");
             }
         }
 
@@ -87,18 +87,18 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
     public void upsert(Request req, Response res) throws ApiException {
         if (strictRest) {
             if (req.isPost() && req.getResourceKey() != null)
-                ApiException.throw404NotFound("You are trying to POST to a specific resource url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
+                throw ApiException.new404NotFound("You are trying to POST to a specific resource url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
             if (req.isPut() && req.getResourceKey() == null)
-                ApiException.throw404NotFound("You are trying to PUT to a collection url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
+                throw ApiException.new404NotFound("You are trying to PUT to a collection url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
         }
 
         Collection   collection   = req.getCollection();
-        List<Change> changes      = new ArrayList();
-        List         resourceKeys = new ArrayList();
+        List<Change> changes      = new ArrayList<>();
+        List         resourceKeys = new ArrayList<>();
         JSNode       obj          = req.getJson();
 
         if (obj == null)
-            ApiException.throw400BadRequest("You must pass a JSON body to the RestPostHandler");
+            throw ApiException.new400BadRequest("You must pass a JSON body to the RestPostHandler");
 
         boolean     collapseAll = "true".equalsIgnoreCase(req.getChain().getConfig("collapseAll", this.collapseAll + ""));
         Set<String> collapses   = req.getChain().mergeEndpointActionParamsConfig("collapses");
@@ -110,13 +110,13 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
 
         if (obj instanceof JSArray) {
             if (!Utils.empty(req.getResourceKey())) {
-                ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
+                throw ApiException.new400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
             }
             resourceKeys = upsert(req, collection, (JSArray) obj);
         } else {
             String href = obj.getString("href");
             if (req.isPut() && href != null && req.getResourceKey() != null && !req.getUrl().toString().startsWith(href)) {
-                ApiException.throw400BadRequest("You are PUT-ing an resource with a different href property than the resource URL you are PUT-ing to.");
+                throw ApiException.new400BadRequest("You are PUT-ing an resource with a different href property than the resource URL you are PUT-ing to.");
             }
 
             resourceKeys = upsert(req, collection, new JSArray(obj));
@@ -131,7 +131,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         res.getJson().put("data", array);
 
         res.withStatus(Status.SC_201_CREATED);
-        StringBuffer buff = new StringBuffer("");
+        StringBuilder buff = new StringBuilder();
         for (int i = 0; i < resourceKeys.size(); i++) {
             String resourceKey = resourceKeys.get(i) + "";
             String href        = Chain.buildLink(collection, resourceKey, null);
@@ -213,7 +213,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         //-- AND ITS DESCENDANTS.
         for (Relationship rel : collection.getRelationships()) {
             Relationship inverse    = rel.getInverse();
-            List         childNodes = new ArrayList();
+            List         childNodes = new ArrayList<>();
 
             for (JSNode node : nodes.asNodeList()) {
                 Object value = node.get(rel.getName());
@@ -288,7 +288,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         //-- TODO: can optimize this to not upsert if the key was available
         //-- in the first pass
         for (Relationship rel : collection.getRelationships()) {
-            List<Map> updatedRows = new ArrayList();
+            List<Map> updatedRows = new ArrayList<>();
             if (rel.isManyToOne())//this means we have a FK to the related element's PK
             {
                 for (JSNode node : nodes.asNodeList()) {
@@ -300,7 +300,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
 
                     Object docChild = node.get(rel.getName());
                     if (docChild instanceof JSNode) {
-                        Map updatedRow = new HashMap();
+                        Map updatedRow = new HashMap<>();
                         updatedRows.add(updatedRow);
                         updatedRow.putAll(primaryKey);
 
@@ -342,13 +342,13 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                 String href = node.getString("href");
 
                 if (href == null)
-                    ApiException.throw500InternalServerError("The child href should not be null at this point, this looks like an algorithm error.");
+                    throw ApiException.new500InternalServerError("The child href should not be null at this point, this looks like an algorithm error.");
 
                 Collection parentTbl = collection;
                 Row        parentPk  = parentTbl.decodeResourceKey(href);
                 Map        parentKey = collection.getDb().mapTo(parentPk, parentTbl.getPrimaryIndex(), rel.getFkIndex1());
 
-                keepRels.put(rel, parentKey, new ArrayList());//there may not be any child nodes...this has to be added here so it will be in the loop later
+                keepRels.put(rel, parentKey, new ArrayList<>());//there may not be any child nodes...this has to be added here so it will be in the loop later
 
                 JSArray childNodes = node.getArray(rel.getName());
 
@@ -396,7 +396,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
             Map          parentKey = (Map) mkey.getKey(1);
             List<Map>    childKeys = (List) keepRels.get(rel, parentKey);
 
-            List upserts = new ArrayList();
+            List upserts = new ArrayList<>();
 
             //-- this set will contain the columns we need to update/delete outdated relationships
             Set includesKeys = new HashSet();
@@ -407,7 +407,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
             Term childOr  = Term.term(childNot, "or");
 
             for (Map childKey : childKeys) {
-                Map upsert = new HashMap();
+                Map upsert = new HashMap<>();
                 upsert.putAll(parentKey);
                 upsert.putAll(childKey);
                 upserts.add(upsert);
@@ -431,7 +431,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
             //-- now find all relationships that are NOT in the group that we just upserted
             //-- they need to be nulled out if many-to-one and deleted if many-to-many
 
-            Map<String, String> queryTerms = new HashMap();
+            Map<String, String> queryTerms = new HashMap<>();
             queryTerms.put("limit", "100");
             queryTerms.put("includes", Utils.implode(",", includesKeys));
 
@@ -463,7 +463,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                 }
                 //TODO: put back in support for many to many rels recursing through engine
                 else if (rel.isManyToMany()) {
-                    List resourceKeys = new ArrayList();
+                    List resourceKeys = new ArrayList<>();
                     for (JSNode node : toUnlink.data().asNodeList()) {
                         resourceKeys.add(Utils.substringAfter(node.getString("href"), "/"));
                     }
@@ -518,7 +518,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
     //      else
     //      {
     //         if (srcCols.size() != destCols.size())
-    //            ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
+    //            throw ApiException.new500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
     //
     //         if (srcRow == null)
     //            return Collections.EMPTY_MAP;

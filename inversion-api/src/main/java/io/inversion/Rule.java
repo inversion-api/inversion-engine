@@ -28,7 +28,7 @@ import java.util.*;
  * Matches against an HTTP method and URL path to determine if the object
  * should be included when processing the associated Request.
  * <p>
- * Matching relies heavily on variablized Path matching via {@link io.inversion.Path.match}
+ * Matching relies heavily on variablized Path matching via {@link Path#matches(String)}
  */
 public abstract class Rule<R extends Rule> implements Comparable<R> {
 
@@ -47,12 +47,12 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     /**
      * Method/path combinations that would cause this Rule to be included in the relevant processing.
      */
-    protected List<RuleMatcher> includeMatchers = new ArrayList();
+    protected List<RuleMatcher> includeMatchers = new ArrayList<>();
 
     /**
      * Method/path combinations that would cause this Rule to be excluded from the relevant processing.
      */
-    protected List<RuleMatcher> excludeMatchers = new ArrayList();
+    protected List<RuleMatcher> excludeMatchers = new ArrayList<>();
 
     /**
      * {@code JSNode} is used because it implements a case insensitive map without modifying the keys
@@ -187,7 +187,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     /**
      * Select this Rule when any method and path match.
      *
-     * @param one   or more comma separated http method names, can be null to match on any
+     * @param methods   or more comma separated http method names, can be null to match on any
      * @param paths each path can be one or more comma separated variableized Paths
      * @return this
      */
@@ -199,7 +199,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     /**
      * Select this Rule when any method and path match.
      *
-     * @param one   or more comma separated http method names, can be null to match on any
+     * @param methods or more comma separated http method names, can be null to match on any
      * @param paths each path can be one or more comma separated variableized Paths
      * @return this
      */
@@ -220,7 +220,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     /**
      * Don't select this Rule when any method and path match.
      *
-     * @param one   or more comma separated http method names, can be null to match on any
+     * @param methods   or more comma separated http method names, can be null to match on any
      * @param paths each path can be one or more comma separated variableized Paths
      * @return this
      */
@@ -230,10 +230,9 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     /**
-     * Don't select this Rule when any method and path match.
+     * Don't select this Rule when RuleMatcher matches
      *
-     * @param one   or more comma separated http method names, can be null to match on any
-     * @param paths each path can be one or more comma separated variableized Paths
+     * @param matcher the method/path combo to exclude
      * @return this
      */
     public R withExcludeOn(RuleMatcher matcher) {
@@ -324,7 +323,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     public String toString() {
-        StringBuffer buff = new StringBuffer(getClass().getSimpleName());
+        StringBuilder buff = new StringBuilder(getClass().getSimpleName());
 
         if (name != null) {
             buff.append(":").append(name);
@@ -342,7 +341,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     static List<Path> asPathsList(String... paths) {
-        List<Path> pathsList = new ArrayList();
+        List<Path> pathsList = new ArrayList<>();
         for (String path : Utils.explode(",", paths)) {
             pathsList.add(new Path(path));
         }
@@ -358,7 +357,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     public static class RuleMatcher {
 
         protected Set<String> methods = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-        protected List<Path>  paths   = new ArrayList();
+        protected List<Path>  paths   = new ArrayList<>();
 
         public RuleMatcher() {
 
@@ -415,7 +414,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         }
 
         public String toString() {
-            StringBuffer buff = new StringBuffer();
+            StringBuilder buff = new StringBuilder();
             if (methods.size() == 0)
                 buff.append("*");
             else

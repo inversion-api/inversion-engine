@@ -84,7 +84,7 @@ public abstract class Action<A extends Action> extends Rule<A> {
      * @throws ApiException
      */
     public void doGet(Request req, Response res) throws ApiException {
-        ApiException.throw501NotImplemented("Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
+        throw ApiException.new501NotImplemented("Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
     }
 
     /**
@@ -98,7 +98,7 @@ public abstract class Action<A extends Action> extends Rule<A> {
      */
 
     public void doPost(Request req, Response res) throws ApiException {
-        ApiException.throw501NotImplemented("Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
+        throw ApiException.new501NotImplemented("Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
     }
 
     /**
@@ -111,7 +111,7 @@ public abstract class Action<A extends Action> extends Rule<A> {
      * @throws ApiException
      */
     public void doPut(Request req, Response res) throws ApiException {
-        ApiException.throw501NotImplemented("Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
+        throw ApiException.new501NotImplemented("Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
     }
 
     /**
@@ -124,7 +124,7 @@ public abstract class Action<A extends Action> extends Rule<A> {
      * @throws ApiException
      */
     public void doPatch(Request req, Response res) throws ApiException {
-        ApiException.throw501NotImplemented("Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
+        throw ApiException.new501NotImplemented("Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
     }
 
     /**
@@ -137,6 +137,6 @@ public abstract class Action<A extends Action> extends Rule<A> {
      * @throws ApiException
      */
     public void doDelete(Request req, Response res) throws ApiException {
-        ApiException.throw501NotImplemented("Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
+        throw ApiException.new501NotImplemented("Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
     }
 }

@@ -39,7 +39,7 @@ import java.util.*;
  */
 public class JdbcDb extends Db<JdbcDb> {
 
-    static Map<String, String> DEFAULT_DRIVERS = new HashMap();
+    static Map<String, String> DEFAULT_DRIVERS = new HashMap<>();
 
     static {
         DEFAULT_DRIVERS.put("h2", "org.h2.Driver");
@@ -114,7 +114,7 @@ public class JdbcDb extends Db<JdbcDb> {
     /**
      * Urls to DDL files that should be executed on startup of this Db.
      */
-    protected List<String>     ddlUrls                  = new ArrayList();
+    protected List<String>     ddlUrls                  = new ArrayList<>();
 
     static {
         JdbcUtils.addSqlListener(new SqlListener() {
@@ -154,7 +154,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 sql = sql.replaceAll("\r", "");
                 sql = sql.replaceAll("\n", " ");
                 sql = sql.trim().replaceAll(" +", " ");
-                StringBuffer buff = new StringBuffer("");
+                StringBuilder buff = new StringBuilder();
                 buff.append(debugPrefix).append(" -> '").append(sql).append("'").append(" args=").append(args).append(" error='").append(ex != null ? ex.getMessage() : "").append("'");
                 String msg = buff.toString();
                 Chain.debug(msg);
@@ -207,7 +207,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 try {
                     JdbcConnectionLocal.commit();
                 } catch (Exception ex) {
-                    ApiException.throw500InternalServerError(ex, "Error committing tansaction");
+                    throw ApiException.new500InternalServerError(ex, "Error committing tansaction");
                 }
             }
 
@@ -308,9 +308,8 @@ public class JdbcDb extends Db<JdbcDb> {
 
             return upserted;
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
-        return null;
     }
 
     @Override
@@ -325,7 +324,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
     }
 
@@ -340,7 +339,7 @@ public class JdbcDb extends Db<JdbcDb> {
             if (firstRow.size() == 1) {
                 String keyCol = firstRow.keySet().iterator().next();
 
-                List values = new ArrayList();
+                List values = new ArrayList<>();
                 for (Map resourceKey : columnMappedIndexValues) {
                     values.add(resourceKey.values().iterator().next());
                 }
@@ -354,7 +353,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 sql += " DELETE FROM " + quoteCol(table.getTableName());
                 sql += " WHERE ";
 
-                List values = new ArrayList();
+                List values = new ArrayList<>();
                 for (Map<String, Object> resourceKey : columnMappedIndexValues) {
                     if (values.size() > 0)
                         sql += " OR ";
@@ -373,7 +372,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 JdbcUtils.execute(getConnection(), sql, values.toArray());
             }
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
     }
 
@@ -423,8 +422,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             return conn;
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex, "Unable to get DB connection");
-            return null;
+            throw ApiException.new500InternalServerError(ex, "Unable to get DB connection");
         }
     }
 
@@ -680,7 +678,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             rs.close();
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         } finally {
             Utils.close(rs);
         }

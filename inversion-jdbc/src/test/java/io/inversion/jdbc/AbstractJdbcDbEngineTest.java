@@ -11,7 +11,7 @@ public interface AbstractJdbcDbEngineTest extends AbstractEngineTest {
         JdbcConnectionLocal.closeAll();
         Chain.resetAll();
 
-        if (isIntegTest())
+        if (isIntegTest() || getClass().getSimpleName().toLowerCase().contains("h2"))
             return JdbcDbFactory.buildDb(getType(), getClass().getSimpleName());
         else {
             Db db = new JdbcDb(getType()).withType(getType());

@@ -96,8 +96,8 @@ public class Property implements Serializable {
     /**
      * @param primaryKey the primaryKey to set
      */
-    public Property withPk(Property pk) {
-        this.pk = pk;
+    public Property withPk(Property primaryKey) {
+        this.pk = primaryKey;
         return this;
     }
 
@@ -159,7 +159,7 @@ public class Property implements Serializable {
     }
 
     /**
-     * @param tbl the tbl to set
+     * @param collection the Collection the Property belongs to
      */
     public Property withCollection(Collection collection) {
         if (this.collection != collection) {

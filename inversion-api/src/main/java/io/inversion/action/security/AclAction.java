@@ -31,7 +31,7 @@ import java.util.List;
  * parameters that are either required or restricted
  */
 public class AclAction extends Action<AclAction> {
-    protected List<AclRule> aclRules = new ArrayList();
+    protected List<AclRule> aclRules = new ArrayList<>();
 
     public AclAction orRequireAllPerms(String httpMethods, String includePaths, String permission1, String... permissionsN) {
         withAclRules(AclRule.requireAllPerms(httpMethods, includePaths, permission1, permissionsN));
@@ -94,7 +94,7 @@ public class AclAction extends Action<AclAction> {
 
         if (!allowed) {
             Chain.debug("AclAction: NO_MATCH_DENY");
-            ApiException.throw403Forbidden();
+            throw ApiException.new403Forbidden();
         }
     }
 }

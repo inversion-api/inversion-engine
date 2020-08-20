@@ -40,7 +40,7 @@ public class TestSqlTokenizer {
             List<String> expected = Arrays.asList(test[1].split("\\|"));
 
             String       next   = null;
-            List<String> actual = new ArrayList();
+            List<String> actual = new ArrayList<>();
             SqlTokenizer tok    = new SqlTokenizer(input);
 
             while ((next = tok.next()) != null) {
@@ -71,7 +71,7 @@ public class TestSqlTokenizer {
             List<String> expected = Arrays.asList(test[1].split("\\|"));
 
             String       next   = null;
-            List<String> actual = new ArrayList();
+            List<String> actual = new ArrayList<>();
             SqlTokenizer tok    = new SqlTokenizer(input);
 
             while ((next = tok.nextClause()) != null) {

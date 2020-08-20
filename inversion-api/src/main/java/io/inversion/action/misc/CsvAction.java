@@ -67,7 +67,7 @@ public class CsvAction extends Action<CsvAction> {
 
     public String toCsv(JSArray arr) throws ApiException {
         try {
-            StringBuffer buff = new StringBuffer();
+            StringBuilder buff = new StringBuilder();
 
             LinkedHashSet<String> keys = new LinkedHashSet();
 
@@ -106,8 +106,7 @@ public class CsvAction extends Action<CsvAction> {
 
             return buff.toString();
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
-        return null;
     }
 }

@@ -22,11 +22,79 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class EngineTest {
+
+    public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis) {
+        assertEndpointMatch(method, url, statusCode, null, null, null, null, null, apis);
+    }
+
+    public static void assertEndpointMatch(String method, String url, int statusCode, String endpointName, String endpointPath, String collectionKey, String resourceKey, String subCollectionKey, Api... apis) {
+        final boolean[] success = new boolean[]{false};
+        Engine e = new Engine() {
+
+            @Override
+            protected void run(Chain chain, List<ActionMatch> actions) throws ApiException {
+                if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
+                    fail(chain, "endpoints don't match");
+
+                if (endpointPath != null && !endpointPath.equals(chain.getRequest().getEndpointPath().toString())) {
+                    fail(chain, "endpoint path doesn't match");
+                }
+
+                if (collectionKey != null && !collectionKey.equals(chain.getRequest().getCollectionKey()))
+                    fail(chain, "collectionKey don't match");
+
+                if (resourceKey != null && !resourceKey.equals(chain.getRequest().getResourceKey()))
+                    fail(chain, "resourceKey don't match");
+
+                if (subCollectionKey != null && !subCollectionKey.equals(chain.getRequest().getRelationshipKey()))
+                    fail(chain, "subCollectionKey don't match");
+
+                success[0] = true;
+            }
+
+            protected void fail(Chain chain, String message, Object... vals) {
+                System.err.print(message);
+                for (int i = 0; vals != null && i < vals.length; i++)
+                    System.err.print(vals[i] + " ");
+                System.err.println("");
+                System.err.println(endpointName + "," + endpointPath + "," + collectionKey + "," + resourceKey + "," + subCollectionKey);
+                System.err.println("url              :" + chain.getRequest().getUrl());
+                System.err.println("apiUrl           :" + chain.getRequest().getApiUrl());
+                System.err.println("endpoint         :" + chain.getRequest().getEndpoint().getName() + " - " + chain.getRequest().getEndpoint());
+                System.err.println("ep path          :" + chain.getRequest().getEndpointPath());
+                System.err.println("collectionKey    :" + chain.getRequest().getCollectionKey());
+                System.err.println("resourceKey      :" + chain.getRequest().getResourceKey());
+                System.err.println("relationshipKey  :" + chain.getRequest().getRelationshipKey());
+                System.err.println("subPath          :" + chain.getRequest().getSubpath());
+
+                System.err.println(chain.getRequest().getUrl().getParams());
+
+                throw new RuntimeException(message);
+            }
+        };
+
+        for (Api api : apis) {
+            if (api != null)
+                e.withApi(api);//without this additional API, any apiName will match
+        }
+
+        Response resp = e.service(method, url);
+        resp.dump();
+
+        if (statusCode != resp.getStatusCode())
+            fail("status code mismatch");
+
+        if (statusCode < 400 && !success[0])
+            fail("status code mismatch");
+    }
 
     @Test
     public void actionPathVariablesAreAddedToQueryAndJson() {
@@ -350,6 +418,33 @@ public class EngineTest {
         assertEquals("a/b", new Path("/a////b/////").toString());
     }
 
+    //   @Test
+    //   public void test_api_with_version()
+    //   {
+    //      Api api1 = new Api("test")//
+    //                                .withVersion("v1").withAction(new MockAction("mock1").withIncludePaths("*"))//
+    //                                .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludePaths("subpath/*"))//
+    //                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
+    //      ;
+    //      Api api2 = new Api("test")//
+    //                                .withVersion("v2").withAction(new MockAction("mock1").withIncludePaths("*"))//
+    //                                .withEndpoint(new Endpoint("GET", "*").withName("ep3").withExcludePaths("subpath/*"))//
+    //                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep4"))//
+    //      ;
+    //
+    //      Api api3 = new Api("test")//
+    //                                .withVersion("v3").withAction(new MockAction("mock1").withIncludePaths("*"))//
+    //                                .withEndpoint(new Endpoint("GET", "*").withName("ep5").withExcludePaths("subpath/*"))//
+    //                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep6"))//
+    //      ;
+    //
+    //      assertEndpointMatch("GET", "http://localhost/test/v1/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api1, api2, api3);
+    //      assertEndpointMatch("GET", "http://localhost/test/v1/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+    //      assertEndpointMatch("GET", "http://localhost/test/v2/subpath/colKey/entKey/relKey", 200, "ep4", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+    //      assertEndpointMatch("GET", "http://localhost/test/v3/subpath/colKey/entKey/relKey", 200, "ep6", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
+    //
+    //   }
+
     @Test
     public void testSimpleEndpoint2() {
         Engine engine = null;
@@ -439,97 +534,6 @@ public class EngineTest {
         res.assertDebug("Endpoint_actionC_actionCParam", "actionCValue");
 
     }
-
-    //   @Test
-    //   public void test_api_with_version()
-    //   {
-    //      Api api1 = new Api("test")//
-    //                                .withVersion("v1").withAction(new MockAction("mock1").withIncludePaths("*"))//
-    //                                .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludePaths("subpath/*"))//
-    //                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
-    //      ;
-    //      Api api2 = new Api("test")//
-    //                                .withVersion("v2").withAction(new MockAction("mock1").withIncludePaths("*"))//
-    //                                .withEndpoint(new Endpoint("GET", "*").withName("ep3").withExcludePaths("subpath/*"))//
-    //                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep4"))//
-    //      ;
-    //
-    //      Api api3 = new Api("test")//
-    //                                .withVersion("v3").withAction(new MockAction("mock1").withIncludePaths("*"))//
-    //                                .withEndpoint(new Endpoint("GET", "*").withName("ep5").withExcludePaths("subpath/*"))//
-    //                                .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep6"))//
-    //      ;
-    //
-    //      assertEndpointMatch("GET", "http://localhost/test/v1/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api1, api2, api3);
-    //      assertEndpointMatch("GET", "http://localhost/test/v1/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
-    //      assertEndpointMatch("GET", "http://localhost/test/v2/subpath/colKey/entKey/relKey", 200, "ep4", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
-    //      assertEndpointMatch("GET", "http://localhost/test/v3/subpath/colKey/entKey/relKey", 200, "ep6", "subpath", "colKey", "entKey", "relKey", api1, api2, api3);
-    //
-    //   }
-
-    public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis) {
-        assertEndpointMatch(method, url, statusCode, null, null, null, null, null, apis);
-    }
-
-    public static void assertEndpointMatch(String method, String url, int statusCode, String endpointName, String endpointPath, String collectionKey, String resourceKey, String subCollectionKey, Api... apis) {
-        final boolean[] success = new boolean[]{false};
-        Engine e = new Engine() {
-
-            @Override
-            protected void run(Chain chain, List<ActionMatch> actions) throws ApiException {
-                if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
-                    fail(chain, "endpoints don't match");
-
-                if (endpointPath != null && !endpointPath.equals(chain.getRequest().getEndpointPath().toString())) {
-                    fail(chain, "endpoint path doesn't match");
-                }
-
-                if (collectionKey != null && !collectionKey.equals(chain.getRequest().getCollectionKey()))
-                    fail(chain, "collectionKey don't match");
-
-                if (resourceKey != null && !resourceKey.equals(chain.getRequest().getResourceKey()))
-                    fail(chain, "resourceKey don't match");
-
-                if (subCollectionKey != null && !subCollectionKey.equals(chain.getRequest().getRelationshipKey()))
-                    fail(chain, "subCollectionKey don't match");
-
-                success[0] = true;
-            }
-
-            protected void fail(Chain chain, String message, Object... vals) {
-                System.err.print(message);
-                for (int i = 0; vals != null && i < vals.length; i++)
-                    System.err.print(vals[i] + " ");
-                System.err.println("");
-                System.err.println(endpointName + "," + endpointPath + "," + collectionKey + "," + resourceKey + "," + subCollectionKey);
-                System.err.println("url              :" + chain.getRequest().getUrl());
-                System.err.println("apiUrl           :" + chain.getRequest().getApiUrl());
-                System.err.println("endpoint         :" + chain.getRequest().getEndpoint().getName() + " - " + chain.getRequest().getEndpoint());
-                System.err.println("ep path          :" + chain.getRequest().getEndpointPath());
-                System.err.println("collectionKey    :" + chain.getRequest().getCollectionKey());
-                System.err.println("resourceKey      :" + chain.getRequest().getResourceKey());
-                System.err.println("relationshipKey  :" + chain.getRequest().getRelationshipKey());
-                System.err.println("subPath          :" + chain.getRequest().getSubpath());
-
-                System.err.println(chain.getRequest().getUrl().getParams());
-
-                throw new RuntimeException(message);
-            }
-        };
-
-        for (Api api : apis) {
-            if (api != null)
-                e.withApi(api);//without this additional API, any apiName will match
-        }
-
-        Response resp = e.service(method, url);
-        resp.dump();
-
-        if (statusCode != resp.getStatusCode())
-            fail("status code mismatch");
-
-        if (statusCode < 400 && !success[0])
-            fail("status code mismatch");
-    }
-
 }
+
+

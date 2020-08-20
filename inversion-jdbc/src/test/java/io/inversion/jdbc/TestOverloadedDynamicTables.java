@@ -135,20 +135,20 @@ public class TestOverloadedDynamicTables {
                                         }
 
                                         if (customerId == null)
-                                            ApiException.throw400BadRequest("An address must have an associated customer");
+                                            throw ApiException.new400BadRequest("An address must have an associated customer");
 
                                         node.put("partition", customerId);
 
                                         break;
                                     default:
-                                        ApiException.throw400BadRequest("Collection '{}' is unsupported: '{}'", req.getCollectionKey(), req.getUrl());
+                                        throw ApiException.new400BadRequest("Collection '{}' is unsupported: '{}'", req.getCollectionKey(), req.getUrl());
                                 }
                             }
                         }
 
                         if (req.isGet() || req.isDelete()) {
                             if (req.getUrl().findKey("type") == null || (req.getResourceKey() == null && req.getUrl().findKey("partition") == null))
-                                ApiException.throw400BadRequest("Unable to GET/DELTE collection '{}' without a 'type' and 'partition' param: '{}'", req.getCollectionKey(), req.getUrl());
+                                throw ApiException.new400BadRequest("Unable to GET/DELTE collection '{}' without a 'type' and 'partition' param: '{}'", req.getCollectionKey(), req.getUrl());
                         }
 
                         req.getChain().go();

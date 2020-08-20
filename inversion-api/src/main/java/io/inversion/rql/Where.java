@@ -134,7 +134,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
         for (Term child : parent.getTerms()) {
             if (!child.isLeaf()) {
                 if (!functions.contains(child.getToken()))
-                    ApiException.throw400BadRequest("Invalid where function token '{}' : {}", child.getToken(), parent);
+                    throw ApiException.new400BadRequest("Invalid where function token '{}' : {}", child.getToken(), parent);
                 transform(child);
             }
         }
@@ -170,7 +170,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
 
             Index index = getParent().getCollection().getIndex(indexName);
             if (index == null)
-                ApiException.throw400BadRequest("You can't use the _key() function unless your table has a unique index");
+                throw ApiException.new400BadRequest("You can't use the _key() function unless your table has a unique index");
 
             if (index.size() == 1) {
                 Term       t        = Term.term(null, "in", index.getProperty(0).getColumnName());
@@ -195,7 +195,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
                 for (int i = 1; i < children.size(); i++) {
                     Term child = children.get(i);
                     if (!child.isLeaf())
-                        ApiException.throw400BadRequest("Resource key value is not a leaf node: {}", child);
+                        throw ApiException.new400BadRequest("Resource key value is not a leaf node: {}", child);
 
                     Row  keyParts = getParent().getCollection().decodeResourceKey(index, child.getToken());
                     Term and      = Term.term(or, "and");

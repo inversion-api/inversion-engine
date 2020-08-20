@@ -93,7 +93,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
                 HttpHost.create(url)).setMaxRetryTimeoutMillis(ElasticsearchDb.maxRequestDuration));
         ;
 
-        // TODO ApiException.throw500InternalServerError(error) if the client does not have the proper settings
+        // TODO throw ApiException.new500InternalServerError(error) if the client does not have the proper settings
 
         return client;
     }
@@ -139,7 +139,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
                 System.out.println(query.getJson());
                 res = getElasticClient().search(searchReq, RequestOptions.DEFAULT);
             } catch (IOException e) {
-                ApiException.throw500InternalServerError("The elastic client failed to search/select. " + e.getMessage());
+                throw ApiException.new500InternalServerError("The elastic client failed to search/select. " + e.getMessage());
             }
 
         }
@@ -182,7 +182,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
      *
      * @param table
      * @param indexValues
-     * @throws Exception
+     * @throws ApiException
      */
     protected void deleteRow(Collection table, Map<String, Object> indexValues) throws ApiException {
         Object id = table.encodeResourceKey(indexValues);
@@ -196,18 +196,18 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
 
             int statusCode = response.status().getStatus();
             if (statusCode >= 400) {
-                ApiException.throw500InternalServerError("Unexpected http status code returned from database: %s", statusCode);
+                throw ApiException.new500InternalServerError("Unexpected http status code returned from database: %s", statusCode);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
 
         }
     }
 
     @Override
     public List doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
-        List keys = new ArrayList();
+        List keys = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             keys.add(upsertRow(table, row));
         }
@@ -221,7 +221,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
         if (id == null) {
             id = table.encodeResourceKey(columnMappedTermsRow);
             if (id == null)
-                ApiException.throw400BadRequest("Your record does not contain the required key fields.");
+                throw ApiException.new400BadRequest("Your record does not contain the required key fields.");
             doc.putFirst("id", id);
         }
 
@@ -236,17 +236,17 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
         try {
             response = getElasticClient().update(updateRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
-            ApiException.throw500InternalServerError("The elastic client failed to upsert. " + e.getMessage());
+            throw ApiException.new500InternalServerError("The elastic client failed to upsert. " + e.getMessage());
         }
 
         int statusCode = response.status().getStatus();
         if (statusCode > 299) {
-            ApiException.throw400BadRequest("Unexpected http status code returned from database: '%s'", statusCode);
+            throw ApiException.new400BadRequest("Unexpected http status code returned from database: '%s'", statusCode);
         }
 
         String returnedId = response.getId();
         if (!Utils.equal(id, returnedId))
-            ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '%s' vs. '%s'", id, returnedId);
+            throw ApiException.new500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '%s' vs. '%s'", id, returnedId);
 
         return id;
     }

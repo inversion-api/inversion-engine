@@ -32,12 +32,12 @@ public class Api extends Rule<Api> {
 
     protected String url = null;
 
-    protected List<Db>         dbs         = new ArrayList();
-    protected List<Endpoint>   endpoints   = new ArrayList();
-    protected List<Action>     actions     = new ArrayList();
-    protected List<Collection> collections = new ArrayList();
+    protected List<Db>         dbs         = new ArrayList<>();
+    protected List<Endpoint>   endpoints   = new ArrayList<>();
+    protected List<Action>     actions     = new ArrayList<>();
+    protected List<Collection> collections = new ArrayList<>();
 
-    protected transient List<ApiListener> listeners = new ArrayList();
+    protected transient List<ApiListener> listeners = new ArrayList<>();
 
     /**
      * Listener that can be registered with an {@code Api} to receive lifecycle,
@@ -69,7 +69,7 @@ public class Api extends Rule<Api> {
 
     @Override
     protected RuleMatcher getDefaultIncludeMatch() {
-        List parts = new ArrayList();
+        List parts = new ArrayList<>();
         if (name != null) {
             parts.add(name);
         }

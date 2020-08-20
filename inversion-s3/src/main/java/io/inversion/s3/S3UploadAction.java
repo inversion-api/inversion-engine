@@ -55,7 +55,7 @@ import java.util.Map;
  * <p>
  * do this
  * <p>
- * action.config=dynamicBasePath=yyyy/MM/dd&bucket=somebucket
+ * action.config=dynamicBasePath=yyyy/MM/dd@amp;bucket=somebucket
  * <p>
  * While accessKey/secreKey/awsRegion CAN be set either on the Handler
  * or on the Action in this way, if you control the host environment
@@ -115,7 +115,7 @@ public class S3UploadAction extends Action<S3UploadAction> {
             responseContent.put("fileSizeBytes", fileSize);
             res.withJson(new JSNode(responseContent));
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         } finally {
             if (uploadStream != null) {
                 Utils.close(uploadStream);

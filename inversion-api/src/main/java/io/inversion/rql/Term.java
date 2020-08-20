@@ -26,7 +26,7 @@ public class Term implements Comparable<Term> {
     public Term       parent = null;
     public char       quote  = 0;
     public String     token  = null;
-    public List<Term> terms  = new ArrayList();
+    public List<Term> terms  = new ArrayList<>();
 
     protected Term() {
 
@@ -238,11 +238,11 @@ public class Term implements Comparable<Term> {
     }
 
     public String toString() {
-        StringBuffer buff = null;
+        StringBuilder buff = null;
         if (quote > 0) {
-            buff = new StringBuffer("").append(quote).append(getToken()).append(quote);
+            buff = new StringBuilder().append(quote).append(getToken()).append(quote);
         } else {
-            buff = new StringBuffer(getToken());
+            buff = new StringBuilder(getToken());
         }
         if (terms.size() > 0) {
             buff.append("(");
@@ -261,7 +261,7 @@ public class Term implements Comparable<Term> {
 
     public static Term term(Term parent, String token, Object... terms) {
         Term newTerm       = new Term(parent, token);
-        List deconstructed = deconstructed(new ArrayList(), terms);
+        List deconstructed = deconstructed(new ArrayList<>(), terms);
         for (Object aTerm : deconstructed) {
             if (aTerm instanceof Term) {
                 newTerm.withTerm((Term) aTerm);
@@ -298,7 +298,7 @@ public class Term implements Comparable<Term> {
      * @return this term and all children recursively
      */
     public Stream<Term> stream() {
-        List<Term> list = new ArrayList();
+        List<Term> list = new ArrayList<>();
         collect(list);
         return list.stream();
     }

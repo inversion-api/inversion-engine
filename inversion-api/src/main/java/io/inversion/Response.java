@@ -42,7 +42,7 @@ public class Response {
     protected String redirect    = null;
 
     protected String       contentType = null;
-    protected StringBuffer out         = new StringBuffer();
+    protected StringBuilder out         = new StringBuilder();
     protected JSNode       json        = new JSNode("meta", new JSNode("createdOn", Utils.formatIso8601(new Date())), "data", new JSArray());
     protected String       text        = null;
 
@@ -56,8 +56,8 @@ public class Response {
     protected long   contentRangeEnd   = -1;
     protected long   contentRangeSize  = -1;
 
-    protected List<Change> changes = new ArrayList();
-    protected StringBuffer debug   = new StringBuffer();
+    protected List<Change> changes = new ArrayList<>();
+    protected StringBuilder debug   = new StringBuilder();
 
     public Response() {
 
@@ -80,12 +80,12 @@ public class Response {
         return this;
     }
 
-    public void write(StringBuffer buff, Object... msgs) {
+    public void write(StringBuilder buff, Object... msgs) {
         write0(buff, msgs);
         buff.append("\r\n");
     }
 
-    protected void write0(StringBuffer buff, Object... msgs) {
+    protected void write0(StringBuilder buff, Object... msgs) {
         if (msgs != null && msgs.length == 0)
             return;
 
@@ -113,7 +113,7 @@ public class Response {
     }
 
     /**
-     * @param statusCode - one of the SC constants ex "200 OK"
+     * @param status - one of the SC constants ex "200 OK"
      */
     public Response withStatus(String status) {
         statusMesg = status;
@@ -170,7 +170,7 @@ public class Response {
     }
 
     public Response withOutput(String output) {
-        out = new StringBuffer(output);
+        out = new StringBuilder(output);
         return this;
     }
 
@@ -560,7 +560,7 @@ public class Response {
 
     /**
      * This value come from the "Content-Range" header and is the unit part
-     * Content-Range: <unit> <range-start>-<range-end>/<size>
+     * Content-Range: unit range-start-range-end/size
      *
      * @return
      */
@@ -571,7 +571,7 @@ public class Response {
 
     /**
      * This value come from the "Content-Range" header and is the first part
-     * Content-Range: <unit> <range-start>-<range-end>/<size>
+     * Content-Range: unit range-start-range-end/size
      *
      * @return
      */
@@ -582,7 +582,7 @@ public class Response {
 
     /**
      * This value come from the "Content-Range" header and is the middle part
-     * Content-Range: <unit> <range-start>-<range-end>/<size>
+     * Content-Range: unit range-start-range-end/size
      *
      * @return
      */
@@ -593,7 +593,7 @@ public class Response {
 
     /**
      * This value come from the "Content-Range" header and is the last part
-     * Content-Range: <unit> <range-start>-<range-end>/<size>
+     * Content-Range: unit range-start-range-end/size
      *
      * @return
      */
@@ -765,7 +765,7 @@ public class Response {
         if (message != null)
             msg = msg + " " + message.trim();
 
-        ApiException.throwEx(statusCode + "", null, msg);
+        throw new ApiException(statusCode + "", null, msg);
     }
 
     public Response assertStatus(int... statusCodes) {
@@ -785,14 +785,14 @@ public class Response {
             Object[] args = null;
             if (message == null) {
                 message = "The returned status '{}' was not in the approved list '{}'";
-                List debugList = new ArrayList();
+                List debugList = new ArrayList<>();
                 for (int i = 0; statusCodes != null && i < statusCodes.length; i++)
                     debugList.add(statusCodes[i]);
 
                 args = new Object[]{this.statusCode, debugList};
             }
 
-            ApiException.throw500InternalServerError(message, args);
+            throw ApiException.new500InternalServerError(message, args);
         }
 
         return this;

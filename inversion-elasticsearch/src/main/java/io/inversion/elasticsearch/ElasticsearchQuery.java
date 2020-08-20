@@ -34,10 +34,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author kfrankic
- * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
+ * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html
  */
-// 
 public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchDb, Select<Select<Select, ElasticsearchQuery>, ElasticsearchQuery>, From<From<From, ElasticsearchQuery>, ElasticsearchQuery>, Where<Where<Where, ElasticsearchQuery>, ElasticsearchQuery>, Group<Group<Group, ElasticsearchQuery>, ElasticsearchQuery>, Order<Order<Order, ElasticsearchQuery>, ElasticsearchQuery>, Page<Page<Page, ElasticsearchQuery>, ElasticsearchQuery>> {
 
     public ElasticsearchQuery() {

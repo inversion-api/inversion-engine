@@ -27,8 +27,7 @@ import io.inversion.utils.Utils;
  * The demo supports full GET,PUT,POST,DELETE operations with an extensive Resource Query Language
  * (RQL) for GET requests
  *
- * @author wellsb1
- * @see https://github.com/inversion-api/inversion-engine for more information on building awesome APIs with Inversion
+ * @see <a href="https://github.com/inversion-api/inversion-engine">Inversion on Github</a> for more information on building awesome APIs with Inversion
  */
 public class JdbcNorthwindApiDemoMain {
     /**

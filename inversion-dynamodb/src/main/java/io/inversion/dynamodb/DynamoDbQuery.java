@@ -32,18 +32,19 @@ import io.inversion.utils.Utils;
 import java.util.*;
 
 /**
- * @see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
- * @see https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
- * @see https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/index.html
- * @see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html
- * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/QueryingJavaDocumentAPI.html
- * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html#FilteringResults
- * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ExpressionAttributeNames.html
- * <p>
- * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LegacyConditionalParameters.KeyConditions.html
- * <p>
- * https://stackoverflow.com/questions/34349135/how-do-you-query-for-a-non-existent-null-attribute-in-dynamodb
- * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LegacyConditionalParameters.QueryFilter.html
+ * IMPLEMENTATION NOTE: Helpful DynamoDb Links
+ * <ul>
+ *  <li>https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.OperatorsAndFunctions.html
+ *  <li>https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
+ *  <li>https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/index.html
+ *  <li>https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html
+ *  <li>https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/QueryingJavaDocumentAPI.html
+ *  <li>https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html#FilteringResults
+ *  <li>https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ExpressionAttributeNames.html
+ *  <li>https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LegacyConditionalParameters.KeyConditions.html
+ *  <li>https://stackoverflow.com/questions/34349135/how-do-you-query-for-a-non-existent-null-attribute-in-dynamodb
+ *  <li>https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LegacyConditionalParameters.QueryFilter.html
+ * </ul>
  * TODO: are all of these covered? EQ | NE | LE | LT | GE | GT | NOT_NULL | NULL | CONTAINS | NOT_CONTAINS | BEGINS_WITH | IN | BETWEEN
  */
 public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, From<From<From, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>> {
@@ -111,7 +112,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
 
         if (term.hasToken("n", "nn", "emp", "nemp")) {
             if (term.size() > 1)
-                ApiException.throw400BadRequest("The n() and nn() functions only take one column name arg.");
+                throw ApiException.new400BadRequest("The n() and nn() functions only take one column name arg.");
 
             if (term.hasToken("n", "emp")) {
                 Term eqNull = Term.term(term.getParent(), "eq", term.getTerm(0), "null");
@@ -134,7 +135,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 if (wcCount > 2//
                         || (wcCount == 1 && firstWc != val.length() - 1)//
                         || (wcCount == 2 && !(firstWc == 0 && lastWc == val.length() - 1)))
-                    ApiException.throw400BadRequest("DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.");
+                    throw ApiException.new400BadRequest("DynamoDb only supports a 'value*' or '*value*' wildcard formats which are equivalant to the 'sw' and 'w' operators.");
 
                 boolean sw = firstWc == val.length() - 1;
 
@@ -206,7 +207,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
         if (spec instanceof GetItemSpec) {
             GetItemSpec gis = (GetItemSpec) spec;
 
-            StringBuffer debug = new StringBuffer("DynamoDb: ").append("GetItemSpec").append(index != null ? ":'" + index.getName() + "'" : "");
+            StringBuilder debug = new StringBuilder("DynamoDb: ").append("GetItemSpec").append(index != null ? ":'" + index.getName() + "'" : "");
             debug.append(" key: ").append(gis.getKeyComponents());
 
             result.withTestQuery(debug.toString());
@@ -221,7 +222,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
         } else if (spec instanceof QuerySpec) {
             QuerySpec qs = ((QuerySpec) spec);
 
-            StringBuffer debug = new StringBuffer("DynamoDb: ").append("QuerySpec").append(index != null ? ":'" + index.getName() + "'" : "");
+            StringBuilder debug = new StringBuilder("DynamoDb: ").append("QuerySpec").append(index != null ? ":'" + index.getName() + "'" : "");
 
             if (qs.getMaxResultSize() != 100)
                 debug.append(" maxResultSize=").append(qs.getMaxResultSize());
@@ -261,7 +262,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
         } else if (spec instanceof ScanSpec) {
             ScanSpec ss = ((ScanSpec) spec);
 
-            StringBuffer debug = new StringBuffer("DynamoDb: ").append("ScanSpec").append(index != null ? ":'" + index.getName() + "'" : "");
+            StringBuilder debug = new StringBuilder("DynamoDb: ").append("ScanSpec").append(index != null ? ":'" + index.getName() + "'" : "");
 
             if (ss.getMaxResultSize() != 100)
                 debug.append(" maxResultSize=").append(ss.getMaxResultSize());
@@ -341,8 +342,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
         if (v.getBOOL() != null)
             return v.getBOOL();
 
-        ApiException.throw500InternalServerError("Unable to get value from AttributeValue: {}", v);
-        return null;
+        throw ApiException.new500InternalServerError("Unable to get value from AttributeValue: {}", v);
     }
 
     /**
@@ -387,7 +387,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
 
             if (sortBy != null && (afterSortKeyCol == null || !sortBy.equalsIgnoreCase(afterSortKeyCol))) {
                 //TODO make test
-                ApiException.throw400BadRequest("The requested sort key does not match the supplied 'after' continuation token.");
+                throw ApiException.new400BadRequest("The requested sort key does not match the supplied 'after' continuation token.");
             }
         }
 
@@ -444,12 +444,12 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
 
             if (sortBy != null && foundIndex == null) {
                 //TODO: create test case to trigger this exception
-                ApiException.throw400BadRequest("Unable to find valid index to query.  The requested sort field '{}' must be the sort key of the primary index, the sort key of a global secondary index, or a local secondary secondary index.", sortBy);
+                throw ApiException.new400BadRequest("Unable to find valid index to query.  The requested sort field '{}' must be the sort key of the primary index, the sort key of a global secondary index, or a local secondary secondary index.", sortBy);
             }
 
             if (foundPartKey == null && sortBy != null && !order.isAsc(0)) {
                 //an inverse/descending sort can only be run on a QuerySpec which requires a partition key.
-                ApiException.throw400BadRequest("Unable to find valid index to query.  A descending sort on '{}' is only possible when a partition key value is supplied.", sortBy);
+                throw ApiException.new400BadRequest("Unable to find valid index to query.  A descending sort on '{}' is only possible when a partition key value is supplied.", sortBy);
             }
 
             this.index = foundIndex;
@@ -463,7 +463,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
      * Find a valid sort key.
      * <p>
      * IMPLEMENTATION NOTE - WB 20200805 - there are a limited number of operators supported for sort keys in KeyCondition Expressions. 
-     * @see https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#DDB-Query-request-KeyConditionExpression
+     * @see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#DDB-Query-request-KeyConditionExpression">Dynamo Key Condition Expressions</a>
      * @param sortCol the name of a range key column
      * @return a sort key Term if supplied
      */
@@ -481,6 +481,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
     /**
      * Finds the primary or a secondary index to use based on
      * what parameters were passed in.
+     * @return a term referencing the partition key column
+     * @see #calcIndex()
      */
     public Term getPartKey() {
         if (index == null) {
@@ -497,11 +499,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
     }
 
     public Object getSelectSpec() {
-        Map nameMap = new HashMap();
-        Map valueMap = new HashMap();
+        Map nameMap = new HashMap<>();
+        Map valueMap = new HashMap<>();
 
-        StringBuffer keyExpr = new StringBuffer("");
-        StringBuffer filterExpr = new StringBuffer("");
+        StringBuilder keyExpr = new StringBuilder();
+        StringBuilder filterExpr = new StringBuilder();
 
         Index index = calcIndex();
 
@@ -561,7 +563,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 Property afterSortKeyCol = after.size() > 2 ? getCollection().getProperty(after.getToken(2)) : null;
 
                 if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
-                    ApiException.throw400BadRequest("Invalid column in 'after' key: {}", after);
+                    throw ApiException.new400BadRequest("Invalid column in 'after' key: {}", after);
 
                 Object hashValue = db.cast(afterHashKeyCol, after.getToken(1));
                 Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(3)) : null;
@@ -605,7 +607,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 Property afterSortKeyCol = after.size() > 2 ? getCollection().getProperty(after.getToken(2)) : null;
 
                 if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
-                    ApiException.throw400BadRequest("Invalid column in 'after' key: {}");
+                    throw ApiException.new400BadRequest("Invalid column in 'after' key: {}");
 
                 Object hashValue = db.cast(afterHashKeyCol, after.getToken(1));
                 Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(3)) : null;
@@ -636,7 +638,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
         }
     }
 
-    String toString(StringBuffer buff, Term term, Map nameMap, Map valueMap) {
+    String toString(StringBuilder buff, Term term, Map nameMap, Map valueMap) {
         space(buff);
 
         String lc = term.getToken().toLowerCase();
@@ -647,11 +649,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             if (buff.length() > 0)
                 space(buff).append("and ");
 
-            buff.append("(NOT ").append(toString(new StringBuffer(""), term.getTerm(0), nameMap, valueMap)).append(")");
+            buff.append("(NOT ").append(toString(new StringBuilder(), term.getTerm(0), nameMap, valueMap)).append(")");
         } else if (term.hasToken("and", "or")) {
             buff.append("(");
             for (int i = 0; i < term.getNumTerms(); i++) {
-                buff.append(toString(new StringBuffer(""), term.getTerm(i), nameMap, valueMap));
+                buff.append(toString(new StringBuilder(), term.getTerm(i), nameMap, valueMap));
                 if (i < term.getNumTerms() - 1)
                     space(buff).append(term.getToken()).append(" ");
             }
@@ -671,7 +673,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 if (i > 1)
                     buff.append(", ");
 
-                buff.append(toString(new StringBuffer(""), term.getTerm(i), nameMap, valueMap));
+                buff.append(toString(new StringBuilder(), term.getTerm(i), nameMap, valueMap));
 
             }
             buff.append("))");
@@ -681,7 +683,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             String nameKey = "#var" + (nameMap.size() + 1);
             nameMap.put(nameKey, col);
 
-            String expr = toString(new StringBuffer(""), term.getTerm(1), nameMap, valueMap);
+            String expr = toString(new StringBuilder(), term.getTerm(1), nameMap, valueMap);
 
             if (buff.length() > 0)
                 space(buff).append("and ");
@@ -697,7 +699,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             nameMap.put(nameKey, col);
 
             if (term.size() > 1) {
-                String expr = toString(new StringBuffer(""), term.getTerm(1), nameMap, valueMap);
+                String expr = toString(new StringBuilder(), term.getTerm(1), nameMap, valueMap);
                 space(buff).append(func).append("(").append(nameKey).append(",").append(expr).append(")");
             } else {
                 space(buff).append(func).append("(").append(nameKey).append(")");
@@ -722,7 +724,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
         return buff.toString();
     }
 
-    StringBuffer space(StringBuffer buff) {
+    StringBuilder space(StringBuilder buff) {
         if (buff.length() > 0 && buff.charAt(buff.length() - 1) != ' ')
             buff.append(' ');
 

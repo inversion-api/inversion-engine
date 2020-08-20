@@ -43,7 +43,7 @@ public class JdbcUtils {
         }
     }
 
-    static List<SqlListener> listeners = new ArrayList();
+    static List<SqlListener> listeners = new ArrayList<>();
 
     public static String getDbType(Connection conn) {
         String connstr = conn.toString().toLowerCase();
@@ -396,7 +396,7 @@ public class JdbcUtils {
     //      }
     //      else if (Collection.class.isAssignableFrom(type))
     //      {
-    //         Collection list = new ArrayList();
+    //         Collection list = new ArrayList<>();
     //         String[] parts = str.split(",");
     //         for (String part : parts)
     //         {
@@ -415,7 +415,7 @@ public class JdbcUtils {
     //
     //   public static List<Field> getFields(Class clazz)
     //   {
-    //      List<Field> fields = new ArrayList();
+    //      List<Field> fields = new ArrayList<>();
     //
     //      do
     //      {
@@ -450,7 +450,7 @@ public class JdbcUtils {
     }
 
     public static String buildInsertSQL(Connection conn, String tableName, Object[] columnNameArray) {
-        StringBuffer sql = new StringBuffer("INSERT INTO ");
+        StringBuilder sql = new StringBuilder("INSERT INTO ");
         sql.append(quoteCol(conn, tableName)).append(" (");
         sql.append(getColumnStr(conn, columnNameArray)).append(") VALUES (");
         sql.append(getQuestionMarkStr(columnNameArray)).append(")");
@@ -459,8 +459,8 @@ public class JdbcUtils {
     }
 
     public static Object insertMap(Connection conn, String tableName, Map row) throws Exception {
-        List keys   = new ArrayList();
-        List values = new ArrayList();
+        List keys   = new ArrayList<>();
+        List values = new ArrayList<>();
         for (Object key : row.keySet()) {
             keys.add(key);
             values.add(row.get(key));
@@ -475,7 +475,7 @@ public class JdbcUtils {
             //--
             //-- https://github.com/microsoft/mssql-jdbc/issues/358
             //-- https://stackoverflow.com/questions/13641832/getgeneratedkeys-after-preparedstatement-executebatch/13642539#13642539
-            List returnKeys = new ArrayList();
+            List returnKeys = new ArrayList<>();
             for (Object map : maps) {
                 returnKeys.addAll(insertMaps0(conn, tableName, Arrays.asList(map)));
             }
@@ -488,7 +488,7 @@ public class JdbcUtils {
     static List insertMaps0(Connection conn, String tableName, List maps) throws Exception {
         List<Map<String, Object>> rows = (List<Map<String, Object>>) maps;
 
-        List          returnKeys = new ArrayList();
+        List          returnKeys = new ArrayList<>();
         LinkedHashSet keySet     = new LinkedHashSet();
 
         for (Map row : rows) {
@@ -497,7 +497,7 @@ public class JdbcUtils {
 
         List<String> keys = new ArrayList(keySet);
 
-        StringBuffer buff = new StringBuffer("INSERT INTO ");
+        StringBuilder buff = new StringBuilder("INSERT INTO ");
         buff.append(quoteCol(conn, tableName)).append(" (");
         buff.append(getColumnStr(conn, keys.toArray())).append(") VALUES \r\n");
 
@@ -559,10 +559,10 @@ public class JdbcUtils {
     }
 
     public static List<Integer> update(Connection conn, String tableName, List<String> primaryKeyCols, List<Map<String, Object>> rows) throws Exception {
-        List<Integer> updatedCounts = new ArrayList();
+        List<Integer> updatedCounts = new ArrayList<>();
 
         Set                       cols  = null;
-        List<Map<String, Object>> batch = new ArrayList();
+        List<Map<String, Object>> batch = new ArrayList<>();
         for (Map row : rows) {
             if (cols == null) {
                 cols = row.keySet();
@@ -585,7 +585,7 @@ public class JdbcUtils {
         if (rows.size() == 0)
             return Collections.EMPTY_LIST;
 
-        List returnCounts = new ArrayList();
+        List returnCounts = new ArrayList<>();
 
         List<String> valCols = new ArrayList(rows.get(0).keySet());
         valCols.removeAll(keyCols);
@@ -628,7 +628,7 @@ public class JdbcUtils {
     public static String buildUpdateSQL(Connection conn, String tableName, Object[] setColumnNameArray, Object[] whereColumnNames) {
         // UPDATE tmtuple SET model_id = ? , subj = ? , pred = ? , obj = ? , declared = ?
 
-        StringBuffer sql = new StringBuffer("UPDATE ");
+        StringBuilder sql = new StringBuilder("UPDATE ");
         sql.append(quoteCol(conn, tableName)).append(" SET ");
         sql.append(getWhereColumnStr(conn, setColumnNameArray, ","));
         if (whereColumnNames != null && whereColumnNames.length > 0) {
@@ -657,13 +657,13 @@ public class JdbcUtils {
      * @throws ApiException
      */
     public static List<Row> upsert(Connection conn, String tableName, List<String> primaryKeyCols, List<Map<String, Object>> rows) throws Exception {
-        List generatedKeys = new ArrayList();
+        List generatedKeys = new ArrayList<>();
         if (rows.isEmpty())
             return Collections.EMPTY_LIST;
 
         Set                       cols   = null;
         int                       hadKey = -1;
-        List<Map<String, Object>> batch  = new ArrayList();
+        List<Map<String, Object>> batch  = new ArrayList<>();
         for (Map row : rows) {
             int hasKey = 1;
             for (String indexCol : primaryKeyCols) {
@@ -711,7 +711,7 @@ public class JdbcUtils {
                 }
 
                 if (val == null)
-                    ApiException.throw500InternalServerError("Unable to determine upsert key or column '{}'", col);
+                    throw ApiException.new500InternalServerError("Unable to determine upsert key or column '{}'", col);
 
                 row.put(col, val);
             }
@@ -728,7 +728,7 @@ public class JdbcUtils {
             if (key == null) {
                 key = rows.get(i).get(indexCols.get(0));
                 if (key == null)
-                    ApiException.throw500InternalServerError("Unable to determine key for row: " + rows.get(i));
+                    throw ApiException.new500InternalServerError("Unable to determine key for row: " + rows.get(i));
 
                 returnKeys.set(i, key);
             }
@@ -737,7 +737,7 @@ public class JdbcUtils {
     }
 
     static List upsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception {
-        List   returnKeys = new ArrayList();
+        List   returnKeys = new ArrayList<>();
         String type       = getDbType(conn);
 
         switch (type) {
@@ -770,7 +770,7 @@ public class JdbcUtils {
     }
 
     static List h2UpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception {
-        List returnKeys = new ArrayList();
+        List returnKeys = new ArrayList<>();
         for (Map row : rows) {
             returnKeys.add(h2UpsertBatch(conn, tableName, idxCols, row));
         }
@@ -780,8 +780,8 @@ public class JdbcUtils {
     static Object h2UpsertBatch(Connection conn, String tableName, List<String> idxCols, Map<String, Object> row) throws Exception {
         String sql = "";
 
-        List cols = new ArrayList();
-        List vals = new ArrayList();
+        List cols = new ArrayList<>();
+        List vals = new ArrayList<>();
         for (String col : row.keySet()) {
             cols.add(col);
             vals.add(row.get(col));
@@ -844,7 +844,7 @@ public class JdbcUtils {
     }
 
     static String mysqlBuildInsertOnDuplicateKeySQL(Connection conn, String tableName, Object[] columnNameArray) {
-        StringBuffer sql = new StringBuffer(buildInsertSQL(conn, tableName, columnNameArray));
+        StringBuilder sql = new StringBuilder(buildInsertSQL(conn, tableName, columnNameArray));
         sql.append(" ON DUPLICATE KEY UPDATE ");
         for (int i = 0; i < columnNameArray.length; i++) {
             Object col = columnNameArray[i];
@@ -865,11 +865,11 @@ public class JdbcUtils {
      * @throws ApiException
      */
     static List postgresUpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception {
-        List returnKeys = new ArrayList();
+        List returnKeys = new ArrayList<>();
 
         List<String> cols = new ArrayList(rows.get(0).keySet());
 
-        StringBuffer buff = new StringBuffer(buildInsertSQL(conn, tableName, cols.toArray()));
+        StringBuilder buff = new StringBuilder(buildInsertSQL(conn, tableName, cols.toArray()));
         buff.append("\r\n ON CONFLICT (");
         for (int i = 0; i < idxCols.size(); i++) {
             buff.append(quoteCol(conn, idxCols.get(i)));
@@ -921,7 +921,7 @@ public class JdbcUtils {
      * @return
      */
     static List sqlserverUpsertBatch(Connection conn, String tableName, List<String> idxCols, List<Map<String, Object>> rows) throws Exception {
-        List returnKeys = new ArrayList();
+        List returnKeys = new ArrayList<>();
         for (Map row : rows) {
             sqlserverUpsertBatch(conn, tableName, idxCols, row);
             returnKeys.add(row.get(idxCols.get(0)));
@@ -1087,7 +1087,7 @@ public class JdbcUtils {
     */
 
     public static String getWhereColumnStr(Connection conn, Object[] columnNameArray, String sep) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < columnNameArray.length; i++) {
             sb.append(quoteCol(conn, columnNameArray[i]));
@@ -1101,7 +1101,7 @@ public class JdbcUtils {
     }
 
     public static String getColumnStr(Connection conn, Object[] columnNameArray) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < columnNameArray.length; i++) {
             sb.append(quoteCol(conn, columnNameArray[i]));
@@ -1114,7 +1114,7 @@ public class JdbcUtils {
     }
 
     public static String getColumnStr(Connection conn, List columnNameArray) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < columnNameArray.size(); i++) {
             sb.append(quoteCol(conn, columnNameArray.get(i)));
@@ -1131,7 +1131,7 @@ public class JdbcUtils {
     }
 
     public static String getQuestionMarkStr(int numQMarks) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < numQMarks; i++) {
             sb.append("?");

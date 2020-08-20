@@ -88,7 +88,7 @@ public class TestSqlQuery {
 
     @Test
     public void test1() throws Exception {
-        //      List<RqlTest> tests = new ArrayList();
+        //      List<RqlTest> tests = new ArrayList<>();
         //
         //      String rql = null;
         //      String select = null;

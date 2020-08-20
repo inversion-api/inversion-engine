@@ -244,7 +244,7 @@ public class Request {
         try {
             json = JSNode.parseJsonNode(body);
         } catch (Exception ex) {
-            ApiException.throw400BadRequest("Unparsable JSON body");
+            throw ApiException.new400BadRequest("Unparsable JSON body");
         }
 
         return json;
@@ -858,7 +858,7 @@ public class Request {
          */
         protected void fail(String defaultErrorMessage) {
             String message = customErrorMessage != null ? customErrorMessage : defaultErrorMessage;
-            ApiException.throw400BadRequest(message);
+            throw ApiException.new400BadRequest(message);
         }
     }
 

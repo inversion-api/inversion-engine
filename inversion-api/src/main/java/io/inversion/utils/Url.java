@@ -28,7 +28,6 @@ import java.util.Map;
  * Not for use with non HTTP(S) urls.
  * <p>
  * A number of different utility methods are provided to make it simple to find or remove different query string keys.
- * <p>
  */
 public class Url {
     /**
@@ -203,7 +202,7 @@ public class Url {
     /**
      * Generates a URL encode query string for <code>params</code>
      *
-     * @return a URL encoded query string if <code>params.size() is > 0</code> else empty string
+     * @return a URL encoded query string if <code>params.size() is @gt; 0</code> else empty string
      * @see #toQueryString(Map)
      */
     public String getQueryString() {
@@ -263,8 +262,6 @@ public class Url {
 
     /**
      * Parses <code>queryString</code> and replace <code>params</code>
-     *
-     * @param query
      * @return this Url
      */
     public Url withQueryString(String queryString) {
@@ -276,8 +273,7 @@ public class Url {
      * Adds all key/value pairs from <code>newParams</code> to <code>params</code>
      * overwriting any exiting keys on a case insensitive basis
      *
-     * @param params
-     * @return
+     * @return this
      */
     public Url withParams(Map<String, String> newParams) {
         if (newParams != null)
@@ -310,14 +306,14 @@ public class Url {
     }
 
     /**
-     * Replaces any existing param that has <code>key<code> as a whole word case insensitive substring in its key.
+     * Replaces any existing param that has <code>key</code> as a whole word case insensitive substring in its key.
      * <p>
-     * If the key/value pair <code>"eq(dog,Fido)" = null</code> is in the map <code>replaceParam("DOG", "Fifi")
+     * If the key/value pair <code>"eq(dog,Fido)" = null</code> is in the map <code>replaceParam("DOG", "Fifi")</code>
      * would cause it to be removed and the pair "DOG" / "Fifi" would be added.
      *
      * @param key   the key to add overwrite, may not be null, also used a a regex whole world case insensitive token to search for other keys to remove.
      * @param value the value, may be null
-     * @see {@link io.inversion.Utils#containsToken(String, String)}
+     * @see Utils#containsToken
      */
     public void replaceParam(String key, String value) {
         for (String existing : (List<String>) new ArrayList(params.keySet())) {
@@ -330,11 +326,11 @@ public class Url {
     }
 
     /**
-     * Removes any param that has one of <code>tokens<code> as a whole word case insensitive substring in the key.
+     * Removes any param that has one of <code>tokens</code> as a whole word case insensitive substring in the key.
      *
      * @param tokens string tokens when found in a param key will cause them to be removed
      * @return the first value found that contained any one of <code>tokens</code>
-     * @see {@link io.inversion.Utils#containsToken(String, String)}
+     * @see Utils#containsToken
      */
     public String clearParams(String... tokens) {
         String oldValue = null;
@@ -353,7 +349,7 @@ public class Url {
     }
 
     /**
-     * Finds a key that has any one of <code>tokens<code> as a whole word case insensitive substring
+     * Finds a key that has any one of <code>tokens</code> as a whole word case insensitive substring
      *
      * @param tokens substrings to search params.keySet() for
      * @return the first param key that has anyone of <code>tokens</code> as a whole word case insensitive substring
@@ -374,7 +370,7 @@ public class Url {
      *
      * @param tokens substrings to search params.keySet() for
      * @return the value for the first param key that has anyone of <code>tokens</code> as a whole word case insensitive substring
-     * @see {@code #findKey(String...)}
+     * @see #findKey(String...)
      */
     public String findKeyValue(String... tokens) {
         String key = findKey(tokens);
@@ -398,7 +394,7 @@ public class Url {
      * @return a new case insensitive order preserving map copy of <code>params</code>
      */
     public Map<String, String> getParams() {
-        return ((JSNode) params).asMap();
+        return (Map<String, String>)((JSNode) params).asMap();
     }
 
     /**
@@ -409,19 +405,19 @@ public class Url {
     }
 
     /**
-     * Creates a UTF-8 url encoded query string, not including a leading "?" with key value pairs separated by a '&'
+     * Creates a UTF-8 url encoded query string, not including a leading "?" with key value pairs separated by a '&amp;'
      *
      * @param params the key/value pairs to encode
      * @return a UTF-8 url encoded query string
-     * @see {@code java.net.URL.encode(String, String)}
+     * @see java.net.URLEncoder#encode(String, String)
      */
-    public static String toQueryString(Map<String, String> params) {
+    public static String toQueryString(Map<String, Object> params) {
         String query = "";
         if (params != null) {
             for (String key : params.keySet()) {
                 try {
                     if (params.get(key) != null) {
-                        query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key), "UTF-8") + "&";
+                        query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key).toString(), "UTF-8") + "&";
                     } else {
                         query += URLEncoder.encode(key, "UTF-8") + "&";
                     }

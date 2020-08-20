@@ -48,7 +48,7 @@ public class DbGetAction extends Action<DbGetAction> {
             Relationship rel         = collection.getRelationship(req.getRelationshipKey());
 
             if (rel == null)
-                ApiException.throw404NotFound("'{}' is not a valid relationship", req.getRelationshipKey());
+                throw ApiException.new404NotFound("'{}' is not a valid relationship", req.getRelationshipKey());
 
             String newHref = null;
 
@@ -80,7 +80,7 @@ public class DbGetAction extends Action<DbGetAction> {
                         Object   pkVal  = resourceKeyRow.get(pkName);
 
                         if (pkVal == null)
-                            ApiException.throw400BadRequest("Missing parameter for foreign key property '{}'", fk.getJsonName());
+                            throw ApiException.new400BadRequest("Missing parameter for foreign key property '{}'", fk.getJsonName());
 
                         newHref += fk.getJsonName() + "=" + pkVal + "&";
                     }
@@ -94,7 +94,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
                 List<KeyValue> rows = getRelatedKeys(rel, rel.getFkIndex1(), rel.getFkIndex2(), Arrays.asList(resourceKey));
                 if (rows.size() > 0) {
-                    List foreignKeys = new ArrayList();
+                    List foreignKeys = new ArrayList<>();
                     rows.forEach(k -> foreignKeys.add(k.getValue()));
 
                     Collection relatedCollection = rel.getRelated();
@@ -125,7 +125,7 @@ public class DbGetAction extends Action<DbGetAction> {
             res.withStatus(included.getStatus());
             res.withJson(included.getJson());
             return;
-        } else if (!Utils.empty(req.getCollection()) && !Utils.empty(req.getResourceKey())) {
+        } else if (req.getCollection() != null && !Utils.empty(req.getResourceKey())) {
             List<String> resourceKeys = Utils.explode(",", req.getResourceKey());
             Term         term         = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName(), resourceKeys.toArray());
             req.getUrl().withParams(term.toString(), null);
@@ -217,7 +217,7 @@ public class DbGetAction extends Action<DbGetAction> {
             }
 
             if (db == null)
-                ApiException.throw400BadRequest("Unable to find collection for url '{}'", req.getUrl());
+                throw ApiException.new400BadRequest("Unable to find collection for url '{}'", req.getUrl());
 
             results = db.select(null, req.getUrl().getParams());
         } else {
@@ -370,14 +370,14 @@ public class DbGetAction extends Action<DbGetAction> {
                     //However if you were to comment out the following block, the output of the algorithm
                     //would be exactly the same you would just end up running an extra db query
 
-                    List cols = new ArrayList();
+                    List cols = new ArrayList<>();
                     //idxToMatch.getColumns().forEach(c -> cols.add(c.getName()));
                     //idxToRetrieve.getColumns().forEach(c -> cols.add(c.getName()));
 
                     cols.addAll(idxToMatch.getJsonNames());
                     cols.addAll(idxToRetrieve.getJsonNames());
 
-                    relatedEks = new ArrayList();
+                    relatedEks = new ArrayList<>();
                     for (JSNode parentObj : parentObjs) {
                         String parentEk = getResourceKey(parentObj);
                         String childEk  = parentObj.getString(rel.getName());
@@ -399,12 +399,12 @@ public class DbGetAction extends Action<DbGetAction> {
                 }
 
                 if (relatedEks == null) {
-                    List toMatchEks = new ArrayList();
+                    List toMatchEks = new ArrayList<>();
                     for (JSNode parentObj : parentObjs) {
                         String parentEk = getResourceKey(parentObj);
                         if (!toMatchEks.contains(parentEk)) {
                             if (parentObj.get(rel.getName()) instanceof JSArray)
-                                ApiException.throw500InternalServerError("Algorithm implementation error...this relationship seems to have already been expanded.");
+                                throw ApiException.new500InternalServerError("Algorithm implementation error...this relationship seems to have already been expanded.");
 
                             toMatchEks.add(parentEk);
 
@@ -418,7 +418,7 @@ public class DbGetAction extends Action<DbGetAction> {
                     relatedEks = getRelatedKeys(rel, idxToMatch, idxToRetrieve, toMatchEks);
                 }
 
-                List                          unfetchedChildEks = new ArrayList();
+                List                          unfetchedChildEks = new ArrayList<>();
                 ListValuedMap<String, String> fkCache           = new ArrayListValuedHashMap<>();
 
                 for (KeyValue<String, String> row : relatedEks) {
@@ -463,7 +463,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
     protected List<KeyValue> getRelatedKeys(Relationship rel, Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws ApiException {
         if (idxToMatch.getCollection() != idxToRetrieve.getCollection())
-            ApiException.throw400BadRequest("You can only retrieve related index keys from the same Collection.");
+            throw ApiException.new400BadRequest("You can only retrieve related index keys from the same Collection.");
 
         List<KeyValue> related = new ArrayList<>();
 
@@ -480,7 +480,7 @@ public class DbGetAction extends Action<DbGetAction> {
         Response res  = Chain.peek().getEngine().get(link, Arrays.asList(termKeys, includes, sort, notNull)).assertOk();
 
         for (JSNode node : res.data().asNodeList()) {
-            List idxToMatchVals = new ArrayList();
+            List idxToMatchVals = new ArrayList<>();
 
             for (String property : idxToMatch.getJsonNames()) {
                 Object propVal = node.get(property);
@@ -496,7 +496,7 @@ public class DbGetAction extends Action<DbGetAction> {
                 idxToMatchVals.add(propVal);
             }
 
-            List idxToRetrieveVals = new ArrayList();
+            List idxToRetrieveVals = new ArrayList<>();
             for (String property : idxToRetrieve.getJsonNames()) {
                 Object propVal = node.get(property);
 
@@ -519,10 +519,10 @@ public class DbGetAction extends Action<DbGetAction> {
         //      List<Map> rows = obj.getRows();
         //      for (Map row : rows)
         //      {
-        //         List idxToMatchVals = new ArrayList();
+        //         List idxToMatchVals = new ArrayList<>();
         //         idxToMatch.getColumnNames().forEach(column -> idxToMatchVals.add(row.get(column)));
         //
-        //         List idxToRetrieveVals = new ArrayList();
+        //         List idxToRetrieveVals = new ArrayList<>();
         //         idxToRetrieve.getColumnNames().forEach(column -> idxToRetrieveVals.add(row.get(column)));
         //
         //         String parentEk = Collection.encodeKey(idxToMatchVals);
@@ -580,8 +580,7 @@ public class DbGetAction extends Action<DbGetAction> {
             for (JSNode node : nodes) {
                 Object resourceKey = getResourceKey((JSNode) node);
                 if (pkCache.containsKey(collection, resourceKey)) {
-                    ApiException.throw500InternalServerError("FIX ME IF FOUND.  Algorithm Implementation Error");
-                    return null;
+                    throw ApiException.new500InternalServerError("FIX ME IF FOUND.  Algorithm Implementation Error");
                 }
 
                 pkCache.put(collection, resourceKey, node);

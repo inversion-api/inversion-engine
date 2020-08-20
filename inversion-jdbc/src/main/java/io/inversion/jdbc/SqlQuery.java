@@ -129,7 +129,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             } catch (Exception ex) {
                 System.out.println(sql);
                 ex.printStackTrace();
-                ApiException.throw500InternalServerError(ex);
+                throw ApiException.new500InternalServerError(ex);
             }
         }
 
@@ -209,7 +209,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     protected String printTermsSelect(Parts parts, boolean preparedStmt) {
-        StringBuffer cols = new StringBuffer();
+        StringBuilder cols = new StringBuilder();
 
         List<Term> terms = getSelect().columns();
         for (int i = 0; i < terms.size(); i++) {
@@ -219,7 +219,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 cols.append(" ").append(printTerm(function, null, preparedStmt));
 
                 String colName = term.getToken(1);
-                if (!(empty(colName) || colName.indexOf("$$$ANON") > -1)) {
+                if (!(Utils.empty(colName) || colName.indexOf("$$$ANON") > -1)) {
                     //TODO: validate if this mysql special case is required...will require changing tests if removed
                     if (db == null || db.isType("mysql"))
                         cols.append(" AS " + asString(colName));
@@ -310,7 +310,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 if (where != null) {
                     where = "(" + where + ")";
 
-                    if (empty(parts.where))
+                    if (Utils.empty(parts.where))
                         parts.where = " WHERE " + where;
                     else
                         parts.where += " AND " + where;
@@ -380,7 +380,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
             String where = printTerm(term, null, preparedStmt);
             if (where != null) {
-                if (empty(parts.where))
+                if (Utils.empty(parts.where))
                     parts.where = " WHERE " + where;
                 else
                     parts.where += " AND " + where;
@@ -436,7 +436,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     protected List<Sort> getDefaultSorts(Parts parts) {
-        List<Sort> sorts = new ArrayList();
+        List<Sort> sorts = new ArrayList<>();
 
         boolean wildcard = parts.select.indexOf("* ") >= 0 //
                 || parts.select.indexOf("*,") >= 0;//this trailing space or comma is important because otherwise this would incorrectly match "COUNT(*)"
@@ -572,7 +572,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             }
         }
 
-        List<String> dynamicSqlChildText = new ArrayList();
+        List<String> dynamicSqlChildText = new ArrayList<>();
         for (Term t : term.getTerms()) {
             dynamicSqlChildText.add(printTerm(t, col, preparedStmt));
         }
@@ -610,7 +610,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     protected String printExpression(Term term, List<String> dynamicSqlChildText, List<String> preparedStmtChildText) {
         String token = term.getToken();
 
-        StringBuffer sql = new StringBuffer("");
+        StringBuilder sql = new StringBuilder();
 
         if (term.hasToken("eq", "ne", "like", "w", "sw", "ew", "wo")) {
             boolean negation = term.hasToken("ne", "nw", "wo");
@@ -746,7 +746,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             Relationship rel = collection.getRelationship(relName);
 
             if (rel == null)
-                ApiException.throw400BadRequest("Unable to find relationship for term '{}'", term);
+                throw ApiException.new400BadRequest("Unable to find relationship for term '{}'", term);
 
             String relTbl = rel.getRelated().getTableName();
             String relAlias = "~~relTbl_" + relTbl;
@@ -842,7 +842,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     protected String concatAll(String connector, String function, List strings) {
-        StringBuffer buff = new StringBuffer((strings.size() > 1 ? "(" : ""));
+        StringBuilder buff = new StringBuilder((strings.size() > 1 ? "(" : ""));
         for (int i = 0; i < strings.size(); i++) {
             buff.append(strings.get(i)).append(function);
             if (i < strings.size() - 1)
@@ -880,7 +880,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     public String quoteCol(String str) {
-        StringBuffer buff = new StringBuffer();
+        StringBuilder buff = new StringBuilder();
         String[] parts = str.split("\\.");
         for (int i = 0; i < parts.length; i++) {
             if ("*".equals(parts[i])) {

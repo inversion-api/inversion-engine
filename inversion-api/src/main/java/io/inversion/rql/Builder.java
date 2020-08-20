@@ -24,7 +24,7 @@ public class Builder<T, P extends Builder> {
     protected RqlParser     parser   = null;
     protected P             parent   = null;
     protected List<Builder> builders = null;
-    protected List<Term>    terms    = new ArrayList();
+    protected List<Term>    terms    = new ArrayList<>();
     protected T             r        = null;
 
     /**
@@ -113,7 +113,7 @@ public class Builder<T, P extends Builder> {
 
     public List<Builder> getBuilders() {
         if (builders == null) {
-            builders = new ArrayList();
+            builders = new ArrayList<>();
         }
         return builders;
     }
@@ -231,12 +231,12 @@ public class Builder<T, P extends Builder> {
                 Map<String, Object> map = (Map) term;
 
                 for (String key : map.keySet()) {
-                    if (empty(key))
+                    if (Utils.empty(key))
                         continue;
 
                     String value = (String) map.get(key);
 
-                    if (empty(value) && key.indexOf("(") > -1) {
+                    if (Utils.empty(value) && key.indexOf("(") > -1) {
                         term = key;
                     } else {
                         term = "eq(" + key + "," + value + ")";
@@ -259,10 +259,10 @@ public class Builder<T, P extends Builder> {
     }
 
     protected List<Term> parse(Object... rqlTerms) {
-        List<Term> terms = new ArrayList();
+        List<Term> terms = new ArrayList<>();
 
         for (Object term : rqlTerms) {
-            if (empty(term)) {
+            if (Utils.empty(term)) {
                 continue;
             } else if (term instanceof Term) {
                 terms.add((Term) term);
@@ -301,7 +301,7 @@ public class Builder<T, P extends Builder> {
     }
 
     public List<Term> findAll(String token) {
-        return findAll(token, new ArrayList());
+        return findAll(token, new ArrayList<>());
     }
 
     List<Term> findAll(String token, List<Term> found) {
@@ -370,7 +370,7 @@ public class Builder<T, P extends Builder> {
     }
 
     protected String toString(List<Term> terms) {
-        StringBuffer buff = new StringBuffer("");
+        StringBuilder buff = new StringBuilder();
 
         for (int i = 0; i < terms.size(); i++) {
             buff.append(terms.get(i));
@@ -380,7 +380,7 @@ public class Builder<T, P extends Builder> {
 
         for (Builder builder : getBuilders()) {
             String rql = builder.toString();
-            if (!empty(rql)) {
+            if (!Utils.empty(rql)) {
                 if (buff.length() > 0)
                     buff.append("&");
                 buff.append(rql);
@@ -390,14 +390,5 @@ public class Builder<T, P extends Builder> {
         return buff.toString();
     }
 
-    protected boolean empty(Object... arr) {
-        boolean empty = true;
-        for (int i = 0; empty && arr != null && i < arr.length; i++) {
-            Object obj = arr[i];
-            if (obj != null && obj.toString().length() > 0)
-                empty = false;
-        }
-        return empty;
-    }
 
 }

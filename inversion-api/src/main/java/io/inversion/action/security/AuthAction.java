@@ -95,7 +95,7 @@ public class AuthAction extends Action<AuthAction> {
                 user = userDao.getUser(this, username, password, apiName, tenant);
             } else if (token.toLowerCase().startsWith("session ")) {
                 if (sessionDao == null)
-                    ApiException.throw400BadRequest("AuthAction has not been configured to support session authorization");
+                    throw ApiException.new400BadRequest("AuthAction has not been configured to support session authorization");
 
                 token = token.substring(8, token.length()).trim();
 
@@ -104,7 +104,7 @@ public class AuthAction extends Action<AuthAction> {
                     //must match on a delete.
                     String resourceKey = req.getResourceKey();
                     if (!Utils.equal(token, resourceKey))
-                        ApiException.throw401Unauthroized("Logout requires a session authroization or x-auth-token header that matches the url resourceKey");
+                        throw ApiException.new401Unauthroized("Logout requires a session authroization or x-auth-token header that matches the url resourceKey");
 
                     sessionDao.delete(token);
                     return;
@@ -112,11 +112,11 @@ public class AuthAction extends Action<AuthAction> {
 
                 user = sessionDao.get(token);
             } else {
-                ApiException.throw400BadRequest("Authorization token format must be bearer,basic or session. {} ", token);
+                throw ApiException.new400BadRequest("Authorization token format must be bearer,basic or session. {} ", token);
             }
 
             if (user == null)
-                ApiException.throw401Unauthroized();
+                throw ApiException.new401Unauthroized();
 
         } else {
             if (req.isPost() && sessionReq && (Utils.empty(username, password))) {
@@ -143,21 +143,21 @@ public class AuthAction extends Action<AuthAction> {
                 user = userDao.getUser(this, username, password, apiName, tenant);
 
                 if (user == null)
-                    ApiException.throw401Unauthroized();
+                    throw ApiException.new401Unauthroized();
             }
         }
 
         if (user == null)//by here, we know that no credentials were provided
         {
             if (sessionReq)
-                ApiException.throw401Unauthroized();
+                throw ApiException.new401Unauthroized();
 
             user = userDao.getGuest(apiName, tenant);
         }
 
         if (user == null //
                 || (tenant != null && !tenant.equalsIgnoreCase(user.getTenant()))) {
-            ApiException.throw401Unauthroized();
+            throw ApiException.new401Unauthroized();
         }
 
         user.withRequestAt(now);
@@ -249,7 +249,7 @@ public class AuthAction extends Action<AuthAction> {
                     delete(sessionKey);
                     user = null;
 
-                    ApiException.throw401Unauthroized("The session has expired.");
+                    throw ApiException.new401Unauthroized("The session has expired.");
                 } else if (now - lastRequest > sessionUpdate) {
                     put(sessionKey, user);
                 }
@@ -358,13 +358,12 @@ public class AuthAction extends Action<AuthAction> {
         }
 
         public User getUser(AuthAction action, String username, String password, String apiName, String tenant) throws ApiException {
-            ApiException.throw403Forbidden();
-            return null;
+            throw ApiException.new403Forbidden();
         }
 
         public User getUser(AuthAction action, String token, String apiName, String tenant) throws ApiException {
             if (revokedTokenCache != null && revokedTokenCache.isRevoked(token))
-                ApiException.throw401Unauthroized();
+                throw ApiException.new401Unauthroized();
 
             DecodedJWT jwt = null;
             for (String secret : getJwtSecrets(action, apiName, tenant)) {
@@ -383,7 +382,7 @@ public class AuthAction extends Action<AuthAction> {
             }
 
             if (jwt == null)
-                ApiException.throw401Unauthroized();
+                throw ApiException.new401Unauthroized();
 
             return createUserFromValidJwt(jwt);
         }
@@ -443,7 +442,7 @@ public class AuthAction extends Action<AuthAction> {
          * Finds the most specific keys keys first
          */
         protected List<String> getJwtSecrets(AuthAction action, String apiName, String tenant) {
-            List secrets = new ArrayList();
+            List secrets = new ArrayList<>();
 
             for (int i = 10; i >= 0; i--) {
 

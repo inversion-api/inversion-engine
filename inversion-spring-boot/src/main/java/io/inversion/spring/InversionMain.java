@@ -55,8 +55,6 @@ public class InversionMain {
 
     /**
      * Convenience method for launching a Engine that will be configured via config files.
-     *
-     * @param api
      */
     public static void run() {
         run(new Engine());

@@ -28,8 +28,8 @@ public class AclRule extends Rule<AclRule> {
     protected boolean allow = true;
     protected boolean info  = false;
 
-    protected List<String> permissions = new ArrayList();
-    protected List<String> roles       = new ArrayList();
+    protected List<String> permissions = new ArrayList<>();
+    protected List<String> roles       = new ArrayList<>();
 
     protected boolean allRolesMustMatch       = false;
     protected boolean allPermissionsMustMatch = false;

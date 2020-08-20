@@ -16,7 +16,11 @@
  */
 package io.inversion.jdbc;
 
+import io.inversion.AbstractEngineTest;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -27,7 +31,14 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class JdbcUtilsIntegTest {
+
+    @BeforeAll
+    public void checkIntegEnv() {
+        Assumptions.assumeTrue(AbstractEngineTest.isIntegEnv());
+    }
+
     //  TODO: this was taken out because of h2 case frustrations with columns not found
     //   @Test
     //   public void test_h2Upsert() throws Exception
@@ -140,7 +151,7 @@ public class JdbcUtilsIntegTest {
     }
 
     List<Map<String, Object>> rows(Map... maps) {
-        ArrayList rows = new ArrayList();
+        ArrayList rows = new ArrayList<>();
         for (Map row : maps) {
             rows.add(row);
         }
@@ -148,7 +159,7 @@ public class JdbcUtilsIntegTest {
     }
 
     List list(String... values) {
-        ArrayList list = new ArrayList();
+        ArrayList list = new ArrayList<>();
         for (Object value : values) {
             list.add(value);
         }

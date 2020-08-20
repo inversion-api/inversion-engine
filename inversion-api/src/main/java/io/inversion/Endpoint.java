@@ -31,10 +31,10 @@ public class Endpoint extends Rule<Endpoint> {
      * Compared to Actions that are registered directly with the Api via Api.withAction, these Actions are
      * path matched relative to the Path that matched to select this Endpoint vs a different Endpoint.
      */
-    protected List<Action> actions = new ArrayList();
+    protected List<Action> actions = new ArrayList<>();
 
     /**
-     * Internal Endpoints can only be called by recursive calls to the engine when Chain.depth() is > 1.
+     * Internal Endpoints can only be called by recursive calls to the engine when Chain.depth() is @gt; 1.
      */
     protected boolean internal = false;
 

@@ -27,7 +27,7 @@ public class RestClientIntegTest {
             public void run(Request req, Response res) throws ApiException {
 
                 if (!"yep".equals(req.getJson().find("testing")))
-                    ApiException.throw500InternalServerError();
+                    throw ApiException.new500InternalServerError();
 
                 res.withJson(req.getJson());
             }
@@ -49,7 +49,7 @@ public class RestClientIntegTest {
                 res.data().add(new JSNode("hello", "world"));
 
                 //this forces the payload response over the 1KB size to trigger gzip compression
-                StringBuffer big = new StringBuffer("");
+                StringBuilder big = new StringBuilder();
                 for (int i = 0; i < 2048; i++) {
                     big.append("0");
                 }

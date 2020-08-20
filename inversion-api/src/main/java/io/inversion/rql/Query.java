@@ -40,7 +40,7 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
     protected boolean dryRun = false;
 
     //hold ordered list of columnName=literalValue pairs
-    protected List<KeyValue> values = new ArrayList();
+    protected List<KeyValue> values = new ArrayList<>();
 
     //-- OVERRIDE ME TO ADD NEW FUNCTIONALITY --------------------------
     //------------------------------------------------------------------
@@ -104,7 +104,7 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
 
     public List<Builder> getBuilders() {
         if (builders == null) {
-            builders = new ArrayList();
+            builders = new ArrayList<>();
 
             //order matters when multiple clauses can accept the same term
             getFrom();
@@ -229,7 +229,7 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
 
                 Property col = coll.getProperty(shortName);
                 if (col == null)
-                    ApiException.throw500InternalServerError("Unable to find column '{}' on table '{}'", columnName, coll.getTableName());
+                    throw ApiException.new500InternalServerError("Unable to find column '{}' on table '{}'", columnName, coll.getTableName());
 
                 value = db.cast(col, value);
 
@@ -241,14 +241,14 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
     }
 
     public List<String> getColValueKeys() {
-        List keys = new ArrayList();
+        List keys = new ArrayList<>();
         for (KeyValue kv : values)
             keys.add(kv.getKey());
         return keys;
     }
 
     public List<Object> getColValues() {
-        List keys = new ArrayList();
+        List keys = new ArrayList<>();
         for (KeyValue kv : values)
             keys.add(kv.getValue());
         return keys;

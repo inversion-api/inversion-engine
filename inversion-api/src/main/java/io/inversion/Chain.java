@@ -162,7 +162,7 @@ public class Chain {
                             value = req.getUrl().getParam(name);
                     }
                     if (value == null)
-                        ApiException.throw500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
+                        throw ApiException.new500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
 
                     url += epP.get(i) + "/";
                 } else {
@@ -247,7 +247,7 @@ public class Chain {
     //   }
 
     protected Engine            engine   = null;
-    protected List<ActionMatch> actions  = new ArrayList();
+    protected List<ActionMatch> actions  = new ArrayList<>();
     protected Request           request  = null;
     protected Response          response = null;
 
@@ -369,7 +369,7 @@ public class Chain {
     }
 
     public Map<String, String> getConfig() {
-        Map<String, String> config = new HashMap();
+        Map<String, String> config = new HashMap<>();
         for (String key : getConfigKeys()) {
             config.put(key, getConfig(key));
         }
@@ -439,7 +439,7 @@ public class Chain {
             ActionMatch actionMatch = actions.get(next);
             next += 1;
 
-            Map<String, String> pathParams = new HashMap();
+            Map<String, String> pathParams = new HashMap<>();
             actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
 
             Engine.applyPathParams(pathParams, request.getUrl(), request.getJson());

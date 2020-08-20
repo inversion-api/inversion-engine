@@ -32,13 +32,13 @@ public class DbDeleteAction extends Action<DbDeleteAction> {
         String relationshipKey = req.getRelationshipKey();
 
         if (Utils.empty(resourceKey))
-            ApiException.throw400BadRequest("An resource key must be included in the url path for a DELETE request.");
+            throw ApiException.new400BadRequest("An resource key must be included in the url path for a DELETE request.");
 
         if (!Utils.empty(relationshipKey))
-            ApiException.throw400BadRequest("A relationship key in the url path is not valid for a DELETE request");
+            throw ApiException.new400BadRequest("A relationship key in the url path is not valid for a DELETE request");
 
         if (req.getJson() != null)
-            ApiException.throw501NotImplemented("A JSON body can not be included with a DELETE.  Batch delete is not supported.");
+            throw ApiException.new501NotImplemented("A JSON body can not be included with a DELETE.  Batch delete is not supported.");
 
         int deleted = delete(req.getEngine(), req.getCollection(), req.getUrl().toString());
 
@@ -67,7 +67,7 @@ public class DbDeleteAction extends Action<DbDeleteAction> {
                 String href = node.getString("href");
 
                 if (alreadyDeleted.contains(href))
-                    ApiException.throw500InternalServerError("Deletion of '{}' was not successful.", href);
+                    throw ApiException.new500InternalServerError("Deletion of '{}' was not successful.", href);
                 else
                     alreadyDeleted.add(href);
 

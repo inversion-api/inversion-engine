@@ -38,7 +38,7 @@ public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends Elastics
         for (Term child : parent.getTerms()) {
             if (!child.isLeaf()) {
                 if (!functions.contains(child.getToken()))
-                    ApiException.throw400BadRequest("Invalid where function token '%s' : %s", child.getToken(), parent);
+                    throw ApiException.new400BadRequest("Invalid where function token '%s' : %s", child.getToken(), parent);
                 transform(child);
             }
         }
@@ -74,7 +74,7 @@ public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends Elastics
 
             Index index = getParent().getCollection().getIndex(indexName);
             if (index == null)
-                ApiException.throw400BadRequest("You can't use the _key() function unless your table has a unique index");
+                throw ApiException.new400BadRequest("You can't use the _key() function unless your table has a unique index");
 
             if (index.size() == 1) {
                 Term       t        = Term.term(null, "in", index.getColumnName(0));
@@ -99,7 +99,7 @@ public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends Elastics
                 for (int i = 1; i < children.size(); i++) {
                     Term child = children.get(i);
                     if (!child.isLeaf())
-                        ApiException.throw400BadRequest("Entity key value is not a leaf node: %s", child);
+                        throw ApiException.new400BadRequest("Entity key value is not a leaf node: %s", child);
 
                     Row  keyParts = getParent().getCollection().decodeResourceKey(index, child.getToken());
                     Term and      = Term.term(or, "and");

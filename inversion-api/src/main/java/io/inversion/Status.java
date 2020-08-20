@@ -22,7 +22,7 @@ package io.inversion;
  * usual suspect classed did not include the HTTP status number in the field name and
  * I really wanted to see both the numerical code and message at the same time in the source.
  *
- * @see http://www.restapitutorial.com/httpstatuscodes.html
+ * @see <a href="http://www.restapitutorial.com/httpstatuscodes.html">Rest HTTP Status Codes</a>
  */
 public interface Status {
     public static final String SC_200_OK         = "200 OK";

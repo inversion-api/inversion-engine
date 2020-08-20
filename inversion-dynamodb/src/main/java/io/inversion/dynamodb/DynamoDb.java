@@ -77,7 +77,7 @@ public class DynamoDb extends Db<DynamoDb> {
     @Override
     public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
         AmazonDynamoDB        dynamoClient  = getDynamoClient();
-        List                  keys          = new ArrayList();
+        List                  keys          = new ArrayList<>();
         List<WriteRequest>    writeRequests = new LinkedList<WriteRequest>();
         BatchWriteItemRequest batch         = new BatchWriteItemRequest();
         for (int i = 0; i < rows.size(); i++) {
@@ -133,7 +133,7 @@ public class DynamoDb extends Db<DynamoDb> {
         } else if (pk.size() == 2) {
             dynamo.deleteItem(pk.getProperty(0).getColumnName(), row.get(pk.getProperty(0).getColumnName()), pk.getProperty(1).getColumnName(), row.get(pk.getProperty(1).getColumnName()));
         } else {
-            ApiException.throw400BadRequest("A dynamo delete must have a hash key and an optional sortKey and that is it: '{}'", row);
+            throw ApiException.new400BadRequest("A dynamo delete must have a hash key and an optional sortKey and that is it: '{}'", row);
         }
     }
 
