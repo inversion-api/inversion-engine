@@ -218,9 +218,29 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
      * Cosmos does not use "?" ansi sql style prepared statement vars, it uses
      * named variables prefixed with '@'.
      */
+    @Override
     protected String asVariableName(int valuesPairIdx) {
         KeyValue kv = values.get(valuesPairIdx);
         return "@" + kv.getKey() + (valuesPairIdx + 1);
+    }
+
+    /**
+     * Overridden to exclude rdbms style '%' wildcards that are not needed for cosmos sw and ew queries.
+     * @return the term as a string approperiate for use in a cosmos query
+     */
+    @Override
+    protected String asString(Term term) {
+
+        String string = super.asString(term);
+        System.out.println("String:" + string);
+        Term parent = term.getParent();
+
+        if(parent != null && string.indexOf("%") > 0 && parent.hasToken("sw", "ew"))
+        {
+            string = string.replace("%", "");
+        }
+
+        return string;
     }
 
     protected String printExpression(Term term, List<String> dynamicSqlChildText, List<String> preparedStmtChildText) {
