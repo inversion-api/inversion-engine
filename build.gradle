@@ -167,6 +167,10 @@ subprojects {
   		if (System.properties['test.profile'] != 'integration') {
     		exclude '**/*IntegTest*'
   		}
+		testLogging {
+			outputs.upToDateWhen {false}
+			showStandardStreams = true
+		}
 	}
 
 	//causes a new ${subpoject}/pom.xml file to be generated after each build
@@ -191,18 +195,18 @@ subprojects {
 	            artifact sourcesJar
 	            artifact javadocJar
 	            
-	            //-- uncommenting the following will generate poms with concrete  
-	            //-- version dependencies instead of dynamic depedencies
+	            //-- the following will generate poms with resolved dependencies
+	            //-- instead of potentially dynamic dependencies declared in the gradle build
 	            //-- https://docs.gradle.org/current/userguide/publishing_maven.html
-	            //versionMapping {
-	            //    usage('java-api') {
-	            //        fromResolutionOf('runtimeClasspath')
-	            //    }
-	            //    usage('java-runtime') {
-	            //        fromResolutionResult()
-	            //    }
-	            //}
-	            
+	            versionMapping {
+	                usage('java-api') {
+	                    fromResolutionOf('runtimeClasspath')
+	                }
+	                usage('java-runtime') {
+	                    fromResolutionResult()
+	                }
+	            }
+
 	            pom {
 	                name = project.name
 	                description = 'Inversion Cloud API Engine'
