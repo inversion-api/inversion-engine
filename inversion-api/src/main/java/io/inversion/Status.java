@@ -25,19 +25,19 @@ package io.inversion;
  * @see <a href="http://www.restapitutorial.com/httpstatuscodes.html">Rest HTTP Status Codes</a>
  */
 public interface Status {
-    public static final String SC_200_OK         = "200 OK";
-    public static final String SC_201_CREATED    = "201 Created";
-    public static final String SC_204_NO_CONTENT = "204 No Content";
+    String SC_200_OK         = "200 OK";
+    String SC_201_CREATED    = "201 Created";
+    String SC_204_NO_CONTENT = "204 No Content";
 
     //@see https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
-    //public static final String         SC_302_FOUND                 = "302 Found";
-    public static final String SC_308_PERMANENT_REDIRECT = "308 Permanent Redirect";
+    // String         SC_302_FOUND                 = "302 Found";
+    String SC_308_PERMANENT_REDIRECT = "308 Permanent Redirect";
 
-    public static final String SC_400_BAD_REQUEST           = "400 Bad Request";
-    public static final String SC_401_UNAUTHORIZED          = "401 Unauthorized";
-    public static final String SC_403_FORBIDDEN             = "403 Forbidden";
-    public static final String SC_404_NOT_FOUND             = "404 Not Found";
-    public static final String SC_429_TOO_MANY_REQUESTS     = "429 Too Many Requests";
-    public static final String SC_500_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
-    public static final String SC_501_NOT_IMPLEMENTED       = "501 Not Implemented";
+    String SC_400_BAD_REQUEST           = "400 Bad Request";
+    String SC_401_UNAUTHORIZED          = "401 Unauthorized";
+    String SC_403_FORBIDDEN             = "403 Forbidden";
+    String SC_404_NOT_FOUND             = "404 Not Found";
+    String SC_429_TOO_MANY_REQUESTS     = "429 Too Many Requests";
+    String SC_500_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
+    String SC_501_NOT_IMPLEMENTED       = "501 Not Implemented";
 }

@@ -12,9 +12,9 @@ import org.elasticsearch.index.query.QueryBuilder;
  * @author kfrankic
  */
 public class WrappedQueryBuilder {
-    private QueryBuilder builder;
-    private Term         term;
-    private String       nestedPath;
+    private final Term         term;
+    private final String       nestedPath;
+    private       QueryBuilder builder;
 
     public WrappedQueryBuilder(QueryBuilder qb, Term t, String path) {
         builder = qb;
@@ -35,10 +35,7 @@ public class WrappedQueryBuilder {
     }
 
     public boolean hasNestedPath() {
-        if (nestedPath != null)
-            return true;
-
-        return false;
+        return nestedPath != null;
     }
 
     public String toString() {

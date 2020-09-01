@@ -38,7 +38,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
     @Test
     public void testNonUrlSafeKeyValues() throws Exception {
-        Response res    = null;
+        Response res;
         Engine   engine = engine();
 
         res = engine.get(url("urls"));
@@ -59,7 +59,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
     @Test
     public void testNegativeOneToManyFilters() throws Exception {
-        Response resp = null;
+        Response resp;
 
         //find everyone who reports to Andrew
         resp = engine.get(url("employees" + "?eq(reportsTo.firstName,Andrew)"));
@@ -72,7 +72,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
     @Test
     public void testNegativeManyToOneFilters() throws Exception {
-        Response resp = null;
+        Response resp;
 
         //"Andrew Fuller" is Nancy's manager in the Northwind datataset
         resp = engine.get(url("employees" + "?eq(employees.firstName,Nancy)"));
@@ -81,12 +81,12 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
         resp = engine.get(url("employees" + "?ne(employees.firstName,Nancy)"));
         assertEquals(8, resp.getData().size());
-        assertTrue(resp.getData().toString().toLowerCase().indexOf("fuller") < 0);
+        assertTrue(!resp.getData().toString().toLowerCase().contains("fuller"));
     }
 
     @Test
     public void testNegativeManyToManyFilters() throws Exception {
-        Response resp = null;
+        Response resp;
 
         //-- find everyone who has never sold something with a quantity of 12
         resp = engine.get(url("employees" + "?ne(orderdetails.quantity,12)"));
@@ -96,7 +96,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
     @Test
     public void testRelatedCollectionJoinSelect() throws Exception {
-        Response res    = null;
+        Response res;
         Engine   engine = engine();
 
         res = engine.get(url("customers?orders.shipCity=NONE&customerid=VINET"));
@@ -159,11 +159,9 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
     /**
      * Makes sure that MTM link tables are not recognized as entities
-     *
-     * @throws ApiException
      */
     @Test
-    public void testCollections() throws Exception {
+    public void testCollections() {
         List<String> c1 = new ArrayList(Arrays.asList("categories", "customercustomerdemoes", "customerdemographics", "customers", "employeeorderdetails", "employees", "employeeterritories", "indexlogs", "orderdetails", "orders", "products", "regions", "shippers", "suppliers", "territories", "urls"));
         List<String> c2 = new ArrayList<>();
 
@@ -181,7 +179,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
     @Test
     public void testRelationships1() throws Exception {
-        Response res    = null;
+        Response res;
         Engine   engine = engine();
 
         //res = engine.get("http://localhost/northwind/source/orders?limit=5&sort=orderid");
@@ -201,7 +199,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     @Test
     public void testExpandsOneToMany11() throws Exception {
         Engine   engine = engine();
-        Response res    = null;
+        Response res;
 
         res = engine.get(url("orders/10248?expands=customer,employee,employee.reportsto"));
         assertTrue(res.findString("data.0.customer.href").endsWith("/customers/VINET"));
@@ -212,7 +210,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     @Test
     public void testExpandsOneToMany12() throws Exception {
         Engine   engine = engine();
-        Response res    = null;
+        Response res;
 
         res = engine.get(url("orders/10248?expands=employee.reportsto.employees"));
         res.dump();
@@ -225,7 +223,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     @Test
     public void testExpandsManyToOne() throws Exception {
         Engine   engine = engine();
-        Response res    = null;
+        Response res;
 
         res = engine.get(url("employees/5?expands=employees"));
         res.dump();
@@ -236,7 +234,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     @Test
     public void testExpandsManyToMany() throws Exception {
         Engine   engine = engine();
-        Response res    = null;
+        Response res;
 
         res = engine.get(url("employees/6?expands=territories"));
         assertEquals(5, res.findArray("data.0.territories").length());
@@ -246,7 +244,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     @Test
     public void testIncludes() throws Exception {
         Engine   engine = engine();
-        Response res    = null;
+        Response res;
 
         res = engine.get(url("orders/10248?includes=shipname"));
         res.dump();
@@ -260,21 +258,21 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     @Test
     public void testExcludes11() throws Exception {
         Engine   engine = engine();
-        Response res    = null;
+        Response res;
 
         res = engine.get(url("orders/10248?expands=customer,employee.reportsto&excludes=customer,employee.firstname,employee.reportsto.territories"));
 
-        assertTrue(!res.findNode("data.0").containsKey("customer"));
+        assertFalse(res.findNode("data.0").containsKey("customer"));
         assertTrue(res.findString("data.0.employee.href").endsWith("/employees/5"));
-        assertTrue(!res.findNode("data.0.employee").containsKey("firstname"));
+        assertFalse(res.findNode("data.0.employee").containsKey("firstname"));
         assertTrue(res.findString("data.0.employee.reportsto.href").endsWith("/employees/2"));
-        assertTrue(!res.findNode("data.0.employee.reportsto").hasProperty("territories"));
+        assertFalse(res.findNode("data.0.employee.reportsto").hasProperty("territories"));
     }
 
     @Test
     public void testIncludes12() throws Exception {
         Engine   engine = engine();
-        Response res    = null;
+        Response res;
 
         res = engine.get(url("orders/10248?expands=customer,employee.reportsto&includes=employee.reportsto.territories"));
         res.dump();
@@ -290,7 +288,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     @Test
     public void testTwoPartResourceKey11() throws Exception {
         Engine   engine = engine();
-        Response res    = null;
+        Response res;
 
         res = engine.get(url("orderdetails/10248~11"));
         res.dump();
@@ -300,7 +298,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
         res = engine.get(url("orders/10248/orderdetails"));
         res.dump();
-        assertTrue(res.find("meta.foundRows") != null);
+        assertNotNull(res.find("meta.foundRows"));
         assertTrue(res.findString("data.0.href").toLowerCase().endsWith("/orderdetails/10248~11"));
         assertTrue(res.findString("data.1.href").toLowerCase().endsWith("/orderdetails/10248~42"));
         assertTrue(res.findString("data.2.href").toLowerCase().endsWith("/orderdetails/10248~72"));
@@ -310,7 +308,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     @Test
     public void testTwoPartForeignKey11() throws Exception {
         Engine   engine = engine();
-        Response res    = null;
+        Response res;
 
         res = engine.get(url("orderdetails/10248~11")).assertOk();
         assertEquals(1, res.getFoundRows());
@@ -347,33 +345,33 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
     @Test
     public void testWildcardAndUnderscores() throws Exception {
         Engine   engine = engine();
-        Response res    = null;
+        Response res;
         res = engine.get(url("indexlogs?w(error,ERROR_MSG)")).assertOk();
         res.dump();
-        assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
+        assertEquals((int) (Integer) res.getJson().getNode("meta").get("foundRows"), 1);
 
         String debug = res.getDebug().toLowerCase();
-        if (debug.indexOf("[1]: sql ->") > -1)//this is checking sql statements
+        if (debug.contains("[1]: sql ->"))//this is checking sql statements
         {
             assertTrue(debug.indexOf("args=[%error\\_msg%]") > 0);
         }
 
         res = engine.get(url("indexlogs?w(error,ERROR MSG)")).assertOk();
 
-        assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
+        assertEquals((int) (Integer) res.getJson().getNode("meta").get("foundRows"), 1);
 
         debug = res.getDebug().toLowerCase();
-        if (debug.indexOf("[1]: sql ->") > -1)//this is checking sql statements
+        if (debug.contains("[1]: sql ->"))//this is checking sql statements
         {
             assertTrue(debug.indexOf("args=[%error msg%]") > 0);
         }
 
         res = engine.get(url("indexlogs?eq(error,ERROR_MSG foo)")).assertOk();
 
-        assertTrue((Integer) res.getJson().getNode("meta").get("foundRows") == 1);
+        assertEquals((int) (Integer) res.getJson().getNode("meta").get("foundRows"), 1);
 
         debug = res.getDebug().toLowerCase();
-        if (debug.indexOf("[1]: sql ->") > -1)//this is checking sql statements
+        if (debug.contains("[1]: sql ->"))//this is checking sql statements
         {
             assertTrue(debug.indexOf("args=[error_msg foo]") > 0);
         }

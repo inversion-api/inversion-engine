@@ -33,34 +33,43 @@ import java.util.*;
 public abstract class Rule<R extends Rule> implements Comparable<R> {
 
     protected final transient Logger log = LoggerFactory.getLogger(getClass().getName());
-
+    /**
+     * Method/path combinations that would cause this Rule to be included in the relevant processing.
+     */
+    protected final List<RuleMatcher> includeMatchers = new ArrayList<>();
+    /**
+     * Method/path combinations that would cause this Rule to be excluded from the relevant processing.
+     */
+    protected final List<RuleMatcher> excludeMatchers = new ArrayList<>();
+    /**
+     * {@code JSNode} is used because it implements a case insensitive map without modifying the keys
+     */
+    protected final transient JSNode configMap = new JSNode();
     /**
      * The name used for configuration and debug purposes.
      */
     protected String name = null;
-
     /**
      * Rules are always processed in sequence sorted by ascending order.
      */
     protected int order = 1000;
-
-    /**
-     * Method/path combinations that would cause this Rule to be included in the relevant processing.
-     */
-    protected List<RuleMatcher> includeMatchers = new ArrayList<>();
-
-    /**
-     * Method/path combinations that would cause this Rule to be excluded from the relevant processing.
-     */
-    protected List<RuleMatcher> excludeMatchers = new ArrayList<>();
-
-    /**
-     * {@code JSNode} is used because it implements a case insensitive map without modifying the keys
-     */
-    protected transient JSNode configMap = new JSNode();
-    protected           String configStr = null;
+    protected                 String configStr = null;
 
     transient boolean lazyConfiged = false;
+
+    static List<Path> asPathsList(String... paths) {
+        List<Path> pathsList = new ArrayList<>();
+        for (String path : Utils.explode(",", paths)) {
+            pathsList.add(new Path(path));
+        }
+        return pathsList;
+    }
+
+    static Path[] asPathsArray(String... paths) {
+        List<Path> list = asPathsList(paths);
+        return list.toArray(new Path[0]);
+
+    }
 
     public void checkLazyConfig() {
         //-- reluctant lazy config defaultIncludes if no other
@@ -86,7 +95,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
      * Designed to allow subclasses to provide a default match behavior
      * of no configuration was provided by the developer.
      *
-     * @return
+     * @return the default include match "*","*"
      */
     protected RuleMatcher getDefaultIncludeMatch() {
         return new RuleMatcher(null, "*");
@@ -187,8 +196,8 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     /**
      * Select this Rule when any method and path match.
      *
-     * @param methods   or more comma separated http method names, can be null to match on any
-     * @param paths each path can be one or more comma separated variableized Paths
+     * @param methods or more comma separated http method names, can be null to match on any
+     * @param paths   each path can be one or more comma separated variableized Paths
      * @return this
      */
     public R withIncludeOn(String methods, String... paths) {
@@ -200,7 +209,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
      * Select this Rule when any method and path match.
      *
      * @param methods or more comma separated http method names, can be null to match on any
-     * @param paths each path can be one or more comma separated variableized Paths
+     * @param paths   each path can be one or more comma separated variableized Paths
      * @return this
      */
     public R withIncludeOn(String methods, Path... paths) {
@@ -220,8 +229,8 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     /**
      * Don't select this Rule when any method and path match.
      *
-     * @param methods   or more comma separated http method names, can be null to match on any
-     * @param paths each path can be one or more comma separated variableized Paths
+     * @param methods or more comma separated http method names, can be null to match on any
+     * @param paths   each path can be one or more comma separated variableized Paths
      * @return this
      */
     public R withExcludeOn(String methods, String... paths) {
@@ -308,7 +317,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
 
     @Override
     public int compareTo(Rule a) {
-        int compare = getOrder() == a.getOrder() ? 0 : getOrder() < a.getOrder() ? -1 : 1;
+        int compare = Integer.compare(getOrder(), a.getOrder());
         return compare;
     }
 
@@ -340,24 +349,10 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return buff.toString();
     }
 
-    static List<Path> asPathsList(String... paths) {
-        List<Path> pathsList = new ArrayList<>();
-        for (String path : Utils.explode(",", paths)) {
-            pathsList.add(new Path(path));
-        }
-        return pathsList;
-    }
-
-    static Path[] asPathsArray(String... paths) {
-        List<Path> list = asPathsList(paths);
-        return list.toArray(new Path[list.size()]);
-
-    }
-
     public static class RuleMatcher {
 
-        protected Set<String> methods = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-        protected List<Path>  paths   = new ArrayList<>();
+        protected final Set<String> methods = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        protected final List<Path>  paths   = new ArrayList<>();
 
         public RuleMatcher() {
 

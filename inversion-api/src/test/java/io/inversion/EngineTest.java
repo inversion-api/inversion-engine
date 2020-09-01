@@ -22,10 +22,7 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -64,7 +61,7 @@ public class EngineTest {
                 System.err.print(message);
                 for (int i = 0; vals != null && i < vals.length; i++)
                     System.err.print(vals[i] + " ");
-                System.err.println("");
+                System.err.println();
                 System.err.println(endpointName + "," + endpointPath + "," + collectionKey + "," + resourceKey + "," + subCollectionKey);
                 System.err.println("url              :" + chain.getRequest().getUrl());
                 System.err.println("apiUrl           :" + chain.getRequest().getApiUrl());
@@ -153,7 +150,7 @@ public class EngineTest {
         Engine e = new Engine(api);
 
         Request  req = null;
-        Response res = null;
+        Response res;
 
         res = e.get("http://localhost:8080/api/a/b/c/d/e/f/g");
         res.dump();
@@ -161,9 +158,8 @@ public class EngineTest {
         assertTrue(res.getJson().toString().indexOf("action1") > 0);
         assertTrue(res.getJson().toString().indexOf("action2") > 0);
 
-        res = e.post("http://localhost:8080/api/a/b/c/d/e", new JSNode());
-
-        res = e.get("http://localhost:8080/api/a/b/c/d/f").assertStatus(400, 404);
+        e.post("http://localhost:8080/api/a/b/c/d/e", new JSNode()).assertStatus(400, 404);
+        e.get("http://localhost:8080/api/a/b/c/d/f").assertStatus(400, 404);
 
     }
 
@@ -171,18 +167,17 @@ public class EngineTest {
     public void testPathVariables() {
         Api api1 = new Api("api1").withEndpoint("*", "ep1/*", new MockAction());
         Api api2 = new Api("api2").withEndpoint("*", "ep2/*", new MockAction());
-        ;
 
         Engine e = new Engine(api1, api2);
 
-        Request  req = null;
-        Response res = null;
+        Request  req;
+        Response res;
 
         res = e.get("http://localhost:8080/api1/ep1");
         res.dump();
         req = res.getChain().getRequest();
 
-        assertTrue(req.getEndpoint() != null);
+        assertNotNull(req.getEndpoint());
         assertEquals(new Path("ep1"), req.getEndpointPath());
         assertEquals(new Path("api1"), req.getApiPath());
 
@@ -192,7 +187,7 @@ public class EngineTest {
         res = e.get("http://localhost:8080/some/servlet/path/api1/ep1");
         res.dump();
         req = res.getChain().getRequest();
-        assertTrue(req.getEndpoint() != null);
+        assertNotNull(req.getEndpoint());
         assertEquals(new Path("ep1"), req.getEndpointPath());
         assertEquals(new Path("api1"), req.getApiPath());
 
@@ -203,10 +198,10 @@ public class EngineTest {
         assertEquals(400, res.getStatusCode());
 
         req = res.getChain().getRequest();
-        assertTrue(req.getEndpoint() == null);
+        assertNull(req.getEndpoint());
 
         req = e.get("http://localhost:8080/some/servlet/path/api1/v1/ep1").getChain().getRequest();
-        assertTrue(req.getEndpoint() != null);
+        assertNotNull(req.getEndpoint());
         assertEquals(new Path("ep1"), req.getEndpointPath());
         assertEquals(new Path("api1/v1"), req.getApiPath());
 
@@ -214,7 +209,7 @@ public class EngineTest {
         api1.withIncludeOn(null, "api1/v1/:tenant/*");
         res = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1");
         req = res.getChain().getRequest();
-        assertTrue(req.getEndpoint() != null);
+        assertNotNull(req.getEndpoint());
         assertEquals(new Path("ep1"), req.getEndpointPath());
         assertEquals(new Path("api1/v1/acme"), req.getApiPath());
 
@@ -234,7 +229,7 @@ public class EngineTest {
 
     @Test
     public void test_endpoints_without_paths() {
-        Api api = null;
+        Api api;
 
         api = new Api("test")//
                 .withAction(new MockAction("mock1"))//
@@ -352,7 +347,7 @@ public class EngineTest {
 
     @Test
     public void test1() {
-        Engine engine = null;
+        Engine engine;
 
         engine = new Engine()//
                 .withApi(new Api()//
@@ -393,15 +388,15 @@ public class EngineTest {
 
     @Test
     public void test2() {
-        Engine engine = null;
+        Engine engine;
 
         engine = new Engine()//
                 .withApi(new Api()//
                         .withEndpoint("get", "actionA/*", new MockActionA("get", "*"))//
                         .withEndpoint("get", "actionB/*", new MockActionB("get", "*")));
 
-        Response resp = null;
-        JSNode   data = null;
+        Response resp;
+        JSNode   data;
 
         resp = engine.get("/actionA/helloworld");
         data = resp.getJson();
@@ -447,13 +442,13 @@ public class EngineTest {
 
     @Test
     public void testSimpleEndpoint2() {
-        Engine engine = null;
+        Engine engine;
 
         engine = new Engine()//
                 .withApi(new Api()//
                         .withEndpoint("GET", "actionA/*", new MockActionA("GET", "*")));
 
-        Response resp = null;
+        Response resp;
         resp = engine.get("/actionA");
         assertEquals(200, resp.getStatusCode());
 

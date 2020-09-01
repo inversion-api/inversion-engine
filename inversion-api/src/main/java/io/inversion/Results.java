@@ -32,12 +32,19 @@ import java.util.Map;
  */
 public class Results<M extends Map> implements Iterable<M> {
     public static String LAST_QUERY = null;
-
+    /**
+     * The RQL terms that will get the next page of results the DB things there are more results.
+     * <p>
+     * Dbs are not responsible for mapping from column names to json names so these terms will
+     * have column names when initially returned from the Db.
+     * <p>
+     * Actions should map the keys to the corresponding json name property names before returning to the caller.
+     */
+    protected final List<Term> next = new ArrayList<>();
     /**
      * the query that produced these results.
      */
-    protected Query query = null;
-
+    protected Query query;
     /**
      * The data the query produced.
      * <p>
@@ -47,17 +54,6 @@ public class Results<M extends Map> implements Iterable<M> {
      * Actions should map them to the corresponding json property names before returning to the caller.
      */
     protected List<M> rows = new ArrayList<>();
-
-    /**
-     * The RQL terms that will get the next page of results the DB things there are more results.
-     * <p>
-     * Dbs are not responsible for mapping from column names to json names so these terms will
-     * have column names when initially returned from the Db.
-     * <p>
-     * Actions should map the keys to the corresponding json name property names before returning to the caller.
-     */
-    protected List<Term> next = new ArrayList<>();
-
     /**
      * The total number of rows (if known) in the Db that match the query, not the number of rows returned in this Results.
      * <p>
@@ -96,7 +92,7 @@ public class Results<M extends Map> implements Iterable<M> {
     }
 
     public M getRow(int index) {
-        return (M) rows.get(index);
+        return rows.get(index);
     }
 
     public Results setRow(int index, M row) {

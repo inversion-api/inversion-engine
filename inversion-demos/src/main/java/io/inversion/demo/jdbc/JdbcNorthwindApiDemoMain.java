@@ -33,6 +33,8 @@ public class JdbcNorthwindApiDemoMain {
     /**
      * This simple factory method is static so that other
      * demos can use and extend this api configuration.
+     *
+     * @return the constructed Api
      */
     public static Api buildApi() {
         return new Api()//

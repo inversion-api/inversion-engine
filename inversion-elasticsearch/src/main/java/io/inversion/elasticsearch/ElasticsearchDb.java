@@ -44,22 +44,19 @@ import java.util.List;
 import java.util.Map;
 
 public class ElasticsearchDb extends Db<ElasticsearchDb> {
-    // The url to connect to elasticsearch
-    protected static String url = null;
+    // When an elastic search is performed, this is the default '_source' value that will be used.
+    // This value is optional and does not need to be set.
+    public final String defaultSource = null;
+    protected final int maxRequestDuration = 10000;               // duration in milliseconds.
 
-    protected static int maxRequestDuration = 10000;               // duration in milliseconds.
-
-    protected static final int[] allowedFailResponseCodes = {400, 401, 403, 404};
+    protected final int[] allowedFailResponseCodes = {400, 401, 403, 404};
 
     // This is the expected maximum base query search size.  Searching beyond this value requires
     // a 'search_after' to be performed.  By default, Elastic sets this value to 10k. Typically,
     // there's no need to change this value.
-    public static int maxElasticQuerySize = 10000;
-
-    // When an elastic search is performed, this is the default '_source' value that will be used.
-    // This value is optional and does not need to be set.
-    public String defaultSource = null;
-
+    public int maxElasticQuerySize = 10000;
+    // The url to connect to elasticsearch
+    protected String url = null;
     transient private RestHighLevelClient client;
 
     public ElasticsearchDb() {
@@ -67,8 +64,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
     }
 
     public ElasticsearchDb(String elasticUrl) {
-        this();
-        ElasticsearchDb.url = elasticUrl;
+        url = elasticUrl;
     }
 
     public ElasticsearchDb(String name, String url) {
@@ -80,7 +76,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
         if (this.client == null) {
             synchronized (this) {
                 if (this.client == null) {
-                    this.client = buildElasticClient(ElasticsearchDb.url);
+                    this.client = buildElasticClient(url);
                 }
             }
         }
@@ -88,13 +84,10 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
         return client;
     }
 
-    private static RestHighLevelClient buildElasticClient(String url) {
+    private RestHighLevelClient buildElasticClient(String url) {
         RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(//
-                HttpHost.create(url)).setMaxRetryTimeoutMillis(ElasticsearchDb.maxRequestDuration));
-        ;
-
+                HttpHost.create(url)).setMaxRetryTimeoutMillis(maxRequestDuration));
         // TODO throw ApiException.new500InternalServerError(error) if the client does not have the proper settings
-
         return client;
     }
 
@@ -155,7 +148,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
             SearchHits hits = res.getHits();
             System.out.println("total hits: " + hits.totalHits); // TODO verify toString() output is pretty
 
-            Long totalHits = hits.getTotalHits();
+            long totalHits = hits.getTotalHits();
 
             SearchHit[] hitArray = hits.getHits();
 
@@ -163,7 +156,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
                 result.withRow(hit.getSourceAsMap()); // TODO verify getSourceAsMap()
             }
 
-            result.withFoundRows(totalHits.intValue());
+            result.withFoundRows((int) totalHits);
         } else
             System.out.println("request failed :*(");
 
@@ -180,15 +173,14 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
     /**
      * Deletes a single specific resource.
      *
-     * @param table
-     * @param indexValues
-     * @throws ApiException
+     * @param collection  the collection to delete from
+     * @param indexValues identifiers for the records to delete
      */
-    protected void deleteRow(Collection table, Map<String, Object> indexValues) throws ApiException {
-        Object id = table.encodeResourceKey(indexValues);
+    protected void deleteRow(Collection collection, Map<String, Object> indexValues) throws ApiException {
+        Object id = collection.encodeResourceKey(indexValues);
 
         try {
-            DeleteRequest request = new DeleteRequest(table.getTableName(), "doc", id.toString());
+            DeleteRequest request = new DeleteRequest(collection.getTableName(), "doc", id.toString());
 
             Chain.debug("ElasticDb: Delete request=" + request.toString());
 
@@ -227,12 +219,12 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
 
         String json = doc.toString();
 
-        UpdateRequest updateRequest = new UpdateRequest(table.getTableName(), "doc", id.toString());
+        UpdateRequest updateRequest = new UpdateRequest(table.getTableName(), "doc", id);
         updateRequest.upsert(json, XContentType.JSON);
 
         Chain.debug("ElasticDb: Upsert " + updateRequest.toString());
 
-        UpdateResponse response = null;
+        UpdateResponse response;
         try {
             response = getElasticClient().update(updateRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
@@ -282,7 +274,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
                 Map<String, JSNode> jsContentMap = jsObj.asMap();
 
                 // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
-                Map<String, Collection> tableMap = new HashMap<String, Collection>();
+                Map<String, Collection> tableMap = new HashMap<>();
 
                 for (Map.Entry<String, JSNode> entry : jsContentMap.entrySet()) {
                     // we now have the index and with it, it's aliases and mappings
@@ -303,36 +295,6 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
 
     }
 
-    //   public void configApi(Api api)
-    //   {
-    //      for (Collection t : getCollections())
-    //      {
-    //         //            List<Column> cols = t.getColumns();
-    //         List<Property> columnPropList = t.getProperties();
-    //         Collection collection = new Collection();
-    //
-    //         collection.withName(super.beautifyCollectionName(t.getName()));
-    //
-    //         // TODO unsure if the following still needs to occur...
-    //
-    //         //collection.withTable(t); // Entity entity = collection.withEntity(t);
-    //
-    //         //
-    //         //         for (Column col : cols)
-    //         //         {
-    //         //            Attribute attr = new Attribute();
-    //         //            attr.withEntity(entity);
-    //         //            attr.withName(col.getName());
-    //         //            attr.withColumn(col);
-    //         //            attr.withHint(col.getTable().getName() + "." + col.getName());
-    //         //            attr.withType(col.getType());
-    //         //            entity.withAttribute(attr);
-    //         //         }
-    //
-    //         api.withCollection(collection);
-    //      }
-    //   }
-
     protected Collection buildCollection(String tableName) {
         // TODO fill out
         return null;
@@ -347,14 +309,14 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
      * Most tables will only have one index. An example of a
      * table with multiple indexes would be the alias 'all'.
      *
-     * @param indexName
-     * @param jsIndex
-     * @return
+     * @param elasticName the elastic name
+     * @param jsIndex     the jsIndex
+     * @param tableMap    the tableMap
      */
     private void buildTables(String elasticName, JSNode jsIndex, Map<String, Collection> tableMap) {
         Map<String, JSNode> jsMappingsDocProps = jsIndex.getNode("mappings").getNode("_doc").getNode("properties").asMap();
 
-        Collection table = null;
+        Collection table;
 
         if (tableMap.containsKey(elasticName))
             table = tableMap.get(elasticName);
@@ -368,12 +330,10 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
         // use the mapping to add columns to the table.
         addColumns(table, false, jsMappingsDocProps, "");
 
-        String                  aliasName    = null;
+        String                  aliasName;
         Map<String, ObjectNode> jsAliasProps = jsIndex.getNode("aliases").asMap();
         for (Map.Entry<String, ObjectNode> propEntry : jsAliasProps.entrySet()) {
             aliasName = propEntry.getKey();
-
-            table = null;
 
             // use the previously created table if it exists.
             if (tableMap.containsKey(aliasName))

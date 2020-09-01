@@ -27,11 +27,11 @@ import java.util.stream.Collectors;
  *
  */
 public class Index implements Serializable {
-    protected Collection     collection = null;
-    protected String         name       = null;
-    protected String         type       = null;           // primary, partition, sort, localsecondary, etc
-    protected boolean        unique     = true;
-    protected List<Property> properties = new ArrayList<>();
+    protected final List<Property> properties = new ArrayList<>();
+    protected       Collection     collection = null;
+    protected       String         name       = null;
+    protected       String         type       = null;           // primary, partition, sort, localsecondary, etc
+    protected       boolean        unique     = true;
 
     public Index() {
         super();

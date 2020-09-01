@@ -61,4 +61,16 @@ public class UtilsTest {
         assertTrue(Utils.containsToken("equals(includes,field1,field2)", "equals(includes,field1,field2)"));
         assertTrue(Utils.containsToken("equals(includes,field1,field2)", "equals(includes,field1,field2), asdasdf"));
     }
+
+    @Test
+    public void endsWith() {
+        assertTrue(Utils.endsWith("", ""));
+        assertTrue(Utils.endsWith("asdf123", "123"));
+        assertFalse(Utils.endsWith("asdf123", "456"));
+        assertFalse(Utils.endsWith("9294", "92949294"));
+        assertTrue(Utils.endsWith("9294", ""));
+        assertFalse(Utils.endsWith("http://localhost/northwind", "/"));
+        assertTrue(Utils.endsWith("http://localhost/northwind/", "/"));
+
+    }
 }

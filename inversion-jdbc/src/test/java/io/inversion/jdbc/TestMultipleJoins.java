@@ -25,7 +25,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class TestMultipleJoins {
@@ -80,7 +79,7 @@ public class TestMultipleJoins {
 
         res = engine.get("crm/customers?identifiers.providerCode=vendorD_1&identifiers.identifier=SHARED");
         res.dump();
-        assertTrue(res.getData().size() == 1);
+        assertEquals(res.getData().size(), 1);
         assertEquals("http://localhost/crm/customers/1", res.find("data.0.href"));
 
     }

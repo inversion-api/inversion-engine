@@ -1,9 +1,8 @@
 package io.inversion.dynamodb;
 
+import io.inversion.rql.AbstractRqlTest;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-
-import io.inversion.rql.AbstractRqlTest;
 
 /**
  * Implements supported RQL test cases and adds extended cases to support
@@ -64,8 +63,8 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest implements AbstractDyna
             if (queryString == null)
                 continue;
 
-            if (queryString.indexOf("type") < 0) {
-                if (queryString.indexOf("?") < 0)
+            if (!queryString.contains("type")) {
+                if (!queryString.contains("?"))
                     queryString += "?";
                 else
                     queryString += "&";

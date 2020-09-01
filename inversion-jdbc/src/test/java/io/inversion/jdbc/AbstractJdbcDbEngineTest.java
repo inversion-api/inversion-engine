@@ -7,7 +7,7 @@ import io.inversion.Db;
 public interface AbstractJdbcDbEngineTest extends AbstractEngineTest {
 
     @Override
-    public default Db buildDb() {
+    default Db buildDb() {
         JdbcConnectionLocal.closeAll();
         Chain.resetAll();
 

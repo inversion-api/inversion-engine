@@ -71,6 +71,8 @@ public class Utils {
     /**
      * Checks to see if <code>toFind</code> is in <code>values</code> array using loose equality checking
      *
+     * @param toFind the object to find
+     * @param values where to try and find it
      * @return true if toFind is loosely equal to any of <code>values</code>
      */
     public static boolean in(Object toFind, Object... values) {
@@ -82,6 +84,7 @@ public class Utils {
     }
 
     /**
+     * @param arr an array of objects to check and see if any are not empty
      * @return true if any args are not null with a toString().length() @gt; 0
      */
     public static boolean empty(Object... arr) {
@@ -119,6 +122,58 @@ public class Utils {
         if (items != null)
             Collections.addAll(list, items);
         return list;
+    }
+
+    /**
+     * String.endsWith surrogate for StringBuffer and StringBuilder
+     *
+     * @param seq the string to check
+     * @param end the ending to check for
+     * @return true if seq ends with end
+     */
+    public static boolean endsWith(CharSequence seq, String end) {
+        if (end == null)
+            return false;
+
+        int seqLen = seq.length();
+        int endLen = end.length();
+
+        if (seqLen < endLen)
+            return false;
+
+        for (int i = 1; i <= endLen; i++) {
+            char s = seq.charAt(seqLen - i);
+            char e = end.charAt(endLen - i);
+            if (s != e)
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * String.startsWith surrogate for StringBuffer and StringBuilder
+     *
+     * @param seq   the string to check
+     * @param start the starting substring to check for
+     * @return true if seq ends with end
+     */
+    public static boolean startsWith(CharSequence seq, String start) {
+        if (start == null)
+            return false;
+
+        int seqLen   = seq.length();
+        int startLen = start.length();
+
+        if (seqLen < startLen)
+            return false;
+
+        for (int i = 0; i < startLen; i++) {
+            char s = seq.charAt(seqLen);
+            char e = start.charAt(startLen);
+            if (s != e)
+                return false;
+        }
+        return true;
     }
 
     /**
@@ -335,7 +390,8 @@ public class Utils {
     /**
      * Removes all matching pairs of leading/trailing <code>quoteChars</code> from the start and end of a string.
      *
-     * @param str the string to dequote
+     * @param str        the string to dequote
+     * @param quoteChars characters to treat as quotes
      * @return str with matched pairs of leading/trailing quoteChars removed
      */
     public static String dequote(String str, char[] quoteChars) {
@@ -378,11 +434,16 @@ public class Utils {
     }
 
     /**
-     * Faster and null safe way to call Integer.parseInt(str.trim()) that swallows exceptions.
+     * Converst a string to a boolean.
+     * <p>
+     * Easier and null safe way to call Boolean.parseBoolean(str.trim()) that swallows exceptions.
+     *
+     * @param str the string to parse as a boolean
+     * @return true if the trimmed lower case str is "0" or "false"
      */
     public static boolean atob(Object str) {
         try {
-            String bool = str + "";
+            String bool = (str + "").trim().toLowerCase();
             return !("0".equals(bool) || "false".equals(bool));
         } catch (Exception ex) {
             //ignore
@@ -391,7 +452,12 @@ public class Utils {
     }
 
     /**
-     * Faster and null safe way to call Integer.parseInt(str.trim()) that swallows exceptions.
+     * Convert a string to an integer.
+     * <p>
+     * Easier null safe way to call Integer.parseInt(str.trim()) that swallows exceptions.
+     *
+     * @param str the string to parse
+     * @return the parsed value or -1 if the string does not parse
      */
     public static int atoi(Object str) {
         try {
@@ -403,7 +469,12 @@ public class Utils {
     }
 
     /**
-     * Faster and null safe way to call Long.parseLong(str.trim()) that swallows exceptions.
+     * Convert a string to a long.
+     * <p>
+     * Easier null safe way to call Long.parseLong(str.trim()) that swallows exceptions.
+     *
+     * @param str the string to parse
+     * @return the parsed value or -1 if the string does not parse
      */
     public static long atol(Object str) {
         try {
@@ -415,7 +486,12 @@ public class Utils {
     }
 
     /**
-     * Faster and null safe way to call Float.parseFloat(str.trim()) that swallows exceptions.
+     * Convert a string to a float.
+     * <p>
+     * Easier null safe way to call Float.parseFloat(str.trim()) that swallows exceptions.
+     *
+     * @param str the string to parse
+     * @return the parsed value or -1 if the string does not parse
      */
     public static float atof(Object str) {
         try {
@@ -427,7 +503,12 @@ public class Utils {
     }
 
     /**
-     * Faster and null safe way to call Double.parseDouble(str.trim()) that swallows exceptions.
+     * Convert a string to a double.
+     * <p>
+     * Easier null safe way to call Double.parseDouble(str.trim()) that swallows exceptions.
+     *
+     * @param str the string to parse
+     * @return the parsed value or -1 if the string does not parse
      */
     public static double atod(Object str) {
         try {
@@ -439,7 +520,7 @@ public class Utils {
     }
 
     /**
-     * returns a lowercase url safe string
+     * Creates a lowercase url safe string.
      *
      * @param str the string to slugify
      * @return the slugified string
@@ -499,6 +580,8 @@ public class Utils {
 
     /**
      * Less typing to call System.currentTimeMillis()
+     *
+     * @return the current time in milliseconds
      */
     public static long time() {
         return System.currentTimeMillis();
@@ -518,6 +601,10 @@ public class Utils {
 
     /**
      * Simple one liner to avoid verbosity of using SimpleDateFormat
+     *
+     * @param date   the date to format
+     * @param format the format
+     * @return the formatted date
      */
     public static String formatDate(Date date, String format) {
         SimpleDateFormat f = new SimpleDateFormat(format);
@@ -648,6 +735,7 @@ public class Utils {
     /**
      * Shortcut for throw new RuntimeException(message);
      *
+     * @param message the error message
      * @throws RuntimeException always
      */
     public static void error(String message) throws RuntimeException {
@@ -965,7 +1053,7 @@ public class Utils {
      *
      * @param file the file to read and stringify
      * @return the file text
-     * @throws RuntimeException when an IOException is thrown
+     * @throws IOException when an IOException is thrown
      * @see #read(InputStream)
      */
     public static String read(File file) throws IOException {
@@ -994,6 +1082,8 @@ public class Utils {
     /**
      * Convenience overloading of write(File, String)
      *
+     * @param file the file path to write
+     * @param text the text to write to the file
      * @throws IOException when thrown
      * @see #write(File, String)
      */
@@ -1081,6 +1171,7 @@ public class Utils {
     }
 
     /**
+     * @param str the string to chec to see if it is a wildcard pattern.
      * @return true if the string contains a * or a ?
      */
     public static boolean isWildcard(String str) {
@@ -1090,6 +1181,8 @@ public class Utils {
     /**
      * Pattern matches the string using ? to indicate any one single value and * to indicate any 0-n multiple value
      *
+     * @param wildcard a wildcard pattern
+     * @param string   the string to check to see if it matches the wildcard
      * @return true if string matches wildcard
      */
     public static boolean wildcardMatch(String wildcard, String string) {

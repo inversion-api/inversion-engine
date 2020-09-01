@@ -1,7 +1,6 @@
 package io.inversion.jdbc;
 
 import io.inversion.Api;
-import io.inversion.ApiException;
 import io.inversion.action.db.DbAction;
 import io.inversion.spring.InversionMain;
 import io.inversion.utils.Config;
@@ -36,7 +35,7 @@ public class JdbcDbFactory {
         return null;
     }
 
-    public static JdbcDb bootstrapH2(String database) throws Exception {
+    public static JdbcDb bootstrapH2(String database) {
         return bootstrapH2(database, JdbcDb.class.getResource("northwind-h2.ddl").toString());
     }
 
@@ -45,7 +44,7 @@ public class JdbcDbFactory {
 
             database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
 
-            JdbcDb db = new JdbcDb("h2", //
+            return new JdbcDb("h2", //
                     "org.h2.Driver", //
                     "jdbc:h2:mem:" + database + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
                     "sa", //
@@ -80,7 +79,7 @@ public class JdbcDbFactory {
             //
             //               }
             //            };
-            return db;
+
         } catch (Exception ex) {
             Utils.rethrow(ex);
         }
@@ -109,7 +108,9 @@ public class JdbcDbFactory {
      * 'root' account can not make network connections to MySql out of the box and you have to
      * add the remote connect privilege to MySql.
      *
-     * @throws ApiException
+     * @param database the name of the db
+     * @return the configured JdbcDb
+     * @throws Exception if bootstrapping fails
      */
     public static JdbcDb bootstrapMySql(String database) throws Exception {
         database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
@@ -119,9 +120,9 @@ public class JdbcDbFactory {
         String user   = Config.getString("mysql.user", "root");
         String pass   = Config.getString("mysql.pass", "password");
 
-        Class.forName(driver).newInstance();
+        Class.forName(driver).getDeclaredConstructor().newInstance();
 
-        Connection conn = null;
+        Connection conn;
         try {
             conn = DriverManager.getConnection(url, user, pass);
         } catch (Exception ex) {
@@ -139,9 +140,7 @@ public class JdbcDbFactory {
 
         //sessionVariables=sql_mode='STRICT_TRANS_TABLES,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION,PIPES_AS_CONCAT'
 
-        JdbcDb db = new JdbcDb("mysql", driver, url + database, user, pass);
-        //JdbcDb db = new JdbcDb("mysql", driver, url + database + "?sessionVariables=sql_mode=NO_ENGINE_SUBSTITUTION", user, pass, JdbcDb.class.getResource("northwind-mysql.ddl").toString());
-        return db;
+        return new JdbcDb("mysql", driver, url + database, user, pass);
     }
 
     /**
@@ -157,8 +156,10 @@ public class JdbcDbFactory {
      * <p>
      * Postgres 9.5+ is required for upsert support.
      *
-     * @throws ApiException
-     * @see https://stackoverflow.com/questions/40327449/postgres-syntax-error-at-or-near-on
+     * @param database the name of the db
+     * @return the configured JdbcDb
+     * @throws Exception if bootstrapping fails
+     * @see <a href="https://stackoverflow.com/questions/40327449/postgres-syntax-error-at-or-near-on">Postgres syntax error at or near end</a>
      */
     public static JdbcDb bootstrapPostgres(String database) throws Exception {
         database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
@@ -168,13 +169,13 @@ public class JdbcDbFactory {
         String user   = Config.getString("postgres.user", "postgres");
         String pass   = Config.getString("postgres.pass", "password");
 
-        Class.forName(driver).newInstance();
+        Class.forName(driver).getDeclaredConstructor().newInstance();
 
-        Connection conn = null;
+        Connection conn;
         try {
             conn = DriverManager.getConnection(url, user, pass);
         } catch (Exception ex) {
-            String message = "Looks like we could not connect to Postgress at: " + url + ".  You can start a free dev/test Postgres server with the following Docker one liner \"docker run --name postgres95 -p 5433:5432 -e POSTGRES_PASSWORD=password -d postgres:9.5\".";
+            String message = "Looks like we could not connect to Postgres at: " + url + ".  You can start a free dev/test Postgres server with the following Docker one liner \"docker run --name postgres95 -p 5433:5432 -e POSTGRES_PASSWORD=password -d postgres:9.5\".";
             throw new Exception(message, ex);
         }
 
@@ -182,8 +183,7 @@ public class JdbcDbFactory {
         JdbcUtils.execute(conn, "CREATE DATABASE " + database);
         conn.close();
 
-        JdbcDb db = new JdbcDb("postgres", driver, url + database, user, pass, JdbcDb.class.getResource("northwind-postgres.ddl").toString());
-        return db;
+        return new JdbcDb("postgres", driver, url + database, user, pass, JdbcDb.class.getResource("northwind-postgres.ddl").toString());
     }
 
     /**
@@ -191,10 +191,13 @@ public class JdbcDbFactory {
      * 1433 expecting that you will run a test sqlserver in a docker container and we don't want the docker
      * port to potentially conflict with a native install of sqlserver on your dev machine.
      * <p>
-     * You can easily run an integ ready sqlserver docker container with the following one liner:
+     * You can easily run an integration ready sqlserver docker container with the following one liner:
      * <pre>
      *   docker run --name sqlserver2017 -e 'ACCEPT_EULA=Y' -e 'SA_PASSWORD=Jmk38zZVn' -p 1434:1433 -d mcr.microsoft.com/mssql/server:2017-latest
      * <pre>
+     * @param database the name of the db
+     * @throws Exception if bootstrapping fails
+     * @return the configured JdbcDb
      */
     public static JdbcDb bootstrapSqlServer(String database) throws Exception {
         database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
@@ -204,9 +207,9 @@ public class JdbcDbFactory {
         String user   = Config.getString("sqlserver.user", "sa");
         String pass   = Config.getString("sqlserver.pass", "Jmk38zZVn");
 
-        Class.forName(driver).newInstance();
+        Class.forName(driver).getDeclaredConstructor().newInstance();
 
-        Connection conn = null;
+        Connection conn;
         try {
             conn = DriverManager.getConnection(url, user, pass);
         } catch (Exception ex) {
@@ -218,8 +221,6 @@ public class JdbcDbFactory {
         JdbcUtils.execute(conn, "CREATE DATABASE " + database);
         conn.close();
 
-        JdbcDb db = new JdbcDb("sqlserver", driver, url + ";databaseName=" + database, user, pass, JdbcDb.class.getResource("northwind-sqlserver.ddl").toString());
-        return db;
-
+        return new JdbcDb("sqlserver", driver, url + ";databaseName=" + database, user, pass, JdbcDb.class.getResource("northwind-sqlserver.ddl").toString());
     }
 }

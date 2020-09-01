@@ -55,7 +55,7 @@ public class LayoutDirective extends Parse {
         }
 
         Node n           = node.jjtGetChild(length - 1);
-        Node renderNode  = null;
+        Node renderNode;
         int  numChildren = n.jjtGetNumChildren();
 
         Writer savedWriter = new StringWriter();

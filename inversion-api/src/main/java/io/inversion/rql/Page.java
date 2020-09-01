@@ -94,7 +94,7 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P> {
                 page = (offset / limit) + 1;
             }
         }
-        return page < 1 ? 1 : page;
+        return Math.max(page, 1);
     }
 
     public int getPageNum() {

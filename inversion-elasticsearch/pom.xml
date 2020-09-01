@@ -47,13 +47,13 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-elasticsearch</artifactId>
-      <version>1.11+</version>
+      <version>1.11.851</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>elasticsearch-rest-high-level-client</artifactId>
-      <version>6.4.+</version>
+      <version>6.4.3</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

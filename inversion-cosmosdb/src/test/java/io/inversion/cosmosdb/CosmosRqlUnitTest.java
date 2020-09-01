@@ -16,11 +16,10 @@
  */
 package io.inversion.cosmosdb;
 
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
-
 import io.inversion.Db;
 import io.inversion.rql.AbstractRqlTest;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class CosmosRqlUnitTest extends AbstractRqlTest {
@@ -52,10 +51,10 @@ public class CosmosRqlUnitTest extends AbstractRqlTest {
         withExpectedResult("not", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND NOT ((Northwind[\\\"shipCity\\\"] = @shipCity2 OR Northwind[\\\"shipCity\\\"] = @shipCity3)) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCity2\",\"value\":\"Reims\"},{\"name\":\"@shipCity3\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("as", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT *, Northwind[\\\"orderId\\\"] AS \\\"order_identifier\\\" FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("includes", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT Northwind[\\\"shipCountry\\\"], Northwind[\\\"shipCity\\\"], Northwind[\\\"type\\\"], Northwind[\\\"orderId\\\"] FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
-        
-        
+
+
         withExpectedResult("distinct", "SqlQuerySpec={\"query\":\"SELECT DISTINCT Northwind[\\\"shipCountry\\\"], Northwind[\\\"type\\\"], Northwind[\\\"orderId\\\"] FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
-        
+
         withExpectedResult("count1", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT COUNT(*) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("count2", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT COUNT(@null1) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type2 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@null1\",\"value\":\"1\"},{\"name\":\"@type2\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("count3", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT COUNT(Northwind[\\\"shipRegion\\\"]) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");

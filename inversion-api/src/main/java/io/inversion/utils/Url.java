@@ -33,7 +33,7 @@ public class Url {
     /**
      * The url string as supplied to the constructor, with 'http://localhost/' prepended if the constructor url arg did not contain a host
      */
-    protected String original = null;
+    protected final String original;
 
     /**
      * The url protocol, either http or https
@@ -62,19 +62,19 @@ public class Url {
      * implementation here simply because it is an affective case insensitive map that preserves
      * the original key case key iteration order.
      */
-    protected Map params = new JSNode();
+    protected JSNode params = new JSNode();
 
     /**
      * Parses <code>url</code> into its protocol, host, port, path and query string param parts.
      * <p>
      * If <code>url</code> does not start with "http://" or "https://" then "http://localhost/" will be prepended.
      *
-     * @param url
+     * @param url url string
      */
     public Url(String url) {
-        String path = null;
+        String path;
 
-        if (url.indexOf(":/") > 0 && url.indexOf("://") < 0)
+        if (url.indexOf(":/") > 0 && !url.contains("://"))
             url = url.replaceAll(":/", "://");
 
         url = url.replace("&amp;", "&");
@@ -86,7 +86,7 @@ public class Url {
         try {
             int queryIndex = url.indexOf('?');
             if (queryIndex >= 0) {
-                String query = url.substring(queryIndex + 1, url.length());
+                String query = url.substring(queryIndex + 1);
                 url = url.substring(0, queryIndex);
 
                 withQueryString(query);
@@ -119,7 +119,7 @@ public class Url {
 
                 host = url.substring(hostStart, hostEnd);
 
-                String rest = url.substring(hostEnd, url.length());
+                String rest = url.substring(hostEnd);
 
                 if (rest.indexOf(':') > -1) {
                     int nextColon = rest.indexOf(':');
@@ -128,14 +128,14 @@ public class Url {
                     if (nextColon < nextSlash) {
                         String portString = rest.substring(nextColon + 1, nextSlash);
                         port = Integer.parseInt(portString);
-                        rest = rest.substring(nextSlash, rest.length());
+                        rest = rest.substring(nextSlash);
                     }
                 }
 
                 path = rest;
             }
 
-            if (path == null || path.length() == 0) {
+            if (path.length() == 0) {
                 path = "/";
             } else if (path.charAt(0) != '/') {
                 path = '/' + url;
@@ -148,6 +148,41 @@ public class Url {
             System.err.println("Error parsing url \"" + url + "\"");
             ex.printStackTrace();
         }
+    }
+
+    /**
+     * Creates a UTF-8 url encoded query string, not including a leading "?" with key value pairs separated by a '&amp;'
+     *
+     * @param params the key/value pairs to encode
+     * @return a UTF-8 url encoded query string
+     * @see java.net.URLEncoder#encode(String, String)
+     */
+    public static String toQueryString(Map params) {
+        StringBuilder query = new StringBuilder();
+        if (params != null) {
+            for (Object o : params.keySet()) {
+                String key = o.toString();
+                try {
+                    if (params.get(key) != null) {
+                        query.append(URLEncoder.encode(key, "UTF-8")).append("=").append(URLEncoder.encode(params.get(key).toString(), "UTF-8")).append("&");
+                    } else {
+                        query.append(URLEncoder.encode(key, "UTF-8")).append("&");
+                    }
+
+                } catch (UnsupportedEncodingException e) {
+                    Utils.rethrow(e);
+                }
+            }
+            if (query.length() > 0)
+                query = new StringBuilder(query.substring(0, query.length() - 1));
+        }
+
+        String str = query.toString();
+        str = str.replace("%28", "(");
+        str = str.replace("%29", ")");
+        str = str.replace("%2C", ",");
+
+        return str;
     }
 
     /**
@@ -172,7 +207,7 @@ public class Url {
                 url = url.substring(0, url.length() - 1);
 
             url += "?";
-            url += toQueryString(((JSNode) params).asMap());
+            url += toQueryString(params.asMap());
         }
 
         return url;
@@ -185,7 +220,7 @@ public class Url {
      */
     public boolean equals(Object url) {
         if (url instanceof Url) {
-            return toString().equals(((Url) url).toString());
+            return toString().equals(url.toString());
         }
         return false;
     }
@@ -194,7 +229,7 @@ public class Url {
         String domain = host;
 
         if (domain.lastIndexOf('.') > domain.indexOf('.')) {
-            domain = domain.substring(domain.indexOf('.') + 1, domain.length());
+            domain = domain.substring(domain.indexOf('.') + 1);
         }
         return domain;
     }
@@ -209,7 +244,7 @@ public class Url {
         if (params.size() == 0)
             return "";
 
-        return toQueryString(((JSNode) params).asMap());
+        return toQueryString(params.asMap());
     }
 
     public String getHost() {
@@ -262,7 +297,9 @@ public class Url {
 
     /**
      * Parses <code>queryString</code> and replace <code>params</code>
-     * @return this Url
+     *
+     * @param queryString query prams to add
+     * @return this
      */
     public Url withQueryString(String queryString) {
         params = new JSNode(Utils.parseQueryString(queryString));
@@ -273,6 +310,7 @@ public class Url {
      * Adds all key/value pairs from <code>newParams</code> to <code>params</code>
      * overwriting any exiting keys on a case insensitive basis
      *
+     * @param newParams name/value pairs to add to the query string params map
      * @return this
      */
     public Url withParams(Map<String, String> newParams) {
@@ -287,7 +325,7 @@ public class Url {
      *
      * @param name  the key to add or overwrite, may not be null
      * @param value the value, may be null
-     * @return
+     * @return this
      */
     public Url withParam(String name, String value) {
         params.put(name, value);
@@ -335,8 +373,7 @@ public class Url {
     public String clearParams(String... tokens) {
         String oldValue = null;
         for (String token : tokens) {
-            List<String> keys = (List<String>) new ArrayList(params.keySet());
-            for (String existing : keys) {
+            for (String existing : params.keySet()) {
                 if (Utils.containsToken(token, existing)) {
                     String removed = (String) params.remove(existing);
                     if (oldValue == null)
@@ -356,7 +393,7 @@ public class Url {
      */
     public String findKey(String... tokens) {
         for (String token : tokens) {
-            for (String key : (List<String>) new ArrayList(params.keySet())) {
+            for (String key : params.keySet()) {
                 if (Utils.containsToken(token, key)) {
                     return key;
                 }
@@ -375,7 +412,7 @@ public class Url {
     public String findKeyValue(String... tokens) {
         String key = findKey(tokens);
         if (key != null)
-            return ((JSNode) params).getString(key);
+            return params.getString(key);
 
         return null;
     }
@@ -394,7 +431,7 @@ public class Url {
      * @return a new case insensitive order preserving map copy of <code>params</code>
      */
     public Map<String, String> getParams() {
-        return (Map<String, String>)((JSNode) params).asMap();
+        return (Map<String, String>) params.asMap();
     }
 
     /**
@@ -402,39 +439,6 @@ public class Url {
      */
     public String getOriginal() {
         return original;
-    }
-
-    /**
-     * Creates a UTF-8 url encoded query string, not including a leading "?" with key value pairs separated by a '&amp;'
-     *
-     * @param params the key/value pairs to encode
-     * @return a UTF-8 url encoded query string
-     * @see java.net.URLEncoder#encode(String, String)
-     */
-    public static String toQueryString(Map<String, Object> params) {
-        String query = "";
-        if (params != null) {
-            for (String key : params.keySet()) {
-                try {
-                    if (params.get(key) != null) {
-                        query += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(params.get(key).toString(), "UTF-8") + "&";
-                    } else {
-                        query += URLEncoder.encode(key, "UTF-8") + "&";
-                    }
-
-                } catch (UnsupportedEncodingException e) {
-                    Utils.rethrow(e);
-                }
-            }
-            if (query.length() > 0)
-                query = query.substring(0, query.length() - 1);
-        }
-
-        query = query.replace("%28", "(");
-        query = query.replace("%29", ")");
-        query = query.replace("%2C", ",");
-
-        return query;
     }
 
 }

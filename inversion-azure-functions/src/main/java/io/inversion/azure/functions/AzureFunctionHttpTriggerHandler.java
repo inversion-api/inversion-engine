@@ -83,7 +83,7 @@ public class AzureFunctionHttpTriggerHandler {
         Builder builder = azReq.createResponseBuilder(HttpStatus.valueOf(res.getStatusCode()));
 
         for (String key : res.getHeaders().keySet()) {
-            List         values = res.getHeaders().get(key);
+            List          values = res.getHeaders().get(key);
             StringBuilder buff   = new StringBuilder();
             for (int i = 0; i < values.size(); i++) {
                 buff.append(values.get(i));
@@ -115,6 +115,8 @@ public class AzureFunctionHttpTriggerHandler {
      * <p>
      * If <code>api</code> is null, it calls buildApi() which by default does nothing and is itself designed as an override hook.
      *
+     * @param request the request to service
+     * @param context the execution context
      * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator.
      * @see #buildApi(HttpRequestMessage, ExecutionContext)
      */
@@ -137,6 +139,8 @@ public class AzureFunctionHttpTriggerHandler {
      * If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api
      * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Confg/Configurator.
      *
+     * @param request the request to service
+     * @param context the execution context
      * @return null unless you override this method to construct an Api.
      * @see #buildEngine
      */

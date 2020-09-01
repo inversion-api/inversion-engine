@@ -18,23 +18,17 @@ package io.inversion;
 
 import io.inversion.utils.Utils;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class User {
+    protected final Set<String> groups      = new HashSet();
+    protected final Set<String> roles       = new HashSet();
+    protected final Set<String> permissions = new HashSet();
     protected int    id       = 0;
     protected String tenant   = null;
     protected String username = null;
     protected String password = null;
-
     protected String displayName = null;
-
-    protected Set<String> groups      = new HashSet();
-    protected Set<String> roles       = new HashSet();
-    protected Set<String> permissions = new HashSet();
-
     protected String accessKey = null;
     protected String secretKey = null;
 
@@ -151,10 +145,7 @@ public class User {
 
     public User withPermissions(String... permissions) {
         if (permissions != null) {
-            for (String permission : Utils.explode(",", permissions)) {
-                if (!this.permissions.contains(permission))
-                    this.permissions.add(permission);
-            }
+            this.permissions.addAll(Utils.explode(",", permissions));
         }
 
         return this;
@@ -177,10 +168,7 @@ public class User {
 
     public User withGroups(String... groups) {
         if (groups != null) {
-            for (String group : Utils.explode(",", groups)) {
-                if (!this.groups.contains(group))
-                    this.groups.add(group);
-            }
+            this.groups.addAll(Utils.explode(",", groups));
         }
 
         return this;
@@ -203,9 +191,7 @@ public class User {
 
     public User withRoles(String... roles) {
         if (roles != null) {
-            for (String role : roles) {
-                this.roles.add(role);
-            }
+            Collections.addAll(this.roles, roles);
         }
 
         return this;

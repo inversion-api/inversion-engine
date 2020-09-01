@@ -27,9 +27,9 @@ import java.util.stream.Collectors;
 
 public class Where<T extends Where, P extends Query> extends Builder<T, P> {
 
-    Set<String>         existsFunctions    = Utils.asSet("eq", "nn", "gt", "ge", "lt", "le", "like", "sw", "ew", "in", "w");
-    Set<String>         notExistsFunctions = Utils.asSet("ne", "n", "out", "wo", "emp");
-    Map<String, String> notExistsMap       = Utils.asMap("ne", "eq", "n", "nn", "out", "in", "wo", "w", "emp", "nemp");
+    final Set<String>         existsFunctions    = Utils.asSet("eq", "nn", "gt", "ge", "lt", "le", "like", "sw", "ew", "in", "w");
+    final Set<String>         notExistsFunctions = Utils.asSet("ne", "n", "out", "wo", "emp");
+    final Map<String, String> notExistsMap       = Utils.asMap("ne", "eq", "n", "nn", "out", "in", "wo", "w", "emp", "nemp");
 
     public Where(P query) {
         super(query);
@@ -43,7 +43,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
 
             term = transform(term);
 
-            List<Term> unknownCols = term.stream().filter(t -> isInvalidColumn(t)).collect(Collectors.toList());
+            List<Term> unknownCols = term.stream().filter(this::isInvalidColumn).collect(Collectors.toList());
             if (unknownCols.size() > 0) {
                 Chain.debug("Ignoring query terms with unknown columns: " + unknownCols);
                 //System.err.println("Ignoring query terms with unknown columns: " + unknownCols);
@@ -87,7 +87,6 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
      * each column to be defined.
      * <p>
      * IMPLEMENTATION NOTE: Terms that are passed into this function presumably have already been filtered by the Db object for known restricted columns.
-     * {@link Db#reservedParams}
      *
      * @param t the term to check for valid column references
      * @return false if the first child is a leaf with an invalid column name

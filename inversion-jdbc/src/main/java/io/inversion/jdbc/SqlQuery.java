@@ -27,17 +27,16 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 /**
  * Composes and executes a SQL SELECT based on supplied RQL <code>Terms</code>.
  */
 public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Select, SqlQuery>, SqlQuery>, From<From<From, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>> {
 
-    protected char              stringQuote = '\'';
-    protected char              columnQuote = '"';
+    protected char stringQuote = '\'';
+    protected char columnQuote = '"';
 
-    String                      type        = null;
+    String type = null;
 
     LinkedHashMap<String, Term> joins;
 
@@ -47,7 +46,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
     public SqlQuery(D db, Collection table, List<Term> terms) {
         super(db, table, terms, "_query");
-        
+
         //-- this is done in the super call but this second call 
         //-- is required to set the columnQuote after member variable
         //-- initialization happens AFTER the super call.
@@ -81,11 +80,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
     @Override
     public Results doSelect() throws ApiException {
-        JdbcDb db = (JdbcDb) getDb();
+        JdbcDb db  = (JdbcDb) getDb();
         String sql = getPreparedStmt();
 
         Results results = new Results(this);
-        List values = getColValues();
+        List    values  = getColValues();
 
         //-- for test cases and query explain
         String debug = getClass().getSimpleName() + " " + getType() + ": " + sql + " args=" + values;
@@ -101,11 +100,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             //-- generation of the prepared statement above
 
             try {
-                Rows rows = JdbcUtils.selectRows(conn, sql, values);
-                int foundRows = rows.size();
+                Rows rows      = JdbcUtils.selectRows(conn, sql, values);
+                int  foundRows = rows.size();
 
                 int limit = getPage().getLimit();
-                int page = getPage().getOffset();
+                int page  = getPage().getOffset();
 
                 //-- don't query for total row count if the DB returned fewer that
                 //-- the max number of rows on the first page...foundRows must be
@@ -180,7 +179,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 buff += " \r\n" + parts.limit;
         }
 
-        String sql = buff.toString();
+        String sql = buff;
         return sql;
     }
 
@@ -188,9 +187,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         String initialSelect = (String) find("_query", 0);
 
         if (initialSelect == null) {
-            String expression = getFrom().getSubquery();
-            String alias = quoteCol(getFrom().getAlias());
-            boolean distinct = getSelect().isDistinct();
+            String  expression = getFrom().getSubquery();
+            String  alias      = quoteCol(getFrom().getAlias());
+            boolean distinct   = getSelect().isDistinct();
 
             if (expression != null) {
                 initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM (" + expression + ")";
@@ -219,15 +218,15 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 cols.append(" ").append(printTerm(function, null, preparedStmt));
 
                 String colName = term.getToken(1);
-                if (!(Utils.empty(colName) || colName.indexOf("$$$ANON") > -1)) {
+                if (!(Utils.empty(colName) || colName.contains("$$$ANON"))) {
                     //TODO: validate if this mysql special case is required...will require changing tests if removed
                     if (db == null || db.isType("mysql"))
-                        cols.append(" AS " + asString(colName));
+                        cols.append(" AS ").append(asString(colName));
                     else
-                        cols.append(" AS " + quoteCol(colName));
+                        cols.append(" AS ").append(quoteCol(colName));
                 }
-            } else if (term.getToken().indexOf(".") < 0) {
-                cols.append(" " + printCol(term.getToken()));
+            } else if (!term.getToken().contains(".")) {
+                cols.append(" ").append(printCol(term.getToken()));
             }
 
             if (i < terms.size() - 1)
@@ -267,8 +266,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 }
 
                 //inserts the select list before the *
-                int idx = parts.select.substring(0, star).indexOf(" ");
-                String newSelect = parts.select.substring(0, idx) + cols + parts.select.substring(star + 1, parts.select.length());
+                int    idx       = parts.select.substring(0, star).indexOf(" ");
+                String newSelect = parts.select.substring(0, idx) + cols + parts.select.substring(star + 1);
                 parts.select = newSelect;
             } else {
                 String select = parts.select.trim();
@@ -280,14 +279,14 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             }
         }
 
-        if (getSelect().isDistinct() && parts.select.toLowerCase().indexOf("distinct") < 0) {
+        if (getSelect().isDistinct() && !parts.select.toLowerCase().contains("distinct")) {
             int idx = parts.select.toLowerCase().indexOf("select") + 6;
-            parts.select = parts.select.substring(0, idx) + " DISTINCT " + parts.select.substring(idx, parts.select.length());
+            parts.select = parts.select.substring(0, idx) + " DISTINCT " + parts.select.substring(idx);
         }
 
         if (Chain.peek() != null && Chain.peek().get("foundRows") == null && "mysql".equalsIgnoreCase(getType()) && parts.select.toLowerCase().trim().startsWith("select")) {
             int idx = parts.select.toLowerCase().indexOf("select") + 6;
-            parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx, parts.select.length());
+            parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx);
         }
 
         return parts.select;
@@ -298,17 +297,17 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             for (Entry<String, Term> joinTerm : joins.entrySet()) {
                 Term join = joinTerm.getValue();
 
-                String where = "";
+                StringBuilder where = new StringBuilder();
 
                 for (int j = 2; j < join.size(); j += 4)//the first token is the related name, the second token is the table alias
                 {
                     if (j > 2)
-                        where += " AND ";
-                    where += quoteCol(join.getToken(j)) + "." + quoteCol(join.getToken(j + 1)) + " = " + quoteCol(join.getToken(j + 2)) + "." + quoteCol(join.getToken(j + 3));
+                        where.append(" AND ");
+                    where.append(quoteCol(join.getToken(j))).append(".").append(quoteCol(join.getToken(j + 1))).append(" = ").append(quoteCol(join.getToken(j + 2))).append(".").append(quoteCol(join.getToken(j + 3)));
                 }
 
                 if (where != null) {
-                    where = "(" + where + ")";
+                    where = new StringBuilder("(" + where + ")");
 
                     if (Utils.empty(parts.where))
                         parts.where = " WHERE " + where;
@@ -375,9 +374,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     //   }
 
     protected String printWhereClause(Parts parts, List<Term> terms, boolean preparedStmt) {
-        for (int i = 0; i < terms.size(); i++) {
-            Term term = terms.get(i);
-
+        for (Term term : terms) {
             String where = printTerm(term, null, preparedStmt);
             if (where != null) {
                 if (Utils.empty(parts.where))
@@ -391,17 +388,16 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
     protected String printGroupClause(Parts parts, List<String> groupBy) {
         if (groupBy.size() > 0) {
-            if (parts.group == null)
-                parts.group = "GROUP BY ";
 
-            //for (Term group : groupBy.getTerms())
+            StringBuilder group = new StringBuilder(parts.group != null ? parts.group : "GROUP BY ");
+
             for (String column : groupBy) {
-                if (!parts.group.endsWith("GROUP BY "))
-                    parts.group += ", ";
-                parts.group += printCol(column);
+                if (!Utils.endsWith(group, "GROUP BY "))
+                    group.append(", ");
+                group.append(printCol(column));
             }
+            parts.group = group.toString();
         }
-
         return parts.group;
     }
 
@@ -415,7 +411,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             sorts = getDefaultSorts(parts);
         }
 
-        for (int i = 0; i < sorts.size(); i++) {
+        for (Sort sort : sorts) {
             //-- now setup the "ORDER BY" clause based on the
             //-- "sort" parameter.  Multiple sorts can be
             //-- comma separated and a leading '-' indicates
@@ -423,7 +419,6 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             //--
             //-- ex: "sort=firstName,-age"
 
-            Sort sort = sorts.get(i);
             if (parts.order == null)
                 parts.order = "ORDER BY ";
 
@@ -438,8 +433,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     protected List<Sort> getDefaultSorts(Parts parts) {
         List<Sort> sorts = new ArrayList<>();
 
-        boolean wildcard = parts.select.indexOf("* ") >= 0 //
-                || parts.select.indexOf("*,") >= 0;//this trailing space or comma is important because otherwise this would incorrectly match "COUNT(*)"
+        boolean wildcard = parts.select.contains("* ") //
+                || parts.select.contains("*,");//this trailing space or comma is important because otherwise this would incorrectly match "COUNT(*)"
 
         if (collection != null && collection.getPrimaryIndex() != null) {
             for (String pkCol : collection.getPrimaryIndex().getColumnNames()) {
@@ -527,7 +522,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     protected int queryFoundRows(Connection conn, String sql, List values) throws Exception {
-        int foundRows = 0;
+        int foundRows;
         if (db.isType("mysql")) {
             sql = "SELECT FOUND_ROWS()";
             foundRows = JdbcUtils.selectInt(conn, sql);
@@ -552,7 +547,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         if (term.isLeaf()) {
             String token = term.getToken();
 
-            String value = null;
+            String value;
             if (isCol(term)) {
                 value = printCol(token);
             } else if (isBool(term)) {
@@ -602,10 +597,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
      * Override to handle printing additional functions or to change the
      * way a specific function is printed.
      *
-     * @param term
-     * @param dynamicSqlChildText
-     * @param preparedStmtChildText
-     * @return
+     * @param term                  the term to print
+     * @param dynamicSqlChildText   child tokens printed as dynamic sql
+     * @param preparedStmtChildText child tokens printed as prepared statements
+     * @return the sql statement for term
      */
     protected String printExpression(Term term, List<String> dynamicSqlChildText, List<String> preparedStmtChildText) {
         String token = term.getToken();
@@ -643,7 +638,6 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                             if (getDb().isType("sqlserver") //
                                     && dynamicSqlChildText.get(i).indexOf('\\') >= 0) {
                                 sql.append(" {escape '\\'}");
-                                ;
                             }
                         }
                     } else {
@@ -715,7 +709,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             //String s = "COUNT (1)";
             //sql.append(s);
 
-            String pt = printTableAlias() + ".*";
+            String pt   = printTableAlias() + ".*";
             String acol = preparedStmtChildText.get(0);
             if (pt.equals(acol))//reset count(table.*) to count(*)
                 acol = "*";
@@ -727,7 +721,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             //TODO: what do you do with this as a function????
         } else if ("sum".equalsIgnoreCase(token) || "min".equalsIgnoreCase(token) || "max".equalsIgnoreCase(token)) {
             String acol = preparedStmtChildText.get(0);
-            String s = token.toUpperCase() + "(" + acol + ")";
+            String s    = token.toUpperCase() + "(" + acol + ")";
             sql.append(s);
         } else if (Utils.in(token.toLowerCase(), "_exists", "_notexists")) {
             if ("_notexists".equalsIgnoreCase(token))
@@ -748,10 +742,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             if (rel == null)
                 throw ApiException.new400BadRequest("Unable to find relationship for term '{}'", term);
 
-            String relTbl = rel.getRelated().getTableName();
+            String relTbl   = rel.getRelated().getTableName();
             String relAlias = "~~relTbl_" + relTbl;
 
-            String lnkTbl = rel.getFk1Col1().getCollection().getTableName();
+            String lnkTbl   = rel.getFk1Col1().getCollection().getTableName();
             String lnkAlias = "~~lnkTbl_" + lnkTbl;
 
             sql.append(quoteCol(relTbl)).append(" ").append(quoteCol(relAlias));
@@ -768,9 +762,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
             if (rel.isManyToOne()) {
                 for (int i = 0; i < fk1.size(); i++) {
-                    Property prop = fk1.getProperty(i);
-                    String pkName = prop.getPk().getColumnName();
-                    String fkName = prop.getColumnName();
+                    Property prop   = fk1.getProperty(i);
+                    String   pkName = prop.getPk().getColumnName();
+                    String   fkName = prop.getColumnName();
                     sql.append(printTableAlias()).append(".").append(quoteCol(fkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(pkName));
 
                     if (i < fk1.size() - 1)
@@ -778,27 +772,27 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 }
             } else if (rel.isOneToMany()) {
                 for (int i = 0; i < fk1.size(); i++) {
-                    Property prop = fk1.getProperty(i);
-                    String pkName = prop.getPk().getColumnName();
-                    String fkName = prop.getColumnName();
+                    Property prop   = fk1.getProperty(i);
+                    String   pkName = prop.getPk().getColumnName();
+                    String   fkName = prop.getColumnName();
                     sql.append(printTableAlias()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(fkName));
                     if (i < fk1.size() - 1)
                         sql.append(" AND ");
                 }
             } else if (rel.isManyToMany()) {
                 for (int i = 0; i < fk1.size(); i++) {
-                    Property prop = fk1.getProperty(i);
-                    String pkName = prop.getPk().getColumnName();
-                    String fkName = prop.getColumnName();
+                    Property prop   = fk1.getProperty(i);
+                    String   pkName = prop.getPk().getColumnName();
+                    String   fkName = prop.getColumnName();
                     sql.append(printTableAlias()).append(".").append(quoteCol(pkName)).append(" = ").append(quoteCol(lnkAlias)).append(".").append(quoteCol(fkName));
                     sql.append(" AND ");
                 }
 
                 Index fk2 = rel.getFkIndex2();
                 for (int i = 0; i < fk2.size(); i++) {
-                    Property prop = fk2.getProperty(i);
-                    String pkName = prop.getPk().getColumnName();
-                    String fkName = prop.getColumnName();
+                    Property prop   = fk2.getProperty(i);
+                    String   pkName = prop.getPk().getColumnName();
+                    String   fkName = prop.getColumnName();
                     sql.append(quoteCol(lnkAlias)).append(".").append(quoteCol(fkName)).append(" = ").append(quoteCol(relAlias)).append(".").append(quoteCol(pkName));
 
                     if (i < fk2.size() - 1)
@@ -873,15 +867,12 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         if (collection != null && collection.getProperty(term.getToken()) != null)
             return true;
 
-        if (term.getParent() != null && term.getParent().indexOf(term) == 0)
-            return true;
-
-        return false;
+        return term.getParent() != null && term.getParent().indexOf(term) == 0;
     }
 
     public String quoteCol(String str) {
-        StringBuilder buff = new StringBuilder();
-        String[] parts = str.split("\\.");
+        StringBuilder buff  = new StringBuilder();
+        String[]      parts = str.split("\\.");
         for (int i = 0; i < parts.length; i++) {
             if ("*".equals(parts[i])) {
                 buff.append(parts[i]);
@@ -917,7 +908,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     public String printCol(String columnName) {
-        if (columnName.indexOf(".") < 0) {
+        if (!columnName.contains(".")) {
             return printTableAlias() + "." + quoteCol(columnName);
         }
 
@@ -933,8 +924,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     protected String asString(Term term) {
-        String token = term.token;
-        Term parent = term.getParent();
+        String token  = term.token;
+        Term   parent = term.getParent();
         if (parent != null && parent.hasToken("eq", "ne", "w", "sw", "ew", "like", "wo")) {
             if (parent.hasToken("w") || parent.hasToken("wo")) {
                 if (!token.startsWith("*"))
@@ -956,7 +947,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             }
         }
 
-        return stringQuote + token.toString() + stringQuote;
+        return stringQuote + token + stringQuote;
     }
 
     protected String asNum(String token) {
@@ -987,10 +978,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         if ("false".equalsIgnoreCase(token))
             return true;
 
-        if ("null".equalsIgnoreCase(token))
-            return true;
-
-        return false;
+        return "null".equalsIgnoreCase(token);
     }
 
     protected boolean isBool(Term term) {
@@ -1002,10 +990,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         if ("true".equalsIgnoreCase(token))
             return true;
 
-        if ("false".equalsIgnoreCase(token))
-            return true;
-
-        return false;
+        return "false".equalsIgnoreCase(token);
     }
 
     public String asBool(String token) {
@@ -1013,56 +998,6 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             return "true";
 
         return "false";
-    }
-
-    public class Parts {
-
-        public String select = null;
-        public String from   = null;
-        public String where  = null;
-        public String group  = null;
-        public String order  = null;
-        public String limit  = null;
-
-        void withSql(String sql) {
-            if (sql == null)
-                return;
-
-            sql = sql.trim();
-
-            SqlTokenizer tok = new SqlTokenizer(sql);
-
-            String clause = null;
-            while ((clause = tok.nextClause()) != null) {
-                String token = (clause.indexOf(" ") > 0 ? clause.substring(0, clause.indexOf(" ")) : clause).toLowerCase();
-
-                switch (token) {
-                    //case "insert":
-                    //case "update":
-                    case "delete":
-                    case "select":
-                        select = clause;
-                        continue;
-                    case "from":
-                        from = clause;
-                        continue;
-                    case "where":
-                        where = clause;
-                        continue;
-                    case "group":
-                        group = clause;
-                        continue;
-                    case "order":
-                        order = clause;
-                        continue;
-                    case "limit":
-                        limit = clause;
-                        continue;
-                    default :
-                        throw new RuntimeException("Unable to parse: \"" + clause + "\" - \"" + sql + "\"");
-                }
-            }
-        }
     }
 
     @Override
@@ -1092,6 +1027,56 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
     public void withColumnQuote(char columnQuote) {
         this.columnQuote = columnQuote;
+    }
+
+    public static class Parts {
+
+        public String select = null;
+        public String from   = null;
+        public String where  = null;
+        public String group  = null;
+        public String order  = null;
+        public String limit  = null;
+
+        void withSql(String sql) {
+            if (sql == null)
+                return;
+
+            sql = sql.trim();
+
+            SqlTokenizer tok = new SqlTokenizer(sql);
+
+            String clause;
+            while ((clause = tok.nextClause()) != null) {
+                String token = (clause.indexOf(" ") > 0 ? clause.substring(0, clause.indexOf(" ")) : clause).toLowerCase();
+
+                switch (token) {
+                    //case "insert":
+                    //case "update":
+                    case "delete":
+                    case "select":
+                        select = clause;
+                        continue;
+                    case "from":
+                        from = clause;
+                        continue;
+                    case "where":
+                        where = clause;
+                        continue;
+                    case "group":
+                        group = clause;
+                        continue;
+                    case "order":
+                        order = clause;
+                        continue;
+                    case "limit":
+                        limit = clause;
+                        continue;
+                    default:
+                        throw new RuntimeException("Unable to parse: \"" + clause + "\" - \"" + sql + "\"");
+                }
+            }
+        }
     }
 
 }

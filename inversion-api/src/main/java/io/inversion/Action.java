@@ -18,7 +18,6 @@ package io.inversion;
 
 /**
  * Actions perform some work when matched to a Request and potentially contribute to the content of the Response.
- * <p>
  * <h3>The Action Sandwich</h3>
  * <p>
  * Nearly the entire job of the Engine and Api Endpoint configuration is to match one or more Action subclass instances to a Request.
@@ -59,7 +58,6 @@ public abstract class Action<A extends Action> extends Rule<A> {
      *
      * @param req the Request being serviced
      * @param res the Reponse being generated
-     * @throws ApiException
      */
     public void run(Request req, Response res) throws ApiException {
         if (req.isGet())
@@ -79,9 +77,8 @@ public abstract class Action<A extends Action> extends Rule<A> {
      * <p>
      * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.
      *
-     * @param req
-     * @param res
-     * @throws ApiException
+     * @param req the request to run
+     * @param res the response to populate
      */
     public void doGet(Request req, Response res) throws ApiException {
         throw ApiException.new501NotImplemented("Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
@@ -92,9 +89,8 @@ public abstract class Action<A extends Action> extends Rule<A> {
      * <p>
      * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.
      *
-     * @param req
-     * @param res
-     * @throws ApiException
+     * @param req the request to run
+     * @param res the response to populate
      */
 
     public void doPost(Request req, Response res) throws ApiException {
@@ -106,9 +102,8 @@ public abstract class Action<A extends Action> extends Rule<A> {
      * <p>
      * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.
      *
-     * @param req
-     * @param res
-     * @throws ApiException
+     * @param req the request to run
+     * @param res the response to populate
      */
     public void doPut(Request req, Response res) throws ApiException {
         throw ApiException.new501NotImplemented("Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
@@ -119,9 +114,8 @@ public abstract class Action<A extends Action> extends Rule<A> {
      * <p>
      * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.
      *
-     * @param req
-     * @param res
-     * @throws ApiException
+     * @param req the request to run
+     * @param res the response to populate
      */
     public void doPatch(Request req, Response res) throws ApiException {
         throw ApiException.new501NotImplemented("Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
@@ -132,9 +126,8 @@ public abstract class Action<A extends Action> extends Rule<A> {
      * <p>
      * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.
      *
-     * @param req
-     * @param res
-     * @throws ApiException
+     * @param req the request to run
+     * @param res the response to populate
      */
     public void doDelete(Request req, Response res) throws ApiException {
         throw ApiException.new501NotImplemented("Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");

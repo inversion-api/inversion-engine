@@ -93,6 +93,8 @@ public class Config {
      * Generally, you don't need to explicitly call this, as accessing any of this
      * classes getters will cause the default configuration to be loaded via <code>loadConfiguration()</code>
      * if <code>configuration</code> is null.
+     *
+     * @param configuration the configuration to use
      */
     public static synchronized void setConfiguration(CompositeConfiguration configuration) {
         Config.configuration = configuration;
@@ -127,7 +129,7 @@ public class Config {
      *
      * @param configPath    the path use to locate 'inversion.properties' files via <code>getResource</code>
      * @param configProfile the runtime profile used to load some inversion-${configProfile}-[0-100].properties files and not others.
-     * @see #getResource(String)
+     * @see #findUrl(String)
      * @see Utils#findProperty(String...)
      */
     public static synchronized void loadConfiguration(String configPath, String configProfile) {
@@ -142,7 +144,7 @@ public class Config {
         System.out.println("  - configProfile : " + configProfile);
 
         try {
-            URL url = getResource(".env");
+            URL url = findUrl(".env");
             if (url != null) {
                 System.out.println("  - loading file  : " + url);
                 configuration.addConfiguration(configs.properties(url));
@@ -158,22 +160,22 @@ public class Config {
 
             if (configProfile != null) {
                 for (int i = 100; i >= -1; i--) {
-                    String fileName = null;
+                    String fileName;
 
                     fileName = configPath + "inversion" + (i < 0 ? "" : i) + "-" + configProfile + ".properties";
-                    url = getResource(fileName);
+                    url = findUrl(fileName);
 
                     if (url == null) {
                         fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + "-" + configProfile + ".properties";
-                        url = getResource(fileName);
+                        url = findUrl(fileName);
                     }
                     if (url == null) {
                         fileName = configPath + "inversion" + "-" + configProfile + (i < 0 ? "" : i) + ".properties";
-                        url = getResource(fileName);
+                        url = findUrl(fileName);
                     }
                     if (url == null) {
                         fileName = configPath + "inversion" + "-" + configProfile + "-" + (i < 0 ? "" : i) + ".properties";
-                        url = getResource(fileName);
+                        url = findUrl(fileName);
                     }
 
                     if (url != null) {
@@ -185,11 +187,11 @@ public class Config {
 
             for (int i = 100; i >= -1; i--) {
                 String fileName = configPath + "inversion" + (i < 0 ? "" : i) + ".properties";
-                url = getResource(fileName);
+                url = findUrl(fileName);
 
                 if (url == null) {
                     fileName = configPath + "inversion" + "-" + (i < 0 ? "" : i) + ".properties";
-                    url = getResource(fileName);
+                    url = findUrl(fileName);
                 }
 
                 if (url != null) {
@@ -207,12 +209,12 @@ public class Config {
     /**
      * Attempts to locate a resource URL for <code>name</code> via the ClassLoader or as a file path relative to ${user.dir}.
      *
-     * @param name
-     * @return
+     * @param name a string identifier for the resource to find
+     * @return a url
      */
-    protected static URL getResource(String name) {
+    protected static URL findUrl(String name) {
         try {
-            URL url = null;
+            URL url;
 
             url = Config.class.getClassLoader().getResource(name);
             if (url == null) {

@@ -119,7 +119,7 @@ public class Path {
      * @param parts an list of path part strings
      */
     public Path(List<String> parts) {
-        this(parts.toArray(new String[parts.size()]));
+        this(parts.toArray(new String[0]));
     }
 
     /**
@@ -172,6 +172,8 @@ public class Path {
      * <p>
      * The <code>parts</code> is exploded via <code>Utils.explode('/', part)</code> first so while the part arg is a
      * single value, it could result in multiple additions.
+     *
+     * @param parts path parts to add
      */
     public void add(String parts) {
         if (!Utils.empty(parts)) {
@@ -376,17 +378,14 @@ public class Path {
      * @param concretePath the path to match against
      * @return true if this path matches <code>concretePath</code>
      */
-    public boolean matches(Path concretePath)
-    {
+    public boolean matches(Path concretePath) {
         Path matchedPath = new Path();
 
-        if (size() < concretePath.size() && !"*".equals(last()))
-        {
+        if (size() < concretePath.size() && !"*".equals(last())) {
             return false;
         }
 
-        for (int i = 0; i < size(); i++)
-        {
+        for (int i = 0; i < size(); i++) {
             String myPart = get(i);
 
             if (i == size() - 1 && myPart.equals("*"))
@@ -394,11 +393,8 @@ public class Path {
 
             boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
 
-            if (i == concretePath.size())
-            {
-                if (optional)
-                    return true;
-                return false;
+            if (i == concretePath.size()) {
+                return optional;
             }
 
             if (optional)
@@ -407,31 +403,24 @@ public class Path {
             String theirPart = concretePath.get(i);
             matchedPath.add(theirPart);
 
-            if (myPart.startsWith(":"))
-            {
+            if (myPart.startsWith(":")) {
                 continue;
-            }
-            else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}"))
-            {
+            } else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}")) {
                 int nameStart = myPart.indexOf("{") + 1;
-                int endName = myPart.indexOf(":");
+                int endName   = myPart.indexOf(":");
                 if (endName < 0)
                     endName = myPart.length() - 1;
 
                 String name = myPart.substring(nameStart, endName).trim();
 
-                if (endName < myPart.length() - 1)
-                {
-                    String regex = myPart.substring(endName + 1, myPart.length() - 1);
+                if (endName < myPart.length() - 1) {
+                    String  regex   = myPart.substring(endName + 1, myPart.length() - 1);
                     Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-                    if (!pattern.matcher(theirPart).matches())
-                    {
+                    if (!pattern.matcher(theirPart).matches()) {
                         return false;
                     }
                 }
-            }
-            else if (!myPart.equalsIgnoreCase(theirPart))
-            {
+            } else if (!myPart.equalsIgnoreCase(theirPart)) {
                 return false;
             }
 
@@ -443,6 +432,9 @@ public class Path {
     /**
      * Convenience overloading of {@link #extract(Map, Path, boolean)} with <code>greedy = true</code>.
      *
+     * @param params  a map to add extracted name/value pairs to
+     * @param toMatch the path to extract from
+     * @return the part of this path that matched
      * @see Path#extract(Map, Path, boolean)
      */
     public Path extract(Map params, Path toMatch) {
@@ -484,9 +476,9 @@ public class Path {
      * <p>
      * Engine will also add the params to the Request Url params as if they had been supplied as name value pairs by the caller on the query string.
      *
-     * @param params
-     * @param matchingConcretePath
-     * @param greedy
+     * @param params               the map to add extracted name/value pairs to
+     * @param matchingConcretePath the path to extract from
+     * @param greedy               if extraction should consume through optional path parts
      * @return the same Path object that was passed in but potentially now shorter as matching segments may have been consumed
      * @see io.inversion.Engine#service(Request, Response)
      * @see Chain#next()
@@ -495,7 +487,7 @@ public class Path {
         Path matchedPath = new Path();
 
         boolean restOptional = false;
-        int     i            = 0;
+        int     i;
         int     nextOptional = 0;
         for (i = 0; i < size() && matchingConcretePath.size() > 0; i++) {
             String myPart = get(i);
@@ -510,7 +502,7 @@ public class Path {
             if (myPart.equals("*"))
                 break;
 
-            String theirPart = null;
+            String theirPart;
 
             if (greedy || !restOptional) {
                 theirPart = matchingConcretePath.remove(0);
@@ -545,7 +537,7 @@ public class Path {
         }
 
         //null out any trailing vars
-        for (i = i; i < size(); i++) {
+        for (; i < size(); i++) {
             String var = getVarName(i);
             if (var != null)
                 params.put(var, null);

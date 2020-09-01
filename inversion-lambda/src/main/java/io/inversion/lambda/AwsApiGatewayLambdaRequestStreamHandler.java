@@ -18,12 +18,16 @@ package io.inversion.lambda;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import io.inversion.*;
+import io.inversion.Api;
+import io.inversion.Engine;
+import io.inversion.Request;
+import io.inversion.Response;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,18 +35,15 @@ import java.util.Map;
 /**
  * Adapter to run an Inversion API as an AWS Lambda behind an ApiGateway
  */
+
 public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHandler {
     protected Engine engine = null;
     protected Api    api    = null;
 
     boolean debug = false;
 
+    @SuppressWarnings("unchecked")
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-        runRequest(inputStream, outputStream, context);
-    }
-
-    public Chain runRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-        Chain chain = null;
 
         String input = Utils.read(new BufferedInputStream(inputStream));
 
@@ -86,19 +87,11 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
                 }
             }
 
-            Response res = null;
-            Request  req = null;
+            JSNode              jsonHeaders = json.getNode("headers");
+            Map<String, String> headers     = jsonHeaders == null ? new HashMap<>() : (Map<String, String>) jsonHeaders.asMap();
 
-            Map    headers     = new HashMap<>();
-            JSNode jsonHeaders = json.getNode("headers");
-            if (jsonHeaders != null)
-                headers = jsonHeaders.asMap();
-
-            Map    params     = new HashMap<>();
-            JSNode jsonParams = json.getNode("queryStringParameters");
-            if (jsonParams != null) {
-                params = jsonParams.asMap();
-            }
+            JSNode              jsonParams = json.getNode("queryStringParameters");
+            Map<String, String> params     = jsonParams == null ? new HashMap<>() : jsonParams.asMap();
 
             String body = json.getString("body");
 
@@ -107,10 +100,10 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
                 params.putAll(postParams);
             }
 
-            req = new Request(method, url.toString(), headers, params, body);
-            res = new Response();
+            Request  req = new Request(method, url.toString(), headers, params, body);
+            Response res = new Response();
 
-            chain = engine.service(req, res);
+            engine.service(req, res);
 
             if (outputStream != null) {
                 writeResponse(res, outputStream);
@@ -133,13 +126,11 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
                 responseJson.put("headers", new JSNode("Access-Control-Allow-Origin", "*"));
 
                 responseJson.put("body", responseBody.toString());
-                OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+                OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
                 writer.write(responseJson.toString());
                 writer.close();
             }
         }
-
-        return chain;
     }
 
     /**
@@ -151,15 +142,21 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
      * <p>
      * If <code>api</code> is null, it calls buildApi() which by default does nothing and is itself designed as an override hook.
      *
-     * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator.
+     * @param configProfile the configuration runtime profile
+     * @param servletPath   the servlet path
+     * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Config/Configurator.
      * @see #buildApi
      */
     protected Engine buildEngine(String configProfile, String servletPath) {
+
+        System.out.println("TODO FIX ME: " + servletPath);
+        System.out.println("TODO FIX ME: " + configProfile);
+
         Engine engine = new Engine();
         engine.withConfigProfile(configProfile);
 
         if (api == null)
-            api = buildApi(configProfile, servletPath);
+            api = buildApi(engine);
 
         if (api != null) {
             engine.withApi(api);
@@ -172,12 +169,14 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
      * Optional subclass override hook to supply your own custom wired up Api.
      * <p>
      * If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api
-     * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Confg/Configurator.
+     * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Config/Configurator.
      *
+     * @param engine the engine that will host the Api
      * @return null unless you override this method to construct an Api.
      * @see #buildEngine
      */
-    protected Api buildApi(String configProfile, String servletPath) {
+    protected Api buildApi(Engine engine) {
+        System.out.println("You can override buildApi(engine) to wire up your api in code: " + engine);
         return null;
     }
 
@@ -190,7 +189,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
         responseJson.put("headers", headers);
 
         for (String key : res.getHeaders().keySet()) {
-            List         values = res.getHeaders().get(key);
+            List          values = res.getHeaders().get(key);
             StringBuilder buff   = new StringBuilder();
             for (int i = 0; i < values.size(); i++) {
                 buff.append(values.get(i));
@@ -203,7 +202,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
         String output = res.getOutput();
 
         responseJson.put("body", output);
-        OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+        OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
         writer.write(responseJson.toString());
         writer.close();
     }

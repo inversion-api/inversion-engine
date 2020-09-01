@@ -45,7 +45,6 @@ import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.FileSystems;
 import java.nio.file.Paths;
@@ -57,30 +56,84 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class ScriptAction extends Action<ScriptAction> {
-    static ThreadLocal<ScriptAction> scriptLocal = new ThreadLocal();
-    static ThreadLocal<Chain>        chainLocal  = new ThreadLocal();
+    static final ThreadLocal<ScriptAction> scriptLocal = new ThreadLocal<>();
+    static final ThreadLocal<Chain>        chainLocal  = new ThreadLocal<>();
 
     protected final Logger log = LoggerFactory.getLogger(ScriptAction.class);
+    final Map<String, String> scriptTypes = new LinkedHashMap<>();
     String scriptsCollection = "scripts";
-
     long                cacheExpireSeconds = 60 * 30;
     Map<String, JSNode> CACHE;
-
     boolean inited = false;
-
-    String scriptsDir  = "/WEB-INF/scripts";
-    Map    scriptTypes = new LinkedHashMap();
-
+    String scriptsDir = "/WEB-INF/scripts";
     VelocityEngine velocity = null;
 
-    List<String> reservedNames = new ArrayList(Arrays.asList("switch", "layout", "settings"));
+    //List<String> reservedNames = new ArrayList<String>(Arrays.asList("switch", "layout", "settings"));
 
     public ScriptAction() {
         scriptTypes.put("js", "javascript");
         scriptTypes.put("vm", "velocity");
     }
 
-    synchronized void init(Engine service) {
+    public static JSNode findScript(final String path) {
+        if (path == null)
+            return null;
+
+        ScriptAction handler = scriptLocal.get();
+        Chain        chain   = chainLocal.get();
+
+        //      if (handler.CACHE.containsKey(path))
+        //         return handler.CACHE.get(path);
+
+        String ext = path.indexOf(".") > 0 ? path.substring(path.lastIndexOf(".") + 1).toLowerCase() : null;
+        if (ext != null && !handler.scriptTypes.containsKey(ext)) {
+            return null;
+        }
+
+        String scriptsDir        = chain.getConfig("scriptsDir", handler.scriptsDir);
+        String scriptsCollection = chain.getConfig("scriptsCollection", handler.scriptsCollection);
+
+        List<String> paths = new ArrayList<>();
+        if (ext != null) {
+            paths.add(path);
+        } else {
+            for (Object e : handler.scriptTypes.keySet())
+                paths.add(path + "." + e);
+        }
+
+        JSNode script = null;
+
+        for (String p : paths) {
+
+            ext = handler.ext(p);
+            URL url = chain.getEngine().getResource(Utils.implode("/", scriptsDir, p));
+            if (url != null) {
+                try {
+                    script = new JSNode("type", handler.scriptTypes.get(ext), "script", Utils.read(url.openStream()));
+                } catch (IOException e) {
+                    //ignore
+                }
+                break;
+            }
+        }
+
+        if (script == null && !Utils.empty(scriptsCollection)) {
+            String   url = chain.getRequest().getApiUrl() + scriptsCollection + "?name=" + path;
+            Response r   = chain.getEngine().get(url);
+            if (r.getStatusCode() == 200) {
+                JSArray dataArr = r.getJson().getArray("data");
+                if (!dataArr.isEmpty()) {
+                    script = dataArr.getNode(0);
+                }
+            }
+        }
+
+        handler.CACHE.put(path, script);
+
+        return script;
+    }
+
+    synchronized void init() {
         if (!inited) {
             inited = true;
             if (cacheExpireSeconds > 0) {
@@ -89,7 +142,7 @@ public class ScriptAction extends Action<ScriptAction> {
 
             //---------------------------------------------------------
             //-- Initialize Velocity Engine Support
-            VelocityResourceLoader vrl = new VelocityResourceLoader();
+            //VelocityResourceLoader vrl = new VelocityResourceLoader();
 
             velocity = new VelocityEngine();
 
@@ -120,7 +173,7 @@ public class ScriptAction extends Action<ScriptAction> {
                         log.info("Init : Attempting to create file system for " + uri);
                         Map<String, String> env = new HashMap<>();
                         env.put("create", "true");
-                        FileSystem fs = FileSystems.newFileSystem(uri, env);
+                        FileSystems.newFileSystem(uri, env);
                     }
                 }
             } catch (Exception e) {
@@ -135,10 +188,10 @@ public class ScriptAction extends Action<ScriptAction> {
         chainLocal.set(req.getChain());
 
         if (!inited) {
-            init(req.getEngine());
+            init();
         }
 
-        LinkedHashMap<String, JSNode> scripts = findScripts(req.getEngine(), req.getChain(), req);
+        LinkedHashMap<String, JSNode> scripts = findScripts(req);
         if (scripts.size() > 0) {
             runScripts(req, res, scripts);
         }
@@ -244,7 +297,7 @@ public class ScriptAction extends Action<ScriptAction> {
                 }
             }
 
-            if (!Utils.empty(content))// && Utils.empty(res.getText()) && (res.getJson() == null || res.getJson().getProperties().size() == 0))
+            if (content != null && !Utils.empty(content))// && Utils.empty(res.getText()) && (res.getJson() == null || res.getJson().getProperties().size() == 0))
             {
                 boolean setText = true;
                 if (content.startsWith("{") || content.startsWith("[")) {
@@ -253,7 +306,7 @@ public class ScriptAction extends Action<ScriptAction> {
                         res.withJson(obj);
                         setText = false;
                     } catch (Exception ex) {
-
+                        //intentionally empty
                     }
                 }
 
@@ -271,7 +324,7 @@ public class ScriptAction extends Action<ScriptAction> {
         }
     }
 
-    public LinkedHashMap<String, JSNode> findScripts(Engine engine, Chain chain, Request req) throws ApiException {
+    public LinkedHashMap<String, JSNode> findScripts(Request req) throws ApiException {
         Map<JSNode, String> paths   = new HashMap<>();
         List<JSNode>        scripts = new ArrayList<>();
 
@@ -344,7 +397,7 @@ public class ScriptAction extends Action<ScriptAction> {
             }
         }
 
-        LinkedHashMap ordered = new LinkedHashMap();
+        LinkedHashMap<String, JSNode> ordered = new LinkedHashMap<>();
         for (JSNode aScript : scripts) {
             ordered.put(paths.get(aScript), aScript);
         }
@@ -352,73 +405,9 @@ public class ScriptAction extends Action<ScriptAction> {
         return ordered;
     }
 
-    public static JSNode findScript(final String path) {
-        if (path == null)
-            return null;
-
-        ScriptAction handler = scriptLocal.get();
-        Chain        chain   = chainLocal.get();
-
-        //      if (handler.CACHE.containsKey(path))
-        //         return handler.CACHE.get(path);
-
-        String ext = path.indexOf(".") > 0 ? path.substring(path.lastIndexOf(".") + 1, path.length()).toLowerCase() : null;
-        if (ext != null && !handler.scriptTypes.containsKey(ext)) {
-            return null;
-        }
-
-        String scriptsDir        = chain.getConfig("scriptsDir", handler.scriptsDir);
-        String scriptsCollection = chain.getConfig("scriptsCollection", handler.scriptsCollection);
-
-        List<String> exts = new ArrayList<>();
-        if (ext != null)
-            exts.add(ext);
-        else
-            exts.addAll(handler.scriptTypes.keySet());
-
-        List<String> paths = new ArrayList<>();
-        if (ext != null) {
-            paths.add(path);
-        } else {
-            for (Object e : handler.scriptTypes.keySet())
-                paths.add(path + "." + e);
-        }
-
-        JSNode script = null;
-
-        for (String p : paths) {
-
-            ext = handler.ext(p);
-            URL url = chain.getEngine().getResource(Utils.implode("/", scriptsDir, p));
-            if (url != null) {
-                try {
-                    script = new JSNode("type", handler.scriptTypes.get(ext), "script", Utils.read(url.openStream()));
-                } catch (IOException e) {
-                    //ignore
-                }
-                break;
-            }
-        }
-
-        if (script == null && !Utils.empty(scriptsCollection)) {
-            String   url = chain.getRequest().getApiUrl() + scriptsCollection + "?name=" + path;
-            Response r   = chain.getEngine().get(url);
-            if (r.getStatusCode() == 200) {
-                JSArray dataArr = r.getJson().getArray("data");
-                if (!dataArr.isEmpty()) {
-                    script = dataArr.getNode(0);
-                }
-            }
-        }
-
-        handler.CACHE.put(path, script);
-
-        return script;
-    }
-
     String ext(String fileName) {
         if (fileName.indexOf(".") > 0) {
-            String ext = fileName.substring(fileName.lastIndexOf(".") + 1, fileName.length()).toLowerCase();
+            String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
             if (scriptTypes.containsKey(ext))
                 return ext;
         }
@@ -474,6 +463,10 @@ public class ScriptAction extends Action<ScriptAction> {
         return scriptsCollection;
     }
 
+    public void setScriptsCollection(String scriptsCollection) {
+        this.scriptsCollection = scriptsCollection;
+    }
+
     public String getScriptsDir() {
         return scriptsDir;
     }
@@ -481,10 +474,6 @@ public class ScriptAction extends Action<ScriptAction> {
     public ScriptAction withScriptsDir(String scriptsDir) {
         this.scriptsDir = scriptsDir;
         return this;
-    }
-
-    public void setScriptsCollection(String scriptsCollection) {
-        this.scriptsCollection = scriptsCollection;
     }
 
     public long getCacheExpireSeconds() {
@@ -518,7 +507,7 @@ public class ScriptAction extends Action<ScriptAction> {
         }
 
         public List<Object> list(Object obj) {
-            List<Object> l = new ArrayList<Object>();
+            List<Object> l = new ArrayList<>();
 
             if (obj instanceof Map) {
                 l.addAll(((Map) obj).values());

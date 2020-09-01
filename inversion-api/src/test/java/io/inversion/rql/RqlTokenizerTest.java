@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RqlTokenizerTest {
@@ -73,13 +74,13 @@ public class RqlTokenizerTest {
 
         for (int i = tests.size() - 1; i >= 0; i--) {
             List<String> test    = tests.get(i);
-            String       toParse = test.get(0).toString();
+            String       toParse = test.get(0);
             List<String> tokens  = null;
 
             try {
                 tokens = new RqlTokenizer(toParse).asList();
 
-                assertTrue(tokens.size() == test.size() - 1, "Token count wrong: " + (test.size() - 1) + " != " + tokens.size() + "'" + toParse + "' != " + tokens);
+                assertEquals(test.size() - 1, tokens.size(), "Token count wrong: " + (test.size() - 1) + " != " + tokens.size() + "'" + toParse + "' != " + tokens);
 
                 for (int j = 0; j < tokens.size(); j++) {
                     String token = tokens.get(j);

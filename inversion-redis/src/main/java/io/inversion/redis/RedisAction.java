@@ -143,29 +143,27 @@ public class RedisAction extends Action<RedisAction> {
     }
 
     /**
-     * Sorts the request parameters alphabetically
-     *
-     * @param requestParamMap map representing the request parameters
-     * @return a concatenated string of each param beginning with '?' and joined by '&'
+     * @param chain chain of the current request
+     * @return an alphabetically concatenated string of each param beginning with '?' and joined by '&'
      */
     String getCacheKey(Chain chain) {
         TreeMap<String, String> sortedKeyMap = new TreeMap<>(chain.getRequest().getUrl().getParams());
 
-        String sortedParams = "";
+        StringBuilder sortedParams = new StringBuilder();
 
         boolean isFirstParam = true;
 
         for (Map.Entry<String, String> entry : sortedKeyMap.entrySet()) {
             if (isFirstParam) {
-                sortedParams += "?";
+                sortedParams.append("?");
                 isFirstParam = false;
             } else
-                sortedParams += "&";
+                sortedParams.append("&");
 
-            sortedParams += entry.getKey();
+            sortedParams.append(entry.getKey());
 
             if (!entry.getValue().isEmpty()) {
-                sortedParams += "=" + entry.getValue();
+                sortedParams.append("=").append(entry.getValue());
             }
 
         }

@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public class RqlTokenizer {
-    char[] chars = null;
-    int    head  = 0;
+    final char[] chars;
+    int head = 0;
 
     boolean escaped  = false;
     char    quote    = 0;
@@ -40,7 +40,7 @@ public class RqlTokenizer {
 
     public List<String> asList() {
         List<String> list = new ArrayList<>();
-        String       next = null;
+        String       next;
         while ((next = next()) != null)
             list.add(next);
 

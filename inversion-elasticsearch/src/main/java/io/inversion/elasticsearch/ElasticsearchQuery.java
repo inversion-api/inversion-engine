@@ -85,14 +85,14 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
     }
 
     public WrappedQueryBuilder buildQuery(Term parent, Term child) {
-        QueryBuilder qb = null;
+        QueryBuilder qb;
 
         String token = child.getToken().toLowerCase();
         String field = child.getToken(0);
 
         Object value = null;
 
-        List<WrappedQueryBuilder> childBuilderList = new ArrayList<WrappedQueryBuilder>();
+        List<WrappedQueryBuilder> childBuilderList = new ArrayList<>();
 
         // check the child terms' for the same nested base field value.
         // ex: 'test.yellow' & 'test.blue' would have the same base of 'test'
@@ -109,8 +109,8 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
         if (child.getNumTerms() > 1)
             value = child.getTerm(1).getToken();
 
-        BoolQueryBuilder boolBuilder = null;
-        List<Object>     valueList   = null;
+        BoolQueryBuilder boolBuilder;
+        List<Object>     valueList;
         switch (token) {
             case "gt":
                 qb = QueryBuilders.rangeQuery(field).gt(value);
@@ -183,7 +183,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
                 break;
             case "w":
                 // TODO break out into a method similar to mergeChildBuilders()
-                List<QueryBuilder> withList = new ArrayList<QueryBuilder>();
+                List<QueryBuilder> withList = new ArrayList<>();
                 for (int i = 1; i < child.getNumTerms(); i++) {
                     if (child.getTerm(i).isLeaf()) {
                         value = child.getTerm(i).getToken();
@@ -222,7 +222,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
                 qb = QueryBuilders.boolQuery().mustNot(QueryBuilders.existsQuery(field));
                 break;
             case "in":
-                valueList = new ArrayList<Object>();
+                valueList = new ArrayList<>();
                 for (int i = 1; i < child.getNumTerms(); i++) {
                     if (child.getTerm(i).isLeaf()) {
                         valueList.add(child.getTerm(i).getToken());
@@ -231,7 +231,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
                 qb = QueryBuilders.termsQuery(field, valueList);
                 break;
             case "out":
-                valueList = new ArrayList<Object>();
+                valueList = new ArrayList<>();
                 for (int i = 1; i < child.getNumTerms(); i++) {
                     if (child.getTerm(i).isLeaf()) {
                         valueList.add(child.getTerm(i).getToken());
@@ -255,9 +255,9 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
     }
 
     public SearchSourceBuilder getSearchBuilder() {
-        QueryBuilder root = null;
+        QueryBuilder root;
 
-        List<WrappedQueryBuilder> childList = new ArrayList<WrappedQueryBuilder>();
+        List<WrappedQueryBuilder> childList = new ArrayList<>();
 
         for (Term term : where.getTerms()) {
             WrappedQueryBuilder wrappedChild = buildQuery(null, term);
@@ -373,8 +373,8 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
     /**
      * specifically needed for handling nested children
      *
-     * @param childBuilderList
-     * @return
+     * @param childBuilderList child builders
+     * @return the query builder
      */
     private WrappedQueryBuilder mergeChildBuilders(List<WrappedQueryBuilder> childBuilderList, Term term) {
 

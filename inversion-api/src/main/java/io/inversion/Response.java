@@ -30,34 +30,26 @@ import java.util.Date;
 import java.util.List;
 
 public class Response {
+    protected final ArrayListValuedHashMap<String, String> headers = new ArrayListValuedHashMap<>();
+    protected final List<Change>  changes = new ArrayList<>();
+    protected final StringBuilder debug   = new StringBuilder();
     protected String url = null;
-
     protected Chain chain = null;
-
-    protected ArrayListValuedHashMap<String, String> headers = new ArrayListValuedHashMap();
-
     protected int    statusCode  = 200;
     protected String statusMesg  = "OK";
     protected String statusError = null;
     protected String redirect    = null;
-
-    protected String       contentType = null;
+    protected String        contentType = null;
     protected StringBuilder out         = new StringBuilder();
-    protected JSNode       json        = new JSNode("meta", new JSNode("createdOn", Utils.formatIso8601(new Date())), "data", new JSArray());
-    protected String       text        = null;
-
+    protected JSNode        json        = new JSNode("meta", new JSNode("createdOn", Utils.formatIso8601(new Date())), "data", new JSArray());
+    protected String        text        = null;
     protected String fileName = null;
     protected File   file     = null;
-
     protected Throwable error = null;
-
     protected String contentRangeUnit  = null;
     protected long   contentRangeStart = -1;
     protected long   contentRangeEnd   = -1;
     protected long   contentRangeSize  = -1;
-
-    protected List<Change> changes = new ArrayList<>();
-    protected StringBuilder debug   = new StringBuilder();
 
     public Response() {
 
@@ -114,6 +106,7 @@ public class Response {
 
     /**
      * @param status - one of the SC constants ex "200 OK"
+     * @return this
      */
     public Response withStatus(String status) {
         statusMesg = status;
@@ -121,7 +114,7 @@ public class Response {
             statusCode = Integer.parseInt(status.substring(0, 3));
 
             if (statusMesg.length() > 4) {
-                statusMesg = status.substring(4, status.length());
+                statusMesg = status.substring(4);
             }
         } catch (Exception ex) {
             //the status message did not start with numeric status code.
@@ -211,6 +204,7 @@ public class Response {
      * instead unless you REALLY want to change to wrapper document structure.
      *
      * @param json the json to set
+     * @return this
      */
     public Response withJson(JSNode json) {
         this.json = json;
@@ -409,8 +403,8 @@ public class Response {
 
     public Response withChange(String method, String collectionKey, Object resourceKey) {
         if (resourceKey instanceof List) {
-            List<String> deletedIds = (List<String>) resourceKey;
-            for (String id : deletedIds) {
+            List deletedIds = (List) resourceKey;
+            for (Object id : deletedIds) {
                 changes.add(new Change(method, collectionKey, id));
             }
         } else {
@@ -517,8 +511,7 @@ public class Response {
         try {
             if (!isSuccess()) {
                 String message = findString("message");
-                String string  = getStatus() + (!Utils.empty(message) ? " - " + message : "");
-                return string;
+                return getStatus() + (!Utils.empty(message) ? " - " + message : "");
             }
         } catch (Exception ex) {
             Utils.rethrow(ex);
@@ -548,7 +541,7 @@ public class Response {
      * This is the value returned from the server via the "Content-Length" header
      * NOTE: this will not match file length, for partial downloads, consider also using ContentRangeSize
      *
-     * @return
+     * @return the value of the Content-Length header if it exists else 0
      */
     public long getContentLength() {
         String length = getHeader("Content-Length");
@@ -562,7 +555,7 @@ public class Response {
      * This value come from the "Content-Range" header and is the unit part
      * Content-Range: unit range-start-range-end/size
      *
-     * @return
+     * @return the units from the content-range header
      */
     public String getContentRangeUnit() {
         parseContentRange();
@@ -573,7 +566,7 @@ public class Response {
      * This value come from the "Content-Range" header and is the first part
      * Content-Range: unit range-start-range-end/size
      *
-     * @return
+     * @return the start value from the content-range header
      */
     public long getContentRangeStart() {
         parseContentRange();
@@ -584,7 +577,7 @@ public class Response {
      * This value come from the "Content-Range" header and is the middle part
      * Content-Range: unit range-start-range-end/size
      *
-     * @return
+     * @return then end value from the content-range header
      */
     public long getContentRangeEnd() {
         parseContentRange();
@@ -595,7 +588,7 @@ public class Response {
      * This value come from the "Content-Range" header and is the last part
      * Content-Range: unit range-start-range-end/size
      *
-     * @return
+     * @return then size value from the content-range header
      */
     public long getContentRangeSize() {
         parseContentRange();
@@ -637,7 +630,7 @@ public class Response {
                 if (Utils.empty(fileName))
                     fileName = null;
             } catch (Exception ex) {
-
+                //intentionally blank
             }
         }
         return this;
@@ -707,7 +700,8 @@ public class Response {
     }
 
     @Override
-    public void finalize() {
+    //TODO replace with Cleaner or something similar
+    public void finalize() throws Throwable {
         if (file != null) {
             try {
                 File tempFile = file;
@@ -717,6 +711,7 @@ public class Response {
                 // ignore
             }
         }
+        super.finalize();
     }
 
     //----------------------------------------------------------------------------------------------------------------------
@@ -749,13 +744,13 @@ public class Response {
 
         statusCode = statusCode > 399 ? statusCode : 500;
 
-        String msg = "";
+        StringBuilder msg = new StringBuilder();
         for (int i = 0; messages != null && i < messages.length; i++)
-            msg += messages[i] + "\r\n ";
+            msg.append(messages[i]).append("\r\n ");
 
         String message = getText();
         try {
-            while (message != null && message.startsWith("{") && message.indexOf("\\\"message\\\"") > -1) {
+            while (message != null && message.startsWith("{") && message.contains("\\\"message\\\"")) {
                 message = JSNode.parseJsonNode(message).getString("message");
             }
         } catch (Exception ex) {
@@ -763,9 +758,9 @@ public class Response {
         }
 
         if (message != null)
-            msg = msg + " " + message.trim();
+            msg.append(" ").append(message.trim());
 
-        throw new ApiException(statusCode + "", null, msg);
+        throw new ApiException(statusCode + "", null, msg.toString());
     }
 
     public Response assertStatus(int... statusCodes) {
@@ -785,9 +780,8 @@ public class Response {
             Object[] args = null;
             if (message == null) {
                 message = "The returned status '{}' was not in the approved list '{}'";
-                List debugList = new ArrayList<>();
-                for (int i = 0; statusCodes != null && i < statusCodes.length; i++)
-                    debugList.add(statusCodes[i]);
+                List<Integer> debugList = new ArrayList<>();
+                for (int code : statusCodes) debugList.add(code);
 
                 args = new Object[]{this.statusCode, debugList};
             }
@@ -800,12 +794,9 @@ public class Response {
 
     public Response assertDebug(String lineMatch, String... matches) {
         if (matches == null || matches.length == 0) {
-            matches = new String[]{lineMatch.substring(lineMatch.indexOf(" ") + 1, lineMatch.length())};
+            matches = new String[]{lineMatch.substring(lineMatch.indexOf(" ") + 1)};
             lineMatch = lineMatch.substring(0, lineMatch.indexOf(" "));
         }
-
-        if (matches == null || matches.length == 0)
-            return this;
 
         String debug = getDebug();
 
@@ -819,11 +810,10 @@ public class Response {
 
         String debugLine = debug.substring(idx, debug.indexOf("\n", idx)).trim();
 
-        for (int i = 0; i < matches.length; i++) {
-            String       match       = matches[i];
+        for (String match : matches) {
             List<String> matchTokens = Utils.split(match, ' ', '\'', '"', '{', '}');
             for (String matchToken : matchTokens) {
-                if (debugLine.indexOf(matchToken) < 0) {
+                if (!debugLine.contains(matchToken)) {
                     String msg = "ERROR: Can't find match token in debug line";
                     msg += "\r\n" + "  - debug line    : " + debugLine;
                     msg += "\r\n" + "  - missing token : " + matchToken;

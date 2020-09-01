@@ -46,14 +46,12 @@ import java.util.List;
  * be assigned Roles and Users can be assigned to Groups.
  * This means users can be assigned permissions through
  * any one of the following relationship paths.
- * <p>
  * <ol>
  *  <li>user-to-permission
  *  <li>user-to-group-to-permission
  *  <li>user-to-role-to-permission
  *  <li>user-to-group-to-role-to-permission
  * </ol>
- * <p>
  * See users-h2.ddl for full underlying schema
  */
 public class JdbcDbUserDao extends JwtUserDao {
@@ -118,7 +116,7 @@ public class JdbcDbUserDao extends JwtUserDao {
     public User getUser(AuthAction action, String username, String suppliedPassword, String apiName, String tenant) throws ApiException {
         User user = null;
         try {
-            String sql    = "";
+            String sql = "";
 
             if (username != null) {
                 sql += " SELECT DISTINCT u.*";
@@ -180,7 +178,7 @@ public class JdbcDbUserDao extends JwtUserDao {
         }
     }
 
-    /**
+    /*
      * user -@gt; permission
      * user -@gt; group -@gt; permission
      * user -@gt; role -@gt; permission

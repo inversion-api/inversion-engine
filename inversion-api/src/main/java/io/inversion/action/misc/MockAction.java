@@ -103,6 +103,7 @@ public class MockAction extends Action<MockAction> {
             try {
                 stream = new URL(jsonUrl).openStream();
             } catch (Exception ex) {
+                //intentionally empty
             }
 
             if (stream == null) {

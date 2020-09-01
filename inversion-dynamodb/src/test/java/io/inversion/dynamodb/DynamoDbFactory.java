@@ -16,27 +16,10 @@
  */
 package io.inversion.dynamodb;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.DeleteTableRequest;
-import com.amazonaws.services.dynamodbv2.model.DeleteTableResult;
-import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.LocalSecondaryIndex;
-import com.amazonaws.services.dynamodbv2.model.Projection;
-import com.amazonaws.services.dynamodbv2.model.ProjectionType;
-import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
-
+import com.amazonaws.services.dynamodbv2.model.*;
 import io.inversion.Api;
 import io.inversion.Collection;
 import io.inversion.Engine;
@@ -46,6 +29,12 @@ import io.inversion.jdbc.JdbcDbFactory;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DynamoDbFactory {
 
@@ -58,39 +47,10 @@ public class DynamoDbFactory {
         return new NorthwindDynamoDb();
     }
 
-    public static class NorthwindDynamoDb extends DynamoDb implements Serializable {
-
-        public NorthwindDynamoDb() {
-            super("dynamo", "northwind");
-        }
-
-        @Override
-        public void configApi(Api api) {
-            Collection northwind = getCollectionByTableName("northwind");
-            removeCollection(northwind);
-
-            Collection orders = northwind.copy().withName("orders");
-            withCollection(orders);
-
-            orders.getPropertyByColumnName("hk").withJsonName("orderId"); //get orders by id
-            orders.getPropertyByColumnName("sk").withJsonName("type");
-
-            orders.getPropertyByColumnName("gs1hk").withJsonName("employeeId"); //get orders by customer sorted by date
-            orders.getPropertyByColumnName("gs1sk").withJsonName("orderDate");
-            orders.getPropertyByColumnName("gs2hk").withJsonName("customerId");
-
-            orders.getPropertyByColumnName("ls1").withJsonName("shipCity");
-            orders.getPropertyByColumnName("ls2").withJsonName("shipName");
-            orders.getPropertyByColumnName("ls3").withJsonName("requiredDate");
-
-            super.configApi(api);
-        }
-    }
-
     protected static void rebuildNorthwind() {
         try {
             DynamoDB dynamoDB = new DynamoDB(DynamoDb.buildDynamoClient("dynamo"));
-            Table table = dynamoDB.getTable("northwind");
+            Table    table    = dynamoDB.getTable("northwind");
             if (table != null) {
                 table.delete();
                 table.waitForDelete();
@@ -145,21 +105,21 @@ public class DynamoDbFactory {
             for (GlobalSecondaryIndex gsx : gsxs) {
                 gsx.setProjection(new Projection().withProjectionType(ProjectionType.ALL));
                 gsx.withProvisionedThroughput(new ProvisionedThroughput()//
-                                                                         .withReadCapacityUnits(50L)//
-                                                                         .withWriteCapacityUnits(50L));
+                        .withReadCapacityUnits(50L)//
+                        .withWriteCapacityUnits(50L));
             }
 
-            AmazonDynamoDB client = DynamoDb.buildDynamoClient("dynamo");
-            DynamoDB dynamoDB = new DynamoDB(client);
+            AmazonDynamoDB client   = DynamoDb.buildDynamoClient("dynamo");
+            DynamoDB       dynamoDB = new DynamoDB(client);
 
             CreateTableRequest request = new CreateTableRequest()//
-                                                                 .withTableName("northwind")//
-                                                                 .withGlobalSecondaryIndexes(gsxs)//
-                                                                 .withLocalSecondaryIndexes(lsxs).withKeySchema(keys)//
-                                                                 .withAttributeDefinitions(attrs)//
-                                                                 .withProvisionedThroughput(new ProvisionedThroughput()//
-                                                                                                                       .withReadCapacityUnits(50L)//
-                                                                                                                       .withWriteCapacityUnits(50L));
+                    .withTableName("northwind")//
+                    .withGlobalSecondaryIndexes(gsxs)//
+                    .withLocalSecondaryIndexes(lsxs).withKeySchema(keys)//
+                    .withAttributeDefinitions(attrs)//
+                    .withProvisionedThroughput(new ProvisionedThroughput()//
+                            .withReadCapacityUnits(50L)//
+                            .withWriteCapacityUnits(50L));
 
             Table table = dynamoDB.createTable(request);
 
@@ -175,19 +135,19 @@ public class DynamoDbFactory {
             Engine h2Engine = new Engine().withApi(h2Api);
 
             Engine dynamoEngine = new Engine().withApi(new Api("northwind")//
-                                                                           .withDb(new NorthwindDynamoDb())//
-                                                                           .withEndpoint("*", "/*", new DbAction()));
+                    .withDb(new NorthwindDynamoDb())//
+                    .withEndpoint("*", "/*", new DbAction()));
 
-            System.out.println("");
+            System.out.println();
             System.out.println("RELOADING DYNAMO...");
 
             int empShipRegion = 0;
 
-            Response res = null;
-            int pages = 0;
-            int total = 0;
-            String start = "northwind/orders?pageSize=100&sort=orderid";
-            String next = start;
+            Response res;
+            int      pages = 0;
+            int      total = 0;
+            String   start = "northwind/orders?pageSize=100&sort=orderid";
+            String   next  = start;
             do {
                 JSArray toPost = new JSArray();
 
@@ -214,7 +174,7 @@ public class DynamoDbFactory {
                     for (String key : js.keySet()) {
                         String value = js.getString(key);
                         if (value != null && (value.startsWith("http://") || value.startsWith("https://"))) {
-                            value = value.substring(value.lastIndexOf("/") + 1, value.length());
+                            value = value.substring(value.lastIndexOf("/") + 1);
                             js.remove(key);
 
                             if (!key.toLowerCase().endsWith("id"))
@@ -233,7 +193,7 @@ public class DynamoDbFactory {
             } while (pages < 200 && next != null);
 
             h2Engine.shutdown();
-            
+
             System.out.println("EMPTY SHIP REGION = " + empShipRegion + " out of " + total);
             System.out.println("...FINISHED RELOADING");
             System.out.println("...FINISHED RELOADING");
@@ -246,6 +206,35 @@ public class DynamoDbFactory {
             Utils.rethrow(ex);
         }
 
+    }
+
+    public static class NorthwindDynamoDb extends DynamoDb implements Serializable {
+
+        public NorthwindDynamoDb() {
+            super("dynamo", "northwind");
+        }
+
+        @Override
+        public void configApi(Api api) {
+            Collection northwind = getCollectionByTableName("northwind");
+            removeCollection(northwind);
+
+            Collection orders = northwind.copy().withName("orders");
+            withCollection(orders);
+
+            orders.getPropertyByColumnName("hk").withJsonName("orderId"); //get orders by id
+            orders.getPropertyByColumnName("sk").withJsonName("type");
+
+            orders.getPropertyByColumnName("gs1hk").withJsonName("employeeId"); //get orders by customer sorted by date
+            orders.getPropertyByColumnName("gs1sk").withJsonName("orderDate");
+            orders.getPropertyByColumnName("gs2hk").withJsonName("customerId");
+
+            orders.getPropertyByColumnName("ls1").withJsonName("shipCity");
+            orders.getPropertyByColumnName("ls2").withJsonName("shipName");
+            orders.getPropertyByColumnName("ls3").withJsonName("requiredDate");
+
+            super.configApi(api);
+        }
     }
 
 }

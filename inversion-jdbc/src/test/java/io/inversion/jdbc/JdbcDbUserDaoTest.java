@@ -86,7 +86,7 @@ public class JdbcDbUserDaoTest {
             String v    = row.getString("via");
 
             if (type.equals("permission")) {
-                if (name.equals(n) && via.equals(via))
+                if (name.equals(n) && via.equals(v))
                     return true;
             }
         }

@@ -47,7 +47,7 @@ public class ApiException extends RuntimeException implements Status {
         if (httpStatus == null && messageFormat != null)
             httpStatus = messageFormat;
 
-        if (httpStatus.matches("\\d\\d\\d .*"))
+        if (httpStatus != null && httpStatus.matches("\\d\\d\\d .*"))
             withStatus(httpStatus);
     }
 
@@ -60,11 +60,11 @@ public class ApiException extends RuntimeException implements Status {
      * <p>
      * All arguments are optional but if everything is null you will get an empty string.
      *
-     * @param httpStatus the HTTP stats codde of the error
-     * @param cause the cause of the error
+     * @param httpStatus    the HTTP stats codde of the error
+     * @param cause         the cause of the error
      * @param messageFormat the caller supplied error message with variable placeholders
-     * @param args variables to insert into <code>messageFormat</code>
-     * @return
+     * @param args          variables to insert into <code>messageFormat</code>
+     * @return a hopefully user friendly error message
      */
     public static String getMessage(String httpStatus, Throwable cause, String messageFormat, Object... args) {
         String msg = httpStatus != null ? httpStatus : "";
@@ -91,24 +91,6 @@ public class ApiException extends RuntimeException implements Status {
         return msg;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public ApiException withStatus(String status) {
-        this.status = status;
-        return this;
-    }
-
-    public boolean hasStatus(int... statusCodes) {
-        for (int statusCode : statusCodes) {
-            if (status.startsWith(statusCode + " "))
-                return true;
-        }
-        return false;
-    }
-
-
     /**
      * Rethrows <code>cause</code> as a 500  INTERNAL SERVER ERROR ApiException
      *
@@ -123,16 +105,27 @@ public class ApiException extends RuntimeException implements Status {
      * Throws a 500 INTERNAL SERVER ERROR ApiException with the given message
      *
      * @param messageFormat the error message potentially with variables
-     * @param args values substitued into <code>messageFormat</code>
-     * @throws ApiException
+     * @param args          values substituted into <code>messageFormat</code>
+     * @throws ApiException always
      */
     public static void throwEx(String messageFormat, Object... args) throws ApiException {
         throwEx(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, args);
     }
 
     public static void throwEx(String status, Throwable cause, String messageFormat, Object... args) throws ApiException {
-        ApiException ex = new ApiException(status, cause, messageFormat, args);
-        throw ex;
+        throw new ApiException(status, cause, messageFormat, args);
+    }
+
+    public static ApiException new400BadRequest() throws ApiException {
+        return new ApiException(SC_400_BAD_REQUEST, null, null);
+    }
+
+    public static ApiException new400BadRequest(Throwable cause) throws ApiException {
+        return new ApiException(SC_400_BAD_REQUEST, cause, null);
+    }
+
+    public static ApiException new400BadRequest(String messageFormat, Object... messages) throws ApiException {
+        return new ApiException(SC_400_BAD_REQUEST, null, messageFormat, messages);
     }
 
 //    public static void throw400BadRequest() throws ApiException {
@@ -247,18 +240,6 @@ public class ApiException extends RuntimeException implements Status {
 //        throwEx(SC_501_NOT_IMPLEMENTED, cause, messageFormat, args);
 //    }
 
-    public static ApiException new400BadRequest() throws ApiException {
-        return new ApiException(SC_400_BAD_REQUEST, null, null);
-    }
-
-    public static ApiException new400BadRequest(Throwable cause) throws ApiException {
-        return new ApiException(SC_400_BAD_REQUEST, cause, null);
-    }
-
-    public static ApiException new400BadRequest(String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_400_BAD_REQUEST, null, messageFormat, messages);
-    }
-
     public static ApiException new400BadRequest(Throwable cause, String messageFormat, Object... messages) throws ApiException {
         return new ApiException(SC_400_BAD_REQUEST, cause, messageFormat, messages);
     }
@@ -357,5 +338,22 @@ public class ApiException extends RuntimeException implements Status {
 
     public static ApiException new501NotImplemented(Throwable cause, String messageFormat, Object... args) throws ApiException {
         return new ApiException(SC_501_NOT_IMPLEMENTED, cause, messageFormat, args);
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public ApiException withStatus(String status) {
+        this.status = status;
+        return this;
+    }
+
+    public boolean hasStatus(int... statusCodes) {
+        for (int statusCode : statusCodes) {
+            if (status.startsWith(statusCode + " "))
+                return true;
+        }
+        return false;
     }
 }

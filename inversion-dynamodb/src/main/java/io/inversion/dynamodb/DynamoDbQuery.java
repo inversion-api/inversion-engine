@@ -24,12 +24,14 @@ import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import io.inversion.Collection;
 import io.inversion.*;
 import io.inversion.rql.*;
 import io.inversion.utils.Utils;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * IMPLEMENTATION NOTE: Helpful DynamoDb Links
@@ -49,8 +51,8 @@ import java.util.*;
  */
 public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<Select, DynamoDbQuery>, DynamoDbQuery>, From<From<From, DynamoDbQuery>, DynamoDbQuery>, Where<Where<Where, DynamoDbQuery>, DynamoDbQuery>, Group<Group<Group, DynamoDbQuery>, DynamoDbQuery>, Order<Order<Order, DynamoDbQuery>, DynamoDbQuery>, Page<Page<Page, DynamoDbQuery>, DynamoDbQuery>> {
 
-    public static Map<String, String> OPERATOR_MAP = new HashMap<>();
-    public static Map<String, String> FUNCTION_MAP = new HashMap<>();
+    public static final Map<String, String> OPERATOR_MAP = new HashMap<>();
+    public static final Map<String, String> FUNCTION_MAP = new HashMap<>();
 
     static {
         OPERATOR_MAP.put("eq", "=");
@@ -76,8 +78,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
     com.amazonaws.services.dynamodbv2.document.Table dynamoTable = null;
     Index                                            index;
 
-    Term                                             partKey     = null;
-    Term                                             sortKey     = null;
+    Term partKey = null;
+    Term sortKey = null;
 
     public DynamoDbQuery() {
     }
@@ -115,23 +117,23 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 throw ApiException.new400BadRequest("The n() and nn() functions only take one column name arg.");
 
             if (term.hasToken("n", "emp")) {
-                Term eqNull = Term.term(term.getParent(), "eq", term.getTerm(0), "null");
+                Term eqNull        = Term.term(term.getParent(), "eq", term.getTerm(0), "null");
                 Term attrNotExists = Term.term(null, "attribute_not_exists", term.getTerm(0));
 
                 term = Term.term(term.getParent(), "or", attrNotExists, eqNull);
             } else if (term.hasToken("nn", "nemp")) {
-                Term neNull = Term.term(term.getParent(), "ne", term.getTerm(0), "null");
+                Term neNull     = Term.term(term.getParent(), "ne", term.getTerm(0), "null");
                 Term attrExists = Term.term(null, "attribute_exists", term.getTerm(0));
                 term = Term.term(term.getParent(), "and", attrExists, neNull);
             }
         }
 
         if (term.hasToken("like")) {
-            String val = term.getToken(1);
-            int firstWc = val.indexOf("*");
+            String val     = term.getToken(1);
+            int    firstWc = val.indexOf("*");
             if (firstWc > -1) {
                 int wcCount = val.length() - val.replace("*", "").length();
-                int lastWc = val.lastIndexOf("*");
+                int lastWc  = val.lastIndexOf("*");
                 if (wcCount > 2//
                         || (wcCount == 1 && firstWc != val.length() - 1)//
                         || (wcCount == 2 && !(firstWc == 0 && lastWc == val.length() - 1)))
@@ -193,7 +195,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
 
     protected Results doSelect0() throws Exception {
         com.amazonaws.services.dynamodbv2.document.Index dynamoIndex = null;
-        Results result = new Results(this);
+        Results                                          result      = new Results(this);
 
         Object spec = getSelectSpec();
 
@@ -240,7 +242,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 debug.append(" projectionExpression='").append(qs.getProjectionExpression()).append("'");
 
             if (qs.getExclusiveStartKey() != null)
-                debug.append(" exclusiveStartKey='" + qs.getExclusiveStartKey());
+                debug.append(" exclusiveStartKey='").append(qs.getExclusiveStartKey());
 
             if (qs.getKeyConditionExpression() != null)
                 debug.append(" keyConditionExpression='").append(qs.getKeyConditionExpression()).append("'");
@@ -280,7 +282,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 debug.append(" projectionExpression='").append(ss.getProjectionExpression()).append("'");
 
             if (ss.getExclusiveStartKey() != null)
-                debug.append(" exclusiveStartKey='" + ss.getExclusiveStartKey());
+                debug.append(" exclusiveStartKey='").append(ss.getExclusiveStartKey());
 
             result.withTestQuery(debug.toString());
             Chain.debug(debug);
@@ -317,7 +319,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 after.withTerm(Term.term(after, getValue(attrs.get(key)).toString()));
             }
         }
-        return Arrays.asList(after);
+        return Utils.asList(after);
     }
 
     protected Object getValue(AttributeValue v) {
@@ -385,19 +387,19 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 }
             }
 
-            if (sortBy != null && (afterSortKeyCol == null || !sortBy.equalsIgnoreCase(afterSortKeyCol))) {
+            if (sortBy != null && (!sortBy.equalsIgnoreCase(afterSortKeyCol))) {
                 //TODO make test
                 throw ApiException.new400BadRequest("The requested sort key does not match the supplied 'after' continuation token.");
             }
         }
 
         if (index == null) {
-            Index foundIndex = null;
-            Term foundPartKey = null;
-            Term foundSortKey = null;
+            Index foundIndex   = null;
+            Term  foundPartKey = null;
+            Term  foundSortKey = null;
 
             for (io.inversion.Index idx : getCollection().getIndexes()) {
-                Index index = (Index) idx;
+                Index index = idx;
 
                 String partCol = index.getColumnName(0);//getHashKey().getColumnName();
                 String sortCol = index.getColumnName(1);//index.getSortKey() != null ? index.getSortKey().getColumnName() : null;
@@ -417,8 +419,6 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                     //--  @see https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#DDB-Query-request-KeyConditionExpression
                     sortKey = findTerm(sortCol, "gt", "ne", "gt", "ge", "lt", "le", "sw", "ew", "in", "out", "n", "nn");
                     if (sortKey != null && Utils.in(sortKey.getToken(), "in", "out")) {
-                        partKey = null;
-                        sortKey = null;
                         continue;
                     }
                 }
@@ -462,10 +462,11 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
     /**
      * Find a valid sort key.
      * <p>
-     * IMPLEMENTATION NOTE - WB 20200805 - there are a limited number of operators supported for sort keys in KeyCondition Expressions. 
-     * @see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#DDB-Query-request-KeyConditionExpression">Dynamo Key Condition Expressions</a>
+     * IMPLEMENTATION NOTE - WB 20200805 - there are a limited number of operators supported for sort keys in KeyCondition Expressions.
+     *
      * @param sortCol the name of a range key column
      * @return a sort key Term if supplied
+     * @see <a href="https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#DDB-Query-request-KeyConditionExpression">Dynamo Key Condition Expressions</a>
      */
     Term findSortKeyTerm(String sortCol) {
         Term sortKey = findTerm(sortCol);
@@ -481,6 +482,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
     /**
      * Finds the primary or a secondary index to use based on
      * what parameters were passed in.
+     *
      * @return a term referencing the partition key column
      * @see #calcIndex()
      */
@@ -499,10 +501,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
     }
 
     public Object getSelectSpec() {
-        Map nameMap = new HashMap<>();
+        Map nameMap  = new HashMap<>();
         Map valueMap = new HashMap<>();
 
-        StringBuilder keyExpr = new StringBuilder();
+        StringBuilder keyExpr    = new StringBuilder();
         StringBuilder filterExpr = new StringBuilder();
 
         Index index = calcIndex();
@@ -515,7 +517,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 && sortKey.getTerm(1).isLeaf())//sortKey is a single eq expression not a logic expr
         {
             String partKeyCol = partKey.getToken(0);
-            String type = collection.getProperty(partKeyCol).getType();
+            String type       = collection.getProperty(partKeyCol).getType();
             Object partKeyVal = getDb().cast(type, partKey.getToken(1));
 
             String sortKeyCol = sortKey.getToken(0);
@@ -543,7 +545,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
         int pageSize = getPage().getPageSize();
 
         String projectionExpression = null;
-        List columns = getSelect().getColumnNames();
+        List   columns              = getSelect().getColumnNames();
         if (columns.size() > 0)
             projectionExpression = Utils.implode(",", columns);
 
@@ -641,8 +643,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
     String toString(StringBuilder buff, Term term, Map nameMap, Map valueMap) {
         space(buff);
 
-        String lc = term.getToken().toLowerCase();
-        String op = OPERATOR_MAP.get(lc);
+        String lc   = term.getToken().toLowerCase();
+        String op   = OPERATOR_MAP.get(lc);
         String func = FUNCTION_MAP.get(lc);
 
         if (term.hasToken("not")) {
@@ -659,7 +661,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             }
             buff.append(")");
         } else if (term.hasToken("in", "out")) {
-            String col = term.getToken(0);
+            String col     = term.getToken(0);
             String nameKey = "#var" + (nameMap.size() + 1);
             nameMap.put(nameKey, col);
 
@@ -705,11 +707,9 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 space(buff).append(func).append("(").append(nameKey).append(")");
             }
         } else if (term.isLeaf()) {
-            String colName = term.getParent().getToken(0);
-
-            Object value = term.getToken();
-            Property col = collection.getProperty(colName);
-            value = db.cast(col, term.getToken());
+            String   colName = term.getParent().getToken(0);
+            Property col     = collection.getProperty(colName);
+            Object   value   = db.cast(col, term.getToken());
 
             if ("null".equalsIgnoreCase(value + ""))
                 value = null;

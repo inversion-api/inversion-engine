@@ -20,6 +20,9 @@ import io.inversion.utils.Utils;
 
 import java.io.Serializable;
 
+/**
+ *
+ */
 public class Property implements Serializable {
     protected String  jsonName   = null;
     protected String  columnName = null;
@@ -95,6 +98,7 @@ public class Property implements Serializable {
 
     /**
      * @param primaryKey the primaryKey to set
+     * @return this
      */
     public Property withPk(Property primaryKey) {
         this.pk = primaryKey;
@@ -114,6 +118,7 @@ public class Property implements Serializable {
 
     /**
      * @param name the name to set
+     * @return this
      */
     public Property withColumnName(String name) {
         this.columnName = name;
@@ -129,6 +134,7 @@ public class Property implements Serializable {
 
     /**
      * @param name the name to set
+     * @return this
      */
     public Property withJsonName(String name) {
         this.jsonName = name;
@@ -144,6 +150,7 @@ public class Property implements Serializable {
 
     /**
      * @param type the type to set
+     * @return this
      */
     public Property withType(String type) {
         if (!Utils.empty(type) && !"null".equalsIgnoreCase(type))
@@ -152,7 +159,7 @@ public class Property implements Serializable {
     }
 
     /**
-     * @return the tbl
+     * @return the collection that owns this property
      */
     public Collection getCollection() {
         return collection;
@@ -160,6 +167,7 @@ public class Property implements Serializable {
 
     /**
      * @param collection the Collection the Property belongs to
+     * @return this
      */
     public Property withCollection(Collection collection) {
         if (this.collection != collection) {
@@ -178,6 +186,7 @@ public class Property implements Serializable {
 
     /**
      * @param hint the hint to set
+     * @return this
      */
     public Property withHint(String hint) {
         this.hint = hint;

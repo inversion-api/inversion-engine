@@ -23,10 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -152,17 +149,13 @@ public class JdbcUtilsIntegTest {
 
     List<Map<String, Object>> rows(Map... maps) {
         ArrayList rows = new ArrayList<>();
-        for (Map row : maps) {
-            rows.add(row);
-        }
+        Collections.addAll(rows, maps);
         return rows;
     }
 
     List list(String... values) {
         ArrayList list = new ArrayList<>();
-        for (Object value : values) {
-            list.add(value);
-        }
+        Collections.addAll(list, values);
         return list;
     }
 }

@@ -84,20 +84,20 @@ public class AuthAction extends Action<AuthAction> {
             token = token.trim();
 
             if (token.toLowerCase().startsWith("bearer ")) {
-                token = token.substring(token.indexOf(" ") + 1, token.length()).trim();
+                token = token.substring(token.indexOf(" ") + 1).trim();
                 user = userDao.getUser(this, token, apiName, tenant);
             } else if (token.toLowerCase().startsWith("basic ")) {
-                token = token.substring(token.indexOf(" ") + 1, token.length());
+                token = token.substring(token.indexOf(" ") + 1);
                 token = new String(Base64.decodeBase64(token));
                 username = token.substring(0, token.indexOf(":"));
-                password = token.substring(token.indexOf(":") + 1, token.length());
+                password = token.substring(token.indexOf(":") + 1);
 
                 user = userDao.getUser(this, username, password, apiName, tenant);
             } else if (token.toLowerCase().startsWith("session ")) {
                 if (sessionDao == null)
                     throw ApiException.new400BadRequest("AuthAction has not been configured to support session authorization");
 
-                token = token.substring(8, token.length()).trim();
+                token = token.substring(8).trim();
 
                 if (sessionReq && req.isDelete()) {
                     //the supplied authorization and the resourceKey in the url
@@ -119,7 +119,7 @@ public class AuthAction extends Action<AuthAction> {
                 throw ApiException.new401Unauthroized();
 
         } else {
-            if (req.isPost() && sessionReq && (Utils.empty(username, password))) {
+            if (req.isPost() && sessionReq) {
                 username = req.getJson().getString("username");
                 password = req.getJson().getString("password");
             }
@@ -212,14 +212,28 @@ public class AuthAction extends Action<AuthAction> {
         return userDao;
     }
 
-    public static interface SessionDao {
-        public User get(String sessionKey);
+    public interface SessionDao {
+        User get(String sessionKey);
 
-        public String post(User user);
+        String post(User user);
 
-        public void put(String sessionKey, User user);
+        void put(String sessionKey, User user);
 
-        public void delete(String sessionKey);
+        void delete(String sessionKey);
+    }
+
+    public interface UserDao {
+        User getUser(AuthAction action, String jwt, String apiName, String tenant) throws ApiException;
+
+        User getUser(AuthAction action, String username, String password, String apiName, String tenant) throws ApiException;
+
+        default User getGuest(String apiName, String tenant) {
+            User user = new User();
+            user.withUsername("Anonymous");
+            user.withRoles("guest");
+            user.withTenant(tenant);
+            return user;
+        }
     }
 
     public static class InMemorySessionDao implements SessionDao {
@@ -247,22 +261,20 @@ public class AuthAction extends Action<AuthAction> {
                 long lastRequest = user.getRequestAt();
                 if (now - lastRequest > sessionExp) {
                     delete(sessionKey);
-                    user = null;
-
                     throw ApiException.new401Unauthroized("The session has expired.");
                 } else if (now - lastRequest > sessionUpdate) {
                     put(sessionKey, user);
                 }
             }
 
-            return (User) cache.get(sessionKey);
+            return cache.get(sessionKey);
         }
 
         /**
          * Override me to change out map/cache implementation
          *
-         * @param sessionKey
-         * @return
+         * @param sessionKey the session id of the user
+         * @return the users if found
          */
         protected User doGet(String sessionKey) {
             return cache.get(sessionKey);
@@ -282,6 +294,9 @@ public class AuthAction extends Action<AuthAction> {
 
         /**
          * Override me to change out map/cache implementation
+         *
+         * @param sessionKey the users session id
+         * @param user       the user to store against the sessionKey
          */
         protected void doPut(String sessionKey, User user) {
             cache.put(sessionKey, user);
@@ -295,7 +310,7 @@ public class AuthAction extends Action<AuthAction> {
         /**
          * Override me to change out map/cache implementation
          *
-         * @param sessionKey
+         * @param sessionKey the session to end
          */
         protected void doDelete(String sessionKey) {
             cache.remove(sessionKey);
@@ -324,22 +339,8 @@ public class AuthAction extends Action<AuthAction> {
 
     }
 
-    public static interface UserDao {
-        User getUser(AuthAction action, String jwt, String apiName, String tenant) throws ApiException;
-
-        User getUser(AuthAction action, String username, String password, String apiName, String tenant) throws ApiException;
-
-        default User getGuest(String apiName, String tenant) {
-            User user = new User();
-            user.withUsername("Anonymous");
-            user.withRoles("guest");
-            user.withTenant(tenant);
-            return user;
-        }
-    }
-
     public static class InMemoryRevokedTokenCache implements RevokedTokenCache {
-        Set<String> revoked = new HashSet();
+        final Set<String> revoked = new HashSet();
 
         public void addRevokedToken(String token) {
             revoked.add(token.toLowerCase());
@@ -352,10 +353,6 @@ public class AuthAction extends Action<AuthAction> {
 
     public static class JwtUserDao implements UserDao {
         RevokedTokenCache revokedTokenCache = new InMemoryRevokedTokenCache();
-
-        public static interface RevokedTokenCache {
-            boolean isRevoked(String token);
-        }
 
         public User getUser(AuthAction action, String username, String password, String apiName, String tenant) throws ApiException {
             throw ApiException.new403Forbidden();
@@ -391,18 +388,18 @@ public class AuthAction extends Action<AuthAction> {
             User user = new User();
             user.withUsername(jwt.getSubject());
 
-            Claim c = null;
+            Claim c;
 
             c = jwt.getClaim("groups");
             if (c != null && !c.isNull()) {
                 List<String> groups = c.asList(String.class);
-                user.withRoles(groups.toArray(new String[groups.size()]));
+                user.withRoles(groups.toArray(new String[0]));
             }
 
             c = jwt.getClaim("roles");
             if (c != null && !c.isNull()) {
                 List<String> roles = c.asList(String.class);
-                user.withRoles(roles.toArray(new String[roles.size()]));
+                user.withRoles(roles.toArray(new String[0]));
             }
 
             c = jwt.getClaim("tenantId");//legacy support
@@ -432,14 +429,19 @@ public class AuthAction extends Action<AuthAction> {
         protected void addPermsToUser(User user, Claim c) {
             if (c != null && !c.isNull()) {
                 List<String> perms = c.asList(String.class);
-                user.withPermissions(perms.toArray(new String[perms.size()]));
+                user.withPermissions(perms.toArray(new String[0]));
             }
         }
 
         /**
          * Looks gwt signing secrets up as environment vars or sysprops.
          * <p>
-         * Finds the most specific keys keys first
+         * Finds the most specific keys keys first.
+         *
+         * @param action  the action requesting the secrets
+         * @param apiName the name of the parent api
+         * @param tenant  the tenant if there is one
+         * @return any jwt secrets found
          */
         protected List<String> getJwtSecrets(AuthAction action, String apiName, String tenant) {
             List secrets = new ArrayList<>();
@@ -479,6 +481,10 @@ public class AuthAction extends Action<AuthAction> {
         public JwtUserDao withRevokedTokenCache(RevokedTokenCache revokedTokenCache) {
             this.revokedTokenCache = revokedTokenCache;
             return this;
+        }
+
+        public interface RevokedTokenCache {
+            boolean isRevoked(String token);
         }
 
     }

@@ -1,51 +1,39 @@
 package io.inversion.spring;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.catalina.Context;
-import org.apache.catalina.connector.Connector;
-import org.apache.catalina.core.StandardContext;
+import io.inversion.Engine;
+import io.inversion.EngineServlet;
+import io.inversion.utils.Path;
 import org.apache.coyote.http11.AbstractHttp11Protocol;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer;
-import org.springframework.boot.web.embedded.tomcat.TomcatContextCustomizer;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
 
-import io.inversion.Engine;
-import io.inversion.EngineServlet;
-import io.inversion.utils.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 @Configuration
 public class InversionServletConfig {
-    @Bean
-    public ServletRegistrationBean inversionServlet(@Autowired Engine engine) {
-        return createDefaultInversionServlet(engine);
-    }
-
     public static ServletRegistrationBean createDefaultInversionServlet(Engine engine) {
         EngineServlet servlet = new EngineServlet();
         servlet.setEngine(engine);
 
-        String                  servletMapping = buildServletMapping(engine);
-        ServletRegistrationBean bean           = new ServletRegistrationBean(servlet, servletMapping);
+        String                                 servletMapping = buildServletMapping(engine);
+        ServletRegistrationBean<EngineServlet> bean           = new ServletRegistrationBean<>(servlet, servletMapping);
 
         bean.setLoadOnStartup(1);
         return bean;
     }
 
     /**
-     * acumulates all of the static path parts
-     * shared by all Engine includesPaths.
+     * @param engine the Engine hosting the Apis
+     * @return accumulation all of the static path parts shared by all Engine includesPaths.
      */
     public static String buildServletMapping(Engine engine) {
-        List    parts = new ArrayList<>();
-        boolean done  = false;
+        List<String> parts = new ArrayList<>();
+        boolean      done  = false;
         for (int i = 0; i < 100 && !done; i++) {
             String part = null;
             for (Path path : engine.getIncludePaths()) {
@@ -67,32 +55,28 @@ public class InversionServletConfig {
         return (parts.size() > 0 ? ("/" + new Path(parts)) : "") + "/*";
     }
 
+    public static ConfigurableServletWebServerFactory createDefaultServletContainer() {
+        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
+        tomcat.addContextCustomizers(context -> context.setAllowCasualMultipartParsing(true));
+
+        tomcat.addConnectorCustomizers(connector -> {
+            AbstractHttp11Protocol httpProtocol = (AbstractHttp11Protocol) connector.getProtocolHandler();
+            httpProtocol.setCompressibleMimeType("text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json");
+            httpProtocol.setCompression("1024");//compresses responses over 1KB.
+        });
+
+
+        return tomcat;
+    }
+
+    @Bean
+    public ServletRegistrationBean inversionServlet(@Autowired Engine engine) {
+        return createDefaultInversionServlet(engine);
+    }
+
     @Bean
     public ConfigurableServletWebServerFactory servletContainer() {
         return createDefaultServletContainer();
-    }
-
-    public static ConfigurableServletWebServerFactory createDefaultServletContainer() {
-        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
-        tomcat.addContextCustomizers(new TomcatContextCustomizer() {
-            @Override
-            public void customize(Context context) {
-                ((StandardContext) context).setAllowCasualMultipartParsing(true);
-            }
-        });
-        
-        tomcat.addConnectorCustomizers(new TomcatConnectorCustomizer() {
-            @Override
-            public void customize(Connector connector) {
-                AbstractHttp11Protocol httpProtocol = (AbstractHttp11Protocol) connector.getProtocolHandler();
-                httpProtocol.setCompressibleMimeType("text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json");
-                httpProtocol.setCompression("1024");//compresses responses over 1KB.
-            }
-        });
-        
-        
-
-        return tomcat;
     }
 
 }

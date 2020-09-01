@@ -28,7 +28,6 @@ import io.inversion.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -101,7 +100,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
             if (partKeyTerm != null && partKeyTerm.getParent() == null) {
                 partKey = partKeyTerm.getToken(1);
             } else if ("id".equalsIgnoreCase(partKeyCol)) {
-                partKey = Chain.peek().getRequest().getResourceKey();
+                partKey = Chain.top().getRequest().getResourceKey();
             }
         }
 
@@ -171,6 +170,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
      * <li>SELECT "table".* FROM "table" -@gt; SELECT * FROM table
      * <li>"table"."column"              -@gt; table["column"]
      * </ul>
+     *
      * @see <a href="https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-select">Cosmos Sql Query Select</a>
      * @see <a href="https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-select#quoted-property-accessor">Cosmos Sql Query - Quoted Property Accessor</a>
      */
@@ -196,7 +196,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
      * a sort on the query string, just search by the "id" field.
      */
     protected List<Sort> getDefaultSorts(Parts parts) {
-        return Utils.add(new ArrayList<Sort>(), new Sort("id", true));
+        return Utils.add(new ArrayList<>(), new Sort("id", true));
     }
 
     /**
@@ -226,6 +226,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
     /**
      * Overridden to exclude rdbms style '%' wildcards that are not needed for cosmos sw and ew queries.
+     *
      * @return the term as a string approperiate for use in a cosmos query
      */
     @Override
@@ -235,8 +236,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         System.out.println("String:" + string);
         Term parent = term.getParent();
 
-        if(parent != null && string.indexOf("%") > 0 && parent.hasToken("sw", "ew"))
-        {
+        if (parent != null && string.indexOf("%") > 0 && parent.hasToken("sw", "ew")) {
             string = string.replace("%", "");
         }
 

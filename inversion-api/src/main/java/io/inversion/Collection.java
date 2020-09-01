@@ -52,43 +52,37 @@ import java.util.regex.Pattern;
  * RestGet/Post/Put/Patch/DeleteAction are responsible for handling basic Rest semantics for interacting with Dbs via Collections.
  * <p>
  * TODO: check on test cases related to hasName and path matching
- * TODO: need tests for entity keys with commas
+ * TODO: need tests for resource keys with commas
  */
 public class Collection extends Rule<Collection> implements Serializable {
+    /**
+     * Additional names that should cause this Collection to match to a Request.
+     * <p>
+     * For example, in an e-commerce environment, you may overload the "orders" collection with aliases "cart", "basket", and "bag".
+     */
+    protected final Set<String> aliases = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    /**
+     * Properties map database column names to JSON property names.
+     */
+    protected final ArrayList<Property> properties = new ArrayList<>();
+    /**
+     * Representation of underlying Db datasource indexes.
+     */
+    protected final ArrayList<Index> indexes = new ArrayList<>();
+    /**
+     * Relationships like resources in one collection to the resources in another collection.
+     */
+    protected final ArrayList<Relationship> relationships = new ArrayList<>();
     /**
      * The backend storage adapter that probably generated this Collection and associated Indexes and Relationships.
      */
     transient protected Db db = null;
-
     /**
      * The backend datasource name that this Collection operates on.
      * <p>
      * The tableName might be "ORDER_DETAIL" but the Collection might be named "orderDetails".
      */
     protected String tableName = null;
-
-    /**
-     * Additional names that should cause this Collection to match to a Request.
-     * <p>
-     * For example, in an e-commerce environment, you may overload the "orders" collection with aliases "cart", "basket", and "bag".
-     */
-    protected Set<String> aliases = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-
-    /**
-     * Properties map database column names to JSON property names.
-     */
-    protected ArrayList<Property> properties = new ArrayList<>();
-
-    /**
-     * Representation of underlying Db datasource indexes.
-     */
-    protected ArrayList<Index> indexes = new ArrayList<>();
-
-    /**
-     * Relationships like resources in one collection to the resources in another collection.
-     */
-    protected ArrayList<Relationship> relationships = new ArrayList<>();
-
     /**
      * Set this to true to prevent it from being automatically exposed through your Api.
      */
@@ -101,6 +95,136 @@ public class Collection extends Rule<Collection> implements Serializable {
     public Collection(String defaultName) {
         withName(defaultName);
         withTableName(defaultName);
+    }
+
+    /**
+     * Encodes the potentially multiple values of an index into a url path and query string safe single value.
+     * <p>
+     * In a typical REST Api configuration where you url paths might map to something like
+     * "${endpoint}/${collection}/[${resource}][?{querystring}]", ${resource} is
+     * the primary index of the resource that has been encoded here.
+     * <p>
+     * That might look like "/bookstore/books/12345" or in the case of a compound primary index
+     * It might look like "/bookstore/orders/4567~abcde" where the "~" character is used to
+     * separate parts of the key.
+     * <p>
+     * The names of the index fields are not encoded, only the values, relying on index property order to remain consistent.
+     * <p>
+     * This methods is used by various actions when constructing hypermedia urls that allow you to
+     * uniquely identify individual resources (records in a Db) or to traverse Relationships.
+     * <p>
+     * The inverse of this method is {@link #decodeResourceKeys(Index, String)} which is used to
+     * decode inbound Url path and query params to determine which resource is being referenced.
+     *
+     * @param values column name to Property value mapping for a resource
+     * @param index  the index identifying the values that should be encoded
+     * @return a url safe encoding of the index values separated by "~" characters or null if any of the values for an index key is null.
+     * @see #encodeStr(String)
+     * @see #decodeResourceKeys(Index, String)
+     */
+    public static String encodeResourceKey(Map values, Index index) {
+        StringBuilder key = new StringBuilder();
+        for (String colName : index.getColumnNames()) {
+            Object val = values.get(colName);
+            if (Utils.empty(val))
+                return null;
+
+            val = encodeStr(val.toString());
+
+            if (key.length() > 0)
+                key.append("~");
+
+            key.append(val);
+        }
+
+        return key.toString();
+    }
+
+    /**
+     * Creates a "~" separated url safe concatenation of <code>pieces</code>
+     *
+     * @param pieces key parts to be encoded
+     * @return a url safe encoding of the <code>pieces</code> separated by "~" characters
+     * @see #encodeStr(String)
+     * @see #encodeResourceKey(Map, Index)
+     */
+    public static String encodeResourceKey(List pieces) {
+        StringBuilder resourceKey = new StringBuilder();
+        for (int i = 0; i < pieces.size(); i++) {
+            Object piece = pieces.get(i);
+            if (piece == null)
+                throw ApiException.new500InternalServerError("Trying to encode an resource key with a null component: '{}'.", pieces);
+
+            resourceKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
+            if (i < pieces.size() - 1)
+                resourceKey.append("~");
+        }
+        return resourceKey.toString();
+    }
+
+    public static void main(String[] args) {
+        System.out.println(encodeStr("abcd/efg"));
+
+    }
+
+    /**
+     * Encodes non url safe characters into a friendly "@FOUR_DIGIT_HEX_VALUE" equivalent that itself will not be modified by URLEncoder.encode(String).
+     * <p>
+     * For example, encodeing "abcd/efg" would result in "abcd@002fefg" where "@002f" is the hex encoding for "/".
+     * <p>
+     * While "~" characters are considered url safe, the are specifically included for encoding so that
+     * {@link #decodeResourceKeys(Index, String)} can split a value on "~" before decoding its parts.
+     *
+     * @param string the string to encode
+     * @return a url safe string with non safe characters encoded as '@FOUR_DIGIT_HEX_VALUE'
+     * @see <a href="https://stackoverflow.com/questions/695438/safe-characters-for-friendly-url">Safe characters for friendly urls</a>
+     * @see #encodeResourceKey(Map, Index)
+     * @see #decodeResourceKeys(Index, String)
+     * @see #decodeStr(String)
+     */
+    public static String encodeStr(String string) {
+        //- . _ ~ ( ) ' ! * : @ , ;
+        Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\:\\,\\;\\*]");
+
+        Matcher      m  = p.matcher(string);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            String        chars = m.group();
+            StringBuilder hex   = new StringBuilder("@").append(Hex.encodeHex(chars.getBytes()));
+            while (hex.length() < 5)
+                hex.insert(1, "0");
+
+            m.appendReplacement(sb, hex.toString());
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+    /**
+     * The reciprocal of {@link #encodeStr(String)} that replaces "\@[0-9a-f]{4}" hex sequences with the unescaped oritional unescaped character.
+     *
+     * @param string the string to decode
+     * @return a string with characters escaped to their hex equivalent replaced with the unescaped value.
+     * @see #encodeResourceKey(Map, Index)
+     * @see #decodeResourceKeys(Index, String)
+     * @see #encodeStr(String)
+     */
+    public static String decodeStr(String string) {
+        try {
+            Pattern      p  = Pattern.compile("\\@[0-9a-f]{4}");
+            Matcher      m  = p.matcher(string);
+            StringBuffer sb = new StringBuffer();
+            while (m.find()) {
+                String group = m.group();
+                String hex   = group.substring(1);
+                String chars = StringEscapeUtils.unescapeJava("\\u" + hex);
+                m.appendReplacement(sb, chars);
+            }
+            m.appendTail(sb);
+            return sb.toString();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     /**
@@ -379,9 +503,9 @@ public class Collection extends Rule<Collection> implements Serializable {
      * <p>
      * All of the Properties in <code>propertyNames</code> must already exist.
      *
-     * @param name the name of the Index to create/add
-     * @param type the type of the Index to create/add
-     * @param unique specifics if Index to create/add is unique
+     * @param name          the name of the Index to create/add
+     * @param type          the type of the Index to create/add
+     * @param unique        specifics if Index to create/add is unique
      * @param propertyNames the Properties that make up the index
      * @return this
      * @see Index#Index(String, String, boolean, Property...)
@@ -392,8 +516,6 @@ public class Collection extends Rule<Collection> implements Serializable {
             String   propName = propertyNames[i];
             Property prop     = getProperty(propName);
             if (prop == null) {
-                System.out.println(this.properties);
-                prop = getProperty(propName);
                 throw ApiException.new500InternalServerError("Property {} does not exist so it can't be added to the index {}", propertyNames[i], name);
             }
 
@@ -482,6 +604,7 @@ public class Collection extends Rule<Collection> implements Serializable {
     /**
      * Fluent utility method to construct a Relationship and associated Indexes.
      *
+     * @param parentCollection  the parent collection of the relationship being created
      * @param childPropertyName name of the json property that will hold this relationship reference
      * @param childFkProps      names of the existing Properties that make up the foreign key
      * @return this
@@ -538,6 +661,7 @@ public class Collection extends Rule<Collection> implements Serializable {
      * This is a convenience overload of withOneToManyRelationship(String, Collection, String, Property...) to be used
      * when code wiring Apis and you don't want to lookup references to the actual Property objects.
      * </p>
+     *
      * @param parentPropertyName the name of the json property for the parent that references the child
      * @param childCollection    the target child collection
      * @param childPropertyName  the name of hte json property for the child that references the parent
@@ -614,7 +738,7 @@ public class Collection extends Rule<Collection> implements Serializable {
     /**
      * Encodes the potentially multiple values of a resources primary index into a url path safe single value.
      *
-     * @param values
+     * @param values the key value pairs to encode
      * @return a url safe encoding of the resources primary index values
      * @see #encodeResourceKey(Map, Index)
      */
@@ -627,138 +751,9 @@ public class Collection extends Rule<Collection> implements Serializable {
     }
 
     /**
-     * Encodes the potentially multiple values of an index into a url path and query string safe single value.
-     * <p>
-     * In a typical REST Api configuration where you url paths might map to something like
-     * "${endpoint}/${collection}/[${resource}][?{querystring}]", ${resource} is
-     * the primary index of the resource that has been encoded here.
-     * <p>
-     * That might look like "/bookstore/books/12345" or in the case of a compound primary index
-     * It might look like "/bookstore/orders/4567~abcde" where the "~" character is used to
-     * separate parts of the key.
-     * <p>
-     * The names of the index fields are not encoded, only the values, relying on index property order to remain consistent.
-     * <p>
-     * This methods is used by various actions when constructing hypermedia urls that allow you to
-     * uniquely identify individual resources (records in a Db) or to traverse Relationships.
-     * <p>
-     * The inverse of this method is {@link #decodeResourceKeys(Index, String)} which is used to
-     * decode inbound Url path and query params to determine which resource is being referenced.
-     *
-     * @param values column name to Property value mapping for a resource
-     * @param index  the index identifying the values that should be encoded
-     * @return a url safe encoding of the index values separated by "~" characters or null if any of the values for an index key is null.
-     * @see #encodeStr(String)
-     * @see #decodeResourceKeys(Index, String)
-     */
-    public static String encodeResourceKey(Map values, Index index) {
-        StringBuilder key = new StringBuilder();
-        for (String colName : index.getColumnNames()) {
-            Object val = values.get(colName);
-            if (Utils.empty(val))
-                return null;
-
-            val = encodeStr(val.toString());
-
-            if (key.length() > 0)
-                key.append("~");
-
-            key.append(val);
-        }
-
-        return key.toString();
-    }
-
-    /**
-     * Creates a "~" separated url safe concatenation of <code>pieces</code>
-     *
-     * @return a url safe encoding of the <code>pieces</code> separated by "~" characters
-     * @see #encodeStr(String)
-     * @see #encodeResourceKey(Map, Index)
-     */
-    public static String encodeResourceKey(List pieces) {
-        StringBuilder resourceKey = new StringBuilder();
-        for (int i = 0; i < pieces.size(); i++) {
-            Object piece = pieces.get(i);
-            if (piece == null)
-                throw ApiException.new500InternalServerError("Trying to encode an resource key with a null component: '{}'.", pieces);
-
-            resourceKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
-            if (i < pieces.size() - 1)
-                resourceKey.append("~");
-        }
-        return resourceKey.toString();
-    }
-
-    public static void main(String[] args) {
-        System.out.println(encodeStr("abcd/efg"));
-
-    }
-
-    /**
-     * Encodes non url safe characters into a friendly "@FOUR_DIGIT_HEX_VALUE" equivalent that itself will not be modified by URLEncoder.encode(String).
-     * <p>
-     * For example, encodeing "abcd/efg" would result in "abcd@002fefg" where "@002f" is the hex encoding for "/".
-     * <p>
-     * While "~" characters are considered url safe, the are specifically included for encoding so that
-     * {@link #decodeResourceKeys(Index, String)} can split a value on "~" before decoding its parts.
-     *
-     * @param string
-     * @return a url safe string with non safe characters encoded as '@FOUR_DIGIT_HEX_VALUE'
-     * @see <a href="https://stackoverflow.com/questions/695438/safe-characters-for-friendly-url">Safe characters for friendly urls</a>
-     * @see #encodeResourceKey(Map, Index)
-     * @see #decodeResourceKeys(Index, String)
-     * @see #decodeStr(String)
-     */
-    public static String encodeStr(String string) {
-        //- . _ ~ ( ) ' ! * : @ , ;
-        Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\:\\,\\;\\*]");
-
-        Matcher      m  = p.matcher(string);
-        StringBuffer sb = new StringBuffer();
-        while (m.find()) {
-            String chars = m.group();
-            StringBuffer hex   = new StringBuffer("@").append(Hex.encodeHex(chars.getBytes()));
-            while (hex.length() < 5)
-                hex.insert(1, "0");
-
-            m.appendReplacement(sb, hex.toString());
-        }
-        m.appendTail(sb);
-        return sb.toString();
-    }
-
-    /**
-     * The reciprocal of {@link #encodeStr(String)} that replaces "\@[0-9a-f]{4}" hex sequences with the unescaped oritional unescaped character.
-     *
-     * @param string
-     * @return a string with characters escaped to their hex equivalent replaced with the unescaped value.
-     * @see #encodeResourceKey(Map, Index)
-     * @see #decodeResourceKeys(Index, String)
-     * @see #encodeStr(String)
-     */
-    public static String decodeStr(String string) {
-        try {
-            Pattern      p  = Pattern.compile("\\@[0-9a-f]{4}");
-            Matcher      m  = p.matcher(string);
-            StringBuffer sb = new StringBuffer();
-            while (m.find()) {
-                String group = m.group();
-                String hex   = group.substring(1);
-                String chars = StringEscapeUtils.unescapeJava("\\u" + hex);
-                m.appendReplacement(sb, chars);
-            }
-            m.appendTail(sb);
-            return sb.toString();
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    /**
      * Decodes a resource key into its columnName / value parts.
      *
-     * @param inKey
+     * @param inKey the resource key to decode
      * @return the decoded columnName / value pairs.
      * @see #decodeResourceKeys(Index, String)
      * @see #encodeResourceKey(Map, Index)
@@ -802,14 +797,13 @@ public class Collection extends Rule<Collection> implements Serializable {
     public Rows decodeResourceKeys(Index index, String inKeys) {
         //someone passed in the whole href...no problem, just strip it out.
         if (inKeys.startsWith("http") && inKeys.indexOf("/") > 0)
-            inKeys = inKeys.substring(inKeys.lastIndexOf("/") + 1, inKeys.length());
+            inKeys = inKeys.substring(inKeys.lastIndexOf("/") + 1);
 
         List<String> colNames = index.getColumnNames();
 
         Rows rows = new Rows(colNames);
         for (String key : Utils.explode(",", inKeys)) {
-            List row = new ArrayList<>();
-            row.addAll(Utils.explode("~", key));
+            List row = Utils.explode("~", key);
 
             if (row.size() != colNames.size())
                 throw ApiException.new400BadRequest("Supplied resource key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());

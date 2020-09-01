@@ -22,10 +22,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 class SqlTokenizer {
-    static Set keywords = new HashSet(Utils.explode(",", "insert,into,update,delete,select,from,where,group,order,limit"));
+    static final Set keywords = new HashSet(Utils.explode(",", "insert,into,update,delete,select,from,where,group,order,limit"));
 
-    char[] chars = null;
-    int    head  = 0;
+    final char[] chars;
+    int head = 0;
 
     StringBuilder clause = new StringBuilder();
 
@@ -55,7 +55,7 @@ class SqlTokenizer {
     public String nextClause() {
         String toReturn = null;
 
-        String nextToken = null;
+        String nextToken;
         while ((nextToken = next()) != null) {
             if (keywords.contains(nextToken.toLowerCase())) {
                 if (clause.length() > 0) {

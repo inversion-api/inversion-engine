@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class CsvActionTest {
-    CsvAction action = new CsvAction();
+    final CsvAction action = new CsvAction();
 
     //
     @Test
