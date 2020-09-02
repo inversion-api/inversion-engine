@@ -21,6 +21,7 @@ import io.inversion.Index;
 import io.inversion.*;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
+import io.inversion.utils.Rows;
 import io.inversion.utils.Utils;
 
 import java.util.ArrayList;
@@ -88,6 +89,18 @@ public class CosmosDb extends Db<CosmosDb> {
                 }
             }
 
+            for (Term term : columnMappedTerms) {
+                if (term.hasChildLeafToken("_key")) {
+                    Rows.Row key = collection.decodeResourceKey(term.getToken(0));
+                    for (Property prop : partitionIdx.getProperties()) {
+                        String colName = prop.getColumnName();
+                        if (key.containsKey(colName))
+                            values.put(colName, key.get(colName));
+                    }
+                }
+            }
+
+
             //if the query supplied the parts necessary to construct the
             if (values.size() == partitionIdx.size()) {
 
@@ -117,8 +130,7 @@ public class CosmosDb extends Db<CosmosDb> {
         return keys;
     }
 
-    void normalizePartitionKey(Collection collection, Map<String, Object> row)
-    {
+    void normalizePartitionKey(Collection collection, Map<String, Object> row) {
         //-- makes sure the partition key is set correctly on the document if there is one.
         Index partitionIdx = collection.getIndexByType(INDEX_TYPE_PARTITION_KEY);
         if (partitionIdx != null) {
@@ -136,7 +148,7 @@ public class CosmosDb extends Db<CosmosDb> {
             normalizePartitionKey(collection, row);
 
             JSNode doc = new JSNode(row);
-            String id = doc.getString("id");
+            String id  = doc.getString("id");
             if (id == null) {
                 id = collection.encodeResourceKey(row);
                 if (id == null)
