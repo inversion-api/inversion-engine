@@ -92,7 +92,7 @@ public class JSNode implements Map<String, Object> {
      * @param nameValuePairs the name value pairs to add
      * @see #putAll(Map)
      */
-    public JSNode(Map<String, Object> nameValuePairs) {
+    public JSNode(Map nameValuePairs) {
         putAll(nameValuePairs);
     }
 

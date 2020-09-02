@@ -135,7 +135,7 @@ public class DynamoDb extends Db<DynamoDb> {
             String key = table.encodeResourceKey(row);
             keys.add(key);
 
-            for (String attr : row.keySet()) {
+            for (String attr : new ArrayList<String>(row.keySet())) {
                 if (Utils.empty(row.get(attr)))
                     row.remove(attr);
             }
