@@ -30,7 +30,7 @@ import java.util.Map;
 
 public class CosmosDb extends Db<CosmosDb> {
 
-    public static final String INDEX_TYPE_PARTITION_KEY = CosmosDb.INDEX_TYPE_PARTITION_KEY;
+    public static final String INDEX_TYPE_PARTITION_KEY = "PartitionKey";
 
     protected           String         uri            = null;
     protected           String         db             = "";
