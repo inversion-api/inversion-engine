@@ -91,7 +91,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
             Map<String, String> headers     = jsonHeaders == null ? new HashMap<>() : (Map<String, String>) jsonHeaders.asMap();
 
             JSNode              jsonParams = json.getNode("queryStringParameters");
-            Map<String, String> params     = jsonParams == null ? new HashMap<>() : jsonParams.asMap();
+            Map<String, String> params     = jsonParams == null ? new HashMap<>() : (Map<String, String>) jsonParams.asMap();
 
             String body = json.getString("body");
 

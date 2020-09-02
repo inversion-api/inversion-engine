@@ -74,7 +74,7 @@ public class CosmosDb extends Db<CosmosDb> {
 
     @Override
     public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
-        List keys = new ArrayList<>();
+        List<String> keys = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             keys.add(upsertRow(table, row));
         }

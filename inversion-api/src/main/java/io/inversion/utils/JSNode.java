@@ -92,7 +92,7 @@ public class JSNode implements Map<String, Object> {
      * @param nameValuePairs the name value pairs to add
      * @see #putAll(Map)
      */
-    public JSNode(Map nameValuePairs) {
+    public JSNode(Map<String, Object> nameValuePairs) {
         putAll(nameValuePairs);
     }
 
@@ -161,34 +161,6 @@ public class JSNode implements Map<String, Object> {
         }
     }
 
-    static void writeArrayNode(JSArray array, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception {
-        json.writeStartArray();
-        for (Object obj : array.asList()) {
-            if (obj == null) {
-                json.writeNull();
-            } else if (obj instanceof JSNode) {
-                writeNode((JSNode) obj, json, visited, lowercaseNames);
-            } else if (obj instanceof Boolean) {
-                json.writeBoolean((Boolean) obj);
-            } else if (obj instanceof Integer) {
-                json.writeNumber((Integer) obj);
-            } else if (obj instanceof Long) {
-                json.writeNumber((Long) obj);
-            } else if (obj instanceof Float) {
-                json.writeNumber((Float) obj);
-            } else if (obj instanceof Double) {
-                json.writeNumber((Double) obj);
-            } else if (obj instanceof BigInteger) {
-                json.writeNumber((BigInteger) obj);
-            } else if (obj instanceof BigDecimal) {
-                json.writeNumber((BigDecimal) obj);
-            } else {
-                json.writeString(encodeStringValue(obj + ""));
-            }
-        }
-        json.writeEndArray();
-    }
-
     static Object mapNode(JsonNode json) {
         if (json == null)
             return null;
@@ -231,21 +203,6 @@ public class JSNode implements Map<String, Object> {
         throw new RuntimeException("unparseable json:" + json);
     }
 
-    /**
-     * Replaces JSON control characters with spaces.
-     *
-     * @param str the string to encode
-     * @return str with control characters replaced with spaces
-     * @see <a href="https://stackoverflow.com/questions/14028716/how-to-remove-control-characters-from-java-string">How to remove control characters from java Strings</a>
-     */
-    static String encodeStringValue(String str) {
-        if (str == null)
-            return null;
-
-        str = str.replaceAll("[\\p{Cntrl}\\p{Cc}\\p{Cf}\\p{Co}\\p{Cn}\u00A0&&[^\r\n\t]]", " ");
-        return str;
-    }
-
     static void writeNode(JSNode node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception {
         JSProperty href = node.getProperty("href");
 
@@ -282,28 +239,29 @@ public class JSNode implements Map<String, Object> {
             if (value == null) {
                 json.writeNullField(name);
             } else if (value instanceof JSNode) {
-                if (!lowercaseNames)
-                    json.writeFieldName(name);
-                else
-                    json.writeFieldName(name.toLowerCase());
-
+                json.writeFieldName(lowercaseNames ? name.toLowerCase() : name);
                 writeNode((JSNode) value, json, visited, lowercaseNames);
-            } else if (value instanceof Date) {
-                json.writeStringField(name, Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
-            } else if (value instanceof Double) {
-                json.writeNumberField(name, (Double) value);
-            } else if (value instanceof Float) {
-                json.writeNumberField(name, (Float) value);
+            } else if (value instanceof String) {
+                if(value.equals("null"))
+                    json.writeNullField(name);
+                else
+                    json.writeStringField(name, (String) value);
+            } else if (value instanceof Boolean) {
+                json.writeBooleanField(name, (Boolean) value);
             } else if (value instanceof Integer) {
                 json.writeNumberField(name, (Integer) value);
             } else if (value instanceof Long) {
                 json.writeNumberField(name, (Long) value);
-            } else if (value instanceof BigDecimal) {
-                json.writeNumberField(name, (BigDecimal) value);
+            } else if (value instanceof Float) {
+                json.writeNumberField(name, (Float) value);
+            } else if (value instanceof Double) {
+                json.writeNumberField(name, (Double) value);
             } else if (value instanceof BigInteger) {
                 json.writeNumberField(name, ((BigInteger) value).intValue());
-            } else if (value instanceof Boolean) {
-                json.writeBooleanField(name, (Boolean) value);
+            } else if (value instanceof BigDecimal) {
+                json.writeNumberField(name, (BigDecimal) value);
+            } else if (value instanceof Date) {
+                json.writeStringField(name, Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
             } else {
                 String strVal = value + "";
                 if ("null".equals(strVal)) {
@@ -315,6 +273,58 @@ public class JSNode implements Map<String, Object> {
             }
         }
         json.writeEndObject();
+    }
+
+    static void writeArrayNode(JSArray array, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception {
+        json.writeStartArray();
+        for (Object value : array.asList()) {
+            if (value == null) {
+                json.writeNull();
+            } else if (value instanceof JSNode) {
+                writeNode((JSNode) value, json, visited, lowercaseNames);
+            } else {
+                if (value instanceof String) {
+                    if(value.equals("null"))
+                        json.writeNull();
+                    else
+                        json.writeString(value.toString());
+                } else if (value instanceof Boolean) {
+                    json.writeBoolean((Boolean) value);
+                } else if (value instanceof Integer) {
+                    json.writeNumber((Integer) value);
+                } else if (value instanceof Long) {
+                    json.writeNumber((Long) value);
+                } else if (value instanceof Float) {
+                    json.writeNumber((Float) value);
+                } else if (value instanceof Double) {
+                    json.writeNumber((Double) value);
+                } else if (value instanceof BigInteger) {
+                    json.writeNumber((BigInteger) value);
+                } else if (value instanceof BigDecimal) {
+                    json.writeNumber((BigDecimal) value);
+                } else if (value instanceof Date) {
+                    json.writeString(Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
+                } else {
+                    json.writeString(JSNode.encodeStringValue(value.toString()));
+                }
+            }
+        }
+        json.writeEndArray();
+    }
+
+    /**
+     * Replaces JSON control characters with spaces.
+     *
+     * @param str the string to encode
+     * @return str with control characters replaced with spaces
+     * @see <a href="https://stackoverflow.com/questions/14028716/how-to-remove-control-characters-from-java-string">How to remove control characters from java Strings</a>
+     */
+    static String encodeStringValue(String str) {
+        if (str == null)
+            return null;
+
+        str = str.replaceAll("[\\p{Cntrl}\\p{Cc}\\p{Cf}\\p{Co}\\p{Cn}\u00A0&&[^\r\n\t]]", " ");
+        return str;
     }
 
     /**
@@ -349,6 +359,7 @@ public class JSNode implements Map<String, Object> {
         //System.out.println(pathStr);
         return jsonPath;
     }
+
 
     /**
      * A heroically permissive finder supporting JSON Pointer, JSONPath and
@@ -924,7 +935,7 @@ public class JSNode implements Map<String, Object> {
     }
 
     @Override
-    public void putAll(Map map) {
+    public void putAll(Map<? extends String, ? extends Object> map) {
         for (Object key : map.keySet()) {
             put(key.toString(), map.get(key));
         }
@@ -1031,7 +1042,7 @@ public class JSNode implements Map<String, Object> {
         return property;
     }
 
-    public Map asMap() {
+    public Map<? extends String, ? extends Object> asMap() {
         Map map = new LinkedHashMap();
         for (JSProperty p : properties.values()) {
             String name  = p.name;
@@ -1161,8 +1172,9 @@ public class JSNode implements Map<String, Object> {
      * @return all property name / value pairs
      */
     @Override
-    public Set<Map.Entry<String, Object>> entrySet() {
-        return asMap().entrySet();
+    public Set<Entry<String, Object>> entrySet() {
+        Map<String, Object> map = (Map<String, Object>) asMap();
+        return map.entrySet();
     }
 
     /**
@@ -1289,17 +1301,17 @@ public class JSNode implements Map<String, Object> {
 
     static class JSONPathTokenizer {
         final char escapeChar = '\\';
-        final Set openQuotes;
-        final Set closeQuotes;
-        final Set breakIncluded;
-        final Set breakExcluded;
-        final Set unquotedIgnored;
-        final Set leadingIgnored;
-        char[]  chars   = null;
-        int     head    = 0;
-        boolean escaped = false;
-        boolean quoted  = false;
-        StringBuilder next = new StringBuilder();
+        final Set  openQuotes;
+        final Set  closeQuotes;
+        final Set  breakIncluded;
+        final Set  breakExcluded;
+        final Set  unquotedIgnored;
+        final Set  leadingIgnored;
+        char[]        chars   = null;
+        int           head    = 0;
+        boolean       escaped = false;
+        boolean       quoted  = false;
+        StringBuilder next    = new StringBuilder();
 
         public JSONPathTokenizer(String openQuoteChars, String closeQuoteChars, String breakIncludedChars, String breakExcludedChars, String unquotedIgnoredChars, String leadingIgnoredChars) {
             this(openQuoteChars, closeQuoteChars, breakIncludedChars, breakExcludedChars, unquotedIgnoredChars, leadingIgnoredChars, null);

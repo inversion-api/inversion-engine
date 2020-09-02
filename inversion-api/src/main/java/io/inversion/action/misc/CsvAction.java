@@ -68,8 +68,7 @@ public class CsvAction extends Action<CsvAction> {
     public String toCsv(JSArray arr) throws ApiException {
         try {
             StringBuilder buff = new StringBuilder();
-
-            LinkedHashSet<String> keys = new LinkedHashSet();
+            LinkedHashSet<String> keys = new LinkedHashSet<>();
 
             for (int i = 0; i < arr.length(); i++) {
                 JSNode obj = (JSNode) arr.get(i);
@@ -84,7 +83,7 @@ public class CsvAction extends Action<CsvAction> {
 
             CSVPrinter printer = new CSVPrinter(buff, CSVFormat.DEFAULT);
 
-            List<String> keysList = new ArrayList(keys);
+            List<String> keysList = new ArrayList<>(keys);
             for (String key : keysList) {
                 printer.print(key);
             }

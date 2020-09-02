@@ -248,7 +248,7 @@ public class AuthAction extends Action<AuthAction> {
         }
 
         public InMemorySessionDao(int sessionMax) {
-            this.cache = new LRUMap(sessionMax);
+            this.cache = new LRUMap<>(sessionMax);
         }
 
         @Override
@@ -340,7 +340,7 @@ public class AuthAction extends Action<AuthAction> {
     }
 
     public static class InMemoryRevokedTokenCache implements RevokedTokenCache {
-        final Set<String> revoked = new HashSet();
+        final Set<String> revoked = new HashSet<>();
 
         public void addRevokedToken(String token) {
             revoked.add(token.toLowerCase());
@@ -444,7 +444,7 @@ public class AuthAction extends Action<AuthAction> {
          * @return any jwt secrets found
          */
         protected List<String> getJwtSecrets(AuthAction action, String apiName, String tenant) {
-            List secrets = new ArrayList<>();
+            List<String> secrets = new ArrayList<>();
 
             for (int i = 10; i >= 0; i--) {
 

@@ -234,10 +234,10 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
      * <p>
      * By default tests pass if the response debug dump contains the test result string...the string match is case insensitive
      *
-     * @param testKey
-     * @param queryString
-     * @param res
-     * @return
+     * @param testKey the test key
+     * @param queryString the querysring
+     * @param res the result
+     * @return if the test passed
      */
     protected boolean verifyTest(String testKey, String queryString, String expectedMatch, Response res) {
 

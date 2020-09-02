@@ -92,6 +92,7 @@ import java.util.*;
  * @see Config
  * @see <a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a>
  */
+@SuppressWarnings("unchecked")
 public class Configurator {
 
     static final Logger log = LoggerFactory.getLogger(Configurator.class);

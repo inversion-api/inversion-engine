@@ -21,6 +21,7 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,7 +45,7 @@ public class DbPostActionTest {
 
         JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
-        DbPostAction.collapse(collapsed, false, new HashSet(Utils.asList("child2")), "");
+        DbPostAction.collapse(collapsed, false, Collections.singleton("child2"), "");
 
         JSNode benchmark = JSNode.parseJsonNode(parent.toString());
         benchmark.remove("child2");
@@ -73,7 +74,7 @@ public class DbPostActionTest {
 
         JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
-        DbPostAction.collapse(collapsed, false, new HashSet(Utils.asList("arrChildren")), "");
+        DbPostAction.collapse(collapsed, false, Collections.singleton("arrChildren"), "");
 
         JSNode benchmark = JSNode.parseJsonNode(parent.toString());
         benchmark.remove("arrChildren");
@@ -109,7 +110,7 @@ public class DbPostActionTest {
 
         JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
-        DbPostAction.collapse(collapsed, false, new HashSet(Utils.asList("child2.child3")), "");
+        DbPostAction.collapse(collapsed, false, Collections.singleton("child2.child3"), "");
 
         JSNode benchmark = JSNode.parseJsonNode(parent.toString());
         benchmark.getNode("child2").getNode("child3").remove("name");

@@ -26,8 +26,6 @@ public class RqlParser {
     private RqlParser() {
     }
 
-    ;
-
     public static Term parse(String paramName, String paramValue) {
         String termStr;
         if (Utils.empty(paramValue) && paramName.contains("(")) {

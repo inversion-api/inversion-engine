@@ -79,7 +79,7 @@ public class DbGetAction extends Action<DbGetAction> {
     }
 
     protected static String stripTerm(String str, String startToken, char... endingTokens) {
-        Set tokens = new HashSet();
+        Set<Character> tokens = new HashSet<>();
         for (char c : endingTokens)
             tokens.add(c);
 
@@ -218,9 +218,9 @@ public class DbGetAction extends Action<DbGetAction> {
                 //-- CONVERTS: http://localhost/northwind/source/employees/1/territories
                 //-- TO THIS : http://localhost/northwind/source/territories/06897,19713
 
-                List<KeyValue> rows = getRelatedKeys(rel, rel.getFkIndex1(), rel.getFkIndex2(), Utils.asList(resourceKey));
+                List<KeyValue<String, String>> rows = getRelatedKeys(rel, rel.getFkIndex1(), rel.getFkIndex2(), Collections.singletonList(resourceKey));
                 if (rows.size() > 0) {
-                    List foreignKeys = new ArrayList<>();
+                    List<String> foreignKeys = new ArrayList<>();
                     rows.forEach(k -> foreignKeys.add(k.getValue()));
 
                     Collection relatedCollection = rel.getRelated();
@@ -361,8 +361,8 @@ public class DbGetAction extends Action<DbGetAction> {
     }
 
     protected void exclude(List<JSNode> nodes) {
-        Set includes = Chain.peek().mergeEndpointActionParamsConfig("includes");
-        Set excludes = Chain.peek().mergeEndpointActionParamsConfig("excludes");
+        Set<String> includes = Chain.peek().mergeEndpointActionParamsConfig("includes");
+        Set<String> excludes = Chain.peek().mergeEndpointActionParamsConfig("excludes");
 
         if (includes.size() > 0 || excludes.size() > 0) {
             for (JSNode node : nodes) {
@@ -376,7 +376,7 @@ public class DbGetAction extends Action<DbGetAction> {
     //-Static Utils -----------------------------------------------------------------------
     //-------------------------------------------------------------------------------------
 
-    protected void exclude(JSNode node, Set includes, Set excludes, String path) {
+    protected void exclude(JSNode node, Set<String> includes, Set<String> excludes, String path) {
         for (String key : node.keySet()) {
             String attrPath = path != null ? (path + "." + key) : key;
             if (exclude(attrPath, includes, excludes)) {
@@ -437,21 +437,7 @@ public class DbGetAction extends Action<DbGetAction> {
                     // objects on the recursion stack and to keep track of entities
                     // so you don't waste time requerying for things you have
                     // already retrieved.
-                    pkCache = new MultiKeyMap() {
-                        //                     public Object put(Object key1, Object key2, Object value)
-                        //                     {
-                        //                        System.out.println("PUTPUTPUTPUTPUTPUTPUTPUT:  " + key1 + ", " + key2);
-                        //                        return super.put(key1, key2, value);
-                        //                     }
-                        //
-                        //                     public Object get(Object key1, Object key2)
-                        //                     {
-                        //                        Object value = super.get(key1, key2);
-                        //                        String str = (value + "").replace("\r", "").replace("\n", "");
-                        //                        System.out.println("GETGETGETGETGETGETGETGET: " + key1 + ", " + key2 + " -> " + value);
-                        //                        return value;
-                        //                     }
-                    };
+                    pkCache = new MultiKeyMap();
 
                     for (JSNode node : parentObjs) {
                         pkCache.put(collection, getResourceKey(node), node);
@@ -566,11 +552,11 @@ public class DbGetAction extends Action<DbGetAction> {
         }
     }
 
-    protected List<KeyValue> getRelatedKeys(Relationship rel, Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws ApiException {
+    protected List<KeyValue<String, String>> getRelatedKeys(Relationship rel, Index idxToMatch, Index idxToRetrieve, List<String> toMatchEks) throws ApiException {
         if (idxToMatch.getCollection() != idxToRetrieve.getCollection())
             throw ApiException.new400BadRequest("You can only retrieve related index keys from the same Collection.");
 
-        List<KeyValue> related = new ArrayList<>();
+        List<KeyValue<String, String>> related = new ArrayList<>();
 
         LinkedHashSet columns = new LinkedHashSet();
         columns.addAll(idxToMatch.getColumnNames());
@@ -617,24 +603,8 @@ public class DbGetAction extends Action<DbGetAction> {
             String parentEk  = Collection.encodeResourceKey(idxToMatchVals);
             String relatedEk = Collection.encodeResourceKey(idxToRetrieveVals);
 
-            related.add(new DefaultKeyValue(parentEk, relatedEk));
+            related.add(new DefaultKeyValue<String, String>(parentEk, relatedEk));
         }
-
-        //      Results obj = idxToMatch.getProperty(0).getCollection().getDb().select(idxToRetrieve.getCollection(), );
-        //      List<Map> rows = obj.getRows();
-        //      for (Map row : rows)
-        //      {
-        //         List idxToMatchVals = new ArrayList<>();
-        //         idxToMatch.getColumnNames().forEach(column -> idxToMatchVals.add(row.get(column)));
-        //
-        //         List idxToRetrieveVals = new ArrayList<>();
-        //         idxToRetrieve.getColumnNames().forEach(column -> idxToRetrieveVals.add(row.get(column)));
-        //
-        //         String parentEk = Collection.encodeKey(idxToMatchVals);
-        //         String relatedEk = Collection.encodeKey(idxToRetrieveVals);
-        //
-        //         related.add(new DefaultKeyValue(parentEk, relatedEk));
-        //      }
 
         return related;
     }

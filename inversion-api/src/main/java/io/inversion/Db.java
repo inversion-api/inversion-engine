@@ -460,7 +460,7 @@ public abstract class Db<T extends Db> {
                 }
             }
 
-            for (String key : (List<String>) new ArrayList(mapped.keySet())) {
+            for (String key : mapped.keySet()) {
                 //TODO can optimize?
                 if (filterOutJsonProperty(collection, key)) {
                     mapped.remove(key);
@@ -491,10 +491,16 @@ public abstract class Db<T extends Db> {
         return null;
     }
 
-    public Map mapTo(Map srcRow, Index srcCols, Index destCols) {
+    public Map<String, Object> mapTo(Map<String, Object> srcRow, Index srcCols, Index destCols) {
+
+        if (srcRow == null)
+            throw ApiException.new500InternalServerError("Attempting to a null key to a different index");
+
+        //make a copy so we don't modify the map that was passed in
+        srcRow = new LinkedHashMap<>(srcRow);
+
         if (srcCols.size() != destCols.size() && destCols.size() == 1) {
-            //when the foreign key is only one column but the related primary key is multiple
-            //columns, encode the FK as an resourceKey.
+            //when the foreign key is only one column but the related primary key is multiple columns, encode the FK as an resourceKey.
             String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
 
             for (Object key : srcRow.keySet())
@@ -503,10 +509,7 @@ public abstract class Db<T extends Db> {
             srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
         } else {
             if (srcCols.size() != destCols.size())
-                throw ApiException.new500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
-
-            if (srcRow == null)
-                return Collections.EMPTY_MAP;
+                throw ApiException.new500InternalServerError("Unable to map from index '{}' to '{}'", srcCols, destCols);
 
             if (srcCols != destCols) {
                 for (int i = 0; i < srcCols.size(); i++) {

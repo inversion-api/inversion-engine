@@ -16,7 +16,6 @@
  */
 package io.inversion.elasticsearch;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.inversion.*;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
@@ -271,7 +270,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
 
                 JSNode jsObj = JSNode.parseJsonNode(EntityUtils.toString(allResponse.getEntity()));
 
-                Map<String, JSNode> jsContentMap = jsObj.asMap();
+                Map<String, JSNode> jsContentMap = (Map<String, JSNode>) jsObj.asMap();
 
                 // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
                 Map<String, Collection> tableMap = new HashMap<>();
@@ -314,7 +313,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
      * @param tableMap    the tableMap
      */
     private void buildTables(String elasticName, JSNode jsIndex, Map<String, Collection> tableMap) {
-        Map<String, JSNode> jsMappingsDocProps = jsIndex.getNode("mappings").getNode("_doc").getNode("properties").asMap();
+        Map<String, JSNode> jsMappingsDocProps = (Map<String, JSNode>) jsIndex.getNode("mappings").getNode("_doc").getNode("properties").asMap();
 
         Collection table;
 
@@ -331,8 +330,8 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
         addColumns(table, false, jsMappingsDocProps, "");
 
         String                  aliasName;
-        Map<String, ObjectNode> jsAliasProps = jsIndex.getNode("aliases").asMap();
-        for (Map.Entry<String, ObjectNode> propEntry : jsAliasProps.entrySet()) {
+        Map<String, JSNode> jsAliasProps = (Map<String, JSNode>) jsIndex.getNode("aliases").asMap();
+        for (Map.Entry<String, JSNode> propEntry : jsAliasProps.entrySet()) {
             aliasName = propEntry.getKey();
 
             // use the previously created table if it exists.

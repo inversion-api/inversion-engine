@@ -51,7 +51,7 @@ public class DbDeleteAction extends Action<DbDeleteAction> {
     protected int delete(Engine engine, Collection collection, String url) throws ApiException {
         int deleted = 0;
 
-        Set alreadyDeleted = new HashSet();
+        Set<String> alreadyDeleted = new HashSet<>();
 
         for (int i = 0; i < 1000; i++) {
             //-- regardless of the query string passed in, this should resolve the keys 

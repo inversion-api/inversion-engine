@@ -38,21 +38,21 @@ public class DynamoDb extends Db<DynamoDb> {
 
     public static final String PRIMARY_INDEX_NAME = "Primary Index";
 
-    public static final String PRIMARY_INDEX_TYPE          = "primary";
-    public static final String LOCAL_SECONDARY_INDEX_TYPE  = "localsecondary";
-    public static final String GLOBAL_SECONDARY_INDEX_TYPE = "globalsecondary";
-    protected final int batchMax = 20;
-    protected String awsAccessKey = null;
-    protected String awsSecretKey = null;
-    protected String awsRegion    = "us-east-1";
-    protected String awsEndpoint  = null;
+    public static final String         PRIMARY_INDEX_TYPE          = "primary";
+    public static final String         LOCAL_SECONDARY_INDEX_TYPE  = "localsecondary";
+    public static final String         GLOBAL_SECONDARY_INDEX_TYPE = "globalsecondary";
+    protected final     int            batchMax                    = 20;
+    protected           String         awsAccessKey                = null;
+    protected           String         awsSecretKey                = null;
+    protected           String         awsRegion                   = "us-east-1";
+    protected           String         awsEndpoint                 = null;
     /**
      * Use to config which row is used to build the column/attribute model  (otherwise first row of scan will be used)
      * <p>
      * FORMAT: collection name | primaryKey | sortKey (optional)
      */
-    protected String blueprintRow;
-    transient protected AmazonDynamoDB dynamoClient = null;
+    protected           String         blueprintRow;
+    transient protected AmazonDynamoDB dynamoClient                = null;
 
     public DynamoDb() {
         this.withType("dynamodb");
@@ -126,7 +126,7 @@ public class DynamoDb extends Db<DynamoDb> {
     @Override
     public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
         AmazonDynamoDB        dynamoClient  = getDynamoClient();
-        List                  keys          = new ArrayList<>();
+        List<String>          keys          = new ArrayList<>();
         List<WriteRequest>    writeRequests = new LinkedList<>();
         BatchWriteItemRequest batch         = new BatchWriteItemRequest();
         for (int i = 0; i < rows.size(); i++) {
@@ -135,7 +135,7 @@ public class DynamoDb extends Db<DynamoDb> {
             String key = table.encodeResourceKey(row);
             keys.add(key);
 
-            for (String attr : (List<String>) new ArrayList(row.keySet())) {
+            for (String attr : row.keySet()) {
                 if (Utils.empty(row.get(attr)))
                     row.remove(attr);
             }
@@ -164,31 +164,11 @@ public class DynamoDb extends Db<DynamoDb> {
         return keys;
     }
 
-    //   protected Collection buildCollection(String collectionName, Table table)
-    //   {
-    //      Collection collection = new Collection();
-    //      collection.withName(beautifyCollectionName(collectionName));
-    //      collection.withTable(table);
-    //
-    //      Resource resource = collection.getResource();
-    //
-    //      for (Column col : table.getColumns())
-    //      {
-    //         resource.getAttribute(col.getColumnName()).withName(beautifyAttributeName(col.getColumnName()));
-    //      }
-    //
-    //      if (getCollectionPath() != null)
-    //         collection.withIncludePaths(getCollectionPath());
-    //
-    //      return collection;
-    //   }
-
     @Override
     public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
         for (Map<String, Object> row : indexValues) {
             deleteRow(table, row);
         }
-
     }
 
     public void deleteRow(Collection table, Map<String, Object> row) throws ApiException {
