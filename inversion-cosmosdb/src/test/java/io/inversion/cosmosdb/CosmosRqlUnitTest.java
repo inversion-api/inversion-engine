@@ -16,11 +16,10 @@
  */
 package io.inversion.cosmosdb;
 
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
-
 import io.inversion.Db;
 import io.inversion.rql.AbstractRqlTest;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 @TestInstance(Lifecycle.PER_CLASS)
 public class CosmosRqlUnitTest extends AbstractRqlTest {
@@ -34,7 +33,7 @@ public class CosmosRqlUnitTest extends AbstractRqlTest {
         withExpectedResult("nn", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND Northwind[\\\"shipRegion\\\"] <> null ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("emp", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE (Northwind[\\\"shipRegion\\\"] IS NULL OR Northwind[\\\"shipRegion\\\"] = '') AND Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("nemp", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND (Northwind[\\\"shipRegion\\\"] IS NOT NULL AND Northwind[\\\"shipRegion\\\"] != '') ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
-        withExpectedResult("likeMiddle", "400 Bad Request - The 'like' RQL operator for CosmosDb expects a single wildcard at the beginning OR the end of a value.  CosmosDb does not really support 'like' but compatible 'like' statements are turned into 'sw' or 'ew' statments that are supported.");
+        withExpectedResult("likeMiddle", "400 Bad Request - The 'like' RQL operator for CosmosDb expects a single wildcard at the beginning OR the end of a value.  CosmosDb does not really support 'like' but compatible 'like' statements are turned into 'sw' or 'ew' statements that are supported.");
         withExpectedResult("likeStartsWith", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND STARTSWITH (Northwind[\\\"shipCountry\\\"], @shipCountry2) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCountry2\",\"value\":\"Franc\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("likeEndsWith", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND ENDSWITH (Northwind[\\\"shipCountry\\\"], @shipCountry2) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCountry2\",\"value\":\"ance\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("sw", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND STARTSWITH (Northwind[\\\"shipCountry\\\"], @shipCountry2) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCountry2\",\"value\":\"Franc\"}]} FeedOptions={enableCrossPartitionQuery=false}");
@@ -52,10 +51,10 @@ public class CosmosRqlUnitTest extends AbstractRqlTest {
         withExpectedResult("not", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT * FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 AND NOT ((Northwind[\\\"shipCity\\\"] = @shipCity2 OR Northwind[\\\"shipCity\\\"] = @shipCity3)) ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"},{\"name\":\"@shipCity2\",\"value\":\"Reims\"},{\"name\":\"@shipCity3\",\"value\":\"Charleroi\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("as", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT *, Northwind[\\\"orderId\\\"] AS \\\"order_identifier\\\" FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("includes", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT Northwind[\\\"shipCountry\\\"], Northwind[\\\"shipCity\\\"], Northwind[\\\"type\\\"], Northwind[\\\"orderId\\\"] FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
-        
-        
+
+
         withExpectedResult("distinct", "SqlQuerySpec={\"query\":\"SELECT DISTINCT Northwind[\\\"shipCountry\\\"], Northwind[\\\"type\\\"], Northwind[\\\"orderId\\\"] FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
-        
+
         withExpectedResult("count1", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT COUNT(*) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("count2", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT COUNT(@null1) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type2 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@null1\",\"value\":\"1\"},{\"name\":\"@type2\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");
         withExpectedResult("count3", "CosmosDb: SqlQuerySpec={\"query\":\"SELECT COUNT(Northwind[\\\"shipRegion\\\"]) FROM Northwind WHERE Northwind[\\\"type\\\"] = @type1 ORDER BY Northwind[\\\"id\\\"] ASC\",\"parameters\":[{\"name\":\"@type1\",\"value\":\"orders\"}]} FeedOptions={enableCrossPartitionQuery=false}");

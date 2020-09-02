@@ -28,7 +28,7 @@ import org.apache.commons.collections4.map.MultiKeyMap;
 
 import java.util.*;
 
-public class DbPostAction<t extends DbPostAction> extends Action<t> {
+public class DbPostAction extends Action<DbPostAction> {
     protected boolean collapseAll = false;
 
     /**
@@ -37,6 +37,83 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
     protected boolean strictRest     = false;
     protected boolean expandResponse = true;
 
+    /*
+     * Collapses nested objects so that relationships can be preserved but the fields
+     * of the nested child objects are not saved (except for FKs back to the parent
+     * object in the case of a ONE_TO_MANY relationship).
+     *
+     * This is intended to be used as a reciprocal to GetHandler "expands" when
+     * a client does not want to scrub their json model before posting changes to
+     * the parent document back to the parent collection.
+     */
+    public static void collapse(JSNode parent, boolean collapseAll, Set collapses, String path) {
+        for (String key : parent.keySet()) {
+            Object value = parent.get(key);
+
+            if (collapseAll || collapses.contains(nextPath(path, key))) {
+                if (value instanceof JSArray) {
+                    JSArray children = (JSArray) value;
+                    if (children.length() == 0)
+                        parent.remove(key);
+
+                    for (int i = 0; i < children.length(); i++) {
+                        if (children.get(i) == null) {
+                            children.remove(i);
+                            i--;
+                            continue;
+                        }
+
+                        if (children.get(i) instanceof JSArray || !(children.get(i) instanceof JSNode)) {
+                            children.remove(i);
+                            i--;
+                            continue;
+                        }
+
+                        JSNode child = children.getNode(i);
+                        for (String key2 : child.keySet()) {
+                            if (!key2.equalsIgnoreCase("href")) {
+                                child.remove(key2);
+                            }
+                        }
+
+                        if (child.keySet().size() == 0) {
+
+                            children.remove(i);
+                            i--;
+                            continue;
+                        }
+                    }
+                    if (children.length() == 0)
+                        parent.remove(key);
+
+                } else if (value instanceof JSNode) {
+                    JSNode child = (JSNode) value;
+                    for (String key2 : child.keySet()) {
+                        if (!key2.equalsIgnoreCase("href")) {
+                            child.remove(key2);
+                        }
+                    }
+                    if (child.keySet().size() == 0)
+                        parent.remove(key);
+                }
+            } else if (value instanceof JSArray) {
+                JSArray children = (JSArray) value;
+                for (int i = 0; i < children.length(); i++) {
+                    if (children.get(i) instanceof JSNode && !(children.get(i) instanceof JSArray)) {
+                        collapse(children.getNode(i), collapseAll, collapses, nextPath(path, key));
+                    }
+                }
+            } else if (value instanceof JSNode) {
+                collapse((JSNode) value, collapseAll, collapses, nextPath(path, key));
+            }
+
+        }
+    }
+
+    public static String nextPath(String path, String next) {
+        return Utils.empty(path) ? next : path + "." + next;
+    }
+
     @Override
     public void run(Request req, Response res) throws ApiException {
         if (req.isMethod("PUT", "POST")) {
@@ -44,7 +121,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         } else if (req.isMethod("PATCH")) {
             patch(req, res);
         } else {
-            ApiException.throw400BadRequest("Method '%' is not supported by RestPostHandler");
+            throw ApiException.new400BadRequest("Method '%' is not supported by RestPostHandler");
         }
 
     }
@@ -55,15 +132,14 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
      * <p>
      * TODO: add support for JSON patching...maybe
      *
-     * @param req
-     * @param res
-     * @throws ApiException
+     * @param req the request to run
+     * @param res the response to populate
      */
     public void patch(Request req, Response res) throws ApiException {
         JSNode body = req.getJson();
         if (body.isArray()) {
             if (!Utils.empty(req.getResourceKey())) {
-                ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
+                throw ApiException.new400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
             }
         } else {
             String href = body.getString("href");
@@ -71,7 +147,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                 if (href == null)
                     body.put("href", Utils.substringBefore(req.getUrl().toString(), "?"));
                 else if (!req.getUrl().toString().startsWith(href))
-                    ApiException.throw400BadRequest("You are PATCHING-ing an resource with a different href property than the resource URL you are PATCHING-ing to.");
+                    throw ApiException.new400BadRequest("You are PATCHING-ing an resource with a different href property than the resource URL you are PATCHING-ing to.");
             }
         }
 
@@ -84,21 +160,77 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
 
     }
 
+    //   String getHref(Object hrefOrNode)
+    //   {
+    //      if (hrefOrNode instanceof JSNode)
+    //         hrefOrNode = ((JSNode) hrefOrNode).get("href");
+    //
+    //      if (hrefOrNode instanceof String)
+    //         return (String) hrefOrNode;
+    //
+    //      return null;
+    //   }
+
+    //   Map getKey(Collection table, Object node)
+    //   {
+    //      if (node instanceof JSNode)
+    //         node = ((JSNode) node).getString("href");
+    //
+    //      if (node instanceof String)
+    //         return table.decodeResourceKey((String) node);
+    //
+    //      return null;
+    //   }
+
+    //   Map mapTo(Map srcRow, Index srcCols, Index destCols)
+    //   {
+    //      if (srcCols.size() != destCols.size() && destCols.size() == 1)
+    //      {
+    //         //when the foreign key is only one column but the related primary key is multiple
+    //         //columns, encode the FK as an resourceKey.
+    //         String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
+    //
+    //         for(Object key : srcRow.keySet())
+    //            srcRow.remove(key);
+    //
+    //         srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
+    //      }
+    //      else
+    //      {
+    //         if (srcCols.size() != destCols.size())
+    //            throw ApiException.new500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
+    //
+    //         if (srcRow == null)
+    //            return Collections.EMPTY_MAP;
+    //
+    //         if (srcCols != destCols)
+    //         {
+    //            for (int i = 0; i < srcCols.size(); i++)
+    //            {
+    //               String key = srcCols.getProperty(i).getColumnName();
+    //               Object value = srcRow.remove(key);
+    //               srcRow.put(destCols.getProperty(i).getColumnName(), value);
+    //            }
+    //         }
+    //      }
+    //      return srcRow;
+    //   }
+
     public void upsert(Request req, Response res) throws ApiException {
         if (strictRest) {
             if (req.isPost() && req.getResourceKey() != null)
-                ApiException.throw404NotFound("You are trying to POST to a specific resource url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
+                throw ApiException.new404NotFound("You are trying to POST to a specific resource url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
             if (req.isPut() && req.getResourceKey() == null)
-                ApiException.throw404NotFound("You are trying to PUT to a collection url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
+                throw ApiException.new404NotFound("You are trying to PUT to a collection url.  Set 'strictRest' to false to interpret PUT vs POST intention based on presense of 'href' property in passed in JSON");
         }
 
-        Collection   collection   = req.getCollection();
-        List<Change> changes      = new ArrayList();
-        List         resourceKeys = new ArrayList();
-        JSNode       obj          = req.getJson();
+        Collection   collection = req.getCollection();
+        List<Change> changes    = new ArrayList<>();
+        List         resourceKeys;
+        JSNode       obj        = req.getJson();
 
         if (obj == null)
-            ApiException.throw400BadRequest("You must pass a JSON body to the RestPostHandler");
+            throw ApiException.new400BadRequest("You must pass a JSON body to the RestPostHandler");
 
         boolean     collapseAll = "true".equalsIgnoreCase(req.getChain().getConfig("collapseAll", this.collapseAll + ""));
         Set<String> collapses   = req.getChain().mergeEndpointActionParamsConfig("collapses");
@@ -110,13 +242,13 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
 
         if (obj instanceof JSArray) {
             if (!Utils.empty(req.getResourceKey())) {
-                ApiException.throw400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
+                throw ApiException.new400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
             }
             resourceKeys = upsert(req, collection, (JSArray) obj);
         } else {
             String href = obj.getString("href");
             if (req.isPut() && href != null && req.getResourceKey() != null && !req.getUrl().toString().startsWith(href)) {
-                ApiException.throw400BadRequest("You are PUT-ing an resource with a different href property than the resource URL you are PUT-ing to.");
+                throw ApiException.new400BadRequest("You are PUT-ing an resource with a different href property than the resource URL you are PUT-ing to.");
             }
 
             resourceKeys = upsert(req, collection, new JSArray(obj));
@@ -131,18 +263,13 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         res.getJson().put("data", array);
 
         res.withStatus(Status.SC_201_CREATED);
-        StringBuffer buff = new StringBuffer("");
-        for (int i = 0; i < resourceKeys.size(); i++) {
-            String resourceKey = resourceKeys.get(i) + "";
+        StringBuilder buff = new StringBuilder();
+        for (Object key : resourceKeys) {
+            String resourceKey = key + "";
             String href        = Chain.buildLink(collection, resourceKey, null);
+            array.add(new JSNode("href", href));
 
-            boolean added = false;
-
-            if (!added) {
-                array.add(new JSNode("href", href));
-            }
-
-            String nextId = href.substring(href.lastIndexOf("/") + 1, href.length());
+            String nextId = href.substring(href.lastIndexOf("/") + 1);
             buff.append(",").append(nextId);
         }
 
@@ -170,7 +297,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
      * placed back in the JSON prior to any PUTs that depend on relationship keys to exist.
      * <p>
      * Step 3: PKs generated for child documents which are actually relationship parents, are set
-     * as foreign keys back on the parent json (which is actully the one-to-many child)
+     * as foreign keys back on the parent json (which is actually the one-to-many child)
      * <p>
      * Step 4: Find the key values for all new/kept one-to-many and many-to-many relationships
      * <p>
@@ -180,13 +307,12 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
      * Step 5.2 Null out all now invalid many-to-one foreign keys back
      * and delete all now invalid many-to-many relationships rows.
      *
-     * @param req
-     * @param collection
-     * @param nodes
-     * @return
-     * @throws ApiException
+     * @param req        the request being serviced
+     * @param collection the collection be modified
+     * @param nodes      the records to update
+     * @return the entity keys of all upserted records
      */
-    protected List<String> upsert(Request req, Collection collection, JSArray nodes) throws ApiException {
+    protected List<String> upsert(Request req, Collection collection, JSArray nodes) {
         //--
         //--
         //-- Step 1. Upsert this generation including many-to-one relationships where the fk is known
@@ -213,7 +339,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         //-- AND ITS DESCENDANTS.
         for (Relationship rel : collection.getRelationships()) {
             Relationship inverse    = rel.getInverse();
-            List         childNodes = new ArrayList();
+            List         childNodes = new ArrayList<>();
 
             for (JSNode node : nodes.asNodeList()) {
                 Object value = node.get(rel.getName());
@@ -288,19 +414,19 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         //-- TODO: can optimize this to not upsert if the key was available
         //-- in the first pass
         for (Relationship rel : collection.getRelationships()) {
-            List<Map> updatedRows = new ArrayList();
+            List<Map> updatedRows = new ArrayList<>();
             if (rel.isManyToOne())//this means we have a FK to the related element's PK
             {
                 for (JSNode node : nodes.asNodeList()) {
-                    Map primaryKey         = collection.getDb().getKey(collection, node);
-                    Map foreignResourceKey = collection.getDb().getKey(rel.getRelated(), node.get(rel.getName()));
+                    Map<String, Object> primaryKey         = collection.getDb().getKey(collection, node);
+                    Map<String, Object> foreignResourceKey = collection.getDb().getKey(rel.getRelated(), node.get(rel.getName()));
 
                     Index foreignIdx        = rel.getFkIndex1();
                     Index relatedPrimaryIdx = rel.getRelated().getPrimaryIndex();
 
                     Object docChild = node.get(rel.getName());
                     if (docChild instanceof JSNode) {
-                        Map updatedRow = new HashMap();
+                        Map<Object, Object> updatedRow = new HashMap<>();
                         updatedRows.add(updatedRow);
                         updatedRow.putAll(primaryKey);
 
@@ -329,7 +455,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         //-- ... this step just collects them...then next steps updates new and removed relationships
         //--
 
-        MultiKeyMap keepRels = new MultiKeyMap<>(); //-- relationship, table, parentKey, list of childKeys
+        MultiKeyMap<Object, ArrayList> keepRels = new MultiKeyMap<>(); //-- relationship, parentKey, list of childKeys
 
         for (Relationship rel : collection.getRelationships()) {
             if (rel.isManyToOne())//these were handled in step 1 and 2
@@ -342,11 +468,10 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                 String href = node.getString("href");
 
                 if (href == null)
-                    ApiException.throw500InternalServerError("The child href should not be null at this point, this looks like an algorithm error.");
+                    throw ApiException.new500InternalServerError("The child href should not be null at this point, this looks like an algorithm error.");
 
-                Collection parentTbl = collection;
-                Row        parentPk  = parentTbl.decodeResourceKey(href);
-                Map        parentKey = collection.getDb().mapTo(parentPk, parentTbl.getPrimaryIndex(), rel.getFkIndex1());
+                Row                 parentPk  = collection.decodeResourceKey(href);
+                Map<String, Object> parentKey = collection.getDb().mapTo(parentPk, collection.getPrimaryIndex(), rel.getFkIndex1());
 
                 keepRels.put(rel, parentKey, new ArrayList());//there may not be any child nodes...this has to be added here so it will be in the loop later
 
@@ -361,10 +486,10 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                         Row    childPk = rel.getRelated().decodeResourceKey(childEk);
 
                         if (rel.isOneToMany()) {
-                            ((ArrayList) keepRels.get(rel, parentKey)).add(childPk);
+                            keepRels.get(rel, parentKey).add(childPk);
                         } else if (rel.isManyToMany()) {
                             Map childFk = collection.getDb().mapTo(childPk, rel.getRelated().getPrimaryIndex(), rel.getFkIndex2());
-                            ((ArrayList) keepRels.get(rel, parentKey)).add(childFk);
+                            keepRels.get(rel, parentKey).add(childFk);
                         }
                     }
 
@@ -391,12 +516,13 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         //--     )
         //--
 
-        for (MultiKey mkey : (Set<MultiKey>) keepRels.keySet()) {
-            Relationship rel       = (Relationship) mkey.getKey(0);
-            Map          parentKey = (Map) mkey.getKey(1);
+        for (Map.Entry<MultiKey<? extends Object>, ArrayList> entry : keepRels.entrySet()) {
+
+            Relationship rel       = (Relationship) entry.getKey().getKey(0);
+            Map          parentKey = (Map) entry.getKey().getKey(1);
             List<Map>    childKeys = (List) keepRels.get(rel, parentKey);
 
-            List upserts = new ArrayList();
+            List upserts = new ArrayList<>();
 
             //-- this set will contain the columns we need to update/delete outdated relationships
             Set includesKeys = new HashSet();
@@ -407,7 +533,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
             Term childOr  = Term.term(childNot, "or");
 
             for (Map childKey : childKeys) {
-                Map upsert = new HashMap();
+                Map upsert = new HashMap<>();
                 upsert.putAll(parentKey);
                 upsert.putAll(childKey);
                 upserts.add(upsert);
@@ -431,7 +557,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
             //-- now find all relationships that are NOT in the group that we just upserted
             //-- they need to be nulled out if many-to-one and deleted if many-to-many
 
-            Map<String, String> queryTerms = new HashMap();
+            Map<String, String> queryTerms = new HashMap<>();
             queryTerms.put("limit", "100");
             queryTerms.put("includes", Utils.implode(",", includesKeys));
 
@@ -463,7 +589,7 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
                 }
                 //TODO: put back in support for many to many rels recursing through engine
                 else if (rel.isManyToMany()) {
-                    List resourceKeys = new ArrayList();
+                    List resourceKeys = new ArrayList<>();
                     for (JSNode node : toUnlink.data().asNodeList()) {
                         resourceKeys.add(Utils.substringAfter(node.getString("href"), "/"));
                     }
@@ -480,62 +606,6 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
         return returnList;
     }
 
-    //   String getHref(Object hrefOrNode)
-    //   {
-    //      if (hrefOrNode instanceof JSNode)
-    //         hrefOrNode = ((JSNode) hrefOrNode).get("href");
-    //
-    //      if (hrefOrNode instanceof String)
-    //         return (String) hrefOrNode;
-    //
-    //      return null;
-    //   }
-
-    //   Map getKey(Collection table, Object node)
-    //   {
-    //      if (node instanceof JSNode)
-    //         node = ((JSNode) node).getString("href");
-    //
-    //      if (node instanceof String)
-    //         return table.decodeResourceKey((String) node);
-    //
-    //      return null;
-    //   }
-
-    //   Map mapTo(Map srcRow, Index srcCols, Index destCols)
-    //   {
-    //      if (srcCols.size() != destCols.size() && destCols.size() == 1)
-    //      {
-    //         //when the foreign key is only one column but the related primary key is multiple
-    //         //columns, encode the FK as an resourceKey.
-    //         String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
-    //
-    //         for(Object key : srcRow.keySet())
-    //            srcRow.remove(key);
-    //
-    //         srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
-    //      }
-    //      else
-    //      {
-    //         if (srcCols.size() != destCols.size())
-    //            ApiException.throw500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
-    //
-    //         if (srcRow == null)
-    //            return Collections.EMPTY_MAP;
-    //
-    //         if (srcCols != destCols)
-    //         {
-    //            for (int i = 0; i < srcCols.size(); i++)
-    //            {
-    //               String key = srcCols.getProperty(i).getColumnName();
-    //               Object value = srcRow.remove(key);
-    //               srcRow.put(destCols.getProperty(i).getColumnName(), value);
-    //            }
-    //         }
-    //      }
-    //      return srcRow;
-    //   }
-
     Term asTerm(Map row) {
         Term t = null;
         for (Object key : row.keySet()) {
@@ -551,83 +621,6 @@ public class DbPostAction<t extends DbPostAction> extends Action<t> {
             }
         }
         return t;
-    }
-
-    /*
-     * Collapses nested objects so that relationships can be preserved but the fields
-     * of the nested child objects are not saved (except for FKs back to the parent
-     * object in the case of a ONE_TO_MANY relationship).
-     *
-     * This is intended to be used as a reciprocal to GetHandler "expands" when
-     * a client does not want to scrub their json model before posting changes to
-     * the parent document back to the parent collection.
-     */
-    public static void collapse(JSNode parent, boolean collapseAll, Set collapses, String path) {
-        for (String key : (List<String>) new ArrayList(parent.keySet())) {
-            Object value = parent.get(key);
-
-            if (collapseAll || collapses.contains(nextPath(path, key))) {
-                if (value instanceof JSArray) {
-                    JSArray children = (JSArray) value;
-                    if (children.length() == 0)
-                        parent.remove(key);
-
-                    for (int i = 0; i < children.length(); i++) {
-                        if (children.get(i) == null) {
-                            children.remove(i);
-                            i--;
-                            continue;
-                        }
-
-                        if (children.get(i) instanceof JSArray || !(children.get(i) instanceof JSNode)) {
-                            children.remove(i);
-                            i--;
-                            continue;
-                        }
-
-                        JSNode child = children.getNode(i);
-                        for (String key2 : (List<String>) new ArrayList(child.keySet())) {
-                            if (!key2.equalsIgnoreCase("href")) {
-                                child.remove(key2);
-                            }
-                        }
-
-                        if (child.keySet().size() == 0) {
-
-                            children.remove(i);
-                            i--;
-                            continue;
-                        }
-                    }
-                    if (children.length() == 0)
-                        parent.remove(key);
-
-                } else if (value instanceof JSNode) {
-                    JSNode child = (JSNode) value;
-                    for (String key2 : (List<String>) new ArrayList(child.keySet())) {
-                        if (!key2.equalsIgnoreCase("href")) {
-                            child.remove(key2);
-                        }
-                    }
-                    if (child.keySet().size() == 0)
-                        parent.remove(key);
-                }
-            } else if (value instanceof JSArray) {
-                JSArray children = (JSArray) value;
-                for (int i = 0; i < children.length(); i++) {
-                    if (children.get(i) instanceof JSNode && !(children.get(i) instanceof JSArray)) {
-                        collapse(children.getNode(i), collapseAll, collapses, nextPath(path, key));
-                    }
-                }
-            } else if (value instanceof JSNode) {
-                collapse((JSNode) value, collapseAll, collapses, nextPath(path, key));
-            }
-
-        }
-    }
-
-    public static String nextPath(String path, String next) {
-        return Utils.empty(path) ? next : path + "." + next;
     }
 
     public boolean isCollapseAll() {

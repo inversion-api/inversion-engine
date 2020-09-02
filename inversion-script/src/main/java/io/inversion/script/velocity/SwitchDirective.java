@@ -21,7 +21,6 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.directive.InputBase;
 import org.apache.velocity.runtime.parser.node.ASTDirective;
-import org.apache.velocity.runtime.parser.node.ASTStringLiteral;
 import org.apache.velocity.runtime.parser.node.Node;
 
 import java.io.IOException;
@@ -66,8 +65,8 @@ public class SwitchDirective extends InputBase {
         String arg = value.toString();
 
         Node n           = node.jjtGetChild(1);
-        Node child       = null;
-        Node renderNode  = null;
+        Node child;
+        Node renderNode;
         int  numChildren = n.jjtGetNumChildren();
         for (int i = 0; i < numChildren; i++) {
             child = n.jjtGetChild(i);
@@ -76,7 +75,7 @@ public class SwitchDirective extends InputBase {
                 String       dirName   = ((ASTDirective) child).getDirectiveName();
 
                 if (dirName.equalsIgnoreCase("case")) {
-                    String casetoken = ((ASTStringLiteral) directive.jjtGetChild(0)).literal();
+                    String casetoken = directive.jjtGetChild(0).literal();
 
                     if (casetoken.equalsIgnoreCase(arg)) {
                         // render all the children until we hit either

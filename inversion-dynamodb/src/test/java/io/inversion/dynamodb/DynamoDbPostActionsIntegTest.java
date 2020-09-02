@@ -48,8 +48,8 @@ public class DynamoDbPostActionsIntegTest {
 //      //-- find 5 orders that are in dynamo that we can delete and repost
 //      res = engine.get("northwind/dynamodb/orders?type=ORDER&limit=5");
 //
-//      List<String> hrefs = new ArrayList();
-//      List orderIds = new ArrayList();
+//      List<String> hrefs = new ArrayList<>();
+//      List orderIds = new ArrayList<>();
 //
 //      res.data().forEach(o -> orderIds.add(((JSNode) o).get("orderid")));
 //      res.data().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
@@ -69,8 +69,8 @@ public class DynamoDbPostActionsIntegTest {
 //      assertTrue(res.data().size() == 5);
 //
 //      //-- reconfigure the h2 json for posting to dynamo
-//      List<Map<String, Object>> mapList = new ArrayList();
-//      List<String> posted = new ArrayList();
+//      List<Map<String, Object>> mapList = new ArrayList<>();
+//      List<String> posted = new ArrayList<>();
 //      for (Object obj : res.data())
 //      {
 //         JSNode node = (JSNode) obj;

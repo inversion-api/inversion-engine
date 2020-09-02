@@ -76,7 +76,6 @@ import java.util.*;
  * <p>
  * Here is an example minimal configuration for Full Wiring Mode that will produce a fully running REST API for the underlying data source.
  * These name/value pairs can come from any combination of property sources loaded into <code>configuration</code>.
- * <p>
  * <pre>
  *      myAction.class=io.inversion.db.DbAction
  *      myDb.class=io.inversion.jdbc.JdbcDb
@@ -89,22 +88,121 @@ import java.util.*;
  * <p>
  * By default, the <code>configuration</code> is going to the global default CombinedConfiguration from Config.
  *
- * @see io.inversion.Engine.startup()
+ * @see Engine#startup()
  * @see Config
  * @see <a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a>
  */
+@SuppressWarnings("unchecked")
 public class Configurator {
 
     static final Logger log = LoggerFactory.getLogger(Configurator.class);
 
     static final String ROOT_BEAN_NAME = "inversion";
 
+    static <T> T cast(String key, String stringVal, Class<T> type, Field field, Map<String, Object> beans) throws Exception {
+        if (String.class.isAssignableFrom(type)) {
+            return (T) stringVal;
+        } else if (Path.class.isAssignableFrom(type)) {
+            return (T) new Path(stringVal);
+        } else if (boolean.class.isAssignableFrom(type)) {
+            stringVal = stringVal.toLowerCase();
+            return (T) (Boolean) (stringVal.equals("true") || stringVal.equals("t") || stringVal.equals("1"));
+        } else if (byte.class.isAssignableFrom(type)) {
+            return (T) (Byte) Byte.parseByte(stringVal);
+        } else if (char.class.isAssignableFrom(type)) {
+            return (T) (Character) stringVal.charAt(0);
+        } else if (int.class.isAssignableFrom(type)) {
+            return (T) (Integer) Integer.parseInt(stringVal);
+        } else if (long.class.isAssignableFrom(type)) {
+            return (T) (Long) Long.parseLong(stringVal);
+        } else if (float.class.isAssignableFrom(type)) {
+            return (T) (Float) Float.parseFloat(stringVal);
+        } else if (double.class.isAssignableFrom(type)) {
+            return (T) (Double) Double.parseDouble(stringVal);
+        } else if (type.isArray() || java.util.Collection.class.isAssignableFrom(type)) {
+            Class subtype = null;
+            if (type.isArray()) {
+                subtype = getArrayElementClass(type);
+            }
+
+            if (subtype == null && field != null) {
+                subtype = (Class) ((((ParameterizedType) field.getGenericType()).getActualTypeArguments())[0]);
+            }
+
+            java.util.Collection list  = java.util.Set.class.isAssignableFrom(type) ? new HashSet() : new ArrayList<>();
+            String[]             parts = stringVal.split(",");
+            for (String part : parts) {
+                part = part.trim();
+
+                Object val = beans.getOrDefault(part, part);
+
+                if (val != null && subtype != null && !subtype.isAssignableFrom(val.getClass()))
+                    val = cast(key, val + "", subtype, null, beans);
+
+                list.add(val);
+            }
+
+            if (type.isArray())
+                return (T) list.toArray((Object[]) Array.newInstance(subtype, list.size()));
+
+            return (T) list;
+        } else if (Map.class.isAssignableFrom(type)) {
+            Map      map   = new HashMap<>();
+            String[] parts = stringVal.split(",");
+            for (String part : parts) {
+                Object val = beans.get(part);
+                map.put(part, val);
+            }
+            return (T) map;
+        } else {
+            Object o = beans.get(stringVal);
+            if (o != null && type.isAssignableFrom(o.getClass()))
+                return (T) o;
+        }
+
+        if (stringVal != null)
+            throw new RuntimeException("Error setting '" + key + "=" + stringVal + "'.  You must add support for type " + type + " into the Configurator");
+
+        return null;
+    }
+
+    //   public static Properties encode(Object... beans) throws Exception
+    //   {
+    //      Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), beans);
+    //      return autoProps;
+    //   }
+
+    static Class getArrayElementClass(Class arrayClass) throws ClassNotFoundException {
+        Class  subtype;
+        String typeStr = arrayClass.toString();
+
+        if (typeStr.startsWith("class [Z")) {
+            subtype = boolean.class;
+        } else if (typeStr.startsWith("class [B")) {
+            subtype = byte.class;
+        } else if (typeStr.startsWith("class [C")) {
+            subtype = char.class;
+        } else if (typeStr.startsWith("class [I")) {
+            subtype = int.class;
+        } else if (typeStr.startsWith("class [J")) {
+            subtype = long.class;
+        } else if (typeStr.startsWith("class [F")) {
+            subtype = float.class;
+        } else if (typeStr.startsWith("class [D")) {
+            subtype = double.class;
+        } else //if (typeStr.startsWith("class ["))
+        {
+            subtype = Class.forName(typeStr.substring(typeStr.indexOf("[") + 2, typeStr.indexOf(";")));
+        }
+        return subtype;
+    }
+
     /**
      * Wires up an Api at runtime by reflectively setting bean properties based on key/value configuration properties.
      *
      * @param engine        the engine to be configured
      * @param configuration the name/value pairs used to wire up the Api's that will be added to <code>engine</code>.
-     * @see io.inversion.Engine.startup()
+     * @see Engine#startup()
      * @see Config
      */
     public synchronized void configure(Engine engine, Configuration configuration) {
@@ -127,7 +225,7 @@ public class Configurator {
 
                 //dump(encoder.props);
 
-                Map<String, Object> beans = new HashMap();
+                Map<String, Object> beans = new HashMap<>();
                 for (Object bean : encoder.names.keySet()) {
                     String key = encoder.names.get(bean);
                     beans.put(key, bean);
@@ -164,15 +262,9 @@ public class Configurator {
                 loadConfig(engine, props);
             }
         } catch (Exception e) {
-            ApiException.throw500InternalServerError(e, "Error loading configuration.");
+            throw ApiException.new500InternalServerError(e, "Error loading configuration.");
         }
     }
-
-    //   public static Properties encode(Object... beans) throws Exception
-    //   {
-    //      Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), beans);
-    //      return autoProps;
-    //   }
 
     void loadConfig(Engine engine, Properties properties) throws Exception {
         Decoder decoder = new Decoder() {
@@ -195,7 +287,7 @@ public class Configurator {
 
             @Override
             public void onLoad(String name, Object module, Map<String, Object> props) throws Exception {
-                Field field = getField("name", module.getClass());
+                Field field = Utils.getField("name", module.getClass());
                 if (field != null && field.get(module) == null)
                     field.set(module, name);
             }
@@ -207,7 +299,7 @@ public class Configurator {
         autoWireApi(decoder);
 
         for (Api api : decoder.getBeans(Api.class)) {
-            for (Db db : ((Api) api).getDbs()) {
+            for (Db db : api.getDbs()) {
                 db.startup(api);
             }
         }
@@ -219,7 +311,7 @@ public class Configurator {
         autoProps.putAll(properties);
 
         for (Api api : decoder.getBeans(Api.class)) {
-            for (Db db : ((Api) api).getDbs()) {
+            for (Db db : api.getDbs()) {
                 db.shutdown(api);
             }
         }
@@ -278,7 +370,7 @@ public class Configurator {
             Api api = decoder.getBeans(Api.class).get(0);
 
             if (api.getDbs().size() == 0)
-                api.withDbs((Db[]) found.toArray(new Db[found.size()]));
+                api.withDbs((Db[]) found.toArray(new Db[0]));
 
             Set<Action> privateActions = new HashSet();
             found = decoder.getBeans(Endpoint.class);
@@ -299,19 +391,71 @@ public class Configurator {
         }
     }
 
+    void dump(Properties autoProps) {
+        //      if (!Utils.empty(configOut))
+        //      {
+        //         String fileName = "./" + configOut.trim();
+        //
+        //         File file = new File(fileName);
+        //
+        //         log.info("writing merged config file to: '" + file.getCanonicalPath() + "'");
+        //
+        //         file.getParentFile().mkdirs();
+        //         BufferedWriter out = new BufferedWriter(new FileWriter(file));
+
+        //properties are sorted based on the number of "." segments they contain so that "shallow"
+        //depth properties can be set before deeper depth properties.
+        Properties sorted = new Properties() {
+
+            public Enumeration keys() {
+                Vector v = new Vector(Decoder.sort(keySet()));
+                return v.elements();
+            }
+        };
+
+        sorted.putAll(autoProps);
+        autoProps = sorted;
+
+        //         //autoProps.store(out, "");
+        //
+        //         //               for (String key : AutoWire.sort(autoProps.keySet()))
+        //         //               {
+        //         //                  String value = autoProps.getProperty(key);
+        //         //                  if (shouldMask(key))
+        //         //                     value = "###############";
+        //         //               }
+        //         out.flush();
+        //         out.close();
+
+        List<String> keys = Decoder.sort(autoProps.keySet());//new ArrayList(autoProps.keySet());
+        Collections.sort(keys);
+        log.info("-- merged user supplied configuration -------------------------");
+        for (String key : keys) {
+            String value = autoProps.getProperty(key);
+
+            //         if (shouldMask(key))
+            //            value = "###############";
+
+            log.info(" > " + key + "=" + value);
+        }
+        log.info("-- end merged user supplied configuration ---------------------");
+
+        //      }
+    }
+
     static class AllIncluder extends DefaultIncluder {
 
         public AllIncluder() {
-            excludeTypes = new ArrayList(Arrays.asList(Logger.class));
+            excludeTypes = Utils.asList(Logger.class);
         }
     }
 
     static class DefaultIncluder implements Includer {
 
-        List<Field> excludes = new ArrayList();                                                                 //TODO:  why was api.actions excluded?  //List<Field> excludes     =  Arrays.asList(Utils.getField("actions", Api.class));
+        final List<Field> excludes = new ArrayList<>();                                                                 //TODO:  why was api.actions excluded?  //List<Field> excludes     =  Arrays.asList(Utils.getField("actions", Api.class));
 
-        List excludeTypes = new ArrayList(Arrays.asList(Logger.class,                                        //don't care to persist info on loggers
-                Action.class, Endpoint.class, Rule.class, Path.class));                                             //these are things that must be supplied by manual config so don't write them out.
+        List excludeTypes = Utils.asList(Logger.class,                                        //don't care to persist info on loggers
+                Action.class, Endpoint.class, Rule.class, Path.class);                                             //these are things that must be supplied by manual config so don't write them out.
 
         @Override
         public boolean include(Field field) {
@@ -404,10 +548,31 @@ public class Configurator {
 
     static class Decoder {
 
-        Properties      props    = new Properties();
-        TreeSet<String> propKeys = new TreeSet<String>();
+        final Properties      props    = new Properties();
+        final TreeSet<String> propKeys = new TreeSet<>();
 
-        Map<String, Object> beans = new HashMap();
+        final Map<String, Object> beans = new HashMap<>();
+
+        /**
+         * Sorts based on the number of "." characters first and then
+         * based on the string value.
+         *
+         * @param keys the keys to sort
+         * @return the sorted list of keys
+         */
+        public static List<String> sort(java.util.Collection keys) {
+            List<String> sorted = new ArrayList(keys);
+            sorted.sort((o1, o2) -> {
+                int count1 = o1.length() - o1.replace(".", "").length();
+                int count2 = o2.length() - o2.replace(".", "").length();
+                if (count1 != count2)
+                    return count1 > count2 ? 1 : -1;
+
+                return o1.compareTo(o2);
+            });
+
+            return sorted;
+        }
 
         //designed to be overridden
         public void onLoad(String name, Object bean, Map<String, Object> properties) throws Exception {
@@ -466,7 +631,7 @@ public class Configurator {
         }
 
         List<String> getKeys(String beanName) {
-            Set<String>       keys       = new HashSet<String>();
+            Set<String>       keys       = new HashSet<>();
             String            beanPrefix = beanName + ".";
             SortedSet<String> keySet     = propKeys.tailSet(beanPrefix);
             for (String key : keySet) {
@@ -499,38 +664,13 @@ public class Configurator {
         }
 
         /**
-         * Sorts based on the number of "." characters first and then
-         * based on the string value.
-         *
-         * @param keys
-         * @return
-         */
-        public static List<String> sort(java.util.Collection keys) {
-            List<String> sorted = new ArrayList(keys);
-            Collections.sort(sorted, new Comparator<String>() {
-
-                @Override
-                public int compare(String o1, String o2) {
-                    int count1 = o1.length() - o1.replace(".", "").length();
-                    int count2 = o2.length() - o2.replace(".", "").length();
-                    if (count1 != count2)
-                        return count1 > count2 ? 1 : -1;
-
-                    return o1.compareTo(o2);
-                }
-            });
-
-            return sorted;
-        }
-
-        /**
          * Four step process
          * 1. Instantiate all beans
          * 2. Set primitiave types on all beans
          * 3. Set object types on all beans
          * 4. Path compression
          *
-         * @throws Exception
+         * @throws Exception when configuration fails
          */
         public void load() throws Exception {
             HashMap<String, Map> loaded = new LinkedHashMap();
@@ -543,15 +683,15 @@ public class Configurator {
                 if (key.endsWith(".class") || key.endsWith(".className")) {
                     String name = key.substring(0, key.lastIndexOf("."));
                     String cn   = (String) props.get(key);
-                    Object obj  = null;
+                    Object obj;
                     try {
-                        obj = Class.forName(cn).newInstance();
+                        obj = Class.forName(cn).getDeclaredConstructor().newInstance();
                     } catch (Exception ex) {
                         System.err.println("Error instantiating class: '" + cn + "'");
                         throw ex;
                     }
 
-                    loaded.put(name, new HashMap());
+                    loaded.put(name, new HashMap<>());
                     beans.put(name, obj);
                     //System.out.println(name + "->" + cn);
                 }
@@ -580,7 +720,7 @@ public class Configurator {
                             continue;
 
                         if ((key.startsWith(beanName + ".") && key.lastIndexOf(".") == beanName.length())) {
-                            String prop  = key.substring(key.lastIndexOf(".") + 1, key.length());
+                            String prop  = key.substring(key.lastIndexOf(".") + 1);
                             String value = getProperty(key);
 
                             if (value != null)
@@ -591,7 +731,7 @@ public class Configurator {
                                 value = null;
                             }
 
-                            boolean valueIsBean = (!(value.equals("") || value.equals("null")) && (beans.containsKey(value) || beans.containsKey(Utils.explode(",", value).get(0))));
+                            boolean valueIsBean = (!(value == null || value.equals("") || value.equals("null")) && (beans.containsKey(value) || beans.containsKey(Utils.explode(",", value).get(0))));
 
                             if (isFirstPassSoLoadOnlyPrimitives && valueIsBean) {
                                 continue;
@@ -602,7 +742,7 @@ public class Configurator {
                             if (handleProp(obj, prop, value)) {
                                 //do nothing, already handled
                             } else {
-                                Field field = getField(prop, obj.getClass());
+                                Field field = Utils.getField(prop, obj.getClass());
                                 if (field != null) {
                                     Class type = field.getType();
 
@@ -646,7 +786,7 @@ public class Configurator {
 
                         Object parent = beans.get(parentKey);
                         if (parent != null) {
-                            Field field = getField(propKey, parent.getClass());
+                            Field field = Utils.getField(propKey, parent.getClass());
                             if (field != null) {
                                 if (Map.class.isAssignableFrom(field.getType())) {
                                     Map map = (Map) field.get(parent);
@@ -662,10 +802,10 @@ public class Configurator {
                                     System.err.println("Unable to set nested value: '" + beanName + "'");
                                 }
                             } else {
-                                System.err.println("Field is not a mapped: " + beanName + " - " + field);
+                                System.err.println("Field is not a mapped: '" + beanName + "'");
                             }
                         } else {
-                            System.err.println("Missing parent for map compression: " + beanName);
+                            System.err.println("Missing parent for map compression: '" + beanName + "'");
                         }
                     }
                 }
@@ -688,7 +828,7 @@ public class Configurator {
         }
 
         public <T> List<T> getBeans(Class<T> type) {
-            List found = new ArrayList();
+            List found = new ArrayList<>();
             for (Object bean : beans.values()) {
                 if (type.isAssignableFrom(bean.getClass()))
                     found.add(bean);
@@ -705,33 +845,12 @@ public class Configurator {
         }
 
         public List findBeans(Class type) {
-            List matches = new ArrayList();
+            List matches = new ArrayList<>();
             for (Object bean : beans.values()) {
                 if (type.isAssignableFrom(bean.getClass()))
                     matches.add(bean);
             }
             return matches;
-        }
-
-        public static Field getField(String fieldName, Class clazz) {
-            if (fieldName == null || clazz == null) {
-                return null;
-            }
-
-            Field[] fields = clazz.getDeclaredFields();
-            for (int i = 0; i < fields.length; i++) {
-                if (fields[i].getName().equals(fieldName)) {
-                    Field field = fields[i];
-                    field.setAccessible(true);
-                    return field;
-                }
-            }
-
-            if (clazz.getSuperclass() != null && !clazz.equals(clazz.getSuperclass())) {
-                return getField(fieldName, clazz.getSuperclass());
-            }
-
-            return null;
         }
 
         protected Object cast0(String str) {
@@ -751,30 +870,10 @@ public class Configurator {
 
     static class Encoder {
 
+        private static final Set<Class<?>> WRAPPER_TYPES = getWrapperTypes();
         Properties                  props    = null;
         Map<Object, String>         names    = null;
         MultiKeyMap<String, String> defaults = null;
-
-        static interface Namer {
-
-            public String getName(Object o) throws Exception;
-        }
-
-        static interface Includer {
-
-            public boolean include(Field field);
-        }
-
-        public Properties encode(Namer namer, Includer includer, Object... objects) throws Exception {
-            props = new Properties();
-            names = new HashMap();
-            defaults = new MultiKeyMap();
-
-            for (Object object : objects) {
-                encode(object, props, namer, includer, names, defaults);
-            }
-            return props;
-        }
 
         static String encode(Object object, Properties props, Namer namer, Includer includer, Map<Object, String> names, MultiKeyMap defaults) throws Exception {
             try {
@@ -803,7 +902,7 @@ public class Configurator {
                             continue;
 
                         try {
-                            Object clean        = object.getClass().newInstance();
+                            Object clean        = object.getClass().getDeclaredConstructor().newInstance();
                             Object defaultValue = field.get(clean);
 
                             if (defaultValue != null && WRAPPER_TYPES.contains(defaultValue.getClass()))
@@ -829,13 +928,13 @@ public class Configurator {
                     String fieldKey = name + "." + field.getName();
                     if (value != null) {
                         if (value.getClass().isArray())
-                            value = Arrays.asList(value);
+                            value = Utils.asList(value);
 
                         if (value instanceof java.util.Collection) {
                             if (((java.util.Collection) value).size() == 0)
                                 continue;
 
-                            List values = new ArrayList();
+                            List values = new ArrayList<>();
                             for (Object child : ((java.util.Collection) value)) {
                                 String childKey = encode(child, props, namer, includer, names, defaults);
                                 values.add(childKey);
@@ -899,10 +998,8 @@ public class Configurator {
             return name;
         }
 
-        private static final Set<Class<?>> WRAPPER_TYPES = getWrapperTypes();
-
         private static Set<Class<?>> getWrapperTypes() {
-            Set<Class<?>> ret = new HashSet<Class<?>>();
+            Set<Class<?>> ret = new HashSet<>();
             ret.add(Boolean.class);
             ret.add(Character.class);
             ret.add(Byte.class);
@@ -916,150 +1013,27 @@ public class Configurator {
             ret.add(Path.class);
             return ret;
         }
-    }
 
-    static <T> T cast(String key, String stringVal, Class<T> type, Field field, Map<String, Object> beans) throws Exception {
-        if (String.class.isAssignableFrom(type)) {
-            return (T) stringVal;
-        } else if (Path.class.isAssignableFrom(type)) {
-            return (T) new Path(stringVal);
-        } else if (boolean.class.isAssignableFrom(type)) {
-            stringVal = stringVal.toLowerCase();
-            return (T) (Boolean) (stringVal.equals("true") || stringVal.equals("t") || stringVal.equals("1"));
-        } else if (byte.class.isAssignableFrom(type)) {
-            return (T) (Byte) Byte.parseByte(stringVal);
-        } else if (char.class.isAssignableFrom(type)) {
-            return (T) (Character) stringVal.charAt(0);
-        } else if (int.class.isAssignableFrom(type)) {
-            return (T) (Integer) Integer.parseInt(stringVal);
-        } else if (long.class.isAssignableFrom(type)) {
-            return (T) (Long) Long.parseLong(stringVal);
-        } else if (float.class.isAssignableFrom(type)) {
-            return (T) (Float) Float.parseFloat(stringVal);
-        } else if (double.class.isAssignableFrom(type)) {
-            return (T) (Double) Double.parseDouble(stringVal);
-        } else if (type.isArray() || java.util.Collection.class.isAssignableFrom(type)) {
-            Class subtype = null;
-            if (type.isArray()) {
-                subtype = getArrayElementClass(type);
+        public Properties encode(Namer namer, Includer includer, Object... objects) throws Exception {
+            props = new Properties();
+            names = new HashMap<>();
+            defaults = new MultiKeyMap();
+
+            for (Object object : objects) {
+                encode(object, props, namer, includer, names, defaults);
             }
-
-            if (subtype == null && field != null) {
-                subtype = (Class) ((((ParameterizedType) field.getGenericType()).getActualTypeArguments())[0]);
-            }
-
-            java.util.Collection list  = java.util.Set.class.isAssignableFrom(type) ? new HashSet() : new ArrayList();
-            String[]             parts = stringVal.split(",");
-            for (String part : parts) {
-                part = part.trim();
-
-                Object val = beans.containsKey(part) ? beans.get(part) : part;
-
-                if (val != null && subtype != null && !subtype.isAssignableFrom(val.getClass()))
-                    val = cast(key, val + "", subtype, null, beans);
-
-                list.add(val);
-            }
-
-            if (type.isArray())
-                return (T) list.toArray((Object[]) Array.newInstance(subtype, list.size()));
-
-            return (T) list;
-        } else if (Map.class.isAssignableFrom(type)) {
-            Map      map   = new HashMap();
-            String[] parts = stringVal.split(",");
-            for (String part : parts) {
-                Object val = beans.get(part);
-                map.put(part, val);
-            }
-            return (T) map;
-        } else {
-            Object o = beans.get(stringVal);
-            if (o != null && type.isAssignableFrom(o.getClass()))
-                return (T) o;
+            return props;
         }
 
-        if (stringVal != null)
-            throw new RuntimeException("Error setting '" + key + "=" + stringVal + "'.  You must add support for type " + type + " into the Configurator");
+        interface Namer {
 
-        return null;
-    }
-
-    static Class getArrayElementClass(Class arrayClass) throws ClassNotFoundException {
-        Class  subtype = null;
-        String typeStr = arrayClass.toString();
-
-        if (typeStr.startsWith("class [Z")) {
-            subtype = boolean.class;
-        } else if (typeStr.startsWith("class [B")) {
-            subtype = byte.class;
-        } else if (typeStr.startsWith("class [C")) {
-            subtype = char.class;
-        } else if (typeStr.startsWith("class [I")) {
-            subtype = int.class;
-        } else if (typeStr.startsWith("class [J")) {
-            subtype = long.class;
-        } else if (typeStr.startsWith("class [F")) {
-            subtype = float.class;
-        } else if (typeStr.startsWith("class [D")) {
-            subtype = double.class;
-        } else //if (typeStr.startsWith("class ["))
-        {
-            subtype = Class.forName(typeStr.substring(typeStr.indexOf("[") + 2, typeStr.indexOf(";")));
+            String getName(Object o) throws Exception;
         }
-        return subtype;
-    }
 
-    void dump(Properties autoProps) {
-        //      if (!Utils.empty(configOut))
-        //      {
-        //         String fileName = "./" + configOut.trim();
-        //
-        //         File file = new File(fileName);
-        //
-        //         log.info("writing merged config file to: '" + file.getCanonicalPath() + "'");
-        //
-        //         file.getParentFile().mkdirs();
-        //         BufferedWriter out = new BufferedWriter(new FileWriter(file));
+        interface Includer {
 
-        //properties are sorted based on the number of "." segments they contain so that "shallow"
-        //depth properties can be set before deeper depth properties.
-        Properties sorted = new Properties() {
-
-            public Enumeration keys() {
-                Vector v = new Vector(Decoder.sort(keySet()));
-                return v.elements();
-            }
-        };
-
-        sorted.putAll(autoProps);
-        autoProps = sorted;
-
-        //         //autoProps.store(out, "");
-        //
-        //         //               for (String key : AutoWire.sort(autoProps.keySet()))
-        //         //               {
-        //         //                  String value = autoProps.getProperty(key);
-        //         //                  if (shouldMask(key))
-        //         //                     value = "###############";
-        //         //               }
-        //         out.flush();
-        //         out.close();
-
-        List<String> keys = Decoder.sort(autoProps.keySet());//new ArrayList(autoProps.keySet());
-        Collections.sort(keys);
-        log.info("-- merged user supplied configuration -------------------------");
-        for (String key : keys) {
-            String value = autoProps.getProperty(key);
-
-            //         if (shouldMask(key))
-            //            value = "###############";
-
-            log.info(" > " + key + "=" + value);
+            boolean include(Field field);
         }
-        log.info("-- end merged user supplied configuration ---------------------");
-
-        //      }
     }
 
 }

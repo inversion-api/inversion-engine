@@ -31,7 +31,8 @@ import io.inversion.utils.Utils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 
-import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Example of how database connectivity settings can be pulled from an Azure KeyVault at runtime.
@@ -58,8 +59,9 @@ public class KeyVaultDemoMain {
 
         PagedIterable<SecretProperties> secretIt = secretClient.listPropertiesOfSecrets();
 
-        LinkedHashSet<String> names = new LinkedHashSet();
-        secretIt.streamByPage().forEach(resp -> resp.getElements().stream().map(props -> names.add(props.getName())));
+        //LinkedHashSet<String> names = new LinkedHashSet<>();
+        //secretIt.streamByPage().forEach(resp -> resp.getElements().stream().map(props -> names.add(props.getName())));
+        Set<String> names = secretIt.streamByPage().flatMap(page -> page.getElements().stream()).map(SecretProperties::getName).collect(Collectors.toSet());
 
         for (String name : names) {
             KeyVaultSecret sec = secretClient.getSecret(name);
@@ -67,15 +69,15 @@ public class KeyVaultDemoMain {
         }
         //-- end secrets lookup
 
-        //-- now we are going to cause the default configration to be
-        //-- loaded and then augment it with the keyvault properties
+        //-- now we are going to cause the default configuration to be
+        //-- loaded and then augment it with the key vault properties
         String configPath    = Utils.findProperty("configPath");
         String configProfile = Utils.findProperty("configProfile", "profile");
 
         Config.loadConfiguration(configPath, configProfile);//this loads the default configuration
         CompositeConfiguration config = Config.getConfiguration();
 
-        //-- add the secrets to the start of the composite list so that keyvaut values are pulled first
+        //-- add the secrets to the start of the composite list so that key vault values are pulled first
         config.addConfigurationFirst(secretsConf);
 
         //-- now wire up your api.

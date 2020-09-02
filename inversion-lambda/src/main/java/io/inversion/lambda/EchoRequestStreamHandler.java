@@ -22,6 +22,7 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Simple handler to echo the request back
@@ -44,7 +45,7 @@ public class EchoRequestStreamHandler implements RequestStreamHandler {
         }
 
         responseJson.put("body", responseBody.toString());
-        OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
+        OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
         writer.write(responseJson.toString());
         writer.close();
     }

@@ -22,14 +22,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 class SqlTokenizer {
-    static Set keywords = new HashSet(Utils.explode(",", "insert,into,update,delete,select,from,where,group,order,limit"));
+    static final Set keywords = new HashSet(Utils.explode(",", "insert,into,update,delete,select,from,where,group,order,limit"));
 
-    char[] chars = null;
-    int    head  = 0;
+    final char[] chars;
+    int head = 0;
 
-    StringBuffer clause = new StringBuffer("");
+    StringBuilder clause = new StringBuilder();
 
-    StringBuffer token = new StringBuffer("");
+    StringBuilder token = new StringBuilder();
 
     boolean escape      = false;
     boolean doubleQuote = false;
@@ -55,12 +55,12 @@ class SqlTokenizer {
     public String nextClause() {
         String toReturn = null;
 
-        String nextToken = null;
+        String nextToken;
         while ((nextToken = next()) != null) {
             if (keywords.contains(nextToken.toLowerCase())) {
                 if (clause.length() > 0) {
                     toReturn = clause.toString();
-                    clause = new StringBuffer(nextToken);
+                    clause = new StringBuilder(nextToken);
                     return toReturn;
                 }
             }
@@ -69,7 +69,7 @@ class SqlTokenizer {
 
         if (clause.length() > 0) {
             toReturn = clause.toString();
-            clause = new StringBuffer("");
+            clause = new StringBuilder();
         }
 
         return toReturn;
@@ -203,7 +203,7 @@ class SqlTokenizer {
             }
         }
         String str = token.toString();
-        token = new StringBuffer();
+        token = new StringBuilder();
         return str;
     }
 

@@ -17,6 +17,9 @@
 package io.inversion.utils;
 
 import io.inversion.ApiException;
+import io.inversion.Chain;
+import io.inversion.Request;
+import io.inversion.Response;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,9 +62,8 @@ import java.util.regex.Pattern;
  *
  *  </ul>
  * <p>
- * <p>
  * When used in the context of a Api configuration you may see something like this:
- * <p>
+ *
  * <pre>
  *  Engine e = new Engine().withIncludeOn(null, new Path("/apis"));
  *                         .withApi(new Api().withIncludeOn(null, new Path("bookstore/{storeName:johnsBestBooks|carolsBooksOnMain}"))
@@ -69,13 +71,13 @@ import java.util.regex.Pattern;
  *                                                                       .withAction(new BrowseCategoriesAction().withIncludeOn(null, new Path("[:subcategory]/*")))));
  * </pre>
  *
- * @see io.inversion.Rule.withIncludeOn
- * @see io.inversion.Rule.withExcludeOn
+ * @see io.inversion.Rule#withIncludeOn
+ * @see io.inversion.Rule#withExcludeOn
  */
 
 public class Path {
-    List<String> parts = new ArrayList();
-    List<String> lc    = new ArrayList();
+    List<String> parts = new ArrayList<>();
+    List<String> lc    = new ArrayList<>();
 
     /**
      * Creates an empty Path
@@ -101,13 +103,13 @@ public class Path {
      * Meaning <code>Path p = new Path("part1", "part2/part3", "/part4/", "////part5//part6/", "part7")</code> is valid
      * and would result in a Path with parts "part1", "part2", "part3", "part4", "part5", "part6", "part7".
      *
-     * @param path an array of path part strings
+     * @param part an array of path part strings
      */
     public Path(String... part) {
         parts = Utils.explode("/", part);
-        lc = new ArrayList(parts.size());
-        for (int i = 0; i < parts.size(); i++) {
-            lc.add(parts.get(i).toLowerCase());
+        lc = new ArrayList<>(parts.size());
+        for (String s : parts) {
+            lc.add(s.toLowerCase());
         }
     }
 
@@ -117,7 +119,7 @@ public class Path {
      * @param parts an list of path part strings
      */
     public Path(List<String> parts) {
-        this(parts.toArray(new String[parts.size()]));
+        this(parts.toArray(new String[0]));
     }
 
     /**
@@ -128,11 +130,11 @@ public class Path {
      * @return a new list with the individual path parts n the originally defined case.
      */
     public List<String> parts() {
-        return new ArrayList(parts);
+        return new ArrayList<>(parts);
     }
 
     /**
-     * Simple way to pull the first element of the path without having to check for <code>size() > 0</code> first.
+     * Simple way to pull the first element of the path without having to check for <code>size() &gt; 0</code> first.
      *
      * @return the first element in the path if it exists otherwise null
      */
@@ -143,7 +145,7 @@ public class Path {
     }
 
     /**
-     * Simple way to pull the last element of the path without having to check for <code>size() > 0</code> first.
+     * Simple way to pull the last element of the path without having to check for <code>size() &gt; 0</code> first.
      *
      * @return the last element in the path if it exists otherwise null
      */
@@ -154,7 +156,7 @@ public class Path {
     }
 
     /**
-     * Simple way to get element at <code>index</code> without haveint to check for <code>size() > index</code> first.
+     * Simple way to get element at <code>index</code> without haveint to check for <code>size() &gt; index</code> first.
      *
      * @param index the index of the path part to retrive
      * @return the path part at index if it exists otherwise null
@@ -171,7 +173,7 @@ public class Path {
      * The <code>parts</code> is exploded via <code>Utils.explode('/', part)</code> first so while the part arg is a
      * single value, it could result in multiple additions.
      *
-     * @param part
+     * @param parts path parts to add
      */
     public void add(String parts) {
         if (!Utils.empty(parts)) {
@@ -183,7 +185,7 @@ public class Path {
     }
 
     /**
-     * Simple way to remove the path part at <code>index</code> without having to check for <code>size() < index</code> first.
+     * Simple way to remove the path part at <code>index</code> without having to check for <code>size() @lt; index</code> first.
      *
      * @param index the index of the path part to remove
      * @return the path part previously located at <code>index</code> if it existed otherwise null
@@ -201,7 +203,7 @@ public class Path {
      * <p>
      * Wildcards and regular expressions are not supported in this method, only straight case insensitive string comparison.
      *
-     * @param partsToMatch
+     * @param partsToMatch the path parts to to match against
      * @return true if each index of <code>partsToMatch</code> is a case insensitive match to this Path at the same index otherwise false.
      */
     public boolean startsWith(List<String> partsToMatch) {
@@ -233,7 +235,11 @@ public class Path {
      * @return true of the objects string representations match
      */
     public boolean equals(Object o) {
+
         if (o == null)
+            return false;
+
+        if (!(o instanceof Path))
             return false;
 
         return o.toString().equals(toString());
@@ -244,12 +250,10 @@ public class Path {
      *
      * @param fromIndex low endpoint (inclusive) of the subList
      * @param toIndex   high endpoint (exclusive) of the subList
-     * @return a subpath from <code>fromIndex</code> (inclusive) to <code>toIndex<code> (exclusive)
-     * @throws IndexOutOfBoundsException
+     * @return a subpath from <code>fromIndex</code> (inclusive) to <code>toIndex</code> (exclusive)
      */
-    public Path subpath(int fromIndex, int toIndex) throws ArrayIndexOutOfBoundsException {
-        Path subpath = new Path(parts.subList(fromIndex, toIndex));
-        return subpath;
+    public Path subpath(int fromIndex, int toIndex) {
+        return new Path(parts.subList(fromIndex, toIndex));
     }
 
     /**
@@ -264,9 +268,9 @@ public class Path {
 
     /**
      * Check if the path part at <code>index</code> is equal to '*' without having
-     * to check if <code>size() < index</code> first.
+     * to check if <code>size() @lt; index</code> first.
      *
-     * @param index
+     * @param index the path part to check
      * @return true if the path part at <code>index</code>
      */
     public boolean isWildcard(int index) {
@@ -275,9 +279,8 @@ public class Path {
 
     /**
      * Check to see if the value at <code>index</code> starts with '${', '{', ':' after removing any leading '[' characters.
-     * <p>
      *
-     * @param index
+     * @param index the index to check
      * @return true if the value exists and is variableized but not a wildcard, false otherwise.
      */
     public boolean isVar(int index) {
@@ -310,7 +313,7 @@ public class Path {
      *  <li> /[part]/[${varNam:regex}]/
      * </ul>
      *
-     * @param index
+     * @param index the index of the var name to get
      * @return the variable name binding for the parth part at <code>index</code> if it exists
      */
     public String getVarName(int index) {
@@ -333,7 +336,7 @@ public class Path {
      * <p>
      * For example: <code>new Path("first/second/[third]/").matches(new Path("first/second/third"))</code>
      *
-     * @param index
+     * @param index the part part to check
      * @return true if the path part at <code>index</code> exists and starts with '[' and ends with ']'
      */
     public boolean isOptional(int index) {
@@ -347,7 +350,7 @@ public class Path {
     /**
      * Convenience overloading of {@link #matches(Path)}.
      *
-     * @param toMatch
+     * @param toMatch the path string to match
      * @return true if the paths match
      */
     public boolean matches(String toMatch) {
@@ -355,7 +358,7 @@ public class Path {
     }
 
     /**
-     * Checks if this Path is as case insensitive match, including any optional rules, wildcards, and regexes to <code>concretePath</path>.
+     * Checks if this Path is as case insensitive match, including any optional rules, wildcards, and regexes to <code>concretePath</code>.
      * <p>
      * As the name implies <code>concretePath</code> is considered to be a literal path not containing optionals, wildcards, and regexes.
      * <p>
@@ -372,7 +375,7 @@ public class Path {
      * <p>
      * All regexes are compiled with Pattern.CASE_INSENSITIVE.
      *
-     * @param concretePath
+     * @param concretePath the path to match against
      * @return true if this path matches <code>concretePath</code>
      */
     public boolean matches(Path concretePath) {
@@ -391,9 +394,7 @@ public class Path {
             boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
 
             if (i == concretePath.size()) {
-                if (optional)
-                    return true;
-                return false;
+                return optional;
             }
 
             if (optional)
@@ -431,6 +432,9 @@ public class Path {
     /**
      * Convenience overloading of {@link #extract(Map, Path, boolean)} with <code>greedy = true</code>.
      *
+     * @param params  a map to add extracted name/value pairs to
+     * @param toMatch the path to extract from
+     * @return the part of this path that matched
      * @see Path#extract(Map, Path, boolean)
      */
     public Path extract(Map params, Path toMatch) {
@@ -472,18 +476,18 @@ public class Path {
      * <p>
      * Engine will also add the params to the Request Url params as if they had been supplied as name value pairs by the caller on the query string.
      *
-     * @param params
-     * @param matchingConcretePath
-     * @param greedy
+     * @param params               the map to add extracted name/value pairs to
+     * @param matchingConcretePath the path to extract from
+     * @param greedy               if extraction should consume through optional path parts
      * @return the same Path object that was passed in but potentially now shorter as matching segments may have been consumed
-     * @see {@code io.inversion.Engine#service(io.inversion.Request, io.inversion.Response)}
-     * @see {@code io.inversion.Chain#next}
+     * @see io.inversion.Engine#service(Request, Response)
+     * @see Chain#next()
      */
     public Path extract(Map params, Path matchingConcretePath, boolean greedy) {
         Path matchedPath = new Path();
 
         boolean restOptional = false;
-        int     i            = 0;
+        int     i;
         int     nextOptional = 0;
         for (i = 0; i < size() && matchingConcretePath.size() > 0; i++) {
             String myPart = get(i);
@@ -498,7 +502,7 @@ public class Path {
             if (myPart.equals("*"))
                 break;
 
-            String theirPart = null;
+            String theirPart;
 
             if (greedy || !restOptional) {
                 theirPart = matchingConcretePath.remove(0);
@@ -522,18 +526,18 @@ public class Path {
                     String  regex   = myPart.substring(endName + 1, myPart.length() - 1);
                     Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
                     if (!pattern.matcher(theirPart).matches()) {
-                        ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), matchingConcretePath.toString());
+                        throw ApiException.new500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), matchingConcretePath.toString());
                     }
                 }
 
                 params.put(name, theirPart);
             } else if (!myPart.equalsIgnoreCase(theirPart)) {
-                ApiException.throw500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), matchingConcretePath.toString());
+                throw ApiException.new500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), matchingConcretePath.toString());
             }
         }
 
         //null out any trailing vars
-        for (i = i; i < size(); i++) {
+        for (; i < size(); i++) {
             String var = getVarName(i);
             if (var != null)
                 params.put(var, null);

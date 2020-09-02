@@ -28,13 +28,12 @@ import io.inversion.rql.*;
 import java.util.List;
 
 /**
- * @see https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
- * @see https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/index.html
- * @see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html
+ * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
+ * https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/index.html
+ * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Introduction.html
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/QueryingJavaDocumentAPI.html
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.html#FilteringResults
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.ExpressionAttributeNames.html
- * <p>
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LegacyConditionalParameters.KeyConditions.html
  */
 public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3DbQuery>, S3DbQuery>, From<From<From, S3DbQuery>, S3DbQuery>, Where<Where<Where, S3DbQuery>, S3DbQuery>, Group<Group<Group, S3DbQuery>, S3DbQuery>, Order<Order<Order, S3DbQuery>, S3DbQuery>, Page<Page<Page, S3DbQuery>, S3DbQuery>> {
@@ -54,10 +53,10 @@ public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3Db
         req.setMaxKeys(getPage().getLimit()); // TODO fix pagesize...currently always set to 1000 ... tied to 'size' but not 'pagesize'?
         req.setDelimiter("/");
 
-        String prefix = Chain.peek().getRequest().getSubpath().toString();
+        String prefix = Chain.top().getRequest().getSubpath().toString();
 
         while (prefix.startsWith("/"))
-            prefix = prefix.substring(1, prefix.length());
+            prefix = prefix.substring(1);
 
         while (prefix.endsWith("/"))
             prefix = prefix.substring(0, prefix.length() - 1);

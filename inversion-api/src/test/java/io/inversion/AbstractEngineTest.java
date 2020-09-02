@@ -2,44 +2,54 @@ package io.inversion;
 
 import io.inversion.action.db.DbAction;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 
 public interface AbstractEngineTest extends AbstractDbTest {
 
-    public Engine getEngine();
+    static boolean isIntegEnv() {
+        String profile = System.getProperty("test.profile");
+        if (profile == null)
+            profile = System.getenv("test.profile");
 
-    public void setEngine(Engine engine);
+        return profile != null && profile.contains("integ");
+    }
 
-    public String getType();
+    Engine getEngine();
 
-    public Db buildDb();
+    void setEngine(Engine engine);
+
+    String getType();
+
+    Db buildDb();
 
     @BeforeAll
-    public default void beforeAll_initializeEngine() {
+    default void checkIntegEnv() {
+        Assumptions.assumeTrue(shouldRun());
+    }
+
+    @BeforeAll
+    default void beforeAll_initializeEngine() {
         Db db = buildDb();
-        if (isIntegTest())
-            db.withDryRun(false);
-        else
-            db.withDryRun(true);
+        db.withDryRun(!isIntegTest() && !getClass().getSimpleName().toLowerCase().contains("h2"));
 
         Engine engine = new Engine().withApi(buildApi(db));
         setEngine(engine);
     }
 
-    public default Api buildApi(Db db) {
+    default Api buildApi(Db db) {
 
         return buildDefaultApi(db);
     }
 
-    public default Api buildDefaultApi(Db db) {
+    default Api buildDefaultApi(Db db) {
 
         return new Api("northwind") //
                 .withEndpoint("*", db.getType() + "/*", new DbAction())//
                 .withDb(db);
     }
 
-
-    public default void configureDefaultModel(Db db) {
+    default void configureDefaultModel(Db db) {
         Collection orders = new Collection("orders").withProperty("orderId", "VARCHAR")//
                 .withProperty("customerId", "INTEGER")//
                 .withProperty("employeeId", "INTEGER")//
@@ -94,7 +104,7 @@ public interface AbstractEngineTest extends AbstractDbTest {
     }
 
     @AfterAll
-    public default void afterAll_finalizeEngine() {
+    default void afterAll_finalizeEngine() {
         Engine engine = getEngine();
         if (engine != null)
             engine.shutdown();
@@ -104,8 +114,24 @@ public interface AbstractEngineTest extends AbstractDbTest {
         Chain.resetAll();
     }
 
-    public default boolean isIntegTest() {
-        return getClass().getSimpleName().indexOf("IntegTest") > -1 || (getClass().getSimpleName().indexOf("UnitTest") < 0 && getClass().getSimpleName().indexOf("H2") > -1);
+    default boolean shouldRun() {
+        boolean run = !isIntegTest() || isIntegEnv();
+        if (!run)
+            System.out.println("SKIPPING INTEGRATION TEST: " + getClass().getSimpleName() + " because env or sys prop 'test.profile' is not 'integration'");
+
+        return run;
+    }
+
+    default boolean isIntegTest() {
+
+        String cn = getClass().getSimpleName().toLowerCase();
+        if (cn.contains("h2"))
+            return false;
+
+        if (cn.contains("unittest"))
+            return false;
+
+        return cn.contains("integtest");
     }
 
 }

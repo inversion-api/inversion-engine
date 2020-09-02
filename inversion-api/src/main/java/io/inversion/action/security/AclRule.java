@@ -25,14 +25,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AclRule extends Rule<AclRule> {
+    protected final List<String> permissions = new ArrayList<>();
+    protected final List<String> roles       = new ArrayList<>();
     protected boolean allow = true;
     protected boolean info  = false;
-
-    protected List<String> permissions = new ArrayList();
-    protected List<String> roles       = new ArrayList();
-
     protected boolean allRolesMustMatch       = false;
     protected boolean allPermissionsMustMatch = false;
+
+    public AclRule() {
+        super();
+    }
+
+    public AclRule(String name, String methods, String includePaths, String permission1, String... permissionsN) {
+        withName(name);
+        withIncludeOn(methods, includePaths);
+
+        if (permission1 != null)
+            withPermissions(permission1);
+
+        if (permissionsN != null)
+            withPermissions(permissionsN);
+    }
 
     public static AclRule allowAll(String methods, String includePaths) {
         AclRule rule = new AclRule(null, methods, includePaths, null);
@@ -65,21 +78,6 @@ public class AclRule extends Rule<AclRule> {
         rule.withRoles(role1);
         rule.withRoles(rolesN);
         return rule;
-    }
-
-    public AclRule() {
-        super();
-    }
-
-    public AclRule(String name, String methods, String includePaths, String permission1, String... permissionsN) {
-        withName(name);
-        withIncludeOn(methods, includePaths);
-
-        if (permission1 != null)
-            withPermissions(permission1);
-
-        if (permissionsN != null)
-            withPermissions(permissionsN);
     }
 
     public boolean ruleMatches(Request req) {

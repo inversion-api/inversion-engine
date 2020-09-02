@@ -1,20 +1,11 @@
 package io.inversion.dynamodb;
 
-import io.inversion.AbstractEngineTest;
-import io.inversion.Action;
-import io.inversion.Api;
-import io.inversion.ApiException;
-import io.inversion.Collection;
-import io.inversion.Db;
-import io.inversion.Index;
-import io.inversion.Relationship;
-import io.inversion.Request;
-import io.inversion.Response;
+import io.inversion.*;
 import io.inversion.utils.Url;
 
 public interface AbstractDynamoTest extends AbstractEngineTest {
 
-    public default Api buildApi(Db db) {
+    default Api buildApi(Db db) {
         Api api = buildDefaultApi(db);
         if (isIntegTest()) {
 
@@ -26,7 +17,7 @@ public interface AbstractDynamoTest extends AbstractEngineTest {
 
                 public void run(Request req, Response res) throws ApiException {
 
-                    Url url = req.getUrl();
+                    Url    url     = req.getUrl();
                     String typeKey = url.findKey("type");
                     if (typeKey == null) {
                         if ("orders".equalsIgnoreCase(req.getCollectionKey())) {
@@ -40,7 +31,7 @@ public interface AbstractDynamoTest extends AbstractEngineTest {
     }
 
     @Override
-    public default Db buildDb() {
+    default Db buildDb() {
         Db db = new DynamoDb().withName("bad_name_missing_env_props_on_purpose");
         if (isIntegTest()) {
             db = DynamoDbFactory.buildNorthwindDynamoDb();
@@ -50,8 +41,8 @@ public interface AbstractDynamoTest extends AbstractEngineTest {
             Collection orders = db.getCollectionByTableName("orders");
             orders.withProperty("type", "S");
 
-            Collection orderDetails = db.getCollectionByTableName("orderDetails");
-            Collection employees = db.getCollectionByTableName("employees");
+            Collection orderDetails         = db.getCollectionByTableName("orderDetails");
+            Collection employees            = db.getCollectionByTableName("employees");
             Collection employeeOrderDetails = db.getCollectionByTableName("employeeOrderDetails");
 
             for (Index index : orders.getIndexes())

@@ -164,7 +164,7 @@ public class ConfiguratorTest {
     //
     //   public static String print(Properties props)
     //   {
-    //      StringBuffer buff = new StringBuffer();
+    //      StringBuilder buff = new StringBuilder();
     //      List<String> keys = new ArrayList(props.keySet());
     //      Collections.sort(keys);
     //      keys.forEach(k -> {

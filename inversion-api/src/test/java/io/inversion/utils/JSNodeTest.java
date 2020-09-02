@@ -19,10 +19,7 @@ package io.inversion.utils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class JSNodeTest {
     @Test
@@ -35,9 +32,9 @@ public class JSNodeTest {
 
     @Test
     public void testJsonPath1() {
-        JSNode  doc    = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
-        JSArray found1 = null;
-        JSArray found2 = null;
+        JSNode  doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+        JSArray found1;
+        JSArray found2;
 
         found1 = doc.findAll("$..book[?(@.author = 'Herman Melville')]");
 
@@ -133,14 +130,14 @@ public class JSNodeTest {
         assertEquals("red", doc.findString("*.bicycle.color"));
         assertEquals("red", doc.findString("*.*.color"));
         assertEquals("red", doc.findString("**.color"));
-        assertEquals(null, doc.findString("*.*.*.color"));
+        assertNull(doc.findString("*.*.*.color"));
 
         found1 = doc.findAll("$..[?(@.store.bicycle.price)]", -1);
         assertEquals(1, found1.size());
 
         found1 = doc.findAll("$..[?(@.*.*.color)]", -1);
         assertEquals(1, found1.size());
-        assertTrue(found1.getNode(0).get("store") != null);
+        assertNotNull(found1.getNode(0).get("store"));
 
         found1 = doc.findAll("$..[?(@.*.bicycle.price)]", -1);
         assertEquals(1, found1.size());
@@ -164,43 +161,37 @@ public class JSNodeTest {
 
     @Test
     public void testCollectNodes1() {
-        JSArray found = null;
-        JSNode  doc   = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testCollectNodes1.json")));
+        JSArray found;
+        JSNode  doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testCollectNodes1.json")));
 
         found = doc.findAll("data.*.basket.lineItems.code");
-        assertTrue(found.size() == 0);
+        assertEquals(found.size(), 0);
 
         found = doc.findAll("data.*.basket.lineItems.*.code");
-        assertTrue(found.size() == 2);
+        assertEquals(found.size(), 2);
 
         found = doc.findAll("lineItems.*.code");
-        assertTrue(found.size() == 0);
+        assertEquals(found.size(), 0);
 
         found = doc.findAll("lineItems.code");
-        assertTrue(found.size() == 1);
+        assertEquals(found.size(), 1);
 
         found = doc.findAll("data.*.basket.*");
-        assertTrue(found.size() == 3);
+        assertEquals(found.size(), 3);
 
         found = doc.findAll("**.lineItems.*.code");
-        assertTrue(found.size() == 3);
+        assertEquals(found.size(), 3);
 
         System.out.println(found);
     }
 
     @Test
     public void testDiff1() {
-        List   found = null;
-        JSNode doc1  = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff1.1.json")));
-        JSNode doc2  = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff1.2.json")));
-
+        JSNode  doc1    = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff1.1.json")));
+        JSNode  doc2    = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff1.2.json")));
         JSArray patches = doc2.diff(doc1);
-
         doc1.patch(patches);
-
-        assertTrue(doc1.toString().equals(doc2.toString()));
-
-        System.out.println(found);
+        assertEquals(doc2.toString(), doc1.toString());
     }
 
     /**
@@ -260,7 +251,7 @@ public class JSNodeTest {
 
         doc1.patch(patches);
 
-        assertTrue(doc1.toString().equals(doc2.toString()));
+        assertEquals(doc2.toString(), doc1.toString());
     }
 
     @Test

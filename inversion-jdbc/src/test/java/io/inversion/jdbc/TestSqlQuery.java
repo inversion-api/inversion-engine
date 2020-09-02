@@ -41,6 +41,23 @@ public class TestSqlQuery {
         //      db = null;
     }
 
+    static LinkedHashMap split(String queryString) {
+        LinkedHashMap map = new LinkedHashMap();
+
+        String[] terms = queryString.split("&");
+        for (String term : terms) {
+            int eqIdx = term.indexOf('=');
+            if (eqIdx < 0) {
+                map.put(term, null);
+            } else {
+                String value = term.substring(eqIdx + 1);
+                term = term.substring(0, eqIdx);
+                map.put(term, value);
+            }
+        }
+        return map;
+    }
+
     @Test
     public void queryWithoutCollection() throws Exception {
         //      db.withExcludeColumns("collection", "entity", "relationship");
@@ -86,9 +103,52 @@ public class TestSqlQuery {
         //      res.dump();
     }
 
+    //   public static boolean compare(String expected, String actual)
+    //   {
+    //      expected = expected.replaceAll("\\s+", " ").trim();
+    //      actual = actual.replaceAll("\\s+", " ").trim();
+    //
+    //      if (!expected.equals(actual))
+    //      {
+    //         //TODO: TAKE THESE "CORRECTIONS" OUT
+    //         actual = actual.replaceAll("SQL_CALC_FOUND_ROWS ", "");
+    //         //str2 = str2.replaceAll(" LIMIT 0, 100", "");
+    //
+    //         expected = expected.replaceAll("SQL_CALC_FOUND_ROWS ", "");
+    //         //str1 = str1.replaceAll(" LIMIT 0, 100", "");
+    //
+    //         if (!expected.equals(actual))
+    //         {
+    //            //System.out.println("\r\n");
+    //            //System.out.println("\r\n");
+    //            System.out.println("EXPECTED: " + expected);
+    //            System.out.println("ACTUAL  : " + actual);
+    //            System.out.print("          " );
+    //
+    //            for (int i = 0; i < expected.length() && i < actual.length(); i++)
+    //            {
+    //               if (expected.charAt(i) == actual.charAt(i))
+    //               {
+    //                  System.out.print(" ");
+    //               }
+    //               else
+    //               {
+    //                  System.out.println("X");
+    //                  break;
+    //               }
+    //            }
+    //            System.out.println(" ");
+    //
+    //            String err = "failed test: " + expected + " != " + actual;
+    //            return false;
+    //         }
+    //      }
+    //      return true;
+    //   }
+
     @Test
     public void test1() throws Exception {
-        //      List<RqlTest> tests = new ArrayList();
+        //      List<RqlTest> tests = new ArrayList<>();
         //
         //      String rql = null;
         //      String select = null;
@@ -580,72 +640,12 @@ public class TestSqlQuery {
         //      }
     }
 
-    //   public static boolean compare(String expected, String actual)
-    //   {
-    //      expected = expected.replaceAll("\\s+", " ").trim();
-    //      actual = actual.replaceAll("\\s+", " ").trim();
-    //
-    //      if (!expected.equals(actual))
-    //      {
-    //         //TODO: TAKE THESE "CORRECTIONS" OUT
-    //         actual = actual.replaceAll("SQL_CALC_FOUND_ROWS ", "");
-    //         //str2 = str2.replaceAll(" LIMIT 0, 100", "");
-    //
-    //         expected = expected.replaceAll("SQL_CALC_FOUND_ROWS ", "");
-    //         //str1 = str1.replaceAll(" LIMIT 0, 100", "");
-    //
-    //         if (!expected.equals(actual))
-    //         {
-    //            //System.out.println("\r\n");
-    //            //System.out.println("\r\n");
-    //            System.out.println("EXPECTED: " + expected);
-    //            System.out.println("ACTUAL  : " + actual);
-    //            System.out.print("          " );
-    //
-    //            for (int i = 0; i < expected.length() && i < actual.length(); i++)
-    //            {
-    //               if (expected.charAt(i) == actual.charAt(i))
-    //               {
-    //                  System.out.print(" ");
-    //               }
-    //               else
-    //               {
-    //                  System.out.println("X");
-    //                  break;
-    //               }
-    //            }
-    //            System.out.println(" ");
-    //
-    //            String err = "failed test: " + expected + " != " + actual;
-    //            return false;
-    //         }
-    //      }
-    //      return true;
-    //   }
-
-    static LinkedHashMap split(String queryString) {
-        LinkedHashMap map = new LinkedHashMap();
-
-        String[] terms = queryString.split("&");
-        for (String term : terms) {
-            int eqIdx = term.indexOf('=');
-            if (eqIdx < 0) {
-                map.put(term, null);
-            } else {
-                String value = term.substring(eqIdx + 1, term.length());
-                term = term.substring(0, eqIdx);
-                map.put(term, value);
-            }
-        }
-        return map;
-    }
-
     static class RqlTest {
-        String   rql         = null;
-        String   select      = null;
-        String   dynamicSql  = null;
-        String   preparedSql = null;
-        String[] fields      = null;
+        final String   rql;
+        final String   select;
+        final String   dynamicSql;
+        final String   preparedSql;
+        final String[] fields;
 
         public RqlTest(String rql, String select, String dynamicSql, String preparedSql, String... fields) {
             super();

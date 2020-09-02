@@ -27,26 +27,38 @@ import java.util.List;
  * Represents a full RQL query with a SELECT,WHERE,GROUP,ORDER, and PAGE clause.
  */
 public class Query<T extends Query, D extends Db, S extends Select, F extends From, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T> {
+    //hold ordered list of columnName=literalValue pairs
+    protected final List<KeyValue> values = new ArrayList<>();
     protected D          db         = null;
     protected Collection collection = null;
-
     protected S select = null;
     protected F from   = null;
     protected W where  = null;
     protected R group  = null;
     protected O order  = null;
     protected G page   = null;
-
     protected boolean dryRun = false;
-
-    //hold ordered list of columnName=literalValue pairs
-    protected List<KeyValue> values = new ArrayList();
 
     //-- OVERRIDE ME TO ADD NEW FUNCTIONALITY --------------------------
     //------------------------------------------------------------------
     //------------------------------------------------------------------
-    protected RqlParser createParser() {
-        return new RqlParser();
+
+    public Query() {
+
+    }
+
+    public Query(D db, Collection coll) {
+        this(db, coll, null);
+    }
+
+    public Query(D db, Collection coll, Object terms, String... functions) {
+        super(null);
+        withDb(db);
+        withCollection(coll);
+        withFunctions(functions);
+
+        if (terms != null)
+            withTerms(terms);
     }
 
     protected S createSelect() {
@@ -69,6 +81,9 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
         return (O) new Order(this);
     }
 
+    //------------------------------------------------------------------
+    //------------------------------------------------------------------
+
     protected G createPage() {
         return (G) new Page(this);
     }
@@ -81,30 +96,9 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
         return null;
     }
 
-    //------------------------------------------------------------------
-    //------------------------------------------------------------------
-
-    public Query() {
-
-    }
-
-    public Query(D db, Collection coll) {
-        this(db, coll, null);
-    }
-
-    public Query(D db, Collection coll, Object terms, String... functions) {
-        super(null);
-        withDb(db);
-        withCollection(coll);
-        withFunctions(functions);
-
-        if (terms != null)
-            withTerms(terms);
-    }
-
     public List<Builder> getBuilders() {
         if (builders == null) {
-            builders = new ArrayList();
+            builders = new ArrayList<>();
 
             //order matters when multiple clauses can accept the same term
             getFrom();
@@ -115,14 +109,6 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
             getSelect();
         }
         return builders;
-    }
-
-    @Override
-    public RqlParser getParser() {
-        if (parser == null)
-            parser = createParser();
-
-        return parser;
     }
 
     public S getSelect() {
@@ -206,11 +192,9 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
     }
 
     protected T withColValue(String columnName, Object value) {
-        Collection coll      = this.collection;
-        String     shortName = columnName;
-
+        Collection coll = this.collection;
         if (columnName != null) {
-            if (columnName.indexOf(".") > -1) {
+            if (columnName.contains(".")) {
                 String collectionName = columnName.substring(0, columnName.indexOf("."));
                 if (columnName.startsWith("~~relTbl_")) {
                     columnName = columnName.substring(columnName.indexOf("_") + 1);
@@ -225,11 +209,11 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
             }
 
             if (coll != null) {
-                shortName = columnName.substring(columnName.indexOf(".") + 1, columnName.length());
+                String shortName = columnName.substring(columnName.indexOf(".") + 1);
 
                 Property col = coll.getProperty(shortName);
                 if (col == null)
-                    ApiException.throw500InternalServerError("Unable to find column '{}' on table '{}'", columnName, coll.getTableName());
+                    throw ApiException.new500InternalServerError("Unable to find column '{}' on table '{}'", columnName, coll.getTableName());
 
                 value = db.cast(col, value);
 
@@ -241,14 +225,14 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
     }
 
     public List<String> getColValueKeys() {
-        List keys = new ArrayList();
+        List keys = new ArrayList<>();
         for (KeyValue kv : values)
             keys.add(kv.getKey());
         return keys;
     }
 
     public List<Object> getColValues() {
-        List keys = new ArrayList();
+        List keys = new ArrayList<>();
         for (KeyValue kv : values)
             keys.add(kv.getValue());
         return keys;

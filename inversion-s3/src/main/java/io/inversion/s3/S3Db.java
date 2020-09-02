@@ -46,9 +46,6 @@ public class S3Db extends Db<S3Db> {
 
     private AmazonS3 client = null;
 
-    /**
-     * @see io.rcktapp.api.Db#bootstrapApi()
-     */
     @Override
     protected void doStartup(Api api) {
         AmazonS3 client = getS3Client();

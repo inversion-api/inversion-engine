@@ -104,24 +104,23 @@ public class FirehoseDb extends Db<FirehoseDb> {
                     coll.withTableName(beautifyCollectionName(collectionName));
             }
         } else {
-            ApiException.throw500InternalServerError("FirehoseDb must have 'includeStreams' configured to be used");
+            throw ApiException.new500InternalServerError("FirehoseDb must have 'includeStreams' configured to be used");
         }
     }
 
     @Override
     public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException {
-        ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
-        return null;
+        throw ApiException.new400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
     }
 
     @Override
     public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
-        ApiException.throw400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
+        throw ApiException.new400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
     }
 
     @Override
     public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
-        List<Record> batch = new ArrayList();
+        List<Record> batch = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {
             String string = new JSNode(rows.get(i)).toString(jsonPrettyPrint, jsonLowercaseNames);
 

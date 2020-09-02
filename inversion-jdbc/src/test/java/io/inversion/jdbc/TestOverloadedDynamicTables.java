@@ -135,20 +135,20 @@ public class TestOverloadedDynamicTables {
                                         }
 
                                         if (customerId == null)
-                                            ApiException.throw400BadRequest("An address must have an associated customer");
+                                            throw ApiException.new400BadRequest("An address must have an associated customer");
 
                                         node.put("partition", customerId);
 
                                         break;
                                     default:
-                                        ApiException.throw400BadRequest("Collection '{}' is unsupported: '{}'", req.getCollectionKey(), req.getUrl());
+                                        throw ApiException.new400BadRequest("Collection '{}' is unsupported: '{}'", req.getCollectionKey(), req.getUrl());
                                 }
                             }
                         }
 
                         if (req.isGet() || req.isDelete()) {
                             if (req.getUrl().findKey("type") == null || (req.getResourceKey() == null && req.getUrl().findKey("partition") == null))
-                                ApiException.throw400BadRequest("Unable to GET/DELTE collection '{}' without a 'type' and 'partition' param: '{}'", req.getCollectionKey(), req.getUrl());
+                                throw ApiException.new400BadRequest("Unable to GET/DELTE collection '{}' without a 'type' and 'partition' param: '{}'", req.getCollectionKey(), req.getUrl());
                         }
 
                         req.getChain().go();
@@ -181,51 +181,49 @@ public class TestOverloadedDynamicTables {
 
     @Test
     public void overloadedPartitionedDynamicTable() {
-        Engine e = engine;
-
+        Engine   e   = engine;
         Response res = null;
 
         res = e.post("crm/acmeco/customers", new JSNode("firstName", "myFirstName", "lastName", "myLastName", "addresses", //
                 new JSArray(new JSNode("alias", "home", "address1", "1234 hometown rd."), //
-                        new JSNode("alias", "office", "address1", "6789 workville st.")))).dump().assertOk();
+                        new JSNode("alias", "office", "address1", "6789 workville st.")))).assertOk();
 
         String customerHref = res.findString("data.0.href");
         String customerKey  = customerHref.substring(customerHref.lastIndexOf("/") + 1);
 
-        res = e.get(customerHref + "?expands=addresses").dump().assertOk();
+        res = e.get(customerHref + "?expands=addresses").assertOk();
 
         String addressHref = res.findString("data.0.addresses.0.href");
 
         //-- these two are functionally the same thing
-        res = e.get(customerHref + "/addresses").dump().assertOk();
+        res = e.get(customerHref + "/addresses").assertOk();
         assertEquals(2, res.data().size());
 
-        res = e.get(customerHref + "/addresses?alias=office").dump().assertOk();
+        res = e.get(customerHref + "/addresses?alias=office").assertOk();
         assertEquals(1, res.data().size());
 
-        res = e.get(addressHref + "?expands=customer").dump().assertOk();
-        res = e.get(addressHref + "?expands=customer&customer=" + customerKey).dump().assertOk();
+        e.get(addressHref + "?expands=customer").assertOk();
+        e.get(addressHref + "?expands=customer&customer=" + customerKey).assertOk();
 
         //-- this will fail because there is no customerKey to establish the partition
-        res = e.get("crm/acmeco/customers").dump().assertStatus(400);
+        e.get("crm/acmeco/customers").assertStatus(400);
 
         JSNode apartment = new JSNode("alias", "apartment", "address1", "1234 downtown rd.");
-        res = e.post("crm/acmeco/addresses", apartment).assertStatus(400);
+        e.post("crm/acmeco/addresses", apartment).assertStatus(400);
 
         apartment.put("customer", customerKey);
-        res = e.post("crm/acmeco/addresses", apartment).assertOk();
+        e.post("crm/acmeco/addresses", apartment).assertOk();
 
-        res = e.get(customerHref + "/addresses").dump().assertOk();
+        res = e.get(customerHref + "/addresses").assertOk();
         assertEquals(3, res.data().size());
 
         for (JSNode address : res.data().asNodeList()) {
-            e.delete(address.getString("href")).dump().assertOk();
+            e.delete(address.getString("href")).assertOk();
         }
 
-        res = e.get(customerHref + "/addresses").dump().assertOk();
+        res = e.get(customerHref + "/addresses").assertOk();
         assertEquals(0, res.data().size());
 
-        res = e.delete(customerHref).dump().assertOk();
-
+        e.delete(customerHref).assertOk();
     }
 }

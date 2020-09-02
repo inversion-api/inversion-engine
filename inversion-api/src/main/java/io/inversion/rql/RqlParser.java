@@ -23,10 +23,12 @@ import java.util.List;
 
 public class RqlParser {
 
+    private RqlParser() {
+    }
 
     public static Term parse(String paramName, String paramValue) {
-        String termStr = null;
-        if (Utils.empty(paramValue) && paramName.indexOf("(") > -1) {
+        String termStr;
+        if (Utils.empty(paramValue) && paramName.contains("(")) {
             termStr = paramName;
         } else {
             if (Utils.empty(paramValue))
@@ -42,7 +44,7 @@ public class RqlParser {
         TermBuilder  tb = new TermBuilder();
         RqlTokenizer t  = new RqlTokenizer(clause);
 
-        String token = null;
+        String token;
         while ((token = t.next()) != null) {
             String lc   = token.toLowerCase();
             String func = lc.endsWith("(") ? lc.substring(0, lc.length() - 1) : null;
@@ -78,8 +80,8 @@ public class RqlParser {
     }
 
     static class TermBuilder {
-        Term       root  = null;
-        List<Term> terms = new ArrayList();
+        final List<Term> terms = new ArrayList<>();
+        Term root = null;
 
         public Term top() {
             if (terms.size() == 0) {
@@ -93,13 +95,12 @@ public class RqlParser {
         }
 
         public void push(Term term) {
-            if (root == null) {
+            if (root == null)
                 root = term;
-                terms.add(term);
-            } else {
+            else
                 top().withTerm(term);
-                terms.add(term);
-            }
+
+            terms.add(term);
         }
 
         public void push(String token) {

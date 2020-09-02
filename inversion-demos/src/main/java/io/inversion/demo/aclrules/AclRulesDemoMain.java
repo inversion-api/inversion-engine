@@ -38,7 +38,7 @@ public class AclRulesDemoMain {
 //            {
 //               String username = req.getUrl().getParam("username");
 //
-//               Map<String, String> perms = new HashMap();
+//               Map<String, String> perms = new HashMap<>();
 //               perms.put("Jack", "human_resources,manager");
 //               perms.put("Diane", "sales_perms,sales_perms");
 //               perms.put("Bill", "sales_perms");

@@ -7,11 +7,11 @@ import io.inversion.Db;
 public interface AbstractJdbcDbEngineTest extends AbstractEngineTest {
 
     @Override
-    public default Db buildDb() {
+    default Db buildDb() {
         JdbcConnectionLocal.closeAll();
         Chain.resetAll();
 
-        if (isIntegTest())
+        if (isIntegTest() || getClass().getSimpleName().toLowerCase().contains("h2"))
             return JdbcDbFactory.buildDb(getType(), getClass().getSimpleName());
         else {
             Db db = new JdbcDb(getType()).withType(getType());

@@ -16,14 +16,13 @@
  */
 package io.inversion.dynamodb;
 
+import io.inversion.action.db.AbstractDbGetActionIntegTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
-import io.inversion.action.db.AbstractDbGetActionIntegTest;
-
 /**
- * @see README.md
+ * see README.md
  */
 @TestInstance(Lifecycle.PER_CLASS)
 public class DynamoDbGetActionIntegTest extends AbstractDbGetActionIntegTest implements AbstractDynamoTest {

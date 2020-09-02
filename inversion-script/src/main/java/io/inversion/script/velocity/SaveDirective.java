@@ -57,7 +57,7 @@ public class SaveDirective extends InputBase {
             }
         }
 
-        Node renderNode  = null;
+        Node renderNode;
         int  numChildren = n.jjtGetNumChildren();
 
         Writer savedWriter = new StringWriter();

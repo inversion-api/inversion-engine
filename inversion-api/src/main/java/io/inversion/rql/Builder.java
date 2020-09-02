@@ -21,16 +21,15 @@ import io.inversion.utils.Utils;
 import java.util.*;
 
 public class Builder<T, P extends Builder> {
-    protected RqlParser     parser   = null;
-    protected P             parent   = null;
-    protected List<Builder> builders = null;
-    protected List<Term>    terms    = new ArrayList();
-    protected T             r        = null;
+
+    protected final List<Term> terms = new ArrayList<>();
 
     /**
      * Term tokens this builder is willing to accept
      */
-    protected Set<String> functions = new HashSet();
+    protected final Set<String>   functions = new HashSet<>();
+    protected       P             parent    = null;
+    protected       List<Builder> builders  = null;
 
     public Builder() {
 
@@ -43,8 +42,9 @@ public class Builder<T, P extends Builder> {
     /**
      * OVERRIDE ME TO ADD CUSTOM FUNCTIONALITY TO YOUR FLUENT API
      *
-     * @param term
-     * @return
+     * @param token the term to add
+     * @param term  the token of the term
+     * @return true if the builder or one of its child builders accepted and added the term
      */
     protected boolean addTerm(String token, Term term) {
         for (Builder builder : getBuilders()) {
@@ -61,26 +61,7 @@ public class Builder<T, P extends Builder> {
     }
 
     protected T r() {
-        if (r != null)
-            return r;
-        else
-            return (T) this;
-    }
-
-    public T withParser(RqlParser parser) {
-        this.parser = parser;
-        return r();
-    }
-
-    public RqlParser getParser() {
-        if (parser != null)
-            return parser;
-
-        Builder root = getRoot();
-        if (root != null)
-            return root.getParser();
-
-        return null;
+        return (T) this;
     }
 
     public Builder getRoot() {
@@ -113,7 +94,7 @@ public class Builder<T, P extends Builder> {
 
     public List<Builder> getBuilders() {
         if (builders == null) {
-            builders = new ArrayList();
+            builders = new ArrayList<>();
         }
         return builders;
     }
@@ -174,8 +155,8 @@ public class Builder<T, P extends Builder> {
     /**
      * OVERRIDE ME TO ADD CUSTOM FUNCTIONALITY TO YOUR FLUENT API
      *
-     * @param term
-     * @return
+     * @param term the term to add to the builder
+     * @return this
      */
     public T withTerm(Term term) {
         if (terms.contains(term))
@@ -216,7 +197,7 @@ public class Builder<T, P extends Builder> {
     }
 
     public List<Term> getTerms() {
-        return new ArrayList(terms);
+        return new ArrayList<>(terms);
     }
 
     public final T withTerms(Object... rqlTerms) {
@@ -228,15 +209,15 @@ public class Builder<T, P extends Builder> {
                     withTerms(t);
                 }
             } else if (term instanceof Map) {
-                Map<String, Object> map = (Map) term;
+                Map<String, Object> map = (Map<String, Object>) term;
 
                 for (String key : map.keySet()) {
-                    if (empty(key))
+                    if (Utils.empty(key))
                         continue;
 
                     String value = (String) map.get(key);
 
-                    if (empty(value) && key.indexOf("(") > -1) {
+                    if (Utils.empty(value) && key.contains("(")) {
                         term = key;
                     } else {
                         term = "eq(" + key + "," + value + ")";
@@ -259,20 +240,20 @@ public class Builder<T, P extends Builder> {
     }
 
     protected List<Term> parse(Object... rqlTerms) {
-        List<Term> terms = new ArrayList();
+        List<Term> terms = new ArrayList<>();
 
         for (Object term : rqlTerms) {
-            if (empty(term)) {
+            if (Utils.empty(term)) {
                 continue;
             } else if (term instanceof Term) {
                 terms.add((Term) term);
             } else {
                 String[] parts = term.toString().split("\\&");
-                for (int i = 0; i < parts.length; i++) {
-                    if (parts[i] == null || parts[i].length() == 0)
+                for (String part : parts) {
+                    if (part == null || part.length() == 0)
                         continue;
 
-                    Term parsed = getParser().parse(parts[i]);
+                    Term parsed = RqlParser.parse(part);
                     terms.add(parsed);
                 }
             }
@@ -301,7 +282,7 @@ public class Builder<T, P extends Builder> {
     }
 
     public List<Term> findAll(String token) {
-        return findAll(token, new ArrayList());
+        return findAll(token, new ArrayList<>());
     }
 
     List<Term> findAll(String token, List<Term> found) {
@@ -370,7 +351,7 @@ public class Builder<T, P extends Builder> {
     }
 
     protected String toString(List<Term> terms) {
-        StringBuffer buff = new StringBuffer("");
+        StringBuilder buff = new StringBuilder();
 
         for (int i = 0; i < terms.size(); i++) {
             buff.append(terms.get(i));
@@ -380,7 +361,7 @@ public class Builder<T, P extends Builder> {
 
         for (Builder builder : getBuilders()) {
             String rql = builder.toString();
-            if (!empty(rql)) {
+            if (!Utils.empty(rql)) {
                 if (buff.length() > 0)
                     buff.append("&");
                 buff.append(rql);
@@ -390,14 +371,5 @@ public class Builder<T, P extends Builder> {
         return buff.toString();
     }
 
-    protected boolean empty(Object... arr) {
-        boolean empty = true;
-        for (int i = 0; empty && arr != null && i < arr.length; i++) {
-            Object obj = arr[i];
-            if (obj != null && obj.toString().length() > 0)
-                empty = false;
-        }
-        return empty;
-    }
 
 }

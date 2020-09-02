@@ -27,11 +27,11 @@ import java.util.stream.Collectors;
  *
  */
 public class Index implements Serializable {
-    protected Collection     collection = null;
-    protected String         name       = null;
-    protected String         type       = null;           // primary, partition, sort, localsecondary, etc
-    protected boolean        unique     = true;
-    protected List<Property> properties = new ArrayList();
+    protected final List<Property> properties = new ArrayList<>();
+    protected       Collection     collection = null;
+    protected       String         name       = null;
+    protected       String         type       = null;           // primary, partition, sort, localsecondary, etc
+    protected       boolean        unique     = true;
 
     public Index() {
         super();
@@ -56,7 +56,7 @@ public class Index implements Serializable {
     }
 
     public String toString() {
-        StringBuffer buff = new StringBuffer(getCollection().getTableName()).append(".").append(name).append("(");
+        StringBuilder buff = new StringBuilder(getCollection().getTableName()).append(".").append(name).append("(");
         for (int i = 0; i < size(); i++) {
             buff.append(getPropertyName(i));
             if (i < size() - 1)

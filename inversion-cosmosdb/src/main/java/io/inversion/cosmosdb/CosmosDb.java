@@ -23,7 +23,6 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -31,10 +30,8 @@ public class CosmosDb extends Db<CosmosDb> {
     protected String uri = null;
     protected String db  = "";
     protected String key = null;
-
-    boolean allowCrossPartitionQueries = false;
-
     transient protected DocumentClient documentClient = null;
+    boolean allowCrossPartitionQueries = false;
 
     public CosmosDb() {
         this.withType("cosmosdb");
@@ -45,23 +42,39 @@ public class CosmosDb extends Db<CosmosDb> {
         withName(name);
     }
 
+    public static DocumentClient buildDocumentClient(String uri, String key) {
+        if (Utils.empty(uri) || Utils.empty(key)) {
+            String error = "";
+            error += "Unable to connect to Cosmos DB because conf values for 'uri' or 'key' can not be found. ";
+            error += "If this is a development environment, you should probably add these key/value pairs to a '.env' properties file in your working directory. ";
+            error += "If this is a production deployment, you should probably set these as environment variables on your container.";
+            error += "You could call CosmosDocumentDb.withUri() and CosmosDocumentDb.withKey() directly in your code but compiling these ";
+            error += "values into your code is strongly discouraged as a poor security practice.";
+
+            throw ApiException.new500InternalServerError(error);
+        }
+
+        DocumentClient client = new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
+        return client;
+    }
+
     /**
      * Finds the resource keys on the other side of the relationship
      *
-     * @param relationship
-     * @param sourceResourceKeys
-     * @return Map<sourceResourceKey, relatedResourceKey>
-     * @throws ApiException
+     * @param collection        the collection to query
+     * @param columnMappedTerms the query terms
+     * @return Map key=sourceResourceKey, value=relatedResourceKey
+     * @throws ApiException if selection fails for any reason
      */
     @Override
-    public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException {
-        CosmosSqlQuery query = new CosmosSqlQuery(this, table, columnMappedTerms);
+    public Results doSelect(Collection collection, List<Term> columnMappedTerms) throws ApiException {
+        CosmosSqlQuery query = new CosmosSqlQuery(this, collection, columnMappedTerms);
         return query.doSelect();
     }
 
     @Override
     public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
-        List keys = new ArrayList();
+        List<String> keys = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             keys.add(upsertRow(table, row));
         }
@@ -76,12 +89,12 @@ public class CosmosDb extends Db<CosmosDb> {
             if (id == null) {
                 id = table.encodeResourceKey(columnMappedTermsRow);
                 if (id == null)
-                    ApiException.throw400BadRequest("Your record does not contain the required key fields.");
+                    throw ApiException.new400BadRequest("Your record does not contain the required key fields.");
                 doc.putFirst("id", id);
             }
 
             //-- the only way to achieve a PATCH is to query for the document first.
-            Results existing = doSelect(table, Arrays.asList(Term.term(null, "_key", table.getPrimaryIndex().getName(), id)));
+            Results existing = doSelect(table, Utils.asList(Term.term(null, "_key", table.getPrimaryIndex().getName(), id)));
             if (existing.size() == 1) {
                 Map<String, Object> row = existing.getRow(0);
                 for (String key : row.keySet()) {
@@ -103,18 +116,17 @@ public class CosmosDb extends Db<CosmosDb> {
 
             int statusCode = response.getStatusCode();
             if (statusCode > 299) {
-                ApiException.throw400BadRequest("Unexpected http status code returned from database: '{}'", statusCode);
+                throw ApiException.new400BadRequest("Unexpected http status code returned from database: '{}'", statusCode);
             }
 
             String returnedId = response.getResource().getId();
             if (!Utils.equal(id, returnedId))
-                ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '{}' vs. '{}'", id, returnedId);
+                throw ApiException.new500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '{}' vs. '{}'", id, returnedId);
 
             return id;
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
-        return null;
     }
 
     @Override
@@ -129,28 +141,26 @@ public class CosmosDb extends Db<CosmosDb> {
      * <p>
      * Rest url format for Cosmos deletions -  https://{databaseaccount}.documents.azure.com/dbs/{db}/colls/{coll}/docs/{doc}
      *
-     * @param table
-     * @param indexValues
-     * @throws ApiException
-     * @see https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
-     * @see
+     * @param collection  the collection to delete
+     * @param indexValues identifiers for the documents to delete
+     * @see <a href="https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest">CosmosDb Resource URI Syntax</a>
      */
-    protected void deleteRow(Collection table, Map<String, Object> indexValues) throws ApiException {
-        Object id                = table.encodeResourceKey(indexValues);
-        Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getProperty(0).getColumnName());
-        String documentUri       = "/dbs/" + db + "/colls/" + table.getTableName() + "/docs/" + id;
+    protected void deleteRow(Collection collection, Map<String, Object> indexValues) throws ApiException {
+        Object id                = collection.encodeResourceKey(indexValues);
+        Object partitionKeyValue = indexValues.get(collection.getIndex("PartitionKey").getProperty(0).getColumnName());
+        String documentUri       = "/dbs/" + db + "/colls/" + collection.getTableName() + "/docs/" + id;
 
         RequestOptions options = new RequestOptions();
         options.setPartitionKey(new PartitionKey(partitionKeyValue));
 
-        ResourceResponse<Document> response = null;
+        ResourceResponse<Document> response;
         try {
             Chain.debug("CosmosDb: Delete documentUri=" + documentUri + "partitionKeyValue=" + partitionKeyValue);
             response = getDocumentClient().deleteDocument(documentUri, options);
 
             int statusCode = response.getStatusCode();
             if (statusCode >= 400) {
-                ApiException.throw500InternalServerError("Unexpected http status code returned from database: {}", statusCode);
+                throw ApiException.new500InternalServerError("Unexpected http status code returned from database: {}", statusCode);
             }
         } catch (DocumentClientException ex) {
             ex.printStackTrace();
@@ -158,7 +168,7 @@ public class CosmosDb extends Db<CosmosDb> {
             if (statusCode == 404) {
                 //ignore attempts to delete things that don't exist
             } else {
-                ApiException.throw500InternalServerError(ex);
+                throw ApiException.new500InternalServerError(ex);
             }
         }
     }
@@ -219,22 +229,6 @@ public class CosmosDb extends Db<CosmosDb> {
         }
 
         return documentClient;
-    }
-
-    public static DocumentClient buildDocumentClient(String uri, String key) {
-        if (Utils.empty(uri) || Utils.empty(key)) {
-            String error = "";
-            error += "Unable to connect to Cosmos DB because conf values for 'uri' or 'key' can not be found. ";
-            error += "If this is a development environment, you should probably add these key/value pairs to a '.env' properties file in your working directory. ";
-            error += "If this is a production deployment, you should probably set these as environment variables on your container.";
-            error += "You could call CosmosDocumentDb.withUri() and CosmosDocumentDb.withKey() directly in your code but compiling these ";
-            error += "values into your code is strongly discouraged as a poor security practice.";
-
-            ApiException.throw500InternalServerError(error);
-        }
-
-        DocumentClient client = new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
-        return client;
     }
 
 }

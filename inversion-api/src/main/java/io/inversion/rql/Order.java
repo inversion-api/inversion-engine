@@ -27,13 +27,12 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P> {
     }
 
     /**
-     * Returns true if the first sort is ascending or if there are no sorts.
-     *
-     * @return
+     * @param index the sort term to check
+     * @return true if the indexed sort is ascending or if the index is out of bounds
      */
     public boolean isAsc(int index) {
         List<Sort> sorts = getSorts();
-        return sorts.size() <= index ? true : sorts.get(index).isAsc();
+        return sorts.size() <= index || sorts.get(index).isAsc();
     }
 
     public String getProperty(int index) {
@@ -42,7 +41,7 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P> {
     }
 
     public List<Sort> getSorts() {
-        List<Sort> sorts = new ArrayList();
+        List<Sort> sorts = new ArrayList<>();
         for (Term term : getTerms()) {
             if (term.hasToken("sort", "order")) {
                 for (Term child : term.getTerms()) {
@@ -50,9 +49,9 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P> {
                     boolean asc      = true;
                     if (property.startsWith("-")) {
                         asc = false;
-                        property = property.substring(1, property.length());
+                        property = property.substring(1);
                     } else if (property.startsWith("+")) {
-                        property = property.substring(1, property.length());
+                        property = property.substring(1);
                     }
                     sorts.add(new Sort(property, asc));
                 }
@@ -62,8 +61,8 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P> {
     }
 
     public static class Sort {
-        String  property = null;
-        boolean asc      = true;
+        String  property;
+        boolean asc;
 
         public Sort(String property, boolean asc) {
             super();

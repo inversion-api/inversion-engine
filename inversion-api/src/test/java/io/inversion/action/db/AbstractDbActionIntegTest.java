@@ -23,13 +23,13 @@ import io.inversion.Response;
 public abstract class AbstractDbActionIntegTest implements AbstractEngineTest {
 
     protected Engine engine = null;
-    protected String type   = null;
+    protected String type;
 
     public AbstractDbActionIntegTest(String type) {
         this.type = type;
     }
 
-    protected Engine engine() throws Exception {
+    protected Engine engine() {
         return engine;
     }
 
@@ -59,7 +59,7 @@ public abstract class AbstractDbActionIntegTest implements AbstractEngineTest {
      * Returns the last response handled by the engine.
      * This is needed for subclasses to decorate test methods
      *
-     * @return
+     * @return the last engine response
      */
     protected Response response() throws Exception {
         return engine().getLastResponse();
@@ -78,7 +78,7 @@ public abstract class AbstractDbActionIntegTest implements AbstractEngineTest {
             cp += "/";
 
         while (path.startsWith("/"))
-            path = path.substring(1, path.length());
+            path = path.substring(1);
 
         //      if (path.indexOf(cp) > -1 || path.startsWith("http"))
         //         return path;

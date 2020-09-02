@@ -29,12 +29,11 @@ import java.util.Map;
 
 public abstract class AbstractRqlTest implements AbstractEngineTest {
 
+    protected final Map<String, String> testRequests      = new LinkedHashMap<>();
+    protected final Map<String, String> expectedResponses = new HashMap<>();
     protected String urlPrefix = null;
     protected Engine engine    = null;
     protected String type      = null;
-
-    protected Map<String, String> testRequests      = new LinkedHashMap<>();
-    protected Map<String, String> expectedResponses = new HashMap<>();
 
     public AbstractRqlTest(String urlPrefix, String type) {
         setUrlPrefix(urlPrefix);
@@ -192,7 +191,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
             if (!verifyTest(testKey, queryString, expected, res)) {
                 System.out.println("FAILED: " + testKey);
                 System.out.println(" - expected: " + expected);
-                System.out.println(" - received: " + Results.LAST_QUERY);
+                System.out.println(" - received: " + (Results.LAST_QUERY != null ? Results.LAST_QUERY : maybeMatch));
                 res.dump();
                 failures.put(testKey, res.getStatus() + " - " + maybeMatch);
             }
@@ -201,7 +200,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
         if (failures.size() > 0) {
             System.out.println("Failed cases...");
             for (String key : failures.keySet()) {
-                String failure = null;
+                String failure;
                 failure = failures.get(key);
 
                 int idx = failure.indexOf("\"message\"");
@@ -220,11 +219,11 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
     /**
      * Override me to add custom test execution handling.
      *
-     * @param engine
-     * @param urlPrefix
-     * @param testKey
-     * @param queryString
-     * @return
+     * @param engine      the engine being tested
+     * @param urlPrefix   the urlPrefix
+     * @param testKey     the testKey
+     * @param queryString the queryString
+     * @return the response
      */
     protected Response runTest(Engine engine, String urlPrefix, String testKey, String queryString) {
         return engine.get(urlPrefix + queryString);
@@ -235,10 +234,10 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
      * <p>
      * By default tests pass if the response debug dump contains the test result string...the string match is case insensitive
      *
-     * @param testKey
-     * @param queryString
-     * @param res
-     * @return
+     * @param testKey the test key
+     * @param queryString the querysring
+     * @param res the result
+     * @return if the test passed
      */
     protected boolean verifyTest(String testKey, String queryString, String expectedMatch, Response res) {
 
@@ -253,7 +252,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
 
         debug = debug.replace("SQL_CALC_FOUND_ROWS ", "").toLowerCase();
 
-        return debug.indexOf(expectedMatch.toLowerCase()) > -1;
+        return debug.contains(expectedMatch.toLowerCase());
     }
 
     public AbstractRqlTest withTestRequest(String testKey, String testRql) {

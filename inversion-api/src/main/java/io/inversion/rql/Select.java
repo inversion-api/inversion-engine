@@ -63,12 +63,12 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
                 getParent().withTerm("as(sum(if(eq(" + col + ", " + terms.get(i) + "), 1, 0))," + terms.get(i) + ")");
             }
 
-            String str = "in(" + col;
+            StringBuilder str = new StringBuilder("in(" + col);
             for (int i = 1; i < terms.size(); i++) {
-                str += "," + terms.get(i).token;
+                str.append(",").append(terms.get(i).token);
             }
-            str += ")";
-            getParent().withTerm(str);
+            str.append(")");
+            getParent().withTerm(str.toString());
 
             return true;
 
@@ -104,7 +104,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
     }
 
     public List<String> getColumnNames() {
-        List<String> columns = new ArrayList();
+        List<String> columns = new ArrayList<>();
 
         for (Term include : findAll("includes")) {
             for (Term child : include.getTerms()) {
@@ -115,7 +115,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
     }
 
     public List<Term> columns() {
-        List<Term> columns = new ArrayList();
+        List<Term> columns = new ArrayList<>();
 
         for (Term include : findAll("includes")) {
             columns.addAll(include.getTerms());
