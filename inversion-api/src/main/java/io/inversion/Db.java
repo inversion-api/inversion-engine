@@ -460,7 +460,7 @@ public abstract class Db<T extends Db> {
                 }
             }
 
-            for (String key : mapped.keySet()) {
+            for (String key : new ArrayList<String>(mapped.keySet())) {
                 //TODO can optimize?
                 if (filterOutJsonProperty(collection, key)) {
                     mapped.remove(key);

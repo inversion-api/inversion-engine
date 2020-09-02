@@ -354,7 +354,7 @@ public class Url {
      * @see Utils#containsToken
      */
     public void replaceParam(String key, String value) {
-        for (String existing : params.keySet()) {
+        for (String existing : new ArrayList<String>(params.keySet())) {
             if (Utils.containsToken(key, existing)) {
                 params.remove(existing);
             }
