@@ -189,7 +189,7 @@ public class CosmosDbFactory {
                     .withProperty("type", "string", false)//
                     .withProperty("customerId", "string")//
                     .withIndex("primaryIndex", "primary", true, "type", "customerId")//
-                    .withIndex("PartitionKey", "PartitionKey", false, "type")//
+                    .withIndex(CosmosDb.INDEX_TYPE_PARTITION_KEY, CosmosDb.INDEX_TYPE_PARTITION_KEY, false, "type")//
 
                     .withProperty("companyName", "string")//
                     .withProperty("contactName", "string")//
@@ -207,7 +207,7 @@ public class CosmosDbFactory {
                     .withProperty("type", "string", false)//
                     .withProperty("employeeId", "number")//
                     .withIndex("primaryIndex", "primary", true, "type", "employeeId")//
-                    .withIndex("PartitionKey", "PartitionKey", false, "type")//
+                    .withIndex(CosmosDb.INDEX_TYPE_PARTITION_KEY, CosmosDb.INDEX_TYPE_PARTITION_KEY, false, "type")//
 
                     .withProperty("lastName", "string")//
                     .withProperty("firstName", "string")//
@@ -230,7 +230,7 @@ public class CosmosDbFactory {
                     .withProperty("type", "string", false)//
                     .withProperty("orderId", "number")//
                     .withIndex("primaryIndex", "primary", true, "type", "orderId")//
-                    .withIndex("PartitionKey", "PartitionKey", false, "type")//
+                    .withIndex(CosmosDb.INDEX_TYPE_PARTITION_KEY, CosmosDb.INDEX_TYPE_PARTITION_KEY, false, "type")//
 
                     //these are order fields
                     .withProperty("customerId", "string")//
@@ -252,7 +252,7 @@ public class CosmosDbFactory {
             //                                                                   .withColumn("type", "string", false)//
             //                                                                   .withColumn("orderId", "number")//
             //                                                                   .withIndex("primaryIndex", "primary", true, "type", "orderId")//
-            //                                                                   .withIndex("PartitionKey", "PartitionKey", false, "type")//
+            //                                                                   .withIndex(CosmosDb.INDEX_TYPE_PARTITION_KEY, CosmosDb.INDEX_TYPE_PARTITION_KEY, false, "type")//
             //
             //                                                                   .withColumn("productId", "number")//
             //                                                                   .withColumn("unitPrice", "number")//

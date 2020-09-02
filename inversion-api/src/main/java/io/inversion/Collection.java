@@ -464,6 +464,20 @@ public class Collection extends Rule<Collection> implements Serializable {
     }
 
     /**
+     * @param indexType the case insensative index type identifier
+     * @return the first index with type = indexType
+     */
+    public Index getIndexByType(String indexType)
+    {
+        for (Index index : indexes) {
+            if (indexType.equalsIgnoreCase(index.getName()))
+                return index;
+        }
+        return null;
+    }
+
+
+    /**
      * Gets an index by case insensitive name.
      *
      * @param indexName the name of the Index to get

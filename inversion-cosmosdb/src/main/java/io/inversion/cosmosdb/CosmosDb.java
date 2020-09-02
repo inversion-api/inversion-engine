@@ -17,19 +17,24 @@
 package io.inversion.cosmosdb;
 
 import com.microsoft.azure.documentdb.*;
+import io.inversion.Index;
 import io.inversion.*;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class CosmosDb extends Db<CosmosDb> {
-    protected String uri = null;
-    protected String db  = "";
-    protected String key = null;
+
+    public static final String INDEX_TYPE_PARTITION_KEY = CosmosDb.INDEX_TYPE_PARTITION_KEY;
+
+    protected           String         uri            = null;
+    protected           String         db             = "";
+    protected           String         key            = null;
     transient protected DocumentClient documentClient = null;
     boolean allowCrossPartitionQueries = false;
 
@@ -68,6 +73,37 @@ public class CosmosDb extends Db<CosmosDb> {
      */
     @Override
     public Results doSelect(Collection collection, List<Term> columnMappedTerms) throws ApiException {
+
+        Index partitionIdx = collection.getIndexByType(INDEX_TYPE_PARTITION_KEY);
+        if (partitionIdx != null) {
+
+            Map<String, Object> values = new HashMap<>();
+            for (Property prop : partitionIdx.getProperties()) {
+                String colName = prop.getColumnName();
+                for (Term term : columnMappedTerms) {
+                    if (term.hasChildLeafToken("eq") && colName.equals(term.getToken(0))) {
+                        values.put(colName, term.getToken(1));
+                        break;
+                    }
+                }
+            }
+
+            //if the query supplied the parts necessary to construct the
+            if (values.size() == partitionIdx.size()) {
+
+                //-- remove any explicit partitionKey query params supplied by the users
+                for (Term term : new ArrayList<Term>(columnMappedTerms)) {
+                    if (term.hasToken("eq") && partitionIdx.getName().equals(term.getToken(0))) {
+                        columnMappedTerms.remove(term);
+                    }
+                }
+
+                String partitionKey = io.inversion.Collection.encodeResourceKey(values, partitionIdx);
+                columnMappedTerms.add(Term.term(null, "eq", partitionIdx.getName(), partitionKey));
+            }
+        }
+
+
         CosmosSqlQuery query = new CosmosSqlQuery(this, collection, columnMappedTerms);
         return query.doSelect();
     }
@@ -81,30 +117,45 @@ public class CosmosDb extends Db<CosmosDb> {
         return keys;
     }
 
-    public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws ApiException {
-        try {
-            JSNode doc = new JSNode(columnMappedTermsRow);
+    void normalizePartitionKey(Collection collection, Map<String, Object> row)
+    {
+        //-- makes sure the partition key is set correctly on the document if there is one.
+        Index partitionIdx = collection.getIndexByType(INDEX_TYPE_PARTITION_KEY);
+        if (partitionIdx != null) {
+            String partitionKey = io.inversion.Collection.encodeResourceKey(row, partitionIdx);
+            if (partitionKey == null)
+                throw ApiException.new400BadRequest("Unable to determine the CosmosDb partition key from the supplied fields");
 
+            row.put(partitionIdx.getName(), partitionKey);
+        }
+    }
+
+    public String upsertRow(Collection collection, Map<String, Object> row) throws ApiException {
+        try {
+
+            normalizePartitionKey(collection, row);
+
+            JSNode doc = new JSNode(row);
             String id = doc.getString("id");
             if (id == null) {
-                id = table.encodeResourceKey(columnMappedTermsRow);
+                id = collection.encodeResourceKey(row);
                 if (id == null)
                     throw ApiException.new400BadRequest("Your record does not contain the required key fields.");
                 doc.putFirst("id", id);
             }
 
             //-- the only way to achieve a PATCH is to query for the document first.
-            Results existing = doSelect(table, Utils.asList(Term.term(null, "_key", table.getPrimaryIndex().getName(), id)));
+            Results existing = doSelect(collection, Utils.asList(Term.term(null, "_key", collection.getPrimaryIndex().getName(), id)));
             if (existing.size() == 1) {
-                Map<String, Object> row = existing.getRow(0);
-                for (String key : row.keySet()) {
+                Map<String, Object> existingRow = existing.getRow(0);
+                for (String key : existingRow.keySet()) {
                     if (!doc.containsKey(key))
-                        doc.put(key, row.get(key));
+                        doc.put(key, existingRow.get(key));
                 }
             }
 
             //-- https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest
-            String cosmosCollectionUri = "/dbs/" + db + "/colls/" + table.getTableName();
+            String cosmosCollectionUri = "/dbs/" + db + "/colls/" + collection.getTableName();
 
             String   json     = doc.toString();
             Document document = new Document(json);
@@ -146,8 +197,11 @@ public class CosmosDb extends Db<CosmosDb> {
      * @see <a href="https://docs.microsoft.com/en-us/rest/api/cosmos-db/cosmosdb-resource-uri-syntax-for-rest">CosmosDb Resource URI Syntax</a>
      */
     protected void deleteRow(Collection collection, Map<String, Object> indexValues) throws ApiException {
+
+        normalizePartitionKey(collection, indexValues);
+
         Object id                = collection.encodeResourceKey(indexValues);
-        Object partitionKeyValue = indexValues.get(collection.getIndex("PartitionKey").getProperty(0).getColumnName());
+        Object partitionKeyValue = indexValues.get(collection.getIndex(CosmosDb.INDEX_TYPE_PARTITION_KEY).getProperty(0).getColumnName());
         String documentUri       = "/dbs/" + db + "/colls/" + collection.getTableName() + "/docs/" + id;
 
         RequestOptions options = new RequestOptions();
