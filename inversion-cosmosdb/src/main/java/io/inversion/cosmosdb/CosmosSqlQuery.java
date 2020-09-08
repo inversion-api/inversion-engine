@@ -88,7 +88,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
         Object partKey    = null;
         String partKeyCol;
-        Index  partKeyIdx = collection.getIndex(CosmosDb.INDEX_TYPE_PARTITION_KEY);
+        Index  partKeyIdx = collection.getIndexByType(CosmosDb.INDEX_TYPE_PARTITION_KEY);
         if (partKeyIdx != null) {
             //-- the only way to turn cross partition querying off is to
             //-- have a single partition key identified in your query.

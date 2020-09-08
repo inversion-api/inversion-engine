@@ -470,7 +470,7 @@ public class Collection extends Rule<Collection> implements Serializable {
     public Index getIndexByType(String indexType)
     {
         for (Index index : indexes) {
-            if (indexType.equalsIgnoreCase(index.getName()))
+            if (indexType.equalsIgnoreCase(index.getType()))
                 return index;
         }
         return null;

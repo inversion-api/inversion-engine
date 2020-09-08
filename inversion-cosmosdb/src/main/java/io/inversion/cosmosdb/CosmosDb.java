@@ -90,8 +90,11 @@ public class CosmosDb extends Db<CosmosDb> {
             }
 
             for (Term term : columnMappedTerms) {
-                if (term.hasChildLeafToken("_key")) {
-                    Rows.Row key = collection.decodeResourceKey(term.getToken(0));
+                if (term.hasToken("_key")) {
+                    String indexName = term.getToken(0);
+                    Index idx = collection.getIndex(indexName);
+                    Rows.Row key = collection.decodeResourceKey(idx, term.getToken(1));
+//                    Rows.Row key = collection.decodeResourceKey(term.getToken(0));
                     for (Property prop : partitionIdx.getProperties()) {
                         String colName = prop.getColumnName();
                         if (key.containsKey(colName))
