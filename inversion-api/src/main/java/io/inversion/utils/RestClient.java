@@ -21,6 +21,7 @@ import io.inversion.Chain;
 import io.inversion.Request;
 import io.inversion.Response;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
@@ -367,7 +368,7 @@ public class RestClient {
     public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, int retryMax, ArrayListValuedHashMap<String, String> headers) {
         String url = buildUrl(fullUrlOrRelativePath);
 
-        String queryString = Utils.substringAfter(url, "?");
+        String queryString = StringUtils.substringAfter(url, "?");
         if (!Utils.empty(queryString)) {
             url = Utils.substringBefore(url, "?");
 
