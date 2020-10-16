@@ -234,9 +234,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>java.util.Set&lt;java.util.Map.Entry&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#entrySet()">entrySet</a></span>()</code></th>
-<td class="colLast">
-<div class="block">Constructs a new LinkedHashSet of key/value pairs preserving column iteration order.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>java.lang.Object</code></td>
@@ -427,7 +425,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getKey&#8203;(int&nbsp;index)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>index</code> - </dd>
+<dd><code>index</code> - the column key to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the key/column name for the given index</dd>
 </dl>
@@ -442,7 +440,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getString&#8203;(int&nbsp;index)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>index</code> - </dd>
+<dd><code>index</code> - the column number to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value at <code>index</code> stringified if it exists</dd>
 </dl>
@@ -457,7 +455,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getString&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>key</code> - </dd>
+<dd><code>key</code> - the column name to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value for <code>key</code> stringified if it exists</dd>
 </dl>
@@ -472,7 +470,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;int&nbsp;getInt&#8203;(int&nbsp;index)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>index</code> - </dd>
+<dd><code>index</code> - the column number to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value at <code>index</code> stringified and parsed as an int if it exists</dd>
 </dl>
@@ -487,7 +485,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;int&nbsp;getInt&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>key</code> - </dd>
+<dd><code>key</code> - the column name to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value for <code>key</code> stringified and parsed as an int if it exists</dd>
 </dl>
@@ -502,7 +500,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;long&nbsp;getLong&#8203;(int&nbsp;index)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>index</code> - </dd>
+<dd><code>index</code> - the column value to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value at <code>index</code> stringified and parsed as a long if it exists</dd>
 </dl>
@@ -517,7 +515,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;long&nbsp;getLong&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>key</code> - </dd>
+<dd><code>key</code> - the columnn name to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value for <code>key</code> stringified and parsed as a long if it exists</dd>
 </dl>
@@ -532,7 +530,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;float&nbsp;getFloat&#8203;(int&nbsp;index)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>index</code> - </dd>
+<dd><code>index</code> - the column number to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value at <code>index</code> stringified and parsed as a float if it exists</dd>
 </dl>
@@ -547,7 +545,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;float&nbsp;getFloat&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>key</code> - </dd>
+<dd><code>key</code> - the column name to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value for <code>key</code> stringified and parsed as a float if it exists</dd>
 </dl>
@@ -562,7 +560,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;getBoolean&#8203;(int&nbsp;index)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>index</code> - </dd>
+<dd><code>index</code> - the column number to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value at <code>index</code> stringified and parsed as a boolean if it exists</dd>
 </dl>
@@ -577,7 +575,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;getBoolean&#8203;(java.lang.String&nbsp;key)</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>key</code> - </dd>
+<dd><code>key</code> - the key of the value to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value for <code>key</code> stringified and parsed as a boolean if it exists</dd>
 </dl>
@@ -667,7 +665,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Gets the value for the key/column.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>key</code> - </dd>
+<dd><code>key</code> - the column name to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value at the index associate with <code>key</code> if it exists, otherwise null.</dd>
 </dl>
@@ -683,11 +681,11 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
                      throws java.lang.ArrayIndexOutOfBoundsException</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>index</code> - </dd>
+<dd><code>index</code> - the column number to get</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value at <code>index</code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.ArrayIndexOutOfBoundsException</code></dd>
+<dd><code>java.lang.ArrayIndexOutOfBoundsException</code> - if index is &gt;= values.length()</dd>
 </dl>
 </li>
 </ul>
@@ -719,8 +717,8 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Sets the <code>index</code>th column to <code>value</code></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>index</code> - </dd>
-<dd><code>value</code> - </dd>
+<dd><code>index</code> - the column number to set</dd>
+<dd><code>value</code> - the value to set</dd>
 </dl>
 </li>
 </ul>
@@ -734,7 +732,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Adds <code>value</code> as the last column</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>value</code> - </dd>
+<dd><code>value</code> - the value to add</dd>
 </dl>
 </li>
 </ul>
@@ -753,8 +751,8 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>put</code>&nbsp;in interface&nbsp;<code>java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>key</code> - </dd>
-<dd><code>value</code> - </dd>
+<dd><code>key</code> - the column name to set</dd>
+<dd><code>value</code> - the column value to set</dd>
 </dl>
 </li>
 </ul>
@@ -776,6 +774,8 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <dd><code>remove</code>&nbsp;in interface&nbsp;<code>java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>key</code> - the String key or an Integer index to remove.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the previous value for the column</dd>
 </dl>
 </li>
 </ul>
@@ -852,10 +852,11 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <li class="blockList">
 <h4>entrySet</h4>
 <pre class="methodSignature">public&nbsp;java.util.Set&lt;java.util.Map.Entry&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;entrySet()</pre>
-<div class="block">Constructs a new LinkedHashSet of key/value pairs preserving column iteration order.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>entrySet</code>&nbsp;in interface&nbsp;<code>java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a new LinkedHashSet of key/value pairs preserving column iteration order.</dd>
 </dl>
 </li>
 </ul>

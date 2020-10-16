@@ -177,10 +177,7 @@ extends java.lang.Object</pre>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#buildServletMapping(io.inversion.Engine)">buildServletMapping</a></span>&#8203;(<a href="../Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine)</code></th>
-<td class="colLast">
-<div class="block">acumulates all of the static path parts
- shared by all Engine includesPaths.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static org.springframework.boot.web.servlet.ServletRegistrationBean</code></td>
@@ -245,17 +242,6 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="inversionServlet(io.inversion.Engine)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>inversionServlet</h4>
-<pre class="methodSignature">@Bean
-public&nbsp;org.springframework.boot.web.servlet.ServletRegistrationBean&nbsp;inversionServlet&#8203;(@Autowired
-                                                                                     <a href="../Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine)</pre>
-</li>
-</ul>
 <a id="createDefaultInversionServlet(io.inversion.Engine)">
 <!--   -->
 </a>
@@ -272,27 +258,42 @@ public&nbsp;org.springframework.boot.web.servlet.ServletRegistrationBean&nbsp;in
 <li class="blockList">
 <h4>buildServletMapping</h4>
 <pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;buildServletMapping&#8203;(<a href="../Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine)</pre>
-<div class="block">acumulates all of the static path parts
- shared by all Engine includesPaths.</div>
-</li>
-</ul>
-<a id="servletContainer()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>servletContainer</h4>
-<pre class="methodSignature">@Bean
-public&nbsp;org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory&nbsp;servletContainer()</pre>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>engine</code> - the Engine hosting the Apis</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>accumulation all of the static path parts shared by all Engine includesPaths.</dd>
+</dl>
 </li>
 </ul>
 <a id="createDefaultServletContainer()">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>createDefaultServletContainer</h4>
 <pre class="methodSignature">public static&nbsp;org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory&nbsp;createDefaultServletContainer()</pre>
+</li>
+</ul>
+<a id="inversionServlet(io.inversion.Engine)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>inversionServlet</h4>
+<pre class="methodSignature">@Bean
+public&nbsp;org.springframework.boot.web.servlet.ServletRegistrationBean&nbsp;inversionServlet&#8203;(@Autowired
+                                                                                     <a href="../Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine)</pre>
+</li>
+</ul>
+<a id="servletContainer()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>servletContainer</h4>
+<pre class="methodSignature">@Bean
+public&nbsp;org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory&nbsp;servletContainer()</pre>
 </li>
 </ul>
 </li>

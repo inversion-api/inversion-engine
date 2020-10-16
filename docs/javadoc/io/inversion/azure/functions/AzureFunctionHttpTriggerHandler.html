@@ -386,6 +386,9 @@ extends java.lang.Object</pre>
  <p>
  If <code>api</code> is null, it calls buildApi() which by default does nothing and is itself designed as an override hook.</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>request</code> - the request to service</dd>
+<dd><code>context</code> - the execution context</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator.</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -406,6 +409,9 @@ extends java.lang.Object</pre>
  If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api
  or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Confg/Configurator.</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>request</code> - the request to service</dd>
+<dd><code>context</code> - the execution context</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>null unless you override this method to construct an Api.</dd>
 <dt><span class="seeLabel">See Also:</span></dt>

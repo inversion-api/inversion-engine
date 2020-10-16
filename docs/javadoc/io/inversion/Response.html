@@ -785,6 +785,33 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Field Detail</h3>
+<a id="headers">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>headers</h4>
+<pre>protected final&nbsp;org.apache.commons.collections4.multimap.ArrayListValuedHashMap&lt;java.lang.String,&#8203;java.lang.String&gt; headers</pre>
+</li>
+</ul>
+<a id="changes">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>changes</h4>
+<pre>protected final&nbsp;java.util.List&lt;<a href="Change.html" title="class in io.inversion">Change</a>&gt; changes</pre>
+</li>
+</ul>
+<a id="debug">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>debug</h4>
+<pre>protected final&nbsp;java.lang.StringBuilder debug</pre>
+</li>
+</ul>
 <a id="url">
 <!--   -->
 </a>
@@ -801,15 +828,6 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>chain</h4>
 <pre>protected&nbsp;<a href="Chain.html" title="class in io.inversion">Chain</a> chain</pre>
-</li>
-</ul>
-<a id="headers">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>headers</h4>
-<pre>protected&nbsp;org.apache.commons.collections4.multimap.ArrayListValuedHashMap&lt;java.lang.String,&#8203;java.lang.String&gt; headers</pre>
 </li>
 </ul>
 <a id="statusCode">
@@ -941,28 +959,10 @@ extends java.lang.Object</pre>
 <a id="contentRangeSize">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>contentRangeSize</h4>
 <pre>protected&nbsp;long contentRangeSize</pre>
-</li>
-</ul>
-<a id="changes">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>changes</h4>
-<pre>protected&nbsp;java.util.List&lt;<a href="Change.html" title="class in io.inversion">Change</a>&gt; changes</pre>
-</li>
-</ul>
-<a id="debug">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>debug</h4>
-<pre>protected&nbsp;java.lang.StringBuilder debug</pre>
 </li>
 </ul>
 </li>
@@ -1052,6 +1052,8 @@ extends java.lang.Object</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>status</code> - - one of the SC constants ex "200 OK"</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 </dl>
 </li>
 </ul>
@@ -1207,6 +1209,8 @@ extends java.lang.Object</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>json</code> - the json to set</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 </dl>
 </li>
 </ul>
@@ -1667,6 +1671,7 @@ extends java.lang.Object</pre>
  NOTE: this will not match file length, for partial downloads, consider also using ContentRangeSize</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the value of the Content-Length header if it exists else 0</dd>
 </dl>
 </li>
 </ul>
@@ -1681,6 +1686,7 @@ extends java.lang.Object</pre>
  Content-Range: unit range-start-range-end/size</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the units from the content-range header</dd>
 </dl>
 </li>
 </ul>
@@ -1695,6 +1701,7 @@ extends java.lang.Object</pre>
  Content-Range: unit range-start-range-end/size</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the start value from the content-range header</dd>
 </dl>
 </li>
 </ul>
@@ -1709,6 +1716,7 @@ extends java.lang.Object</pre>
  Content-Range: unit range-start-range-end/size</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>then end value from the content-range header</dd>
 </dl>
 </li>
 </ul>
@@ -1723,6 +1731,7 @@ extends java.lang.Object</pre>
  Content-Range: unit range-start-range-end/size</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>then size value from the content-range header</dd>
 </dl>
 </li>
 </ul>
@@ -1781,10 +1790,13 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>finalize</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;finalize()</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;finalize()
+              throws java.lang.Throwable</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code>finalize</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>java.lang.Throwable</code></dd>
 </dl>
 </li>
 </ul>

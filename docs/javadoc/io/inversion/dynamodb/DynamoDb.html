@@ -326,7 +326,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doUpsert(io.inversion.Collection,java.util.List)">doUpsert</a></span>&#8203;(<a href="../Collection.html" title="class in io.inversion">Collection</a>&nbsp;table,
         java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)</code></th>
 <td class="colLast">
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.</div>
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.</div>
 </td>
 </tr>
 <tr id="i9" class="rowColor">
@@ -468,6 +468,19 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
 </dl>
 </li>
 </ul>
+<a id="batchMax">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>batchMax</h4>
+<pre>protected final&nbsp;int batchMax</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../constant-values.html#io.inversion.dynamodb.DynamoDb.batchMax">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
 <a id="awsAccessKey">
 <!--   -->
 </a>
@@ -514,15 +527,6 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
 <div class="block">Use to config which row is used to build the column/attribute model  (otherwise first row of scan will be used)
  <p>
  FORMAT: collection name | primaryKey | sortKey (optional)</div>
-</li>
-</ul>
-<a id="batchMax">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>batchMax</h4>
-<pre>protected&nbsp;int batchMax</pre>
 </li>
 </ul>
 <a id="dynamoClient">
@@ -573,6 +577,46 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="findIndexByName(io.inversion.Collection,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>findIndexByName</h4>
+<pre class="methodSignature">public static&nbsp;<a href="../Index.html" title="class in io.inversion">Index</a>&nbsp;findIndexByName&#8203;(<a href="../Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll,
+                                    java.lang.String&nbsp;name)</pre>
+</li>
+</ul>
+<a id="getTypeStringFromObject(java.lang.Object)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getTypeStringFromObject</h4>
+<pre class="methodSignature">protected static&nbsp;java.lang.String&nbsp;getTypeStringFromObject&#8203;(java.lang.Object&nbsp;obj)</pre>
+</li>
+</ul>
+<a id="buildDynamoClient(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>buildDynamoClient</h4>
+<pre class="methodSignature">public static&nbsp;com.amazonaws.services.dynamodbv2.AmazonDynamoDB&nbsp;buildDynamoClient&#8203;(java.lang.String&nbsp;prefix)</pre>
+</li>
+</ul>
+<a id="buildDynamoClient(java.lang.String,java.lang.String,java.lang.String,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>buildDynamoClient</h4>
+<pre class="methodSignature">public static&nbsp;com.amazonaws.services.dynamodbv2.AmazonDynamoDB&nbsp;buildDynamoClient&#8203;(java.lang.String&nbsp;awsRegion,
+                                                                                 java.lang.String&nbsp;awsAccessKey,
+                                                                                 java.lang.String&nbsp;awsSecretKey,
+                                                                                 java.lang.String&nbsp;awsEndpoint)</pre>
+</li>
+</ul>
 <a id="doSelect(io.inversion.Collection,java.util.List)">
 <!--   -->
 </a>
@@ -587,6 +631,8 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#doSelect(io.inversion.Collection,java.util.List)">doSelect</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="DynamoDb.html" title="class in io.inversion.dynamodb">DynamoDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection to query</dd>
 <dd><code>columnMappedTerms</code> - RQL terms that have been translated to use Property columnNames not jsonNames</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A list of maps with keys as Property columnNames not jsonNames</dd>
@@ -605,7 +651,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
                                                  java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)
                                           throws <a href="../ApiException.html" title="class in io.inversion">ApiException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../Db.html#doUpsert(io.inversion.Collection,java.util.List)">Db</a></code></span></div>
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.
  <p>
  Keys that are not supplied in the call but that exist in the row in the target DB should not be modified.
  <p>
@@ -613,7 +659,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
  tables unique index constraints allowing an update to take place instead
  of an insert if the row already exists in the underlying data source.
  <p>
- IMPORTANT #1 - implementors should note that the keys on each row in <code>rows</code> may be different.
+ IMPORTANT #1 - implementors should note that the keys on each record may be different.
  <p>
  IMPORTANT #2 - strict POST/PUT vs POST/PATCH semantics are implementation specific.
  For example, a RDBMS backed implementation may choose to upsert only the supplied
@@ -624,6 +670,9 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#doUpsert(io.inversion.Collection,java.util.List)">doUpsert</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="DynamoDb.html" title="class in io.inversion.dynamodb">DynamoDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection being modified</dd>
+<dd><code>rows</code> - the records being modified</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the encoded resource key for every supplied row</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -651,6 +700,9 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#delete(io.inversion.Collection,java.util.List)">delete</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="DynamoDb.html" title="class in io.inversion.dynamodb">DynamoDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection being modified</dd>
+<dd><code>indexValues</code> - the identifiers for the records to delete</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -690,7 +742,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../Db.html#configDb()">configDb</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="DynamoDb.html" title="class in io.inversion.dynamodb">DynamoDb</a>&gt;</code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
+<dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code> - when configuration fails</dd>
 </dl>
 </li>
 </ul>
@@ -792,53 +844,13 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Dy
 </dl>
 </li>
 </ul>
-<a id="findIndexByName(io.inversion.Collection,java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>findIndexByName</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../Index.html" title="class in io.inversion">Index</a>&nbsp;findIndexByName&#8203;(<a href="../Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll,
-                                    java.lang.String&nbsp;name)</pre>
-</li>
-</ul>
-<a id="getTypeStringFromObject(java.lang.Object)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getTypeStringFromObject</h4>
-<pre class="methodSignature">protected static&nbsp;java.lang.String&nbsp;getTypeStringFromObject&#8203;(java.lang.Object&nbsp;obj)</pre>
-</li>
-</ul>
 <a id="getDynamoClient()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getDynamoClient</h4>
-<pre class="methodSignature">public&nbsp;com.amazonaws.services.dynamodbv2.AmazonDynamoDB&nbsp;getDynamoClient()</pre>
-</li>
-</ul>
-<a id="buildDynamoClient(java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>buildDynamoClient</h4>
-<pre class="methodSignature">public static&nbsp;com.amazonaws.services.dynamodbv2.AmazonDynamoDB&nbsp;buildDynamoClient&#8203;(java.lang.String&nbsp;prefix)</pre>
-</li>
-</ul>
-<a id="buildDynamoClient(java.lang.String,java.lang.String,java.lang.String,java.lang.String)">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>buildDynamoClient</h4>
-<pre class="methodSignature">public static&nbsp;com.amazonaws.services.dynamodbv2.AmazonDynamoDB&nbsp;buildDynamoClient&#8203;(java.lang.String&nbsp;awsRegion,
-                                                                                 java.lang.String&nbsp;awsAccessKey,
-                                                                                 java.lang.String&nbsp;awsSecretKey,
-                                                                                 java.lang.String&nbsp;awsEndpoint)</pre>
+<h4>getDynamoClient</h4>
+<pre class="methodSignature">public&nbsp;com.amazonaws.services.dynamodbv2.AmazonDynamoDB&nbsp;getDynamoClient()</pre>
 </li>
 </ul>
 </li>

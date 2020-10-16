@@ -266,7 +266,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doUpsert(io.inversion.Collection,java.util.List)">doUpsert</a></span>&#8203;(<a href="../Collection.html" title="class in io.inversion">Collection</a>&nbsp;table,
         java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)</code></th>
 <td class="colLast">
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.</div>
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.</div>
 </td>
 </tr>
 <tr id="i4" class="altColor">
@@ -431,6 +431,8 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../Db.html#doStartup(io.inversion.Api)">doStartup</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3Db.html" title="class in io.inversion.s3">S3Db</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>api</code> - the api to start</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../Db.html#configDb()"><code>Db.configDb()</code></a>, 
 <a href="../Db.html#configApi(io.inversion.Api)"><code>Db.configApi(Api)</code></a></dd>
@@ -451,6 +453,8 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#doSelect(io.inversion.Collection,java.util.List)">doSelect</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3Db.html" title="class in io.inversion.s3">S3Db</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection to query</dd>
 <dd><code>columnMappedTerms</code> - RQL terms that have been translated to use Property columnNames not jsonNames</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A list of maps with keys as Property columnNames not jsonNames</dd>
@@ -469,7 +473,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3
                                                  java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)
                                           throws <a href="../ApiException.html" title="class in io.inversion">ApiException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../Db.html#doUpsert(io.inversion.Collection,java.util.List)">Db</a></code></span></div>
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.
  <p>
  Keys that are not supplied in the call but that exist in the row in the target DB should not be modified.
  <p>
@@ -477,7 +481,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3
  tables unique index constraints allowing an update to take place instead
  of an insert if the row already exists in the underlying data source.
  <p>
- IMPORTANT #1 - implementors should note that the keys on each row in <code>rows</code> may be different.
+ IMPORTANT #1 - implementors should note that the keys on each record may be different.
  <p>
  IMPORTANT #2 - strict POST/PUT vs POST/PATCH semantics are implementation specific.
  For example, a RDBMS backed implementation may choose to upsert only the supplied
@@ -488,6 +492,9 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#doUpsert(io.inversion.Collection,java.util.List)">doUpsert</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3Db.html" title="class in io.inversion.s3">S3Db</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection being modified</dd>
+<dd><code>rows</code> - the records being modified</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the encoded resource key for every supplied row</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -515,6 +522,9 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#delete(io.inversion.Collection,java.util.List)">delete</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="S3Db.html" title="class in io.inversion.s3">S3Db</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection being modified</dd>
+<dd><code>indexValues</code> - the identifiers for the records to delete</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>

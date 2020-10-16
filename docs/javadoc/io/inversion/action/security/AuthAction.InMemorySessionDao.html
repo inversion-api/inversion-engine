@@ -415,8 +415,9 @@ implements <a href="AuthAction.SessionDao.html" title="interface in io.inversion
 <div class="block">Override me to change out map/cache implementation</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>sessionKey</code> - </dd>
+<dd><code>sessionKey</code> - the session id of the user</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the users if found</dd>
 </dl>
 </li>
 </ul>
@@ -456,6 +457,11 @@ implements <a href="AuthAction.SessionDao.html" title="interface in io.inversion
 <pre class="methodSignature">protected&nbsp;void&nbsp;doPut&#8203;(java.lang.String&nbsp;sessionKey,
                      <a href="../../User.html" title="class in io.inversion">User</a>&nbsp;user)</pre>
 <div class="block">Override me to change out map/cache implementation</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>sessionKey</code> - the users session id</dd>
+<dd><code>user</code> - the user to store against the sessionKey</dd>
+</dl>
 </li>
 </ul>
 <a id="delete(java.lang.String)">
@@ -481,7 +487,7 @@ implements <a href="AuthAction.SessionDao.html" title="interface in io.inversion
 <div class="block">Override me to change out map/cache implementation</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>sessionKey</code> - </dd>
+<dd><code>sessionKey</code> - the session to end</dd>
 </dl>
 </li>
 </ul>

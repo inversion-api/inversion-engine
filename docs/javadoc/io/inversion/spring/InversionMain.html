@@ -339,15 +339,6 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public static&nbsp;void&nbsp;exit()</pre>
 </li>
 </ul>
-<a id="getContext()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getContext</h4>
-<pre class="methodSignature">public&nbsp;org.springframework.context.ApplicationContext&nbsp;getContext()</pre>
-</li>
-</ul>
 <a id="run()">
 <!--   -->
 </a>
@@ -368,7 +359,9 @@ extends java.lang.Object</pre>
 <div class="block">Convenience method for launching a Engine with a single API.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>api</code> - </dd>
+<dd><code>api</code> - the Api to run</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the SpringBoot ApplicationContext for the running server</dd>
 </dl>
 </li>
 </ul>
@@ -379,6 +372,15 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>run</h4>
 <pre class="methodSignature">public static&nbsp;org.springframework.context.ApplicationContext&nbsp;run&#8203;(<a href="../Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine)</pre>
+</li>
+</ul>
+<a id="getContext()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getContext</h4>
+<pre class="methodSignature">public&nbsp;org.springframework.context.ApplicationContext&nbsp;getContext()</pre>
 </li>
 </ul>
 <a id="inversionServlet()">

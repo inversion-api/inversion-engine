@@ -416,9 +416,7 @@ extends java.lang.Object</pre>
 <td class="colFirst"><code><a href="utils/JSArray.html" title="class in io.inversion.utils">JSArray</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getData()">getData</a></span>()</code></th>
 <td class="colLast">
-<div class="block">Attempts to massage an inbound json body into an array
- according to:
- 1.</div>
+<div class="block">Attempts to massage an inbound json body into an array.</div>
 </td>
 </tr>
 <tr id="i8" class="altColor">
@@ -459,9 +457,7 @@ extends java.lang.Object</pre>
 <tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="utils/Path.html" title="class in io.inversion.utils">Path</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPath()">getPath</a></span>()</code></th>
-<td class="colLast">
-<div class="block">Returns the URL path with the apiPath subtracted from the beginning</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i16" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
@@ -1083,6 +1079,8 @@ extends java.lang.Object</pre>
 <h4>hasCollectionKey</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;hasCollectionKey&#8203;(java.lang.String...&nbsp;collectionKeys)</pre>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>collectionKeys</code> - the name of the collection to check for</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if any of the <code>collectionKeys</code> case insensitive match <code>collectoinKey</code></dd>
 </dl>
@@ -1192,15 +1190,20 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>getData</h4>
 <pre class="methodSignature">public&nbsp;<a href="utils/JSArray.html" title="class in io.inversion.utils">JSArray</a>&nbsp;getData()</pre>
-<div class="block">Attempts to massage an inbound json body into an array
- according to:
- 1. if getBody() is a JSArray return it.
- 1. if getBody() is a JSNode with a "data" array prop, return it
- 1. if getBody() is a JSNode wrap it in an array and return it.
- 1. if getBody() is not a JSNode and getBody() is null, return
- an empty array.</div>
+<div class="block">Attempts to massage an inbound json body into an array.
+ <p>
+ This is useful so actions can treat all inbound requests as if they are arrays instead of having to check.
+ <p>
+ Conversion rules:
+ <ol>
+   <li>if getBody() is a JSArray return it.
+   <li>if getBody() is a JSNode with a "data" array prop, return it
+   <li>if getBody() is a JSNode wrap it in an array and return it.
+   <li>if getBody() is not a JSNode and getBody() is null, return an empty array.
+ </ol></div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the JSON boty messaged into an array</dd>
 </dl>
 </li>
 </ul>
@@ -1373,7 +1376,10 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>getPath</h4>
 <pre class="methodSignature">public&nbsp;<a href="utils/Path.html" title="class in io.inversion.utils">Path</a>&nbsp;getPath()</pre>
-<div class="block">Returns the URL path with the apiPath subtracted from the beginning</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the request path with the apiPath subtracted from the beginning</dd>
+</dl>
 </li>
 </ul>
 <a id="getSubpath()">

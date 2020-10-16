@@ -138,7 +138,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd><a href="RestClient.html" title="class in io.inversion.utils">RestClient</a></dd>
 </dl>
 <hr>
-<pre>public abstract class <span class="typeNameLabel">RestClient.FutureResponse</span>
+<pre>public abstract static class <span class="typeNameLabel">RestClient.FutureResponse</span>
 extends java.lang.Object
 implements java.util.concurrent.RunnableFuture&lt;<a href="../Response.html" title="class in io.inversion">Response</a>&gt;</pre>
 <div class="block">A RunnableFuture that blocks on get() until the execution of the Request has returned the Response.
@@ -306,6 +306,8 @@ implements java.util.concurrent.RunnableFuture&lt;<a href="../Response.html" tit
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>handler</code> - the listener to notify on success</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 </dl>
 </li>
 </ul>
@@ -322,6 +324,8 @@ implements java.util.concurrent.RunnableFuture&lt;<a href="../Response.html" tit
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>handler</code> - the listener to notify on failure</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 </dl>
 </li>
 </ul>
@@ -337,7 +341,9 @@ implements java.util.concurrent.RunnableFuture&lt;<a href="../Response.html" tit
  If the isDone() is already true the handler will be called synchronously right away.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>handler</code> - the listener to notify when the Reponse has arrived</dd>
+<dd><code>handler</code> - the listener to notify when the Response has arrived</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 </dl>
 </li>
 </ul>
@@ -353,7 +359,7 @@ implements java.util.concurrent.RunnableFuture&lt;<a href="../Response.html" tit
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>get</code>&nbsp;in interface&nbsp;<code>java.util.concurrent.Future&lt;<a href="../Response.html" title="class in io.inversion">Response</a>&gt;</code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the Response</dd>
+<dd>the response</dd>
 </dl>
 </li>
 </ul>
@@ -372,7 +378,7 @@ implements java.util.concurrent.RunnableFuture&lt;<a href="../Response.html" tit
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>get</code>&nbsp;in interface&nbsp;<code>java.util.concurrent.Future&lt;<a href="../Response.html" title="class in io.inversion">Response</a>&gt;</code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the response or null</dd>
+<dd>the response or null if the call has not asynchronously completed</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>java.util.concurrent.TimeoutException</code></dd>
 </dl>

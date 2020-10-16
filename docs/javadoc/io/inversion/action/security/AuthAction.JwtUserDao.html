@@ -383,7 +383,15 @@ implements <a href="AuthAction.UserDao.html" title="interface in io.inversion.ac
                                                          java.lang.String&nbsp;tenant)</pre>
 <div class="block">Looks gwt signing secrets up as environment vars or sysprops.
  <p>
- Finds the most specific keys keys first</div>
+ Finds the most specific keys keys first.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>action</code> - the action requesting the secrets</dd>
+<dd><code>apiName</code> - the name of the parent api</dd>
+<dd><code>tenant</code> - the tenant if there is one</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>any jwt secrets found</dd>
+</dl>
 </li>
 </ul>
 <a id="signJwt(com.auth0.jwt.JWTCreator.Builder,io.inversion.action.security.AuthAction,java.lang.String,java.lang.String)">

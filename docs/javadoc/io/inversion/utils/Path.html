@@ -542,6 +542,10 @@ extends java.lang.Object</pre>
  <p>
  The <code>parts</code> is exploded via <code>Utils.explode('/', part)</code> first so while the part arg is a
  single value, it could result in multiple additions.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>parts</code> - path parts to add</dd>
+</dl>
 </li>
 </ul>
 <a id="remove(int)">
@@ -794,6 +798,11 @@ extends java.lang.Object</pre>
                     <a href="Path.html" title="class in io.inversion.utils">Path</a>&nbsp;toMatch)</pre>
 <div class="block">Convenience overloading of <a href="#extract(java.util.Map,io.inversion.utils.Path,boolean)"><code>extract(Map, Path, boolean)</code></a> with <code>greedy = true</code>.</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>params</code> - a map to add extracted name/value pairs to</dd>
+<dd><code>toMatch</code> - the path to extract from</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the part of this path that matched</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#extract(java.util.Map,io.inversion.utils.Path,boolean)"><code>extract(Map, Path, boolean)</code></a></dd>
 </dl>
@@ -843,9 +852,9 @@ extends java.lang.Object</pre>
  Engine will also add the params to the Request Url params as if they had been supplied as name value pairs by the caller on the query string.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>params</code> - </dd>
-<dd><code>matchingConcretePath</code> - </dd>
-<dd><code>greedy</code> - </dd>
+<dd><code>params</code> - the map to add extracted name/value pairs to</dd>
+<dd><code>matchingConcretePath</code> - the path to extract from</dd>
+<dd><code>greedy</code> - if extraction should consume through optional path parts</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the same Path object that was passed in but potentially now shorter as matching segments may have been consumed</dd>
 <dt><span class="seeLabel">See Also:</span></dt>

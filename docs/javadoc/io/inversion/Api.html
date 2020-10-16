@@ -398,8 +398,8 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i22" class="altColor">
-<td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withDb(io.inversion.Db)">withDb</a></span>&#8203;(<a href="Db.html" title="class in io.inversion">Db</a>&nbsp;db)</code></th>
+<td class="colFirst"><code>&lt;T extends <a href="Db.html" title="class in io.inversion">Db</a>&gt;<br><a href="Api.html" title="class in io.inversion">Api</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withDb(io.inversion.Db)">withDb</a></span>&#8203;(<a href="Db.html" title="class in io.inversion">Db</a>&lt;T&gt;&nbsp;db)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i23" class="rowColor">
@@ -487,6 +487,51 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <!--   -->
 </a>
 <h3>Field Detail</h3>
+<a id="dbs">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>dbs</h4>
+<pre>protected final&nbsp;java.util.List&lt;<a href="Db.html" title="class in io.inversion">Db</a>&gt; dbs</pre>
+</li>
+</ul>
+<a id="endpoints">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>endpoints</h4>
+<pre>protected final&nbsp;java.util.List&lt;<a href="Endpoint.html" title="class in io.inversion">Endpoint</a>&gt; endpoints</pre>
+</li>
+</ul>
+<a id="actions">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>actions</h4>
+<pre>protected final&nbsp;java.util.List&lt;<a href="Action.html" title="class in io.inversion">Action</a>&gt; actions</pre>
+</li>
+</ul>
+<a id="collections">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>collections</h4>
+<pre>protected final&nbsp;java.util.List&lt;<a href="Collection.html" title="class in io.inversion">Collection</a>&gt; collections</pre>
+</li>
+</ul>
+<a id="listeners">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>listeners</h4>
+<pre>protected final transient&nbsp;java.util.List&lt;<a href="Api.ApiListener.html" title="interface in io.inversion">Api.ApiListener</a>&gt; listeners</pre>
+</li>
+</ul>
 <a id="hash">
 <!--   -->
 </a>
@@ -508,55 +553,10 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <a id="url">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>url</h4>
 <pre>protected&nbsp;java.lang.String url</pre>
-</li>
-</ul>
-<a id="dbs">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>dbs</h4>
-<pre>protected&nbsp;java.util.List&lt;<a href="Db.html" title="class in io.inversion">Db</a>&gt; dbs</pre>
-</li>
-</ul>
-<a id="endpoints">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>endpoints</h4>
-<pre>protected&nbsp;java.util.List&lt;<a href="Endpoint.html" title="class in io.inversion">Endpoint</a>&gt; endpoints</pre>
-</li>
-</ul>
-<a id="actions">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>actions</h4>
-<pre>protected&nbsp;java.util.List&lt;<a href="Action.html" title="class in io.inversion">Action</a>&gt; actions</pre>
-</li>
-</ul>
-<a id="collections">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>collections</h4>
-<pre>protected&nbsp;java.util.List&lt;<a href="Collection.html" title="class in io.inversion">Collection</a>&gt; collections</pre>
-</li>
-</ul>
-<a id="listeners">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>listeners</h4>
-<pre>protected transient&nbsp;java.util.List&lt;<a href="Api.ApiListener.html" title="interface in io.inversion">Api.ApiListener</a>&gt; listeners</pre>
 </li>
 </ul>
 </li>
@@ -611,6 +611,7 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="Rule.html#getDefaultIncludeMatch()">getDefaultIncludeMatch</a></code>&nbsp;in class&nbsp;<code><a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="Api.html" title="class in io.inversion">Api</a>&gt;</code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the default include match "*","*"</dd>
 </dl>
 </li>
 </ul>
@@ -727,6 +728,8 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>dbs</code> - the dbs to set</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 </dl>
 </li>
 </ul>
@@ -736,7 +739,7 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <ul class="blockList">
 <li class="blockList">
 <h4>withDb</h4>
-<pre class="methodSignature">public&nbsp;<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;withDb&#8203;(<a href="Db.html" title="class in io.inversion">Db</a>&nbsp;db)</pre>
+<pre class="methodSignature">public&nbsp;&lt;T extends <a href="Db.html" title="class in io.inversion">Db</a>&gt;&nbsp;<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;withDb&#8203;(<a href="Db.html" title="class in io.inversion">Db</a>&lt;T&gt;&nbsp;db)</pre>
 </li>
 </ul>
 <a id="getLoadTime()">
@@ -808,6 +811,16 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
                             java.lang.String...&nbsp;childFkProps)</pre>
 <div class="block">This method takes String instead of actual Collections and Properties as a convenience to people hand wiring up an Api.
  The referenced Collections and Properties actually have to exist already or you will get a NPE.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>parentCollectionName</code> - the name of the parent collection</dd>
+<dd><code>parentPropertyName</code> - the name of the json property for the parent that references the child</dd>
+<dd><code>childCollectionName</code> - the target child collection name</dd>
+<dd><code>childPropertyName</code> - the name of hte json property for the child that references the parent</dd>
+<dd><code>childFkProps</code> - names of the existing Properties that make up the foreign key</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
+</dl>
 </li>
 </ul>
 <a id="withRelationship(io.inversion.Collection,java.lang.String,io.inversion.Collection,java.lang.String,io.inversion.Property...)">
@@ -827,6 +840,16 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
  For collections backed by relational data sources (like a SQL db) the length of <code>childFkProps</code> will generally match the
  length of <code>parentCollections</code> primary index.  If the two don't match, then <code>childFkProps</code> must be 1.  In this
  case, the compound primary index of parentCollection will be encoded as an resourceKey in the single child table property.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>parentCollection</code> - the collection to add the relationship to</dd>
+<dd><code>parentPropertyName</code> - the name of the json property for the parent that references the child</dd>
+<dd><code>childCollection</code> - the target child collection</dd>
+<dd><code>childPropertyName</code> - the name of hte json property for the child that references the parent</dd>
+<dd><code>childFkProps</code> - Properties that make up the foreign key</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
+</dl>
 </li>
 </ul>
 <a id="getActions()">

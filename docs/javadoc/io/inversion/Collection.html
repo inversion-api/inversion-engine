@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":9,"i7":10,"i8":9,"i9":9,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":9,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":9,"i6":9,"i7":10,"i8":9,"i9":9,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":9,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -165,7 +165,7 @@ implements java.io.Serializable</pre>
  RestGet/Post/Put/Patch/DeleteAction are responsible for handling basic Rest semantics for interacting with Dbs via Collections.
  <p>
  TODO: check on test cases related to hasName and path matching
- TODO: need tests for entity keys with commas</div>
+ TODO: need tests for resource keys with commas</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../serialized-form.html#io.inversion.Collection">Serialized Form</a></dd>
@@ -420,116 +420,121 @@ implements java.io.Serializable</pre>
 </td>
 </tr>
 <tr id="i17" class="rowColor">
+<td class="colFirst"><code><a href="Index.html" title="class in io.inversion">Index</a></code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIndexByType(java.lang.String)">getIndexByType</a></span>&#8203;(java.lang.String&nbsp;indexType)</code></th>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>java.util.ArrayList&lt;<a href="Index.html" title="class in io.inversion">Index</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getIndexes()">getIndexes</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getName()">getName</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="Index.html" title="class in io.inversion">Index</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPrimaryIndex()">getPrimaryIndex</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Finds the first unique Index with the fewest number of Properties.</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>java.util.List&lt;<a href="Property.html" title="class in io.inversion">Property</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getProperties()">getProperties</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="Property.html" title="class in io.inversion">Property</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getProperty(java.lang.String)">getProperty</a></span>&#8203;(java.lang.String&nbsp;jsonOrColumnName)</code></th>
 <td class="colLast">
 <div class="block">Convenience overload of <a href="#findProperty(java.lang.String)"><code>findProperty(String)</code></a>.</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="Property.html" title="class in io.inversion">Property</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPropertyByColumnName(java.lang.String)">getPropertyByColumnName</a></span>&#8203;(java.lang.String&nbsp;columnName)</code></th>
 <td class="colLast">
 <div class="block">Find the property with case insensitive columnName</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="Property.html" title="class in io.inversion">Property</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getPropertyByJsonName(java.lang.String)">getPropertyByJsonName</a></span>&#8203;(java.lang.String&nbsp;jsonName)</code></th>
 <td class="colLast">
 <div class="block">Find the property with case insensitive jsonName</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code><a href="Relationship.html" title="class in io.inversion">Relationship</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRelationship(java.lang.String)">getRelationship</a></span>&#8203;(java.lang.String&nbsp;name)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>java.util.List&lt;<a href="Relationship.html" title="class in io.inversion">Relationship</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRelationships()">getRelationships</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getTableName()">getTableName</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#hasName(java.lang.String)">hasName</a></span>&#8203;(java.lang.String&nbsp;nameOrAlias)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isExclude()">isExclude</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isLinkTbl()">isLinkTbl</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Returns true if all columns are foreign keys.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#main(java.lang.String%5B%5D)">main</a></span>&#8203;(java.lang.String[]&nbsp;args)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeIndex(io.inversion.Index)">removeIndex</a></span>&#8203;(<a href="Index.html" title="class in io.inversion">Index</a>&nbsp;index)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeProperty(io.inversion.Property)">removeProperty</a></span>&#8203;(<a href="Property.html" title="class in io.inversion">Property</a>&nbsp;prop)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeRelationship(io.inversion.Relationship)">removeRelationship</a></span>&#8203;(<a href="Relationship.html" title="class in io.inversion">Relationship</a>&nbsp;relationship)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withAliases(java.lang.String...)">withAliases</a></span>&#8203;(java.lang.String...&nbsp;aliases)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withDb(io.inversion.Db)">withDb</a></span>&#8203;(<a href="Db.html" title="class in io.inversion">Db</a>&nbsp;db)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withExclude(boolean)">withExclude</a></span>&#8203;(boolean&nbsp;exclude)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withIndex(java.lang.String,java.lang.String,boolean,java.lang.String...)">withIndex</a></span>&#8203;(java.lang.String&nbsp;name,
          java.lang.String&nbsp;type,
@@ -539,12 +544,12 @@ implements java.io.Serializable</pre>
 <div class="block">Fluent utility method for constructing and adding a new Index.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withIndexes(io.inversion.Index...)">withIndexes</a></span>&#8203;(<a href="Index.html" title="class in io.inversion">Index</a>...&nbsp;indexes)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withManyToOneRelationship(io.inversion.Collection,java.lang.String,io.inversion.Property...)">withManyToOneRelationship</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;parentCollection,
                          java.lang.String&nbsp;childPropertyName,
@@ -553,7 +558,7 @@ implements java.io.Serializable</pre>
 <div class="block">Fluent utility method to construct a Relationship and associated Indexes.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withManyToOneRelationship(io.inversion.Collection,java.lang.String,java.lang.String...)">withManyToOneRelationship</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;parentCollection,
                          java.lang.String&nbsp;childPropertyName,
@@ -562,7 +567,7 @@ implements java.io.Serializable</pre>
 <div class="block">Fluent utility method to construct a Relationship and associated Indexes.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withOneToManyRelationship(java.lang.String,io.inversion.Collection,java.lang.String,io.inversion.Property...)">withOneToManyRelationship</a></span>&#8203;(java.lang.String&nbsp;parentPropertyName,
                          <a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;childCollection,
@@ -572,7 +577,7 @@ implements java.io.Serializable</pre>
 <div class="block">Fluent utility method to construct a Relationship and associated Indexes.</div>
 </td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withOneToManyRelationship(java.lang.String,io.inversion.Collection,java.lang.String,java.lang.String...)">withOneToManyRelationship</a></span>&#8203;(java.lang.String&nbsp;parentPropertyName,
                          <a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;childCollection,
@@ -582,14 +587,14 @@ implements java.io.Serializable</pre>
 <div class="block">Fluent utility method to construct a Relationship and associated Indexes.</div>
 </td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withProperties(io.inversion.Property...)">withProperties</a></span>&#8203;(<a href="Property.html" title="class in io.inversion">Property</a>...&nbsp;props)</code></th>
 <td class="colLast">
 <div class="block">Adds the property definitions to this Collection.</div>
 </td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withProperty(java.lang.String,java.lang.String)">withProperty</a></span>&#8203;(java.lang.String&nbsp;name,
             java.lang.String&nbsp;type)</code></th>
@@ -597,7 +602,7 @@ implements java.io.Serializable</pre>
 <div class="block">Fluent utility method for constructing a new Property and adding it to the Collection.</div>
 </td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withProperty(java.lang.String,java.lang.String,boolean)">withProperty</a></span>&#8203;(java.lang.String&nbsp;name,
             java.lang.String&nbsp;type,
@@ -606,19 +611,19 @@ implements java.io.Serializable</pre>
 <div class="block">Fluent utility method for constructing a new Property and adding it to the Collection.</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withRelationship(io.inversion.Relationship)">withRelationship</a></span>&#8203;(<a href="Relationship.html" title="class in io.inversion">Relationship</a>&nbsp;relationship)</code></th>
 <td class="colLast">
 <div class="block">Add a new Relationship if a Relationship with the same name does not already exist.</div>
 </td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withRelationships(io.inversion.Relationship...)">withRelationships</a></span>&#8203;(<a href="Relationship.html" title="class in io.inversion">Relationship</a>...&nbsp;relationships)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withTableName(java.lang.String)">withTableName</a></span>&#8203;(java.lang.String&nbsp;name)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -654,6 +659,48 @@ implements java.io.Serializable</pre>
 <!--   -->
 </a>
 <h3>Field Detail</h3>
+<a id="aliases">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>aliases</h4>
+<pre>protected final&nbsp;java.util.Set&lt;java.lang.String&gt; aliases</pre>
+<div class="block">Additional names that should cause this Collection to match to a Request.
+ <p>
+ For example, in an e-commerce environment, you may overload the "orders" collection with aliases "cart", "basket", and "bag".</div>
+</li>
+</ul>
+<a id="properties">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>properties</h4>
+<pre>protected final&nbsp;java.util.ArrayList&lt;<a href="Property.html" title="class in io.inversion">Property</a>&gt; properties</pre>
+<div class="block">Properties map database column names to JSON property names.</div>
+</li>
+</ul>
+<a id="indexes">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>indexes</h4>
+<pre>protected final&nbsp;java.util.ArrayList&lt;<a href="Index.html" title="class in io.inversion">Index</a>&gt; indexes</pre>
+<div class="block">Representation of underlying Db datasource indexes.</div>
+</li>
+</ul>
+<a id="relationships">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>relationships</h4>
+<pre>protected final&nbsp;java.util.ArrayList&lt;<a href="Relationship.html" title="class in io.inversion">Relationship</a>&gt; relationships</pre>
+<div class="block">Relationships like resources in one collection to the resources in another collection.</div>
+</li>
+</ul>
 <a id="db">
 <!--   -->
 </a>
@@ -674,48 +721,6 @@ implements java.io.Serializable</pre>
 <div class="block">The backend datasource name that this Collection operates on.
  <p>
  The tableName might be "ORDER_DETAIL" but the Collection might be named "orderDetails".</div>
-</li>
-</ul>
-<a id="aliases">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>aliases</h4>
-<pre>protected&nbsp;java.util.Set&lt;java.lang.String&gt; aliases</pre>
-<div class="block">Additional names that should cause this Collection to match to a Request.
- <p>
- For example, in an e-commerce environment, you may overload the "orders" collection with aliases "cart", "basket", and "bag".</div>
-</li>
-</ul>
-<a id="properties">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>properties</h4>
-<pre>protected&nbsp;java.util.ArrayList&lt;<a href="Property.html" title="class in io.inversion">Property</a>&gt; properties</pre>
-<div class="block">Properties map database column names to JSON property names.</div>
-</li>
-</ul>
-<a id="indexes">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>indexes</h4>
-<pre>protected&nbsp;java.util.ArrayList&lt;<a href="Index.html" title="class in io.inversion">Index</a>&gt; indexes</pre>
-<div class="block">Representation of underlying Db datasource indexes.</div>
-</li>
-</ul>
-<a id="relationships">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>relationships</h4>
-<pre>protected&nbsp;java.util.ArrayList&lt;<a href="Relationship.html" title="class in io.inversion">Relationship</a>&gt; relationships</pre>
-<div class="block">Relationships like resources in one collection to the resources in another collection.</div>
 </li>
 </ul>
 <a id="exclude">
@@ -766,6 +771,117 @@ implements java.io.Serializable</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="encodeResourceKey(java.util.Map,io.inversion.Index)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>encodeResourceKey</h4>
+<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;encodeResourceKey&#8203;(java.util.Map&nbsp;values,
+                                                 <a href="Index.html" title="class in io.inversion">Index</a>&nbsp;index)</pre>
+<div class="block">Encodes the potentially multiple values of an index into a url path and query string safe single value.
+ <p>
+ In a typical REST Api configuration where you url paths might map to something like
+ "${endpoint}/${collection}/[${resource}][?{querystring}]", ${resource} is
+ the primary index of the resource that has been encoded here.
+ <p>
+ That might look like "/bookstore/books/12345" or in the case of a compound primary index
+ It might look like "/bookstore/orders/4567~abcde" where the "~" character is used to
+ separate parts of the key.
+ <p>
+ The names of the index fields are not encoded, only the values, relying on index property order to remain consistent.
+ <p>
+ This methods is used by various actions when constructing hypermedia urls that allow you to
+ uniquely identify individual resources (records in a Db) or to traverse Relationships.
+ <p>
+ The inverse of this method is <a href="#decodeResourceKeys(io.inversion.Index,java.lang.String)"><code>decodeResourceKeys(Index, String)</code></a> which is used to
+ decode inbound Url path and query params to determine which resource is being referenced.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>values</code> - column name to Property value mapping for a resource</dd>
+<dd><code>index</code> - the index identifying the values that should be encoded</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a url safe encoding of the index values separated by "~" characters or null if any of the values for an index key is null.</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="#encodeStr(java.lang.String)"><code>encodeStr(String)</code></a>, 
+<a href="#decodeResourceKeys(io.inversion.Index,java.lang.String)"><code>decodeResourceKeys(Index, String)</code></a></dd>
+</dl>
+</li>
+</ul>
+<a id="encodeResourceKey(java.util.List)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>encodeResourceKey</h4>
+<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;encodeResourceKey&#8203;(java.util.List&nbsp;pieces)</pre>
+<div class="block">Creates a "~" separated url safe concatenation of <code>pieces</code></div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>pieces</code> - key parts to be encoded</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a url safe encoding of the <code>pieces</code> separated by "~" characters</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="#encodeStr(java.lang.String)"><code>encodeStr(String)</code></a>, 
+<a href="#encodeResourceKey(java.util.Map,io.inversion.Index)"><code>encodeResourceKey(Map, Index)</code></a></dd>
+</dl>
+</li>
+</ul>
+<a id="main(java.lang.String[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>main</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;main&#8203;(java.lang.String[]&nbsp;args)</pre>
+</li>
+</ul>
+<a id="encodeStr(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>encodeStr</h4>
+<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;encodeStr&#8203;(java.lang.String&nbsp;string)</pre>
+<div class="block">Encodes non url safe characters into a friendly "@FOUR_DIGIT_HEX_VALUE" equivalent that itself will not be modified by URLEncoder.encode(String).
+ <p>
+ For example, encodeing "abcd/efg" would result in "abcd@002fefg" where "@002f" is the hex encoding for "/".
+ <p>
+ While "~" characters are considered url safe, the are specifically included for encoding so that
+ <a href="#decodeResourceKeys(io.inversion.Index,java.lang.String)"><code>decodeResourceKeys(Index, String)</code></a> can split a value on "~" before decoding its parts.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>string</code> - the string to encode</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a url safe string with non safe characters encoded as '@FOUR_DIGIT_HEX_VALUE'</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="https://stackoverflow.com/questions/695438/safe-characters-for-friendly-url">Safe characters for friendly urls</a>, 
+<a href="#encodeResourceKey(java.util.Map,io.inversion.Index)"><code>encodeResourceKey(Map, Index)</code></a>, 
+<a href="#decodeResourceKeys(io.inversion.Index,java.lang.String)"><code>decodeResourceKeys(Index, String)</code></a>, 
+<a href="#decodeStr(java.lang.String)"><code>decodeStr(String)</code></a></dd>
+</dl>
+</li>
+</ul>
+<a id="decodeStr(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>decodeStr</h4>
+<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;decodeStr&#8203;(java.lang.String&nbsp;string)</pre>
+<div class="block">The reciprocal of <a href="#encodeStr(java.lang.String)"><code>encodeStr(String)</code></a> that replaces "\@[0-9a-f]{4}" hex sequences with the unescaped oritional unescaped character.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>string</code> - the string to decode</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a string with characters escaped to their hex equivalent replaced with the unescaped value.</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="#encodeResourceKey(java.util.Map,io.inversion.Index)"><code>encodeResourceKey(Map, Index)</code></a>, 
+<a href="#decodeResourceKeys(io.inversion.Index,java.lang.String)"><code>decodeResourceKeys(Index, String)</code></a>, 
+<a href="#encodeStr(java.lang.String)"><code>encodeStr(String)</code></a></dd>
+</dl>
+</li>
+</ul>
 <a id="getDefaultIncludeMatch()">
 <!--   -->
 </a>
@@ -1068,6 +1184,21 @@ implements java.io.Serializable</pre>
 </dl>
 </li>
 </ul>
+<a id="getIndexByType(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getIndexByType</h4>
+<pre class="methodSignature">public&nbsp;<a href="Index.html" title="class in io.inversion">Index</a>&nbsp;getIndexByType&#8203;(java.lang.String&nbsp;indexType)</pre>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>indexType</code> - the case insensative index type identifier</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the first index with type = indexType</dd>
+</dl>
+</li>
+</ul>
 <a id="getIndex(java.lang.String)">
 <!--   -->
 </a>
@@ -1241,6 +1372,7 @@ implements java.io.Serializable</pre>
 <div class="block">Fluent utility method to construct a Relationship and associated Indexes.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>parentCollection</code> - the parent collection of the relationship being created</dd>
 <dd><code>childPropertyName</code> - name of the json property that will hold this relationship reference</dd>
 <dd><code>childFkProps</code> - names of the existing Properties that make up the foreign key</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -1373,120 +1505,11 @@ implements java.io.Serializable</pre>
 <div class="block">Encodes the potentially multiple values of a resources primary index into a url path safe single value.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>values</code> - </dd>
+<dd><code>values</code> - the key value pairs to encode</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a url safe encoding of the resources primary index values</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#encodeResourceKey(java.util.Map,io.inversion.Index)"><code>encodeResourceKey(Map, Index)</code></a></dd>
-</dl>
-</li>
-</ul>
-<a id="encodeResourceKey(java.util.Map,io.inversion.Index)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>encodeResourceKey</h4>
-<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;encodeResourceKey&#8203;(java.util.Map&nbsp;values,
-                                                 <a href="Index.html" title="class in io.inversion">Index</a>&nbsp;index)</pre>
-<div class="block">Encodes the potentially multiple values of an index into a url path and query string safe single value.
- <p>
- In a typical REST Api configuration where you url paths might map to something like
- "${endpoint}/${collection}/[${resource}][?{querystring}]", ${resource} is
- the primary index of the resource that has been encoded here.
- <p>
- That might look like "/bookstore/books/12345" or in the case of a compound primary index
- It might look like "/bookstore/orders/4567~abcde" where the "~" character is used to
- separate parts of the key.
- <p>
- The names of the index fields are not encoded, only the values, relying on index property order to remain consistent.
- <p>
- This methods is used by various actions when constructing hypermedia urls that allow you to
- uniquely identify individual resources (records in a Db) or to traverse Relationships.
- <p>
- The inverse of this method is <a href="#decodeResourceKeys(io.inversion.Index,java.lang.String)"><code>decodeResourceKeys(Index, String)</code></a> which is used to
- decode inbound Url path and query params to determine which resource is being referenced.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>values</code> - column name to Property value mapping for a resource</dd>
-<dd><code>index</code> - the index identifying the values that should be encoded</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>a url safe encoding of the index values separated by "~" characters or null if any of the values for an index key is null.</dd>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#encodeStr(java.lang.String)"><code>encodeStr(String)</code></a>, 
-<a href="#decodeResourceKeys(io.inversion.Index,java.lang.String)"><code>decodeResourceKeys(Index, String)</code></a></dd>
-</dl>
-</li>
-</ul>
-<a id="encodeResourceKey(java.util.List)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>encodeResourceKey</h4>
-<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;encodeResourceKey&#8203;(java.util.List&nbsp;pieces)</pre>
-<div class="block">Creates a "~" separated url safe concatenation of <code>pieces</code></div>
-<dl>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>a url safe encoding of the <code>pieces</code> separated by "~" characters</dd>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#encodeStr(java.lang.String)"><code>encodeStr(String)</code></a>, 
-<a href="#encodeResourceKey(java.util.Map,io.inversion.Index)"><code>encodeResourceKey(Map, Index)</code></a></dd>
-</dl>
-</li>
-</ul>
-<a id="main(java.lang.String[])">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>main</h4>
-<pre class="methodSignature">public static&nbsp;void&nbsp;main&#8203;(java.lang.String[]&nbsp;args)</pre>
-</li>
-</ul>
-<a id="encodeStr(java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>encodeStr</h4>
-<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;encodeStr&#8203;(java.lang.String&nbsp;string)</pre>
-<div class="block">Encodes non url safe characters into a friendly "@FOUR_DIGIT_HEX_VALUE" equivalent that itself will not be modified by URLEncoder.encode(String).
- <p>
- For example, encodeing "abcd/efg" would result in "abcd@002fefg" where "@002f" is the hex encoding for "/".
- <p>
- While "~" characters are considered url safe, the are specifically included for encoding so that
- <a href="#decodeResourceKeys(io.inversion.Index,java.lang.String)"><code>decodeResourceKeys(Index, String)</code></a> can split a value on "~" before decoding its parts.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>string</code> - </dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>a url safe string with non safe characters encoded as '@FOUR_DIGIT_HEX_VALUE'</dd>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="https://stackoverflow.com/questions/695438/safe-characters-for-friendly-url">Safe characters for friendly urls</a>, 
-<a href="#encodeResourceKey(java.util.Map,io.inversion.Index)"><code>encodeResourceKey(Map, Index)</code></a>, 
-<a href="#decodeResourceKeys(io.inversion.Index,java.lang.String)"><code>decodeResourceKeys(Index, String)</code></a>, 
-<a href="#decodeStr(java.lang.String)"><code>decodeStr(String)</code></a></dd>
-</dl>
-</li>
-</ul>
-<a id="decodeStr(java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decodeStr</h4>
-<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;decodeStr&#8203;(java.lang.String&nbsp;string)</pre>
-<div class="block">The reciprocal of <a href="#encodeStr(java.lang.String)"><code>encodeStr(String)</code></a> that replaces "\@[0-9a-f]{4}" hex sequences with the unescaped oritional unescaped character.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>string</code> - </dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>a string with characters escaped to their hex equivalent replaced with the unescaped value.</dd>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#encodeResourceKey(java.util.Map,io.inversion.Index)"><code>encodeResourceKey(Map, Index)</code></a>, 
-<a href="#decodeResourceKeys(io.inversion.Index,java.lang.String)"><code>decodeResourceKeys(Index, String)</code></a>, 
-<a href="#encodeStr(java.lang.String)"><code>encodeStr(String)</code></a></dd>
 </dl>
 </li>
 </ul>
@@ -1500,7 +1523,7 @@ implements java.io.Serializable</pre>
 <div class="block">Decodes a resource key into its columnName / value parts.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>inKey</code> - </dd>
+<dd><code>inKey</code> - the resource key to decode</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the decoded columnName / value pairs.</dd>
 <dt><span class="seeLabel">See Also:</span></dt>

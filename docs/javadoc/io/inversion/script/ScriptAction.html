@@ -254,9 +254,7 @@ extends <a href="../Action.html" title="class in io.inversion">Action</a>&lt;<a 
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>java.util.LinkedHashMap&lt;java.lang.String,&#8203;<a href="../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#findScripts(io.inversion.Engine,io.inversion.Chain,io.inversion.Request)">findScripts</a></span>&#8203;(<a href="../Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine,
-           <a href="../Chain.html" title="class in io.inversion">Chain</a>&nbsp;chain,
-           <a href="../Request.html" title="class in io.inversion">Request</a>&nbsp;req)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#findScripts(io.inversion.Request)">findScripts</a></span>&#8203;(<a href="../Request.html" title="class in io.inversion">Request</a>&nbsp;req)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
@@ -379,6 +377,15 @@ extends <a href="../Action.html" title="class in io.inversion">Action</a>&lt;<a 
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="findScript(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>findScript</h4>
+<pre class="methodSignature">public static&nbsp;<a href="../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;findScript&#8203;(java.lang.String&nbsp;path)</pre>
+</li>
+</ul>
 <a id="run(io.inversion.Request,io.inversion.Response)">
 <!--   -->
 </a>
@@ -402,29 +409,18 @@ extends <a href="../Action.html" title="class in io.inversion">Action</a>&lt;<a 
 </dl>
 </li>
 </ul>
-<a id="findScripts(io.inversion.Engine,io.inversion.Chain,io.inversion.Request)">
+<a id="findScripts(io.inversion.Request)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>findScripts</h4>
-<pre class="methodSignature">public&nbsp;java.util.LinkedHashMap&lt;java.lang.String,&#8203;<a href="../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;&nbsp;findScripts&#8203;(<a href="../Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine,
-                                                                          <a href="../Chain.html" title="class in io.inversion">Chain</a>&nbsp;chain,
-                                                                          <a href="../Request.html" title="class in io.inversion">Request</a>&nbsp;req)
+<pre class="methodSignature">public&nbsp;java.util.LinkedHashMap&lt;java.lang.String,&#8203;<a href="../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;&nbsp;findScripts&#8203;(<a href="../Request.html" title="class in io.inversion">Request</a>&nbsp;req)
                                                                    throws <a href="../ApiException.html" title="class in io.inversion">ApiException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
-</li>
-</ul>
-<a id="findScript(java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>findScript</h4>
-<pre class="methodSignature">public static&nbsp;<a href="../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;findScript&#8203;(java.lang.String&nbsp;path)</pre>
 </li>
 </ul>
 <a id="getScriptsCollection()">
@@ -434,6 +430,15 @@ extends <a href="../Action.html" title="class in io.inversion">Action</a>&lt;<a 
 <li class="blockList">
 <h4>getScriptsCollection</h4>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getScriptsCollection()</pre>
+</li>
+</ul>
+<a id="setScriptsCollection(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setScriptsCollection</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;setScriptsCollection&#8203;(java.lang.String&nbsp;scriptsCollection)</pre>
 </li>
 </ul>
 <a id="getScriptsDir()">
@@ -452,15 +457,6 @@ extends <a href="../Action.html" title="class in io.inversion">Action</a>&lt;<a 
 <li class="blockList">
 <h4>withScriptsDir</h4>
 <pre class="methodSignature">public&nbsp;<a href="ScriptAction.html" title="class in io.inversion.script">ScriptAction</a>&nbsp;withScriptsDir&#8203;(java.lang.String&nbsp;scriptsDir)</pre>
-</li>
-</ul>
-<a id="setScriptsCollection(java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>setScriptsCollection</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;setScriptsCollection&#8203;(java.lang.String&nbsp;scriptsCollection)</pre>
 </li>
 </ul>
 <a id="getCacheExpireSeconds()">

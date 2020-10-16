@@ -146,7 +146,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <pre>public abstract class <span class="typeNameLabel">Action&lt;A extends Action&gt;</span>
 extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;A&gt;</pre>
 <div class="block">Actions perform some work when matched to a Request and potentially contribute to the content of the Response.
- <p>
  <h3>The Action Sandwich</h3>
  <p>
  Nearly the entire job of the Engine and Api Endpoint configuration is to match one or more Action subclass instances to a Request.
@@ -394,8 +393,8 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;A&gt;</pre
  Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>req</code> - </dd>
-<dd><code>res</code> - </dd>
+<dd><code>req</code> - the request to run</dd>
+<dd><code>res</code> - the response to populate</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -415,8 +414,8 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;A&gt;</pre
  Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>req</code> - </dd>
-<dd><code>res</code> - </dd>
+<dd><code>req</code> - the request to run</dd>
+<dd><code>res</code> - the response to populate</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -436,8 +435,8 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;A&gt;</pre
  Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>req</code> - </dd>
-<dd><code>res</code> - </dd>
+<dd><code>req</code> - the request to run</dd>
+<dd><code>res</code> - the response to populate</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -457,8 +456,8 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;A&gt;</pre
  Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>req</code> - </dd>
-<dd><code>res</code> - </dd>
+<dd><code>req</code> - the request to run</dd>
+<dd><code>res</code> - the response to populate</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -478,8 +477,8 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;A&gt;</pre
  Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>req</code> - </dd>
-<dd><code>res</code> - </dd>
+<dd><code>req</code> - the request to run</dd>
+<dd><code>res</code> - the response to populate</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>

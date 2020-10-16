@@ -172,7 +172,7 @@ extends java.lang.Object</pre>
 </td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>protected java.util.Map</code></td>
+<td class="colFirst"><code>protected <a href="JSNode.html" title="class in io.inversion.utils">JSNode</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#params">params</a></span></code></th>
 <td class="colLast">
 <div class="block">A case insensitive map of query string name/value pairs that preserves iteration order</div>
@@ -334,7 +334,7 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i15" class="rowColor">
 <td class="colFirst"><code>static java.lang.String</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toQueryString(java.util.Map)">toQueryString</a></span>&#8203;(java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&nbsp;params)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toQueryString(java.util.Map)">toQueryString</a></span>&#8203;(java.util.Map&nbsp;params)</code></th>
 <td class="colLast">
 <div class="block">Creates a UTF-8 url encoded query string, not including a leading "?" with key value pairs separated by a '&amp;'</div>
 </td>
@@ -425,7 +425,7 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>original</h4>
-<pre>protected&nbsp;java.lang.String original</pre>
+<pre>protected final&nbsp;java.lang.String original</pre>
 <div class="block">The url string as supplied to the constructor, with 'http://localhost/' prepended if the constructor url arg did not contain a host</div>
 </li>
 </ul>
@@ -475,7 +475,7 @@ extends java.lang.Object</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>params</h4>
-<pre>protected&nbsp;java.util.Map params</pre>
+<pre>protected&nbsp;<a href="JSNode.html" title="class in io.inversion.utils">JSNode</a> params</pre>
 <div class="block">A case insensitive map of query string name/value pairs that preserves iteration order
  <p>
  Implementation Node: <code>params</code>is not actually JSON, JSNode is used as the map
@@ -505,7 +505,7 @@ extends java.lang.Object</pre>
  If <code>url</code> does not start with "http://" or "https://" then "http://localhost/" will be prepended.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>url</code> - </dd>
+<dd><code>url</code> - url string</dd>
 </dl>
 </li>
 </ul>
@@ -519,6 +519,24 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="toQueryString(java.util.Map)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>toQueryString</h4>
+<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;toQueryString&#8203;(java.util.Map&nbsp;params)</pre>
+<div class="block">Creates a UTF-8 url encoded query string, not including a leading "?" with key value pairs separated by a '&amp;'</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>params</code> - the key/value pairs to encode</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a UTF-8 url encoded query string</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><code>URLEncoder.encode(String, String)</code></dd>
+</dl>
+</li>
+</ul>
 <a id="toString()">
 <!--   -->
 </a>
@@ -671,8 +689,10 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public&nbsp;<a href="Url.html" title="class in io.inversion.utils">Url</a>&nbsp;withQueryString&#8203;(java.lang.String&nbsp;queryString)</pre>
 <div class="block">Parses <code>queryString</code> and replace <code>params</code></div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>queryString</code> - query prams to add</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>this Url</dd>
+<dd>this</dd>
 </dl>
 </li>
 </ul>
@@ -686,6 +706,8 @@ extends java.lang.Object</pre>
 <div class="block">Adds all key/value pairs from <code>newParams</code> to <code>params</code>
  overwriting any exiting keys on a case insensitive basis</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>newParams</code> - name/value pairs to add to the query string params map</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>this</dd>
 </dl>
@@ -706,6 +728,7 @@ extends java.lang.Object</pre>
 <dd><code>name</code> - the key to add or overwrite, may not be null</dd>
 <dd><code>value</code> - the value, may be null</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 </dl>
 </li>
 </ul>
@@ -823,31 +846,13 @@ extends java.lang.Object</pre>
 <a id="getOriginal()">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>getOriginal</h4>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getOriginal()</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the url string used in constructing this Url.</dd>
-</dl>
-</li>
-</ul>
-<a id="toQueryString(java.util.Map)">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>toQueryString</h4>
-<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;toQueryString&#8203;(java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&nbsp;params)</pre>
-<div class="block">Creates a UTF-8 url encoded query string, not including a leading "?" with key value pairs separated by a '&amp;'</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>params</code> - the key/value pairs to encode</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>a UTF-8 url encoded query string</dd>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><code>URLEncoder.encode(String, String)</code></dd>
 </dl>
 </li>
 </ul>

@@ -152,14 +152,12 @@ extends <a href="../action/security/AuthAction.JwtUserDao.html" title="class in 
  be assigned Roles and Users can be assigned to Groups.
  This means users can be assigned permissions through
  any one of the following relationship paths.
- <p>
  <ol>
   <li>user-to-permission
   <li>user-to-group-to-permission
   <li>user-to-role-to-permission
   <li>user-to-group-to-role-to-permission
  </ol>
- <p>
  See users-h2.ddl for full underlying schema</div>
 </li>
 </ul>
@@ -271,12 +269,7 @@ extends <a href="../action/security/AuthAction.JwtUserDao.html" title="class in 
        int&nbsp;userId,
        java.lang.String&nbsp;api,
        java.lang.String&nbsp;tenant)</code></th>
-<td class="colLast">
-<div class="block">user -@gt; permission
- user -@gt; group -@gt; permission
- user -@gt; role -@gt; permission
- user -@gt; group -@gt; role -@gt; permission</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a></code></td>
@@ -505,17 +498,6 @@ extends <a href="../action/security/AuthAction.JwtUserDao.html" title="class in 
                        java.lang.String&nbsp;api,
                        java.lang.String&nbsp;tenant)
                 throws java.lang.Exception</pre>
-<div class="block">user -@gt; permission
- user -@gt; group -@gt; permission
- user -@gt; role -@gt; permission
- user -@gt; group -@gt; role -@gt; permission
- <p>
- UserPermission
- GroupPermission
- RolePermission
- UserGroup
- UserRole
- GroupRole</div>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code>java.lang.Exception</code></dd>

@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -200,7 +200,7 @@ extends <a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQu
 <!--   -->
 </a>
 <h3>Fields inherited from class&nbsp;io.inversion.rql.<a href="../rql/Builder.html" title="class in io.inversion.rql">Builder</a></h3>
-<code><a href="../rql/Builder.html#builders">builders</a>, <a href="../rql/Builder.html#functions">functions</a>, <a href="../rql/Builder.html#parent">parent</a>, <a href="../rql/Builder.html#parser">parser</a>, <a href="../rql/Builder.html#r">r</a>, <a href="../rql/Builder.html#terms">terms</a></code></li>
+<code><a href="../rql/Builder.html#builders">builders</a>, <a href="../rql/Builder.html#functions">functions</a>, <a href="../rql/Builder.html#parent">parent</a>, <a href="../rql/Builder.html#terms">terms</a></code></li>
 </ul>
 </li>
 </ul>
@@ -244,23 +244,30 @@ extends <a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQu
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asString(io.inversion.rql.Term)">asString</a></span>&#8203;(<a href="../rql/Term.html" title="class in io.inversion.rql">Term</a>&nbsp;term)</code></th>
+<td class="colLast">
+<div class="block">Overridden to exclude rdbms style '%' wildcards that are not needed for cosmos sw and ew queries.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>protected java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asVariableName(int)">asVariableName</a></span>&#8203;(int&nbsp;valuesPairIdx)</code></th>
 <td class="colLast">
 <div class="block">Cosmos does not use "?" ansi sql style prepared statement vars, it uses
  named variables prefixed with '@'.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>protected <a href="../rql/Where.html" title="class in io.inversion.rql">Where</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#createWhere()">createWhere</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../Results.html" title="class in io.inversion">Results</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doSelect()">doSelect</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>protected java.util.List&lt;<a href="../rql/Order.Sort.html" title="class in io.inversion.rql">Order.Sort</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getDefaultSorts(io.inversion.jdbc.SqlQuery.Parts)">getDefaultSorts</a></span>&#8203;(<a href="../jdbc/SqlQuery.Parts.html" title="class in io.inversion.jdbc">SqlQuery.Parts</a>&nbsp;parts)</code></th>
 <td class="colLast">
@@ -268,7 +275,7 @@ extends <a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQu
  the document identifier and the partition key.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#printExpression(io.inversion.rql.Term,java.util.List,java.util.List)">printExpression</a></span>&#8203;(<a href="../rql/Term.html" title="class in io.inversion.rql">Term</a>&nbsp;term,
                java.util.List&lt;java.lang.String&gt;&nbsp;dynamicSqlChildText,
@@ -278,7 +285,7 @@ extends <a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQu
  way a specific function is printed.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#printLimitClause(io.inversion.jdbc.SqlQuery.Parts,int,int)">printLimitClause</a></span>&#8203;(<a href="../jdbc/SqlQuery.Parts.html" title="class in io.inversion.jdbc">SqlQuery.Parts</a>&nbsp;parts,
                 int&nbsp;offset,
@@ -287,7 +294,7 @@ extends <a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQu
 <div class="block">Both offset and limit are required per cosmos spec.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toSql(boolean)">toSql</a></span>&#8203;(boolean&nbsp;preparedStmt)</code></th>
 <td class="colLast">
@@ -301,21 +308,21 @@ extends <a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQu
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;io.inversion.jdbc.<a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a></h3>
-<code><a href="../jdbc/SqlQuery.html#addTerm(java.lang.String,io.inversion.rql.Term)">addTerm</a>, <a href="../jdbc/SqlQuery.html#asBool(java.lang.String)">asBool</a>, <a href="../jdbc/SqlQuery.html#asNum(java.lang.String)">asNum</a>, <a href="../jdbc/SqlQuery.html#asString(io.inversion.rql.Term)">asString</a>, <a href="../jdbc/SqlQuery.html#asString(java.lang.String)">asString</a>, <a href="../jdbc/SqlQuery.html#concatAll(java.lang.String,java.lang.String,java.util.List)">concatAll</a>, <a href="../jdbc/SqlQuery.html#getDynamicStmt()">getDynamicStmt</a>, <a href="../jdbc/SqlQuery.html#getPreparedStmt()">getPreparedStmt</a>, <a href="../jdbc/SqlQuery.html#getType()">getType</a>, <a href="../jdbc/SqlQuery.html#isBool(io.inversion.rql.Term)">isBool</a>, <a href="../jdbc/SqlQuery.html#isCol(io.inversion.rql.Term)">isCol</a>, <a href="../jdbc/SqlQuery.html#isNum(io.inversion.rql.Term)">isNum</a>, <a href="../jdbc/SqlQuery.html#printCol(java.lang.String)">printCol</a>, <a href="../jdbc/SqlQuery.html#printGroupClause(io.inversion.jdbc.SqlQuery.Parts,java.util.List)">printGroupClause</a>, <a href="../jdbc/SqlQuery.html#printInitialSelect(io.inversion.jdbc.SqlQuery.Parts)">printInitialSelect</a>, <a href="../jdbc/SqlQuery.html#printJoins(io.inversion.jdbc.SqlQuery.Parts,java.util.LinkedHashMap)">printJoins</a>, <a href="../jdbc/SqlQuery.html#printOrderClause(io.inversion.jdbc.SqlQuery.Parts,java.util.List)">printOrderClause</a>, <a href="../jdbc/SqlQuery.html#printSql(io.inversion.jdbc.SqlQuery.Parts)">printSql</a>, <a href="../jdbc/SqlQuery.html#printTableAlias()">printTableAlias</a>, <a href="../jdbc/SqlQuery.html#printTerm(io.inversion.rql.Term,java.lang.String,boolean)">printTerm</a>, <a href="../jdbc/SqlQuery.html#printTermsSelect(io.inversion.jdbc.SqlQuery.Parts,boolean)">printTermsSelect</a>, <a href="../jdbc/SqlQuery.html#printWhereClause(io.inversion.jdbc.SqlQuery.Parts,java.util.List,boolean)">printWhereClause</a>, <a href="../jdbc/SqlQuery.html#queryFoundRows(java.sql.Connection,java.lang.String,java.util.List)">queryFoundRows</a>, <a href="../jdbc/SqlQuery.html#quoteCol(java.lang.String)">quoteCol</a>, <a href="../jdbc/SqlQuery.html#replace(io.inversion.rql.Term,io.inversion.rql.Term,int,java.lang.String,java.lang.String)">replace</a>, <a href="../jdbc/SqlQuery.html#withColumnQuote(char)">withColumnQuote</a>, <a href="../jdbc/SqlQuery.html#withDb(D)">withDb</a>, <a href="../jdbc/SqlQuery.html#withStringQuote(char)">withStringQuote</a>, <a href="../jdbc/SqlQuery.html#withType(java.lang.String)">withType</a></code></li>
+<code><a href="../jdbc/SqlQuery.html#addTerm(java.lang.String,io.inversion.rql.Term)">addTerm</a>, <a href="../jdbc/SqlQuery.html#asBool(java.lang.String)">asBool</a>, <a href="../jdbc/SqlQuery.html#asNum(java.lang.String)">asNum</a>, <a href="../jdbc/SqlQuery.html#asString(java.lang.String)">asString</a>, <a href="../jdbc/SqlQuery.html#concatAll(java.lang.String,java.lang.String,java.util.List)">concatAll</a>, <a href="../jdbc/SqlQuery.html#getDynamicStmt()">getDynamicStmt</a>, <a href="../jdbc/SqlQuery.html#getPreparedStmt()">getPreparedStmt</a>, <a href="../jdbc/SqlQuery.html#getType()">getType</a>, <a href="../jdbc/SqlQuery.html#isBool(io.inversion.rql.Term)">isBool</a>, <a href="../jdbc/SqlQuery.html#isCol(io.inversion.rql.Term)">isCol</a>, <a href="../jdbc/SqlQuery.html#isNum(io.inversion.rql.Term)">isNum</a>, <a href="../jdbc/SqlQuery.html#printCol(java.lang.String)">printCol</a>, <a href="../jdbc/SqlQuery.html#printGroupClause(io.inversion.jdbc.SqlQuery.Parts,java.util.List)">printGroupClause</a>, <a href="../jdbc/SqlQuery.html#printInitialSelect(io.inversion.jdbc.SqlQuery.Parts)">printInitialSelect</a>, <a href="../jdbc/SqlQuery.html#printJoins(io.inversion.jdbc.SqlQuery.Parts,java.util.LinkedHashMap)">printJoins</a>, <a href="../jdbc/SqlQuery.html#printOrderClause(io.inversion.jdbc.SqlQuery.Parts,java.util.List)">printOrderClause</a>, <a href="../jdbc/SqlQuery.html#printSql(io.inversion.jdbc.SqlQuery.Parts)">printSql</a>, <a href="../jdbc/SqlQuery.html#printTableAlias()">printTableAlias</a>, <a href="../jdbc/SqlQuery.html#printTerm(io.inversion.rql.Term,java.lang.String,boolean)">printTerm</a>, <a href="../jdbc/SqlQuery.html#printTermsSelect(io.inversion.jdbc.SqlQuery.Parts,boolean)">printTermsSelect</a>, <a href="../jdbc/SqlQuery.html#printWhereClause(io.inversion.jdbc.SqlQuery.Parts,java.util.List,boolean)">printWhereClause</a>, <a href="../jdbc/SqlQuery.html#queryFoundRows(java.sql.Connection,java.lang.String,java.util.List)">queryFoundRows</a>, <a href="../jdbc/SqlQuery.html#quoteCol(java.lang.String)">quoteCol</a>, <a href="../jdbc/SqlQuery.html#replace(io.inversion.rql.Term,io.inversion.rql.Term,int,java.lang.String,java.lang.String)">replace</a>, <a href="../jdbc/SqlQuery.html#withColumnQuote(char)">withColumnQuote</a>, <a href="../jdbc/SqlQuery.html#withDb(D)">withDb</a>, <a href="../jdbc/SqlQuery.html#withStringQuote(char)">withStringQuote</a>, <a href="../jdbc/SqlQuery.html#withType(java.lang.String)">withType</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.io.inversion.rql.Query">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;io.inversion.rql.<a href="../rql/Query.html" title="class in io.inversion.rql">Query</a></h3>
-<code><a href="../rql/Query.html#clearValues()">clearValues</a>, <a href="../rql/Query.html#createFrom()">createFrom</a>, <a href="../rql/Query.html#createGroup()">createGroup</a>, <a href="../rql/Query.html#createOrder()">createOrder</a>, <a href="../rql/Query.html#createPage()">createPage</a>, <a href="../rql/Query.html#createParser()">createParser</a>, <a href="../rql/Query.html#createSelect()">createSelect</a>, <a href="../rql/Query.html#getBuilders()">getBuilders</a>, <a href="../rql/Query.html#getCollection()">getCollection</a>, <a href="../rql/Query.html#getColValue(int)">getColValue</a>, <a href="../rql/Query.html#getColValueKeys()">getColValueKeys</a>, <a href="../rql/Query.html#getColValues()">getColValues</a>, <a href="../rql/Query.html#getDb()">getDb</a>, <a href="../rql/Query.html#getFrom()">getFrom</a>, <a href="../rql/Query.html#getGroup()">getGroup</a>, <a href="../rql/Query.html#getNumValues()">getNumValues</a>, <a href="../rql/Query.html#getOrder()">getOrder</a>, <a href="../rql/Query.html#getPage()">getPage</a>, <a href="../rql/Query.html#getParser()">getParser</a>, <a href="../rql/Query.html#getSelect()">getSelect</a>, <a href="../rql/Query.html#getValues()">getValues</a>, <a href="../rql/Query.html#getWhere()">getWhere</a>, <a href="../rql/Query.html#isDryRun()">isDryRun</a>, <a href="../rql/Query.html#withCollection(io.inversion.Collection)">withCollection</a>, <a href="../rql/Query.html#withColValue(java.lang.String,java.lang.Object)">withColValue</a>, <a href="../rql/Query.html#withDryRun(boolean)">withDryRun</a>, <a href="../rql/Query.html#withTerm(io.inversion.rql.Term)">withTerm</a></code></li>
+<code><a href="../rql/Query.html#clearValues()">clearValues</a>, <a href="../rql/Query.html#createFrom()">createFrom</a>, <a href="../rql/Query.html#createGroup()">createGroup</a>, <a href="../rql/Query.html#createOrder()">createOrder</a>, <a href="../rql/Query.html#createPage()">createPage</a>, <a href="../rql/Query.html#createSelect()">createSelect</a>, <a href="../rql/Query.html#getBuilders()">getBuilders</a>, <a href="../rql/Query.html#getCollection()">getCollection</a>, <a href="../rql/Query.html#getColValue(int)">getColValue</a>, <a href="../rql/Query.html#getColValueKeys()">getColValueKeys</a>, <a href="../rql/Query.html#getColValues()">getColValues</a>, <a href="../rql/Query.html#getDb()">getDb</a>, <a href="../rql/Query.html#getFrom()">getFrom</a>, <a href="../rql/Query.html#getGroup()">getGroup</a>, <a href="../rql/Query.html#getNumValues()">getNumValues</a>, <a href="../rql/Query.html#getOrder()">getOrder</a>, <a href="../rql/Query.html#getPage()">getPage</a>, <a href="../rql/Query.html#getSelect()">getSelect</a>, <a href="../rql/Query.html#getValues()">getValues</a>, <a href="../rql/Query.html#getWhere()">getWhere</a>, <a href="../rql/Query.html#isDryRun()">isDryRun</a>, <a href="../rql/Query.html#withCollection(io.inversion.Collection)">withCollection</a>, <a href="../rql/Query.html#withColValue(java.lang.String,java.lang.Object)">withColValue</a>, <a href="../rql/Query.html#withDryRun(boolean)">withDryRun</a>, <a href="../rql/Query.html#withTerm(io.inversion.rql.Term)">withTerm</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.io.inversion.rql.Builder">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;io.inversion.rql.<a href="../rql/Builder.html" title="class in io.inversion.rql">Builder</a></h3>
-<code><a href="../rql/Builder.html#clearFunctions()">clearFunctions</a>, <a href="../rql/Builder.html#find(java.lang.String...)">find</a>, <a href="../rql/Builder.html#find(java.lang.String,int)">find</a>, <a href="../rql/Builder.html#findAll(java.lang.String)">findAll</a>, <a href="../rql/Builder.html#findInt(java.lang.String,int,int)">findInt</a>, <a href="../rql/Builder.html#findTerm(java.lang.String,java.lang.String...)">findTerm</a>, <a href="../rql/Builder.html#getParent()">getParent</a>, <a href="../rql/Builder.html#getRoot()">getRoot</a>, <a href="../rql/Builder.html#getTerms()">getTerms</a>, <a href="../rql/Builder.html#isFunction(java.lang.String)">isFunction</a>, <a href="../rql/Builder.html#parse(java.lang.Object...)">parse</a>, <a href="../rql/Builder.html#r()">r</a>, <a href="../rql/Builder.html#removeBuilder(io.inversion.rql.Builder)">removeBuilder</a>, <a href="../rql/Builder.html#toString()">toString</a>, <a href="../rql/Builder.html#toString(java.util.List)">toString</a>, <a href="../rql/Builder.html#withBuilder(io.inversion.rql.Builder)">withBuilder</a>, <a href="../rql/Builder.html#withFunctions(java.lang.String...)">withFunctions</a>, <a href="../rql/Builder.html#withFunctions(java.util.Collection)">withFunctions</a>, <a href="../rql/Builder.html#withParent(P)">withParent</a>, <a href="../rql/Builder.html#withParser(io.inversion.rql.RqlParser)">withParser</a>, <a href="../rql/Builder.html#withTerm(java.lang.String)">withTerm</a>, <a href="../rql/Builder.html#withTerm(java.lang.String,java.lang.Object...)">withTerm</a>, <a href="../rql/Builder.html#withTerms(java.lang.Object...)">withTerms</a></code></li>
+<code><a href="../rql/Builder.html#clearFunctions()">clearFunctions</a>, <a href="../rql/Builder.html#find(java.lang.String...)">find</a>, <a href="../rql/Builder.html#find(java.lang.String,int)">find</a>, <a href="../rql/Builder.html#findAll(java.lang.String)">findAll</a>, <a href="../rql/Builder.html#findInt(java.lang.String,int,int)">findInt</a>, <a href="../rql/Builder.html#findTerm(java.lang.String,java.lang.String...)">findTerm</a>, <a href="../rql/Builder.html#getParent()">getParent</a>, <a href="../rql/Builder.html#getRoot()">getRoot</a>, <a href="../rql/Builder.html#getTerms()">getTerms</a>, <a href="../rql/Builder.html#isFunction(java.lang.String)">isFunction</a>, <a href="../rql/Builder.html#parse(java.lang.Object...)">parse</a>, <a href="../rql/Builder.html#r()">r</a>, <a href="../rql/Builder.html#removeBuilder(io.inversion.rql.Builder)">removeBuilder</a>, <a href="../rql/Builder.html#toString()">toString</a>, <a href="../rql/Builder.html#toString(java.util.List)">toString</a>, <a href="../rql/Builder.html#withBuilder(io.inversion.rql.Builder)">withBuilder</a>, <a href="../rql/Builder.html#withFunctions(java.lang.String...)">withFunctions</a>, <a href="../rql/Builder.html#withFunctions(java.util.Collection)">withFunctions</a>, <a href="../rql/Builder.html#withParent(P)">withParent</a>, <a href="../rql/Builder.html#withTerm(java.lang.String)">withTerm</a>, <a href="../rql/Builder.html#withTerm(java.lang.String,java.lang.Object...)">withTerm</a>, <a href="../rql/Builder.html#withTerms(java.lang.Object...)">withTerms</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -466,6 +473,22 @@ extends <a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQu
 </dl>
 </li>
 </ul>
+<a id="asString(io.inversion.rql.Term)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>asString</h4>
+<pre class="methodSignature">protected&nbsp;java.lang.String&nbsp;asString&#8203;(<a href="../rql/Term.html" title="class in io.inversion.rql">Term</a>&nbsp;term)</pre>
+<div class="block">Overridden to exclude rdbms style '%' wildcards that are not needed for cosmos sw and ew queries.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../jdbc/SqlQuery.html#asString(io.inversion.rql.Term)">asString</a></code>&nbsp;in class&nbsp;<code><a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a>&lt;<a href="CosmosDb.html" title="class in io.inversion.cosmosdb">CosmosDb</a>&gt;</code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the term as a string approperiate for use in a cosmos query</dd>
+</dl>
+</li>
+</ul>
 <a id="printExpression(io.inversion.rql.Term,java.util.List,java.util.List)">
 <!--   -->
 </a>
@@ -481,7 +504,12 @@ extends <a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQu
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../jdbc/SqlQuery.html#printExpression(io.inversion.rql.Term,java.util.List,java.util.List)">printExpression</a></code>&nbsp;in class&nbsp;<code><a href="../jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a>&lt;<a href="CosmosDb.html" title="class in io.inversion.cosmosdb">CosmosDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>term</code> - the term to print</dd>
+<dd><code>dynamicSqlChildText</code> - child tokens printed as dynamic sql</dd>
+<dd><code>preparedStmtChildText</code> - child tokens printed as prepared statements</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the sql statement for term</dd>
 </dl>
 </li>
 </ul>

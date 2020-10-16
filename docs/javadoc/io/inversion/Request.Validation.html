@@ -250,7 +250,7 @@ extends java.lang.Object</pre>
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#fail(java.lang.String)">fail</a></span>&#8203;(java.lang.String&nbsp;defaultErrorMessage)</code></th>
 <td class="colLast">
-<div class="block">Throws an ApiException 400 using the provided custom error message.</div>
+<div class="block">Throws an ApiException 400 using customErrorMessage or defaultErrorMessage</div>
 </td>
 </tr>
 <tr id="i9" class="rowColor">
@@ -400,7 +400,10 @@ extends java.lang.Object</pre>
  found at <code>pathOrProp</code>.  If <code>childProps</code> are null/empty
  then  <code>pathOrProp</code> must not be null.</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>childProps</code> - the child properties to check for</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code> - 400 if the referenced validation is null.</dd>
 </dl>
@@ -612,14 +615,14 @@ extends java.lang.Object</pre>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>fail</h4>
-<pre class="methodSignature">protected&nbsp;void&nbsp;fail&#8203;(java.lang.String&nbsp;defaultErrorMessage)</pre>
-<div class="block">Throws an ApiException 400 using the provided custom error message.  If a custom error message
- was not provided, a default error message is utilized.</div>
+<pre class="methodSignature">protected&nbsp;void&nbsp;fail&#8203;(java.lang.String&nbsp;defaultErrorMessage)
+             throws <a href="ApiException.html" title="class in io.inversion">ApiException</a></pre>
+<div class="block">Throws an ApiException 400 using customErrorMessage or defaultErrorMessage</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>defaultErrorMessage</code> - </dd>
+<dd><code>defaultErrorMessage</code> - the default error message</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
+<dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code> - always</dd>
 </dl>
 </li>
 </ul>
