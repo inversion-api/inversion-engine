@@ -97,6 +97,12 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
             partKeyCol = partKeyIdx.getName();//getProperty(0).getColumnName();
             Term partKeyTerm = findTerm(partKeyCol, "eq");
 
+            if(partKeyTerm == null) {
+                //TODO: need to get all of them...but then what
+                partKeyCol = partKeyIdx.getProperty(0).getColumnName();
+                partKeyTerm = findTerm(partKeyCol, "eq");
+            }
+
             if (partKeyTerm != null && partKeyTerm.getParent() == null) {
                 partKey = partKeyTerm.getToken(1);
             } else if ("id".equalsIgnoreCase(partKeyCol)) {
