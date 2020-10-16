@@ -194,7 +194,7 @@ public abstract class Db<T extends Db> {
      * @param api the api shutting down
      */
     protected void doShutdown(Api api) {
-
+        //default implementation does nothing, subclass can override if they need to close resources on shutdown
     }
 
     public boolean isRunning(Api api) {
@@ -460,7 +460,7 @@ public abstract class Db<T extends Db> {
                 }
             }
 
-            for (String key : new ArrayList<String>(mapped.keySet())) {
+            for (String key : new ArrayList<>(mapped.keySet())) {
                 //TODO can optimize?
                 if (filterOutJsonProperty(collection, key)) {
                     mapped.remove(key);
@@ -503,7 +503,7 @@ public abstract class Db<T extends Db> {
             //when the foreign key is only one column but the related primary key is multiple columns, encode the FK as an resourceKey.
             String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
 
-            for (Object key : new ArrayList(srcRow.keySet()))
+            for (String key : new ArrayList<String>(srcRow.keySet()))
                 srcRow.remove(key);
 
             srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);

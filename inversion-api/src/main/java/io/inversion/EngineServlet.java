@@ -50,7 +50,6 @@ public class EngineServlet extends HttpServlet {
                 while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
                     stringBuilder.append(charBuffer, 0, bytesRead);
                 }
-            } else {
             }
         } catch (Exception ex) {
             throw ApiException.new400BadRequest(ex, "Unable to read request body");

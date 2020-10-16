@@ -102,7 +102,7 @@ public class Engine extends Rule<Engine> {
      * Called after <code>starting</code> has been set to true but before the {@code Configurator} is run or  any {@code Api}s have been started.
      */
     protected void startup0() {
-
+        //implement me
     }
 
     /**
@@ -929,6 +929,7 @@ public class Engine extends Rule<Engine> {
          * @param engine the Engine starting
          */
         default void onStartup(Engine engine) {
+            //implement me
         }
 
         /**
@@ -938,6 +939,7 @@ public class Engine extends Rule<Engine> {
          * @param engine the Engine stopping
          */
         default void onShutdown(Engine engine) {
+            //implement me
         }
     }
 

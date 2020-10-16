@@ -255,11 +255,6 @@ public class JSNodeTest {
     }
 
     @Test
-    public void diff_remove_property_from_node() {
-
-    }
-
-    @Test
     public void diff_remove_element_from_array() {
         JSArray arr1 = new JSArray("one", "two", "three");
         JSArray arr2 = new JSArray("one", "two", "three", "four");
