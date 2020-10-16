@@ -159,7 +159,7 @@ extends <a href="Builder.html" title="class in io.inversion.rql">Builder</a>&lt;
 <!--   -->
 </a>
 <h3>Fields inherited from class&nbsp;io.inversion.rql.<a href="Builder.html" title="class in io.inversion.rql">Builder</a></h3>
-<code><a href="Builder.html#builders">builders</a>, <a href="Builder.html#functions">functions</a>, <a href="Builder.html#parent">parent</a>, <a href="Builder.html#parser">parser</a>, <a href="Builder.html#r">r</a>, <a href="Builder.html#terms">terms</a></code></li>
+<code><a href="Builder.html#builders">builders</a>, <a href="Builder.html#functions">functions</a>, <a href="Builder.html#parent">parent</a>, <a href="Builder.html#terms">terms</a></code></li>
 </ul>
 </li>
 </ul>
@@ -228,7 +228,7 @@ extends <a href="Builder.html" title="class in io.inversion.rql">Builder</a>&lt;
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;io.inversion.rql.<a href="Builder.html" title="class in io.inversion.rql">Builder</a></h3>
-<code><a href="Builder.html#clearFunctions()">clearFunctions</a>, <a href="Builder.html#find(java.lang.String...)">find</a>, <a href="Builder.html#find(java.lang.String,int)">find</a>, <a href="Builder.html#findAll(java.lang.String)">findAll</a>, <a href="Builder.html#findInt(java.lang.String,int,int)">findInt</a>, <a href="Builder.html#findTerm(java.lang.String,java.lang.String...)">findTerm</a>, <a href="Builder.html#getBuilders()">getBuilders</a>, <a href="Builder.html#getParent()">getParent</a>, <a href="Builder.html#getParser()">getParser</a>, <a href="Builder.html#getRoot()">getRoot</a>, <a href="Builder.html#getTerms()">getTerms</a>, <a href="Builder.html#isFunction(java.lang.String)">isFunction</a>, <a href="Builder.html#parse(java.lang.Object...)">parse</a>, <a href="Builder.html#r()">r</a>, <a href="Builder.html#removeBuilder(io.inversion.rql.Builder)">removeBuilder</a>, <a href="Builder.html#toString()">toString</a>, <a href="Builder.html#toString(java.util.List)">toString</a>, <a href="Builder.html#withBuilder(io.inversion.rql.Builder)">withBuilder</a>, <a href="Builder.html#withFunctions(java.lang.String...)">withFunctions</a>, <a href="Builder.html#withFunctions(java.util.Collection)">withFunctions</a>, <a href="Builder.html#withParent(P)">withParent</a>, <a href="Builder.html#withParser(io.inversion.rql.RqlParser)">withParser</a>, <a href="Builder.html#withTerm(io.inversion.rql.Term)">withTerm</a>, <a href="Builder.html#withTerm(java.lang.String)">withTerm</a>, <a href="Builder.html#withTerm(java.lang.String,java.lang.Object...)">withTerm</a>, <a href="Builder.html#withTerms(java.lang.Object...)">withTerms</a></code></li>
+<code><a href="Builder.html#clearFunctions()">clearFunctions</a>, <a href="Builder.html#find(java.lang.String...)">find</a>, <a href="Builder.html#find(java.lang.String,int)">find</a>, <a href="Builder.html#findAll(java.lang.String)">findAll</a>, <a href="Builder.html#findInt(java.lang.String,int,int)">findInt</a>, <a href="Builder.html#findTerm(java.lang.String,java.lang.String...)">findTerm</a>, <a href="Builder.html#getBuilders()">getBuilders</a>, <a href="Builder.html#getParent()">getParent</a>, <a href="Builder.html#getRoot()">getRoot</a>, <a href="Builder.html#getTerms()">getTerms</a>, <a href="Builder.html#isFunction(java.lang.String)">isFunction</a>, <a href="Builder.html#parse(java.lang.Object...)">parse</a>, <a href="Builder.html#r()">r</a>, <a href="Builder.html#removeBuilder(io.inversion.rql.Builder)">removeBuilder</a>, <a href="Builder.html#toString()">toString</a>, <a href="Builder.html#toString(java.util.List)">toString</a>, <a href="Builder.html#withBuilder(io.inversion.rql.Builder)">withBuilder</a>, <a href="Builder.html#withFunctions(java.lang.String...)">withFunctions</a>, <a href="Builder.html#withFunctions(java.util.Collection)">withFunctions</a>, <a href="Builder.html#withParent(P)">withParent</a>, <a href="Builder.html#withTerm(io.inversion.rql.Term)">withTerm</a>, <a href="Builder.html#withTerm(java.lang.String)">withTerm</a>, <a href="Builder.html#withTerm(java.lang.String,java.lang.Object...)">withTerm</a>, <a href="Builder.html#withTerms(java.lang.Object...)">withTerms</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a id="methods.inherited.from.class.java.lang.Object">
@@ -296,7 +296,11 @@ extends <a href="Builder.html" title="class in io.inversion.rql">Builder</a>&lt;
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="Builder.html#addTerm(java.lang.String,io.inversion.rql.Term)">addTerm</a></code>&nbsp;in class&nbsp;<code><a href="Builder.html" title="class in io.inversion.rql">Builder</a>&lt;<a href="Select.html" title="type parameter in Select">T</a> extends <a href="Select.html" title="class in io.inversion.rql">Select</a>,&#8203;<a href="Select.html" title="type parameter in Select">P</a> extends <a href="Query.html" title="class in io.inversion.rql">Query</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>token</code> - the term to add</dd>
+<dd><code>term</code> - the token of the term</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if the builder or one of its child builders accepted and added the term</dd>
 </dl>
 </li>
 </ul>

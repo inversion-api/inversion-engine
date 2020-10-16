@@ -237,8 +237,8 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#exclude(io.inversion.utils.JSNode,java.util.Set,java.util.Set,java.lang.String)">exclude</a></span>&#8203;(<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;node,
-       java.util.Set&nbsp;includes,
-       java.util.Set&nbsp;excludes,
+       java.util.Set&lt;java.lang.String&gt;&nbsp;includes,
+       java.util.Set&lt;java.lang.String&gt;&nbsp;excludes,
        java.lang.String&nbsp;path)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -287,7 +287,7 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code>protected java.util.List&lt;org.apache.commons.collections4.KeyValue&gt;</code></td>
+<td class="colFirst"><code>protected java.util.List&lt;org.apache.commons.collections4.KeyValue&lt;java.lang.String,&#8203;java.lang.String&gt;&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getRelatedKeys(io.inversion.Relationship,io.inversion.Index,io.inversion.Index,java.util.List)">getRelatedKeys</a></span>&#8203;(<a href="../../Relationship.html" title="class in io.inversion">Relationship</a>&nbsp;rel,
               <a href="../../Index.html" title="class in io.inversion">Index</a>&nbsp;idxToMatch,
               <a href="../../Index.html" title="class in io.inversion">Index</a>&nbsp;idxToRetrieve,
@@ -424,66 +424,6 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a id="run(io.inversion.Request,io.inversion.Response)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>run</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;run&#8203;(<a href="../../Request.html" title="class in io.inversion">Request</a>&nbsp;req,
-                <a href="../../Response.html" title="class in io.inversion">Response</a>&nbsp;res)
-         throws <a href="../../ApiException.html" title="class in io.inversion">ApiException</a></pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../Action.html#run(io.inversion.Request,io.inversion.Response)">Action</a></code></span></div>
-<div class="block">Override this method with your custom business logic or override one of the
- http method "doMETHOD" specific handlers.</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="../../Action.html#run(io.inversion.Request,io.inversion.Response)">run</a></code>&nbsp;in class&nbsp;<code><a href="../../Action.html" title="class in io.inversion">Action</a>&lt;<a href="DbGetAction.html" title="class in io.inversion.action.db">DbGetAction</a>&gt;</code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>req</code> - the Request being serviced</dd>
-<dd><code>res</code> - the Reponse being generated</dd>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
-</dl>
-</li>
-</ul>
-<a id="select(io.inversion.Request,io.inversion.Collection,io.inversion.Api)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>select</h4>
-<pre class="methodSignature">protected&nbsp;<a href="../../Results.html" title="class in io.inversion">Results</a>&nbsp;select&#8203;(<a href="../../Request.html" title="class in io.inversion">Request</a>&nbsp;req,
-                         <a href="../../Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
-                         <a href="../../Api.html" title="class in io.inversion">Api</a>&nbsp;api)
-                  throws <a href="../../ApiException.html" title="class in io.inversion">ApiException</a></pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
-</dl>
-</li>
-</ul>
-<a id="exclude(java.util.List)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>exclude</h4>
-<pre class="methodSignature">protected&nbsp;void&nbsp;exclude&#8203;(java.util.List&lt;<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;&nbsp;nodes)</pre>
-</li>
-</ul>
-<a id="exclude(io.inversion.utils.JSNode,java.util.Set,java.util.Set,java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>exclude</h4>
-<pre class="methodSignature">protected&nbsp;void&nbsp;exclude&#8203;(<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;node,
-                       java.util.Set&nbsp;includes,
-                       java.util.Set&nbsp;excludes,
-                       java.lang.String&nbsp;path)</pre>
-</li>
-</ul>
 <a id="exclude(java.lang.String,java.util.Set,java.util.Set)">
 <!--   -->
 </a>
@@ -493,83 +433,6 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
 <pre class="methodSignature">protected static&nbsp;boolean&nbsp;exclude&#8203;(java.lang.String&nbsp;path,
                                  java.util.Set&lt;java.lang.String&gt;&nbsp;includes,
                                  java.util.Set&lt;java.lang.String&gt;&nbsp;excludes)</pre>
-</li>
-</ul>
-<a id="expand(io.inversion.Request,io.inversion.Collection,java.util.List,java.util.Set,java.lang.String,org.apache.commons.collections4.map.MultiKeyMap)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>expand</h4>
-<pre class="methodSignature">protected&nbsp;void&nbsp;expand&#8203;(<a href="../../Request.html" title="class in io.inversion">Request</a>&nbsp;request,
-                      <a href="../../Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
-                      java.util.List&lt;<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;&nbsp;parentObjs,
-                      java.util.Set&nbsp;expands,
-                      java.lang.String&nbsp;expandsPath,
-                      org.apache.commons.collections4.map.MultiKeyMap&nbsp;pkCache)
-               throws <a href="../../ApiException.html" title="class in io.inversion">ApiException</a></pre>
-<div class="block">This is more complicated than it seems like it would need to be because
- it attempts to retrieve all values of a relationship at a time for the whole
- document.  It does not run a recursive query for each resource and each relationship
- which could mean hundreds and hundreds of queries per document.  This should
- result in number of queries proportional to the number of expands terms that does
- not increase with the number of results at any level of the expansion.</div>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
-</dl>
-</li>
-</ul>
-<a id="getRelatedKeys(io.inversion.Relationship,io.inversion.Index,io.inversion.Index,java.util.List)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getRelatedKeys</h4>
-<pre class="methodSignature">protected&nbsp;java.util.List&lt;org.apache.commons.collections4.KeyValue&gt;&nbsp;getRelatedKeys&#8203;(<a href="../../Relationship.html" title="class in io.inversion">Relationship</a>&nbsp;rel,
-                                                                                  <a href="../../Index.html" title="class in io.inversion">Index</a>&nbsp;idxToMatch,
-                                                                                  <a href="../../Index.html" title="class in io.inversion">Index</a>&nbsp;idxToRetrieve,
-                                                                                  java.util.List&lt;java.lang.String&gt;&nbsp;toMatchEks)
-                                                                           throws <a href="../../ApiException.html" title="class in io.inversion">ApiException</a></pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
-</dl>
-</li>
-</ul>
-<a id="recursiveGet(org.apache.commons.collections4.map.MultiKeyMap,io.inversion.Collection,java.util.Collection,java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>recursiveGet</h4>
-<pre class="methodSignature">protected&nbsp;java.util.List&lt;<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;&nbsp;recursiveGet&#8203;(org.apache.commons.collections4.map.MultiKeyMap&nbsp;pkCache,
-                                              <a href="../../Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
-                                              java.util.Collection&nbsp;resourceKeys,
-                                              java.lang.String&nbsp;expandsPath)
-                                       throws <a href="../../ApiException.html" title="class in io.inversion">ApiException</a></pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
-</dl>
-</li>
-</ul>
-<a id="getMaxRows()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getMaxRows</h4>
-<pre class="methodSignature">public&nbsp;int&nbsp;getMaxRows()</pre>
-</li>
-</ul>
-<a id="withMaxRows(int)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>withMaxRows</h4>
-<pre class="methodSignature">public&nbsp;<a href="DbGetAction.html" title="class in io.inversion.action.db">DbGetAction</a>&nbsp;withMaxRows&#8203;(int&nbsp;maxRows)</pre>
 </li>
 </ul>
 <a id="getResourceKey(java.lang.Object)">
@@ -626,12 +489,153 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
 <a id="find(java.util.Collection,java.lang.String,boolean)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>find</h4>
 <pre class="methodSignature">protected static&nbsp;boolean&nbsp;find&#8203;(java.util.Collection&lt;java.lang.String&gt;&nbsp;params,
                               java.lang.String&nbsp;path,
                               boolean&nbsp;matchStart)</pre>
+</li>
+</ul>
+<a id="run(io.inversion.Request,io.inversion.Response)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>run</h4>
+<pre class="methodSignature">public&nbsp;void&nbsp;run&#8203;(<a href="../../Request.html" title="class in io.inversion">Request</a>&nbsp;req,
+                <a href="../../Response.html" title="class in io.inversion">Response</a>&nbsp;res)
+         throws <a href="../../ApiException.html" title="class in io.inversion">ApiException</a></pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../Action.html#run(io.inversion.Request,io.inversion.Response)">Action</a></code></span></div>
+<div class="block">Override this method with your custom business logic or override one of the
+ http method "doMETHOD" specific handlers.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../Action.html#run(io.inversion.Request,io.inversion.Response)">run</a></code>&nbsp;in class&nbsp;<code><a href="../../Action.html" title="class in io.inversion">Action</a>&lt;<a href="DbGetAction.html" title="class in io.inversion.action.db">DbGetAction</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>req</code> - the Request being serviced</dd>
+<dd><code>res</code> - the Reponse being generated</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="select(io.inversion.Request,io.inversion.Collection,io.inversion.Api)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>select</h4>
+<pre class="methodSignature">protected&nbsp;<a href="../../Results.html" title="class in io.inversion">Results</a>&nbsp;select&#8203;(<a href="../../Request.html" title="class in io.inversion">Request</a>&nbsp;req,
+                         <a href="../../Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
+                         <a href="../../Api.html" title="class in io.inversion">Api</a>&nbsp;api)
+                  throws <a href="../../ApiException.html" title="class in io.inversion">ApiException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="exclude(java.util.List)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>exclude</h4>
+<pre class="methodSignature">protected&nbsp;void&nbsp;exclude&#8203;(java.util.List&lt;<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;&nbsp;nodes)</pre>
+</li>
+</ul>
+<a id="exclude(io.inversion.utils.JSNode,java.util.Set,java.util.Set,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>exclude</h4>
+<pre class="methodSignature">protected&nbsp;void&nbsp;exclude&#8203;(<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;node,
+                       java.util.Set&lt;java.lang.String&gt;&nbsp;includes,
+                       java.util.Set&lt;java.lang.String&gt;&nbsp;excludes,
+                       java.lang.String&nbsp;path)</pre>
+</li>
+</ul>
+<a id="expand(io.inversion.Request,io.inversion.Collection,java.util.List,java.util.Set,java.lang.String,org.apache.commons.collections4.map.MultiKeyMap)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>expand</h4>
+<pre class="methodSignature">protected&nbsp;void&nbsp;expand&#8203;(<a href="../../Request.html" title="class in io.inversion">Request</a>&nbsp;request,
+                      <a href="../../Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
+                      java.util.List&lt;<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;&nbsp;parentObjs,
+                      java.util.Set&nbsp;expands,
+                      java.lang.String&nbsp;expandsPath,
+                      org.apache.commons.collections4.map.MultiKeyMap&nbsp;pkCache)</pre>
+<div class="block">This is more complicated than it seems like it would need to be because
+ it attempts to retrieve all values of a relationship at a time for the whole
+ document.  It does not run a recursive query for each resource and each relationship
+ which could mean hundreds and hundreds of queries per document.  This should
+ result in number of queries proportional to the number of expands terms that does
+ not increase with the number of results at any level of the expansion.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>request</code> - the request being serviced</dd>
+<dd><code>collection</code> - the collection being queried</dd>
+<dd><code>parentObjs</code> - the records that were just selected</dd>
+<dd><code>expands</code> - the definition of which properties should be expanded</dd>
+<dd><code>expandsPath</code> - the path we are currently on</dd>
+<dd><code>pkCache</code> - a cache of things already looked up</dd>
+</dl>
+</li>
+</ul>
+<a id="getRelatedKeys(io.inversion.Relationship,io.inversion.Index,io.inversion.Index,java.util.List)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getRelatedKeys</h4>
+<pre class="methodSignature">protected&nbsp;java.util.List&lt;org.apache.commons.collections4.KeyValue&lt;java.lang.String,&#8203;java.lang.String&gt;&gt;&nbsp;getRelatedKeys&#8203;(<a href="../../Relationship.html" title="class in io.inversion">Relationship</a>&nbsp;rel,
+                                                                                                                           <a href="../../Index.html" title="class in io.inversion">Index</a>&nbsp;idxToMatch,
+                                                                                                                           <a href="../../Index.html" title="class in io.inversion">Index</a>&nbsp;idxToRetrieve,
+                                                                                                                           java.util.List&lt;java.lang.String&gt;&nbsp;toMatchEks)
+                                                                                                                    throws <a href="../../ApiException.html" title="class in io.inversion">ApiException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="recursiveGet(org.apache.commons.collections4.map.MultiKeyMap,io.inversion.Collection,java.util.Collection,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>recursiveGet</h4>
+<pre class="methodSignature">protected&nbsp;java.util.List&lt;<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&gt;&nbsp;recursiveGet&#8203;(org.apache.commons.collections4.map.MultiKeyMap&nbsp;pkCache,
+                                              <a href="../../Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
+                                              java.util.Collection&nbsp;resourceKeys,
+                                              java.lang.String&nbsp;expandsPath)
+                                       throws <a href="../../ApiException.html" title="class in io.inversion">ApiException</a></pre>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
+</dl>
+</li>
+</ul>
+<a id="getMaxRows()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getMaxRows</h4>
+<pre class="methodSignature">public&nbsp;int&nbsp;getMaxRows()</pre>
+</li>
+</ul>
+<a id="withMaxRows(int)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>withMaxRows</h4>
+<pre class="methodSignature">public&nbsp;<a href="DbGetAction.html" title="class in io.inversion.action.db">DbGetAction</a>&nbsp;withMaxRows&#8203;(int&nbsp;maxRows)</pre>
 </li>
 </ul>
 </li>

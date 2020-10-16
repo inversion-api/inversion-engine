@@ -19,7 +19,6 @@ package io.inversion.utils;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -354,7 +353,7 @@ public class Url {
      * @see Utils#containsToken
      */
     public void replaceParam(String key, String value) {
-        for (String existing : new ArrayList<String>(params.keySet())) {
+        for (String existing : new ArrayList<>(params.keySet())) {
             if (Utils.containsToken(key, existing)) {
                 params.remove(existing);
             }

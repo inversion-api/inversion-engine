@@ -115,7 +115,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <main role="main">
 <div class="header">
 <div class="subTitle"><span class="packageLabelInType">Package</span>&nbsp;<a href="package-summary.html">io.inversion.action.db</a></div>
-<h2 title="Class DbPostAction" class="title">Class DbPostAction&lt;t extends DbPostAction&gt;</h2>
+<h2 title="Class DbPostAction" class="title">Class DbPostAction</h2>
 </div>
 <div class="contentContainer">
 <ul class="inheritance">
@@ -125,10 +125,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li><a href="../../Rule.html" title="class in io.inversion">io.inversion.Rule</a>&lt;A&gt;</li>
 <li>
 <ul class="inheritance">
-<li><a href="../../Action.html" title="class in io.inversion">io.inversion.Action</a>&lt;t&gt;</li>
+<li><a href="../../Action.html" title="class in io.inversion">io.inversion.Action</a>&lt;<a href="DbPostAction.html" title="class in io.inversion.action.db">DbPostAction</a>&gt;</li>
 <li>
 <ul class="inheritance">
-<li>io.inversion.action.db.DbPostAction&lt;t&gt;</li>
+<li>io.inversion.action.db.DbPostAction</li>
 </ul>
 </li>
 </ul>
@@ -141,15 +141,15 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><code>java.lang.Comparable&lt;t&gt;</code></dd>
+<dd><code>java.lang.Comparable&lt;<a href="DbPostAction.html" title="class in io.inversion.action.db">DbPostAction</a>&gt;</code></dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
 <dd><code><a href="DbPatchAction.html" title="class in io.inversion.action.db">DbPatchAction</a></code>, <code><a href="DbPutAction.html" title="class in io.inversion.action.db">DbPutAction</a></code></dd>
 </dl>
 <hr>
-<pre>public class <span class="typeNameLabel">DbPostAction&lt;t extends DbPostAction&gt;</span>
-extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;t&gt;</pre>
+<pre>public class <span class="typeNameLabel">DbPostAction</span>
+extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;<a href="DbPostAction.html" title="class in io.inversion.action.db">DbPostAction</a>&gt;</pre>
 </li>
 </ul>
 </div>
@@ -422,6 +422,28 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="collapse(io.inversion.utils.JSNode,boolean,java.util.Set,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>collapse</h4>
+<pre class="methodSignature">public static&nbsp;void&nbsp;collapse&#8203;(<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;parent,
+                            boolean&nbsp;collapseAll,
+                            java.util.Set&nbsp;collapses,
+                            java.lang.String&nbsp;path)</pre>
+</li>
+</ul>
+<a id="nextPath(java.lang.String,java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>nextPath</h4>
+<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;nextPath&#8203;(java.lang.String&nbsp;path,
+                                        java.lang.String&nbsp;next)</pre>
+</li>
+</ul>
 <a id="run(io.inversion.Request,io.inversion.Response)">
 <!--   -->
 </a>
@@ -436,7 +458,7 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
  http method "doMETHOD" specific handlers.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="../../Action.html#run(io.inversion.Request,io.inversion.Response)">run</a></code>&nbsp;in class&nbsp;<code><a href="../../Action.html" title="class in io.inversion">Action</a>&lt;<a href="DbPostAction.html" title="type parameter in DbPostAction">t</a> extends <a href="DbPostAction.html" title="class in io.inversion.action.db">DbPostAction</a>&gt;</code></dd>
+<dd><code><a href="../../Action.html#run(io.inversion.Request,io.inversion.Response)">run</a></code>&nbsp;in class&nbsp;<code><a href="../../Action.html" title="class in io.inversion">Action</a>&lt;<a href="DbPostAction.html" title="class in io.inversion.action.db">DbPostAction</a>&gt;</code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>req</code> - the Request being serviced</dd>
 <dd><code>res</code> - the Reponse being generated</dd>
@@ -460,8 +482,8 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
  TODO: add support for JSON patching...maybe</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>req</code> - </dd>
-<dd><code>res</code> - </dd>
+<dd><code>req</code> - the request to run</dd>
+<dd><code>res</code> - the response to populate</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -490,8 +512,7 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
 <h4>upsert</h4>
 <pre class="methodSignature">protected&nbsp;java.util.List&lt;java.lang.String&gt;&nbsp;upsert&#8203;(<a href="../../Request.html" title="class in io.inversion">Request</a>&nbsp;req,
                                                   <a href="../../Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
-                                                  <a href="../../utils/JSArray.html" title="class in io.inversion.utils">JSArray</a>&nbsp;nodes)
-                                           throws <a href="../../ApiException.html" title="class in io.inversion">ApiException</a></pre>
+                                                  <a href="../../utils/JSArray.html" title="class in io.inversion.utils">JSArray</a>&nbsp;nodes)</pre>
 <div class="block">README README README README
  <p>
  Algorithm:
@@ -508,7 +529,7 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
  placed back in the JSON prior to any PUTs that depend on relationship keys to exist.
  <p>
  Step 3: PKs generated for child documents which are actually relationship parents, are set
- as foreign keys back on the parent json (which is actully the one-to-many child)
+ as foreign keys back on the parent json (which is actually the one-to-many child)
  <p>
  Step 4: Find the key values for all new/kept one-to-many and many-to-many relationships
  <p>
@@ -519,35 +540,12 @@ extends <a href="../../Action.html" title="class in io.inversion">Action</a>&lt;
  and delete all now invalid many-to-many relationships rows.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>req</code> - </dd>
-<dd><code>collection</code> - </dd>
-<dd><code>nodes</code> - </dd>
+<dd><code>req</code> - the request being serviced</dd>
+<dd><code>collection</code> - the collection be modified</dd>
+<dd><code>nodes</code> - the records to update</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
+<dd>the entity keys of all upserted records</dd>
 </dl>
-</li>
-</ul>
-<a id="collapse(io.inversion.utils.JSNode,boolean,java.util.Set,java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>collapse</h4>
-<pre class="methodSignature">public static&nbsp;void&nbsp;collapse&#8203;(<a href="../../utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;parent,
-                            boolean&nbsp;collapseAll,
-                            java.util.Set&nbsp;collapses,
-                            java.lang.String&nbsp;path)</pre>
-</li>
-</ul>
-<a id="nextPath(java.lang.String,java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>nextPath</h4>
-<pre class="methodSignature">public static&nbsp;java.lang.String&nbsp;nextPath&#8203;(java.lang.String&nbsp;path,
-                                        java.lang.String&nbsp;next)</pre>
 </li>
 </ul>
 <a id="isCollapseAll()">

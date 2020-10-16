@@ -345,7 +345,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doUpsert(io.inversion.Collection,java.util.List)">doUpsert</a></span>&#8203;(<a href="../Collection.html" title="class in io.inversion">Collection</a>&nbsp;table,
         java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)</code></th>
 <td class="colLast">
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.</div>
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.</div>
 </td>
 </tr>
 <tr id="i8" class="altColor">
@@ -359,8 +359,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
 <td class="colFirst"><code>java.sql.Connection</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getConnection(boolean)">getConnection</a></span>&#8203;(boolean&nbsp;managed)</code></th>
 <td class="colLast">
-<div class="block">Returns a JDBC connection that is shared on the ThreadLocal
- with autoCommit managed by this Db and an EngineListener.</div>
+<div class="block">Returns a JDBC connection to the underlying JDBC db.</div>
 </td>
 </tr>
 <tr id="i10" class="altColor">
@@ -512,6 +511,16 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
 <!--   -->
 </a>
 <h3>Field Detail</h3>
+<a id="ddlUrls">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ddlUrls</h4>
+<pre>protected final&nbsp;java.util.List&lt;java.lang.String&gt; ddlUrls</pre>
+<div class="block">Urls to DDL files that should be executed on startup of this Db.</div>
+</li>
+</ul>
 <a id="stringQuote">
 <!--   -->
 </a>
@@ -629,21 +638,11 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
 <a id="calcRowsFound">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>calcRowsFound</h4>
 <pre>protected&nbsp;boolean calcRowsFound</pre>
 <div class="block">For MySQL only, set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()</div>
-</li>
-</ul>
-<a id="ddlUrls">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>ddlUrls</h4>
-<pre>protected&nbsp;java.util.List&lt;java.lang.String&gt; ddlUrls</pre>
-<div class="block">Urls to DDL files that should be executed on startup of this Db.</div>
 </li>
 </ul>
 </li>
@@ -725,6 +724,8 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../Db.html#doStartup(io.inversion.Api)">doStartup</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>api</code> - the api to start</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../Db.html#configDb()"><code>Db.configDb()</code></a>, 
 <a href="../Db.html#configApi(io.inversion.Api)"><code>Db.configApi(Api)</code></a></dd>
@@ -771,6 +772,8 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#doSelect(io.inversion.Collection,java.util.List)">doSelect</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>coll</code> - the collection to query</dd>
 <dd><code>columnMappedTerms</code> - RQL terms that have been translated to use Property columnNames not jsonNames</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A list of maps with keys as Property columnNames not jsonNames</dd>
@@ -789,7 +792,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
                                                  java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)
                                           throws <a href="../ApiException.html" title="class in io.inversion">ApiException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../Db.html#doUpsert(io.inversion.Collection,java.util.List)">Db</a></code></span></div>
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.
  <p>
  Keys that are not supplied in the call but that exist in the row in the target DB should not be modified.
  <p>
@@ -797,7 +800,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
  tables unique index constraints allowing an update to take place instead
  of an insert if the row already exists in the underlying data source.
  <p>
- IMPORTANT #1 - implementors should note that the keys on each row in <code>rows</code> may be different.
+ IMPORTANT #1 - implementors should note that the keys on each record may be different.
  <p>
  IMPORTANT #2 - strict POST/PUT vs POST/PATCH semantics are implementation specific.
  For example, a RDBMS backed implementation may choose to upsert only the supplied
@@ -808,6 +811,9 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#doUpsert(io.inversion.Collection,java.util.List)">doUpsert</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection being modified</dd>
+<dd><code>rows</code> - the records being modified</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the encoded resource key for every supplied row</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -852,6 +858,9 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#delete(io.inversion.Collection,java.util.List)">delete</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection being modified</dd>
+<dd><code>columnMappedIndexValues</code> - the identifiers for the records to delete</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -867,6 +876,8 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
                                   throws <a href="../ApiException.html" title="class in io.inversion">ApiException</a></pre>
 <div class="block">Shortcut for getConnection(true);</div>
 <dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a connection</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -880,12 +891,18 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="Jd
 <h4>getConnection</h4>
 <pre class="methodSignature">public&nbsp;java.sql.Connection&nbsp;getConnection&#8203;(boolean&nbsp;managed)
                                   throws <a href="../ApiException.html" title="class in io.inversion">ApiException</a></pre>
-<div class="block">Returns a JDBC connection that is shared on the ThreadLocal
- with autoCommit managed by this Db and an EngineListener.</div>
+<div class="block">Returns a JDBC connection to the underlying JDBC db.
+ <p>
+ If managed is true the Connection is shared on the ThreadLocal with autoCommit managed by this Db and an EngineListener.
+ Callers should NOT close this connection.  It will not create a connection pool leak.  All managed connections attached
+ to the ThreadLocal are closed/returned to the pool when the Engine finishes serving a s Request.
+ <p>
+ If managed is false, a completely new Connection is returned.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>managed</code> - </dd>
+<dd><code>managed</code> - should this be a net new collection or a pool connection that is automatically closed when the Request ends</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>a Connection</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>

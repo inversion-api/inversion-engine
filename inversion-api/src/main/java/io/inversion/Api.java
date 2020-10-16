@@ -316,18 +316,23 @@ public class Api extends Rule<Api> {
      */
     public interface ApiListener {
         default void onStartup(Api api) {
+            //implement me
         }
 
         default void onShutdown(Api api) {
+            //implement me
         }
 
         default void afterRequest(Request req, Response res) {
+            //implement me
         }
 
         default void afterError(Request req, Response res) {
+            //implement me
         }
 
         default void beforeFinally(Request req, Response res) {
+            //implement me
         }
     }
 

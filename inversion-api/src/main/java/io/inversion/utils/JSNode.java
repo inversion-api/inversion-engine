@@ -936,7 +936,7 @@ public class JSNode implements Map<String, Object> {
 
     @Override
     public void putAll(Map<? extends String, ? extends Object> map) {
-        for (Object key : map.keySet()) {
+        for (String key : map.keySet()) {
             put(key.toString(), map.get(key));
         }
     }

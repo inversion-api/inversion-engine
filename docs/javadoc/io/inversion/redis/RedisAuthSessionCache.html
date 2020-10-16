@@ -497,7 +497,7 @@ extends <a href="../action/security/AuthAction.InMemorySessionDao.html" title="c
 <ul class="blockList">
 <li class="blockList">
 <h4>om</h4>
-<pre>protected&nbsp;com.fasterxml.jackson.databind.ObjectMapper om</pre>
+<pre>protected final&nbsp;com.fasterxml.jackson.databind.ObjectMapper om</pre>
 </li>
 </ul>
 <a id="redisHost">
@@ -667,7 +667,10 @@ extends <a href="../action/security/AuthAction.InMemorySessionDao.html" title="c
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../action/security/AuthAction.InMemorySessionDao.html#doGet(java.lang.String)">doGet</a></code>&nbsp;in class&nbsp;<code><a href="../action/security/AuthAction.InMemorySessionDao.html" title="class in io.inversion.action.security">AuthAction.InMemorySessionDao</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>sessionKey</code> - the session id of the user</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the users if found</dd>
 </dl>
 </li>
 </ul>
@@ -684,6 +687,9 @@ extends <a href="../action/security/AuthAction.InMemorySessionDao.html" title="c
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../action/security/AuthAction.InMemorySessionDao.html#doPut(java.lang.String,io.inversion.User)">doPut</a></code>&nbsp;in class&nbsp;<code><a href="../action/security/AuthAction.InMemorySessionDao.html" title="class in io.inversion.action.security">AuthAction.InMemorySessionDao</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>sessionKey</code> - the users session id</dd>
+<dd><code>user</code> - the user to store against the sessionKey</dd>
 </dl>
 </li>
 </ul>
@@ -699,6 +705,8 @@ extends <a href="../action/security/AuthAction.InMemorySessionDao.html" title="c
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../action/security/AuthAction.InMemorySessionDao.html#doDelete(java.lang.String)">doDelete</a></code>&nbsp;in class&nbsp;<code><a href="../action/security/AuthAction.InMemorySessionDao.html" title="class in io.inversion.action.security">AuthAction.InMemorySessionDao</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>sessionKey</code> - the session to end</dd>
 </dl>
 </li>
 </ul>

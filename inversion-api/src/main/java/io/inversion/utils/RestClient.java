@@ -1460,7 +1460,7 @@ public class RestClient {
 
         synchronized boolean checkStartThread() {
             if (queue.size() > 0 && threads.size() < threadsMax) {
-                Thread t = new Thread(() -> processQueue(), threadPrefix + " worker");
+                Thread t = new Thread(this::processQueue, threadPrefix + " worker");
                 t.setDaemon(true);
                 threads.add(t);
                 t.start();

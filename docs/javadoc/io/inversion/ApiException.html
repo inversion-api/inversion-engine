@@ -615,34 +615,8 @@ implements <a href="Status.html" title="interface in io.inversion">Status</a></p
 <dd><code>messageFormat</code> - the caller supplied error message with variable placeholders</dd>
 <dd><code>args</code> - variables to insert into <code>messageFormat</code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>a hopefully user friendly error message</dd>
 </dl>
-</li>
-</ul>
-<a id="getStatus()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getStatus</h4>
-<pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getStatus()</pre>
-</li>
-</ul>
-<a id="withStatus(java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>withStatus</h4>
-<pre class="methodSignature">public&nbsp;<a href="ApiException.html" title="class in io.inversion">ApiException</a>&nbsp;withStatus&#8203;(java.lang.String&nbsp;status)</pre>
-</li>
-</ul>
-<a id="hasStatus(int...)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>hasStatus</h4>
-<pre class="methodSignature">public&nbsp;boolean&nbsp;hasStatus&#8203;(int...&nbsp;statusCodes)</pre>
 </li>
 </ul>
 <a id="throwEx(java.lang.Throwable)">
@@ -675,9 +649,9 @@ implements <a href="Status.html" title="interface in io.inversion">Status</a></p
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>messageFormat</code> - the error message potentially with variables</dd>
-<dd><code>args</code> - values substitued into <code>messageFormat</code></dd>
+<dd><code>args</code> - values substituted into <code>messageFormat</code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
+<dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code> - always</dd>
 </dl>
 </li>
 </ul>
@@ -1098,7 +1072,7 @@ implements <a href="Status.html" title="interface in io.inversion">Status</a></p
 <a id="new501NotImplemented(java.lang.Throwable,java.lang.String,java.lang.Object...)">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>new501NotImplemented</h4>
 <pre class="methodSignature">public static&nbsp;<a href="ApiException.html" title="class in io.inversion">ApiException</a>&nbsp;new501NotImplemented&#8203;(java.lang.Throwable&nbsp;cause,
@@ -1109,6 +1083,33 @@ implements <a href="Status.html" title="interface in io.inversion">Status</a></p
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
+</li>
+</ul>
+<a id="getStatus()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getStatus</h4>
+<pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getStatus()</pre>
+</li>
+</ul>
+<a id="withStatus(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>withStatus</h4>
+<pre class="methodSignature">public&nbsp;<a href="ApiException.html" title="class in io.inversion">ApiException</a>&nbsp;withStatus&#8203;(java.lang.String&nbsp;status)</pre>
+</li>
+</ul>
+<a id="hasStatus(int...)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>hasStatus</h4>
+<pre class="methodSignature">public&nbsp;boolean&nbsp;hasStatus&#8203;(int...&nbsp;statusCodes)</pre>
 </li>
 </ul>
 </li>

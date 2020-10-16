@@ -257,7 +257,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 </td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>java.util.Map</code></td>
+<td class="colFirst"><code>java.util.Map&lt;? extends java.lang.String,&#8203;? extends java.lang.Object&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#asMap()">asMap</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -468,7 +468,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 </td>
 </tr>
 <tr id="i34" class="altColor">
-<td class="colFirst"><code><a href="JSArray.html" title="class in io.inversion.utils">JSArray</a></code></td>
+<td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#patch(io.inversion.utils.JSArray)">patch</a></span>&#8203;(<a href="JSArray.html" title="class in io.inversion.utils">JSArray</a>&nbsp;patches)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -480,7 +480,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 </tr>
 <tr id="i36" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#putAll(java.util.Map)">putAll</a></span>&#8203;(java.util.Map&nbsp;map)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#putAll(java.util.Map)">putAll</a></span>&#8203;(java.util.Map&lt;? extends java.lang.String,&#8203;? extends java.lang.Object&gt;&nbsp;map)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i37" class="rowColor">
@@ -525,9 +525,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <tr id="i43" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#toString()">toString</a></span>()</code></th>
-<td class="colLast">
-<div class="block">Pretty prints the JSNode with properties written out in their original case.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i44" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
@@ -639,6 +637,61 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a id="parseJson(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>parseJson</h4>
+<pre class="methodSignature">public static&nbsp;java.lang.Object&nbsp;parseJson&#8203;(java.lang.String&nbsp;json)</pre>
+<div class="block">Turns a JSON string in to JSNode (maps), JSArray (lists), String numbers and booleans.
+ <p>
+ Jackson is the underlying parser</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>json</code> - the json string to parse</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a String, number, boolean, JSNode or JSArray</dd>
+</dl>
+</li>
+</ul>
+<a id="parseJsonNode(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>parseJsonNode</h4>
+<pre class="methodSignature">public static&nbsp;<a href="JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;parseJsonNode&#8203;(java.lang.String&nbsp;json)
+                            throws java.lang.ClassCastException</pre>
+<div class="block">Utility overloading of <a href="#parseJson(java.lang.String)"><code>parseJson(String)</code></a> to cast the return as a JSNode</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>json</code> - the json string to parse</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the result of parsing the json document cast to a JSNode</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>java.lang.ClassCastException</code> - if the result of parsing is not a JSNode</dd>
+</dl>
+</li>
+</ul>
+<a id="parseJsonArray(java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>parseJsonArray</h4>
+<pre class="methodSignature">public static&nbsp;<a href="JSArray.html" title="class in io.inversion.utils">JSArray</a>&nbsp;parseJsonArray&#8203;(java.lang.String&nbsp;json)</pre>
+<div class="block">Utility overloading of <a href="#parseJson(java.lang.String)"><code>parseJson(String)</code></a> to cast the return as a JSArray</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>json</code> - a json string containing an as the root element</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the result of parsing the json document cast to a JSArray</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code>java.lang.ClassCastException</code> - if the result of parsing is not a JSArray</dd>
+</dl>
+</li>
+</ul>
 <a id="findAll(java.lang.String,int)">
 <!--   -->
 </a>
@@ -720,6 +773,11 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
  JsonPath bracket-notation such as  "$['store']['book'][0]['title']"
  is currently not supported.</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>pathExpression</code> - defines the properties to find</dd>
+<dd><code>qty</code> - the maximum number of results</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>an array of found values</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="https://tools.ietf.org/html/rfc6901">JSON Pointer</a>, 
 <a href="https://goessner.net/articles/JsonPath/">JSON Path</a>, 
@@ -742,7 +800,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>patch</h4>
-<pre class="methodSignature">public&nbsp;<a href="JSArray.html" title="class in io.inversion.utils">JSArray</a>&nbsp;patch&#8203;(<a href="JSArray.html" title="class in io.inversion.utils">JSArray</a>&nbsp;patches)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;patch&#8203;(<a href="JSArray.html" title="class in io.inversion.utils">JSArray</a>&nbsp;patches)</pre>
 </li>
 </ul>
 <a id="get(java.lang.Object)">
@@ -769,7 +827,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#get(java.lang.Object)"><code>get(Object)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>name</code> - </dd>
+<dd><code>name</code> - the case insensitive property name to retrieve.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value of property <code>name</code> cast to a JSNode if exists else null</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -789,7 +847,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#get(java.lang.Object)"><code>get(Object)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>name</code> - </dd>
+<dd><code>name</code> - the case insensitive property name to retrieve.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value of property <code>name</code> cast to a JSArray if exists else null</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -809,7 +867,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#get(java.lang.Object)"><code>get(Object)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>name</code> - </dd>
+<dd><code>name</code> - the case insensitive property name to retrieve.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the stringified value of property <code>name</code> if it exists else null</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -827,7 +885,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#get(java.lang.Object)"><code>get(Object)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>name</code> - </dd>
+<dd><code>name</code> - the case insensitive property name to retrieve.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value of property <code>name</code> stringified and parsed as an int if it exists else -1</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -845,7 +903,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#get(java.lang.Object)"><code>get(Object)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>name</code> - </dd>
+<dd><code>name</code> - the case insensitive property name to retrieve.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value of property <code>name</code> stringified and parsed as a double if it exists else -1</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -863,7 +921,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#get(java.lang.Object)"><code>get(Object)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>name</code> - </dd>
+<dd><code>name</code> - the case insensitive property name to retrieve.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the value of property <code>name</code> stringified and parsed as a boolean if it exists else false</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -901,7 +959,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#find(java.lang.String)"><code>find(String)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>pathExpression</code> - specifies the nodes to find</dd>
+<dd><code>pathExpression</code> - specifies the properties to find</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the first value found at <code>pathExpression</code> cast as a JSArray if exists else null</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -921,7 +979,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#find(java.lang.String)"><code>find(String)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>pathExpression</code> - </dd>
+<dd><code>pathExpression</code> - specifies the properties to find</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the first value found at <code>pathExpression</code> stringified if exists else null</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -939,7 +997,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#find(java.lang.String)"><code>find(String)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>pathExpression</code> - </dd>
+<dd><code>pathExpression</code> - specifies the properties to find</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the first value found at <code>pathExpression</code> stringified and parsed as an int if exists else -1</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -957,7 +1015,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#find(java.lang.String)"><code>find(String)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>pathExpression</code> - </dd>
+<dd><code>pathExpression</code> - specifies the properties to find</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the first value found at <code>pathExpression</code> stringified and parsed as a double if exists else -1</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -975,7 +1033,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#find(java.lang.String)"><code>find(String)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>pathExpression</code> - </dd>
+<dd><code>pathExpression</code> - specifies the properties to find</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the first value found at <code>pathExpression</code> stringified and parsed as a boolean if exists else false</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -992,6 +1050,8 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <pre class="methodSignature">public&nbsp;java.lang.Object&nbsp;find&#8203;(java.lang.String&nbsp;pathExpression)</pre>
 <div class="block">Convenience overloading of <a href="#findAll(java.lang.String,int)"><code>findAll(String, int)</code></a> that returns the first item found</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>pathExpression</code> - specifies the properties to find</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the first item found at <code>pathExpression</code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -1009,7 +1069,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#findAll(java.lang.String,int)"><code>findAll(String, int)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>pathExpression</code> - </dd>
+<dd><code>pathExpression</code> - specifies the properties to find</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>all items found for <code>pathExpression</code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -1027,7 +1087,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Convenience overloading of <a href="#findAll(java.lang.String,int)"><code>findAll(String, int)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>pathExpression</code> - </dd>
+<dd><code>pathExpression</code> - specifies the properties to find</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>all items found for <code>pathExpression</code> cast as a List</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -1055,7 +1115,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>putAll</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;putAll&#8203;(java.util.Map&nbsp;map)</pre>
+<pre class="methodSignature">public&nbsp;void&nbsp;putAll&#8203;(java.util.Map&lt;? extends java.lang.String,&#8203;? extends java.lang.Object&gt;&nbsp;map)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>putAll</code>&nbsp;in interface&nbsp;<code>java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</code></dd>
@@ -1073,9 +1133,10 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <div class="block">Vanity method to make sure the attributes prints out first</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>name</code> - </dd>
-<dd><code>value</code> - </dd>
+<dd><code>name</code> - the property name</dd>
+<dd><code>value</code> - the property value</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the previous value of the property if it exists or null</dd>
 </dl>
 </li>
 </ul>
@@ -1158,7 +1219,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>asMap</h4>
-<pre class="methodSignature">public&nbsp;java.util.Map&nbsp;asMap()</pre>
+<pre class="methodSignature">public&nbsp;java.util.Map&lt;? extends java.lang.String,&#8203;? extends java.lang.Object&gt;&nbsp;asMap()</pre>
 </li>
 </ul>
 <a id="copy()">
@@ -1208,10 +1269,11 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <li class="blockList">
 <h4>toString</h4>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;toString()</pre>
-<div class="block">Pretty prints the JSNode with properties written out in their original case.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code>toString</code>&nbsp;in class&nbsp;<code>java.lang.Object</code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>json string, pretty printed with properties written out in their original case.</dd>
 </dl>
 </li>
 </ul>
@@ -1226,6 +1288,8 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>pretty</code> - should spaces and carriage returns be added to the doc for readability</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>json string, with properties written out in their original case optional pretty printed.</dd>
 </dl>
 </li>
 </ul>
@@ -1242,6 +1306,8 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>pretty</code> - should spaces and carriage returns be added to the doc for readability</dd>
 <dd><code>lowercasePropertyNames</code> - when true all property names are printed in lower case instead of their original case</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a json string</dd>
 </dl>
 </li>
 </ul>
@@ -1351,7 +1417,6 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
  differences between JSNode and JSArray.
  <p>
  For example:
- <p>
  <pre>
  JSNode node = response.getJson();//don't know if this is a JSNode or JSArray
  for(Object value : node.asList())
@@ -1384,7 +1449,6 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
  differences between JSNode and JSArray.
  <p>
  For example:
- <p>
  <pre>
  JSNode node = response.getJson();//don't know if this is a JSNode or JSArray
  for(JSNode child : node.asList())
@@ -1425,7 +1489,7 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <a id="stream()">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>stream</h4>
 <pre class="methodSignature">public&nbsp;java.util.stream.Stream&nbsp;stream()</pre>
@@ -1433,61 +1497,6 @@ implements java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>asList().stream()</dd>
-</dl>
-</li>
-</ul>
-<a id="parseJson(java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>parseJson</h4>
-<pre class="methodSignature">public static&nbsp;java.lang.Object&nbsp;parseJson&#8203;(java.lang.String&nbsp;json)</pre>
-<div class="block">Turns a JSON string in to JSNode (maps), JSArray (lists), String numbers and booleans.
- <p>
- Jackson is the underlying parser</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>json</code> - the json string to parse</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>a String, number, boolean, JSNode or JSArray</dd>
-</dl>
-</li>
-</ul>
-<a id="parseJsonNode(java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>parseJsonNode</h4>
-<pre class="methodSignature">public static&nbsp;<a href="JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;parseJsonNode&#8203;(java.lang.String&nbsp;json)
-                            throws java.lang.ClassCastException</pre>
-<div class="block">Utility overloading of <a href="#parseJson(java.lang.String)"><code>parseJson(String)</code></a> to cast the return as a JSNode</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>json</code> - </dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>the result of parsing the json document cast to a JSNode</dd>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.ClassCastException</code> - if the result of parsing is not a JSNode</dd>
-</dl>
-</li>
-</ul>
-<a id="parseJsonArray(java.lang.String)">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>parseJsonArray</h4>
-<pre class="methodSignature">public static&nbsp;<a href="JSArray.html" title="class in io.inversion.utils">JSArray</a>&nbsp;parseJsonArray&#8203;(java.lang.String&nbsp;json)</pre>
-<div class="block">Utility overloading of <a href="#parseJson(java.lang.String)"><code>parseJson(String)</code></a> to cast the return as a JSArray</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>json</code> - </dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>the result of parsing the json document cast to a JSArray</dd>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.ClassCastException</code> - if the result of parsing is not a JSArray</dd>
 </dl>
 </li>
 </ul>

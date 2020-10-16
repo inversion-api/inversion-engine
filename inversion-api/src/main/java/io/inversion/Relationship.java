@@ -159,11 +159,6 @@ public class Relationship implements Serializable {
         return toString().equals(obj.toString());
     }
 
-    public int hashCode() {
-        //return toString().hashCode();
-        return super.hashCode();
-    }
-
     public String toString() {
         try {
             String str = collection.getName() + "." + getName() + " : " + getType() + " ";

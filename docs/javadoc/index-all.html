@@ -243,7 +243,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/security/AclRule.html#allowAll(java.lang.String,java.lang.String)">allowAll(String, String)</a></span> - Static method in class io.inversion.action.security.<a href="io/inversion/action/security/AclRule.html" title="class in io.inversion.action.security">AclRule</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/ElasticsearchDb.html#allowedFailResponseCodes">allowedFailResponseCodes</a></span> - Static variable in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a></dt>
+<dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/ElasticsearchDb.html#allowedFailResponseCodes">allowedFailResponseCodes</a></span> - Variable in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/security/AclRule.html#allPermissionsMustMatch">allPermissionsMustMatch</a></span> - Variable in class io.inversion.action.security.<a href="io/inversion/action/security/AclRule.html" title="class in io.inversion.action.security">AclRule</a></dt>
 <dd>&nbsp;</dd>
@@ -351,6 +351,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Request.Validation.html#asString()">asString()</a></span> - Method in class io.inversion.<a href="io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="io/inversion/cosmosdb/CosmosSqlQuery.html#asString(io.inversion.rql.Term)">asString(Term)</a></span> - Method in class io.inversion.cosmosdb.<a href="io/inversion/cosmosdb/CosmosSqlQuery.html" title="class in io.inversion.cosmosdb">CosmosSqlQuery</a></dt>
+<dd>
+<div class="block">Overridden to exclude rdbms style '%' wildcards that are not needed for cosmos sw and ew queries.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/SqlQuery.html#asString(io.inversion.rql.Term)">asString(Term)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/SqlQuery.html#asString(java.lang.String)">asString(String)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a></dt>
@@ -364,23 +368,23 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#atob(java.lang.Object)">atob(Object)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
 <dd>
-<div class="block">Faster and null safe way to call Integer.parseInt(str.trim()) that swallows exceptions.</div>
+<div class="block">Converst a string to a boolean.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#atod(java.lang.Object)">atod(Object)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
 <dd>
-<div class="block">Faster and null safe way to call Double.parseDouble(str.trim()) that swallows exceptions.</div>
+<div class="block">Convert a string to a double.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#atof(java.lang.Object)">atof(Object)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
 <dd>
-<div class="block">Faster and null safe way to call Float.parseFloat(str.trim()) that swallows exceptions.</div>
+<div class="block">Convert a string to a float.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#atoi(java.lang.Object)">atoi(Object)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
 <dd>
-<div class="block">Faster and null safe way to call Integer.parseInt(str.trim()) that swallows exceptions.</div>
+<div class="block">Convert a string to an integer.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#atol(java.lang.Object)">atol(Object)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
 <dd>
-<div class="block">Faster and null safe way to call Long.parseLong(str.trim()) that swallows exceptions.</div>
+<div class="block">Convert a string to a long.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/security/AuthAction.html#AUTH_ACTION_DEFAULT_ORDER_IS_100">AUTH_ACTION_DEFAULT_ORDER_IS_100</a></span> - Static variable in class io.inversion.action.security.<a href="io/inversion/action/security/AuthAction.html" title="class in io.inversion.action.security">AuthAction</a></dt>
 <dd>&nbsp;</dd>
@@ -489,7 +493,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">Optional subclass override hook to supply your own custom wired up Api.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="io/inversion/lambda/AwsApiGatewayLambdaRequestStreamHandler.html#buildApi(java.lang.String,java.lang.String)">buildApi(String, String)</a></span> - Method in class io.inversion.lambda.<a href="io/inversion/lambda/AwsApiGatewayLambdaRequestStreamHandler.html" title="class in io.inversion.lambda">AwsApiGatewayLambdaRequestStreamHandler</a></dt>
+<dt><span class="memberNameLink"><a href="io/inversion/lambda/AwsApiGatewayLambdaRequestStreamHandler.html#buildApi(io.inversion.Engine)">buildApi(Engine)</a></span> - Method in class io.inversion.lambda.<a href="io/inversion/lambda/AwsApiGatewayLambdaRequestStreamHandler.html" title="class in io.inversion.lambda">AwsApiGatewayLambdaRequestStreamHandler</a></dt>
 <dd>
 <div class="block">Optional subclass override hook to supply your own custom wired up Api.</div>
 </dd>
@@ -551,10 +555,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/azure/functions/AzureFunctionHttpTriggerHandler.html#buildRequest(com.microsoft.azure.functions.HttpRequestMessage)">buildRequest(HttpRequestMessage&lt;Optional&lt;String&gt;&gt;)</a></span> - Method in class io.inversion.azure.functions.<a href="io/inversion/azure/functions/AzureFunctionHttpTriggerHandler.html" title="class in io.inversion.azure.functions">AzureFunctionHttpTriggerHandler</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/spring/InversionServletConfig.html#buildServletMapping(io.inversion.Engine)">buildServletMapping(Engine)</a></span> - Static method in class io.inversion.spring.<a href="io/inversion/spring/InversionServletConfig.html" title="class in io.inversion.spring">InversionServletConfig</a></dt>
-<dd>
-<div class="block">acumulates all of the static path parts
- shared by all Engine includesPaths.</div>
-</dd>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcUtils.html#buildUpdateSQL(java.sql.Connection,java.lang.String,java.lang.Object%5B%5D,java.lang.Object%5B%5D)">buildUpdateSQL(Connection, String, Object[], Object[])</a></span> - Static method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcUtils.html" title="class in io.inversion.jdbc">JdbcUtils</a></dt>
 <dd>&nbsp;</dd>
 </dl>
@@ -636,8 +637,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Removes any param that has one of <code>tokens</code> as a whole word case insensitive substring in the key.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Query.html#clearValues()">clearValues()</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Query.html" title="class in io.inversion.rql">Query</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/utils/Rows.RowKeys.html#clone()">clone()</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Rows.RowKeys.html" title="class in io.inversion.utils">Rows.RowKeys</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcUtils.html#close(java.lang.Object...)">close(Object...)</a></span> - Static method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcUtils.html" title="class in io.inversion.jdbc">JdbcUtils</a></dt>
 <dd>&nbsp;</dd>
@@ -790,6 +789,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">Makes a deep copy of this JSNode by stringifying/parsing.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="io/inversion/utils/Rows.RowKeys.html#copy()">copy()</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Rows.RowKeys.html" title="class in io.inversion.utils">Rows.RowKeys</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Engine.html#corsAllowHeaders">corsAllowHeaders</a></span> - Variable in class io.inversion.<a href="io/inversion/Engine.html" title="class in io.inversion">Engine</a></dt>
 <dd>
 <div class="block">Base value for the CORS "Access-Control-Allow-Headers" response header.</div>
@@ -819,8 +820,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/ElasticsearchQuery.html#createPage()">createPage()</a></span> - Method in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/ElasticsearchQuery.html" title="class in io.inversion.elasticsearch">ElasticsearchQuery</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Query.html#createPage()">createPage()</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Query.html" title="class in io.inversion.rql">Query</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/rql/Query.html#createParser()">createParser()</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Query.html" title="class in io.inversion.rql">Query</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/ElasticsearchQuery.html#createSelect()">createSelect()</a></span> - Method in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/ElasticsearchQuery.html" title="class in io.inversion.elasticsearch">ElasticsearchQuery</a></dt>
 <dd>&nbsp;</dd>
@@ -896,7 +895,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/db/DbPatchAction.html#%3Cinit%3E()">DbPatchAction()</a></span> - Constructor for class io.inversion.action.db.<a href="io/inversion/action/db/DbPatchAction.html" title="class in io.inversion.action.db">DbPatchAction</a></dt>
 <dd>&nbsp;</dd>
-<dt><a href="io/inversion/action/db/DbPostAction.html" title="class in io.inversion.action.db"><span class="typeNameLink">DbPostAction</span></a>&lt;<a href="io/inversion/action/db/DbPostAction.html" title="type parameter in DbPostAction">t</a> extends <a href="io/inversion/action/db/DbPostAction.html" title="class in io.inversion.action.db">DbPostAction</a>&gt; - Class in <a href="io/inversion/action/db/package-summary.html">io.inversion.action.db</a></dt>
+<dt><a href="io/inversion/action/db/DbPostAction.html" title="class in io.inversion.action.db"><span class="typeNameLink">DbPostAction</span></a> - Class in <a href="io/inversion/action/db/package-summary.html">io.inversion.action.db</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/db/DbPostAction.html#%3Cinit%3E()">DbPostAction()</a></span> - Constructor for class io.inversion.action.db.<a href="io/inversion/action/db/DbPostAction.html" title="class in io.inversion.action.db">DbPostAction</a></dt>
 <dd>&nbsp;</dd>
@@ -1115,7 +1114,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Db.html#doUpsert(io.inversion.Collection,java.util.List)">doUpsert(Collection, List&lt;Map&lt;String, Object&gt;&gt;)</a></span> - Method in class io.inversion.<a href="io/inversion/Db.html" title="class in io.inversion">Db</a></dt>
 <dd>
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.</div>
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/dynamodb/DynamoDb.html#doUpsert(io.inversion.Collection,java.util.List)">doUpsert(Collection, List&lt;Map&lt;String, Object&gt;&gt;)</a></span> - Method in class io.inversion.dynamodb.<a href="io/inversion/dynamodb/DynamoDb.html" title="class in io.inversion.dynamodb">DynamoDb</a></dt>
 <dd>&nbsp;</dd>
@@ -1248,6 +1247,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Api.html#endpoints">endpoints</a></span> - Variable in class io.inversion.<a href="io/inversion/Api.html" title="class in io.inversion">Api</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#endsWith(java.lang.CharSequence,java.lang.String)">endsWith(CharSequence, String)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
+<dd>
+<div class="block">String.endsWith surrogate for StringBuffer and StringBuilder</div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/azure/functions/AzureFunctionHttpTriggerHandler.html#engine">engine</a></span> - Variable in class io.inversion.azure.functions.<a href="io/inversion/azure/functions/AzureFunctionHttpTriggerHandler.html" title="class in io.inversion.azure.functions">AzureFunctionHttpTriggerHandler</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Chain.html#engine">engine</a></span> - Variable in class io.inversion.<a href="io/inversion/Chain.html" title="class in io.inversion">Chain</a></dt>
@@ -1278,9 +1281,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/utils/JSNode.html#entrySet()">entrySet()</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Rows.Row.html#entrySet()">entrySet()</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></dt>
-<dd>
-<div class="block">Constructs a new LinkedHashSet of key/value pairs preserving column iteration order.</div>
-</dd>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Request.Validation.html#eq(java.lang.Object)">eq(Object)</a></span> - Method in class io.inversion.<a href="io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#equal(java.lang.Object,java.lang.Object)">equal(Object, Object)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
@@ -1317,7 +1318,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Relationship.html#exclude">exclude</a></span> - Variable in class io.inversion.<a href="io/inversion/Relationship.html" title="class in io.inversion">Relationship</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/action/db/DbGetAction.html#exclude(io.inversion.utils.JSNode,java.util.Set,java.util.Set,java.lang.String)">exclude(JSNode, Set, Set, String)</a></span> - Method in class io.inversion.action.db.<a href="io/inversion/action/db/DbGetAction.html" title="class in io.inversion.action.db">DbGetAction</a></dt>
+<dt><span class="memberNameLink"><a href="io/inversion/action/db/DbGetAction.html#exclude(io.inversion.utils.JSNode,java.util.Set,java.util.Set,java.lang.String)">exclude(JSNode, Set&lt;String&gt;, Set&lt;String&gt;, String)</a></span> - Method in class io.inversion.action.db.<a href="io/inversion/action/db/DbGetAction.html" title="class in io.inversion.action.db">DbGetAction</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/db/DbGetAction.html#exclude(java.lang.String,java.util.Set,java.util.Set)">exclude(String, Set&lt;String&gt;, Set&lt;String&gt;)</a></span> - Static method in class io.inversion.action.db.<a href="io/inversion/action/db/DbGetAction.html" title="class in io.inversion.action.db">DbGetAction</a></dt>
 <dd>&nbsp;</dd>
@@ -1376,7 +1377,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dl>
 <dt><span class="memberNameLink"><a href="io/inversion/Request.Validation.html#fail(java.lang.String)">fail(String)</a></span> - Method in class io.inversion.<a href="io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a></dt>
 <dd>
-<div class="block">Throws an ApiException 400 using the provided custom error message.</div>
+<div class="block">Throws an ApiException 400 using customErrorMessage or defaultErrorMessage</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/User.html#failedNum">failedNum</a></span> - Variable in class io.inversion.<a href="io/inversion/User.html" title="class in io.inversion">User</a></dt>
 <dd>
@@ -1438,12 +1439,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Convenience overloading of <a href="io/inversion/utils/JSNode.html#find(java.lang.String)"><code>JSNode.find(String)</code></a></div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcDbUserDao.html#findGRP(java.sql.Connection,int,java.lang.String,java.lang.String)">findGRP(Connection, int, String, String)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcDbUserDao.html" title="class in io.inversion.jdbc">JdbcDbUserDao</a></dt>
-<dd>
-<div class="block">user -@gt; permission
- user -@gt; group -@gt; permission
- user -@gt; role -@gt; permission
- user -@gt; group -@gt; role -@gt; permission</div>
-</dd>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/dynamodb/DynamoDb.html#findIndexByName(io.inversion.Collection,java.lang.String)">findIndexByName(Collection, String)</a></span> - Static method in class io.inversion.dynamodb.<a href="io/inversion/dynamodb/DynamoDb.html" title="class in io.inversion.dynamodb">DynamoDb</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#findInputStream(java.lang.String)">findInputStream(String)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
@@ -1480,7 +1476,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/script/ScriptAction.html#findScript(java.lang.String)">findScript(String)</a></span> - Static method in class io.inversion.script.<a href="io/inversion/script/ScriptAction.html" title="class in io.inversion.script">ScriptAction</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/script/ScriptAction.html#findScripts(io.inversion.Engine,io.inversion.Chain,io.inversion.Request)">findScripts(Engine, Chain, Request)</a></span> - Method in class io.inversion.script.<a href="io/inversion/script/ScriptAction.html" title="class in io.inversion.script">ScriptAction</a></dt>
+<dt><span class="memberNameLink"><a href="io/inversion/script/ScriptAction.html#findScripts(io.inversion.Request)">findScripts(Request)</a></span> - Method in class io.inversion.script.<a href="io/inversion/script/ScriptAction.html" title="class in io.inversion.script">ScriptAction</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Response.html#findString(java.lang.String)">findString(String)</a></span> - Method in class io.inversion.<a href="io/inversion/Response.html" title="class in io.inversion">Response</a></dt>
 <dd>&nbsp;</dd>
@@ -1490,6 +1486,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Builder.html#findTerm(java.lang.String,java.lang.String...)">findTerm(String, String...)</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Builder.html" title="class in io.inversion.rql">Builder</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="io/inversion/utils/Config.html#findUrl(java.lang.String)">findUrl(String)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Config.html" title="class in io.inversion.utils">Config</a></dt>
+<dd>
+<div class="block">Attempts to locate a resource URL for <code>name</code> via the ClassLoader or as a file path relative to ${user.dir}.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/kinesis/FirehoseDb.html#firehoseClient">firehoseClient</a></span> - Variable in class io.inversion.kinesis.<a href="io/inversion/kinesis/FirehoseDb.html" title="class in io.inversion.kinesis">FirehoseDb</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="io/inversion/kinesis/FirehoseDb.html" title="class in io.inversion.kinesis"><span class="typeNameLink">FirehoseDb</span></a> - Class in <a href="io/inversion/kinesis/package-summary.html">io.inversion.kinesis</a></dt>
@@ -1796,8 +1796,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcDb.html#getConnection(boolean)">getConnection(boolean)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a></dt>
 <dd>
-<div class="block">Returns a JDBC connection that is shared on the ThreadLocal
- with autoCommit managed by this Db and an EngineListener.</div>
+<div class="block">Returns a JDBC connection to the underlying JDBC db.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcDb.html#getConnection0(boolean)">getConnection0(boolean)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a></dt>
 <dd>&nbsp;</dd>
@@ -1836,9 +1835,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Request.html#getData()">getData()</a></span> - Method in class io.inversion.<a href="io/inversion/Request.html" title="class in io.inversion">Request</a></dt>
 <dd>
-<div class="block">Attempts to massage an inbound json body into an array
- according to:
- 1.</div>
+<div class="block">Attempts to massage an inbound json body into an array.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Response.html#getData()">getData()</a></span> - Method in class io.inversion.<a href="io/inversion/Response.html" title="class in io.inversion">Response</a></dt>
 <dd>&nbsp;</dd>
@@ -1869,13 +1866,13 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <div class="block">Designed to allow subclasses to provide a default match behavior
  of no configuration was provided by the developer.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="io/inversion/jdbc/SqlQuery.html#getDefaultSorts(io.inversion.jdbc.SqlQuery.Parts)">getDefaultSorts(SqlQuery.Parts)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/cosmosdb/CosmosSqlQuery.html#getDefaultSorts(io.inversion.jdbc.SqlQuery.Parts)">getDefaultSorts(SqlQuery.Parts)</a></span> - Method in class io.inversion.cosmosdb.<a href="io/inversion/cosmosdb/CosmosSqlQuery.html" title="class in io.inversion.cosmosdb">CosmosSqlQuery</a></dt>
 <dd>
 <div class="block">The inversion configured primary index should contain at least
  the document identifier and the partition key.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="io/inversion/jdbc/SqlQuery.html#getDefaultSorts(io.inversion.jdbc.SqlQuery.Parts)">getDefaultSorts(SqlQuery.Parts)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/db/DbAction.html#getDeleteAction()">getDeleteAction()</a></span> - Method in class io.inversion.action.db.<a href="io/inversion/action/db/DbAction.html" title="class in io.inversion.action.db">DbAction</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Chain.html#getDepth()">getDepth()</a></span> - Static method in class io.inversion.<a href="io/inversion/Chain.html" title="class in io.inversion">Chain</a></dt>
@@ -1947,9 +1944,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/Rule.html#getExcludePaths()">getExcludePaths()</a></span> - Method in class io.inversion.<a href="io/inversion/Rule.html" title="class in io.inversion">Rule</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/RestClient.html#getExecutor()">getExecutor()</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/RestClient.html" title="class in io.inversion.utils">RestClient</a></dt>
-<dd>
-<div class="block">Gets <code>executor</code> and calling buildExecutor to construct a new one if <code>executor</code> is null.</div>
-</dd>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/User.html#getFailedNum()">getFailedNum()</a></span> - Method in class io.inversion.<a href="io/inversion/User.html" title="class in io.inversion">User</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#getField(java.lang.String,java.lang.Class)">getField(String, Class)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
@@ -2050,6 +2045,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">Gets an index by case insensitive name.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="io/inversion/Collection.html#getIndexByType(java.lang.String)">getIndexByType(String)</a></span> - Method in class io.inversion.<a href="io/inversion/Collection.html" title="class in io.inversion">Collection</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Collection.html#getIndexes()">getIndexes()</a></span> - Method in class io.inversion.<a href="io/inversion/Collection.html" title="class in io.inversion">Collection</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Request.Upload.html#getInputStream()">getInputStream()</a></span> - Method in class io.inversion.<a href="io/inversion/Request.Upload.html" title="class in io.inversion">Request.Upload</a></dt>
@@ -2213,10 +2210,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Term.html#getParent()">getParent()</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Term.html" title="class in io.inversion.rql">Term</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/rql/Builder.html#getParser()">getParser()</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Builder.html" title="class in io.inversion.rql">Builder</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/rql/Query.html#getParser()">getParser()</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Query.html" title="class in io.inversion.rql">Query</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/dynamodb/DynamoDbQuery.html#getPartKey()">getPartKey()</a></span> - Method in class io.inversion.dynamodb.<a href="io/inversion/dynamodb/DynamoDbQuery.html" title="class in io.inversion.dynamodb">DynamoDbQuery</a></dt>
 <dd>
 <div class="block">Finds the primary or a secondary index to use based on
@@ -2229,9 +2222,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/action/db/DbAction.html#getPatchAction()">getPatchAction()</a></span> - Method in class io.inversion.action.db.<a href="io/inversion/action/db/DbAction.html" title="class in io.inversion.action.db">DbAction</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Request.html#getPath()">getPath()</a></span> - Method in class io.inversion.<a href="io/inversion/Request.html" title="class in io.inversion">Request</a></dt>
-<dd>
-<div class="block">Returns the URL path with the apiPath subtracted from the beginning</div>
-</dd>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Url.html#getPath()">getPath()</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/security/AclRule.html#getPermissions()">getPermissions()</a></span> - Method in class io.inversion.action.security.<a href="io/inversion/action/security/AclRule.html" title="class in io.inversion.action.security">AclRule</a></dt>
@@ -2348,10 +2339,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Engine.html#getResource(java.lang.String)">getResource(String)</a></span> - Method in class io.inversion.<a href="io/inversion/Engine.html" title="class in io.inversion">Engine</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/utils/Config.html#getResource(java.lang.String)">getResource(String)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Config.html" title="class in io.inversion.utils">Config</a></dt>
-<dd>
-<div class="block">Attempts to locate a resource URL for <code>name</code> via the ClassLoader or as a file path relative to ${user.dir}.</div>
-</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Change.html#getResourceKey()">getResourceKey()</a></span> - Method in class io.inversion.<a href="io/inversion/Change.html" title="class in io.inversion">Change</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Request.html#getResourceKey()">getResourceKey()</a></span> - Method in class io.inversion.<a href="io/inversion/Request.html" title="class in io.inversion">Request</a></dt>
@@ -2596,8 +2583,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#hash(byte%5B%5D,java.lang.String)">hash(byte[], String)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/Relationship.html#hashCode()">hashCode()</a></span> - Method in class io.inversion.<a href="io/inversion/Relationship.html" title="class in io.inversion">Relationship</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Collection.html#hasName(java.lang.String)">hasName(String)</a></span> - Method in class io.inversion.<a href="io/inversion/Collection.html" title="class in io.inversion">Collection</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/WrappedQueryBuilder.html#hasNestedPath()">hasNestedPath()</a></span> - Method in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/WrappedQueryBuilder.html" title="class in io.inversion.elasticsearch">WrappedQueryBuilder</a></dt>
@@ -2680,6 +2665,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/Index.html#%3Cinit%3E()">Index()</a></span> - Constructor for class io.inversion.<a href="io/inversion/Index.html" title="class in io.inversion">Index</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Index.html#%3Cinit%3E(java.lang.String,java.lang.String,boolean,io.inversion.Property...)">Index(String, String, boolean, Property...)</a></span> - Constructor for class io.inversion.<a href="io/inversion/Index.html" title="class in io.inversion">Index</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="io/inversion/cosmosdb/CosmosDb.html#INDEX_TYPE_PARTITION_KEY">INDEX_TYPE_PARTITION_KEY</a></span> - Static variable in class io.inversion.cosmosdb.<a href="io/inversion/cosmosdb/CosmosDb.html" title="class in io.inversion.cosmosdb">CosmosDb</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Collection.html#indexes">indexes</a></span> - Variable in class io.inversion.<a href="io/inversion/Collection.html" title="class in io.inversion">Collection</a></dt>
 <dd>
@@ -2792,9 +2779,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Order.Sort.html#isAsc()">isAsc()</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Order.Sort.html" title="class in io.inversion.rql">Order.Sort</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Order.html#isAsc(int)">isAsc(int)</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Order.html" title="class in io.inversion.rql">Order</a></dt>
-<dd>
-<div class="block">Returns true if the first sort is ascending or if there are no sorts.</div>
-</dd>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcDb.html#isAutoCommit()">isAutoCommit()</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/redis/RedisDb.html#isBlockWhenExhausted()">isBlockWhenExhausted()</a></span> - Method in class io.inversion.redis.<a href="io/inversion/redis/RedisDb.html" title="class in io.inversion.redis">RedisDb</a></dt>
@@ -3161,7 +3146,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">Attempts to construct a sensible json property name for a Relationship.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="io/inversion/Db.html#mapTo(java.util.Map,io.inversion.Index,io.inversion.Index)">mapTo(Map, Index, Index)</a></span> - Method in class io.inversion.<a href="io/inversion/Db.html" title="class in io.inversion">Db</a></dt>
+<dt><span class="memberNameLink"><a href="io/inversion/Db.html#mapTo(java.util.Map,io.inversion.Index,io.inversion.Index)">mapTo(Map&lt;String, Object&gt;, Index, Index)</a></span> - Method in class io.inversion.<a href="io/inversion/Db.html" title="class in io.inversion">Db</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Db.html#mapToColumnNames(io.inversion.Collection,io.inversion.rql.Term)">mapToColumnNames(Collection, Term)</a></span> - Method in class io.inversion.<a href="io/inversion/Db.html" title="class in io.inversion">Db</a></dt>
 <dd>&nbsp;</dd>
@@ -3191,9 +3176,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Request.Validation.html#max(java.lang.Number)">max(Number)</a></span> - Method in class io.inversion.<a href="io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/ElasticsearchDb.html#maxElasticQuerySize">maxElasticQuerySize</a></span> - Static variable in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a></dt>
+<dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/ElasticsearchDb.html#maxElasticQuerySize">maxElasticQuerySize</a></span> - Variable in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/ElasticsearchDb.html#maxRequestDuration">maxRequestDuration</a></span> - Static variable in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a></dt>
+<dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/ElasticsearchDb.html#maxRequestDuration">maxRequestDuration</a></span> - Variable in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/db/DbGetAction.html#maxRows">maxRows</a></span> - Variable in class io.inversion.action.db.<a href="io/inversion/action/db/DbGetAction.html" title="class in io.inversion.action.db">DbGetAction</a></dt>
 <dd>&nbsp;</dd>
@@ -3202,7 +3187,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/Chain.html#mergeEndpointActionParamsConfig(java.lang.String)">mergeEndpointActionParamsConfig(String)</a></span> - Method in class io.inversion.<a href="io/inversion/Chain.html" title="class in io.inversion">Chain</a></dt>
 <dd>
 <div class="block">Returns the combined list of endpoint/action stack/request params
- for the suppled key</div>
+ for the supplied key</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Change.html#method">method</a></span> - Variable in class io.inversion.<a href="io/inversion/Change.html" title="class in io.inversion">Change</a></dt>
 <dd>&nbsp;</dd>
@@ -3463,8 +3448,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#parseQueryString(java.lang.String)">parseQueryString(String)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/rql/Builder.html#parser">parser</a></span> - Variable in class io.inversion.rql.<a href="io/inversion/rql/Builder.html" title="class in io.inversion.rql">Builder</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Path.html#parts()">parts()</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a></dt>
 <dd>
 <div class="block">Gets the path parts as a List.</div>
@@ -3588,12 +3571,12 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/SqlQuery.html#printJoins(io.inversion.jdbc.SqlQuery.Parts,java.util.LinkedHashMap)">printJoins(SqlQuery.Parts, LinkedHashMap&lt;String, Term&gt;)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/jdbc/SqlQuery.html#printLimitClause(io.inversion.jdbc.SqlQuery.Parts,int,int)">printLimitClause(SqlQuery.Parts, int, int)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/cosmosdb/CosmosSqlQuery.html#printLimitClause(io.inversion.jdbc.SqlQuery.Parts,int,int)">printLimitClause(SqlQuery.Parts, int, int)</a></span> - Method in class io.inversion.cosmosdb.<a href="io/inversion/cosmosdb/CosmosSqlQuery.html" title="class in io.inversion.cosmosdb">CosmosSqlQuery</a></dt>
 <dd>
 <div class="block">Both offset and limit are required per cosmos spec.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="io/inversion/jdbc/SqlQuery.html#printLimitClause(io.inversion.jdbc.SqlQuery.Parts,int,int)">printLimitClause(SqlQuery.Parts, int, int)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/SqlQuery.html#printOrderClause(io.inversion.jdbc.SqlQuery.Parts,java.util.List)">printOrderClause(SqlQuery.Parts, List&lt;Order.Sort&gt;)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/SqlQuery.html#printSql(io.inversion.jdbc.SqlQuery.Parts)">printSql(SqlQuery.Parts)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/SqlQuery.html" title="class in io.inversion.jdbc">SqlQuery</a></dt>
@@ -3668,7 +3651,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/action/db/DbAction.html#putAction">putAction</a></span> - Variable in class io.inversion.action.db.<a href="io/inversion/action/db/DbAction.html" title="class in io.inversion.action.db">DbAction</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/utils/JSNode.html#putAll(java.util.Map)">putAll(Map)</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></dt>
+<dt><span class="memberNameLink"><a href="io/inversion/utils/JSNode.html#putAll(java.util.Map)">putAll(Map&lt;? extends String, ? extends Object&gt;)</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Rows.Row.html#putAll(java.util.Map)">putAll(Map&lt;? extends String, ? extends Object&gt;)</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></dt>
 <dd>&nbsp;</dd>
@@ -3716,8 +3699,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </a>
 <h2 class="title">R</h2>
 <dl>
-<dt><span class="memberNameLink"><a href="io/inversion/rql/Builder.html#r">r</a></span> - Variable in class io.inversion.rql.<a href="io/inversion/rql/Builder.html" title="class in io.inversion.rql">Builder</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Builder.html#r()">r()</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Builder.html" title="class in io.inversion.rql">Builder</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#read(java.io.File)">read(File)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
@@ -3828,8 +3809,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">Simple way to remove the path part at <code>index</code> without having to check for <code>size() @lt; index</code> first.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="io/inversion/Chain.html#remove(java.lang.Object)">remove(Object)</a></span> - Method in class io.inversion.<a href="io/inversion/Chain.html" title="class in io.inversion">Chain</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/JSArray.html#remove(java.lang.Object)">remove(Object)</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/JSArray.html" title="class in io.inversion.utils">JSArray</a></dt>
 <dd>
 <div class="block">Override of JSNode.remove(Object) to parse <code>index</code> as an Integer and remove the column from <a href="io/inversion/utils/JSArray.html#objects"><code>JSArray.objects</code></a> instead of removing the key from JSNode.properties</div>
@@ -3840,6 +3819,8 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">Sets the value for <code>keyOrIndex</code> to null.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="io/inversion/Chain.html#remove(java.lang.String)">remove(String)</a></span> - Method in class io.inversion.<a href="io/inversion/Chain.html" title="class in io.inversion">Chain</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/JSNode.html#remove(java.lang.String...)">remove(String...)</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></dt>
 <dd>
 <div class="block">Removes all properties with <code>names</code>.</div>
@@ -3970,7 +3951,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>
 <div class="block">A RunnableFuture that blocks on get() until the execution of the Request has returned the Response.</div>
 </dd>
-<dt><a href="io/inversion/Results.html" title="class in io.inversion"><span class="typeNameLink">Results</span></a>&lt;<a href="io/inversion/Results.html" title="type parameter in Results">M</a> extends java.util.Map&gt; - Class in <a href="io/inversion/package-summary.html">io.inversion</a></dt>
+<dt><a href="io/inversion/Results.html" title="class in io.inversion"><span class="typeNameLink">Results</span></a>&lt;<a href="io/inversion/Results.html" title="type parameter in Results">M</a> extends java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt; - Class in <a href="io/inversion/package-summary.html">io.inversion</a></dt>
 <dd>
 <div class="block">Results are returned by a Db and transformed by Actions into Response content.</div>
 </dd>
@@ -4050,8 +4031,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><a href="io/inversion/rql/RqlParser.html" title="class in io.inversion.rql"><span class="typeNameLink">RqlParser</span></a> - Class in <a href="io/inversion/rql/package-summary.html">io.inversion.rql</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/rql/RqlParser.html#%3Cinit%3E()">RqlParser()</a></span> - Constructor for class io.inversion.rql.<a href="io/inversion/rql/RqlParser.html" title="class in io.inversion.rql">RqlParser</a></dt>
-<dd>&nbsp;</dd>
 <dt><a href="io/inversion/rql/RqlTokenizer.html" title="class in io.inversion.rql"><span class="typeNameLink">RqlTokenizer</span></a> - Class in <a href="io/inversion/rql/package-summary.html">io.inversion.rql</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/RqlTokenizer.html#%3Cinit%3E(java.lang.String)">RqlTokenizer(String)</a></span> - Constructor for class io.inversion.rql.<a href="io/inversion/rql/RqlTokenizer.html" title="class in io.inversion.rql">RqlTokenizer</a></dt>
@@ -4113,8 +4092,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/s3/S3UploadAction.html#run(io.inversion.Request,io.inversion.Response)">run(Request, Response)</a></span> - Method in class io.inversion.s3.<a href="io/inversion/s3/S3UploadAction.html" title="class in io.inversion.s3">S3UploadAction</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/script/ScriptAction.html#run(io.inversion.Request,io.inversion.Response)">run(Request, Response)</a></span> - Method in class io.inversion.script.<a href="io/inversion/script/ScriptAction.html" title="class in io.inversion.script">ScriptAction</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/lambda/AwsApiGatewayLambdaRequestStreamHandler.html#runRequest(java.io.InputStream,java.io.OutputStream,com.amazonaws.services.lambda.runtime.Context)">runRequest(InputStream, OutputStream, Context)</a></span> - Method in class io.inversion.lambda.<a href="io/inversion/lambda/AwsApiGatewayLambdaRequestStreamHandler.html" title="class in io.inversion.lambda">AwsApiGatewayLambdaRequestStreamHandler</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcUtils.html#runSql(java.sql.Connection,java.io.InputStream)">runSql(Connection, InputStream)</a></span> - Static method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcUtils.html" title="class in io.inversion.jdbc">JdbcUtils</a></dt>
 <dd>&nbsp;</dd>
@@ -4410,7 +4387,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#slugify(java.lang.String)">slugify(String)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
 <dd>
-<div class="block">returns a lowercase url safe string</div>
+<div class="block">Creates a lowercase url safe string.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/RestClient.html#socketTimeout">socketTimeout</a></span> - Variable in class io.inversion.utils.<a href="io/inversion/utils/RestClient.html" title="class in io.inversion.utils">RestClient</a></dt>
 <dd>
@@ -4437,6 +4414,10 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><a href="io/inversion/jdbc/SqlQuery.Parts.html" title="class in io.inversion.jdbc"><span class="typeNameLink">SqlQuery.Parts</span></a> - Class in <a href="io/inversion/jdbc/package-summary.html">io.inversion.jdbc</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="io/inversion/utils/Utils.html#startsWith(java.lang.CharSequence,java.lang.String)">startsWith(CharSequence, String)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Utils.html" title="class in io.inversion.utils">Utils</a></dt>
+<dd>
+<div class="block">String.startsWith surrogate for StringBuffer and StringBuilder</div>
+</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Path.html#startsWith(java.util.List)">startsWith(List&lt;String&gt;)</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a></dt>
 <dd>
 <div class="block">Performs a case insensitive string match between this Path and <code>pathsToMatch</code>.</div>
@@ -4597,7 +4578,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 </dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Term.html#token">token</a></span> - Variable in class io.inversion.rql.<a href="io/inversion/rql/Term.html" title="class in io.inversion.rql">Term</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/utils/Url.html#toQueryString(java.util.Map)">toQueryString(Map&lt;String, Object&gt;)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></dt>
+<dt><span class="memberNameLink"><a href="io/inversion/Chain.html#top()">top()</a></span> - Static method in class io.inversion.<a href="io/inversion/Chain.html" title="class in io.inversion">Chain</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="io/inversion/utils/Url.html#toQueryString(java.util.Map)">toQueryString(Map)</a></span> - Static method in class io.inversion.utils.<a href="io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></dt>
 <dd>
 <div class="block">Creates a UTF-8 url encoded query string, not including a leading "?" with key value pairs separated by a '&amp;'</div>
 </dd>
@@ -4629,9 +4612,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/Rule.html#toString()">toString()</a></span> - Method in class io.inversion.<a href="io/inversion/Rule.html" title="class in io.inversion">Rule</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/JSNode.html#toString()">toString()</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a></dt>
-<dd>
-<div class="block">Pretty prints the JSNode with properties written out in their original case.</div>
-</dd>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Path.html#toString()">toString()</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/utils/Rows.Row.html#toString()">toString()</a></span> - Method in class io.inversion.utils.<a href="io/inversion/utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a></dt>
@@ -4707,7 +4688,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Api.html#url">url</a></span> - Variable in class io.inversion.<a href="io/inversion/Api.html" title="class in io.inversion">Api</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/ElasticsearchDb.html#url">url</a></span> - Static variable in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a></dt>
+<dt><span class="memberNameLink"><a href="io/inversion/elasticsearch/ElasticsearchDb.html#url">url</a></span> - Variable in class io.inversion.elasticsearch.<a href="io/inversion/elasticsearch/ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcDb.html#url">url</a></span> - Variable in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a></dt>
 <dd>
@@ -4962,9 +4943,9 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Query.html#withDb(D)">withDb(D)</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Query.html" title="class in io.inversion.rql">Query</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/Api.html#withDb(io.inversion.Db)">withDb(Db)</a></span> - Method in class io.inversion.<a href="io/inversion/Api.html" title="class in io.inversion">Api</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/Collection.html#withDb(io.inversion.Db)">withDb(Db)</a></span> - Method in class io.inversion.<a href="io/inversion/Collection.html" title="class in io.inversion">Collection</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="io/inversion/Api.html#withDb(io.inversion.Db)">withDb(Db&lt;T&gt;)</a></span> - Method in class io.inversion.<a href="io/inversion/Api.html" title="class in io.inversion">Api</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcDbUserDao.html#withDb(io.inversion.jdbc.JdbcDb)">withDb(JdbcDb)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcDbUserDao.html" title="class in io.inversion.jdbc">JdbcDbUserDao</a></dt>
 <dd>&nbsp;</dd>
@@ -5224,8 +5205,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Term.html#withParent(io.inversion.rql.Term)">withParent(Term)</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Term.html" title="class in io.inversion.rql">Term</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/rql/Builder.html#withParent(P)">withParent(P)</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Builder.html" title="class in io.inversion.rql">Builder</a></dt>
-<dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="io/inversion/rql/Builder.html#withParser(io.inversion.rql.RqlParser)">withParser(RqlParser)</a></span> - Method in class io.inversion.rql.<a href="io/inversion/rql/Builder.html" title="class in io.inversion.rql">Builder</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="io/inversion/jdbc/JdbcDb.html#withPass(java.lang.String)">withPass(String)</a></span> - Method in class io.inversion.jdbc.<a href="io/inversion/jdbc/JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a></dt>
 <dd>&nbsp;</dd>

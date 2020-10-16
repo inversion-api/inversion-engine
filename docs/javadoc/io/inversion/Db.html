@@ -130,10 +130,6 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <ul class="blockList">
 <li class="blockList">
 <dl>
-<dt><span class="paramLabel">Type Parameters:</span></dt>
-<dd><code>T</code> - </dd>
-</dl>
-<dl>
 <dt>Direct Known Subclasses:</dt>
 <dd><code><a href="cosmosdb/CosmosDb.html" title="class in io.inversion.cosmosdb">CosmosDb</a></code>, <code><a href="dynamodb/DynamoDb.html" title="class in io.inversion.dynamodb">DynamoDb</a></code>, <code><a href="elasticsearch/ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a></code>, <code><a href="kinesis/FirehoseDb.html" title="class in io.inversion.kinesis">FirehoseDb</a></code>, <code><a href="jdbc/JdbcDb.html" title="class in io.inversion.jdbc">JdbcDb</a></code>, <code><a href="redis/RedisDb.html" title="class in io.inversion.redis">RedisDb</a></code>, <code><a href="s3/S3Db.html" title="class in io.inversion.s3">S3Db</a></code></dd>
 </dl>
@@ -397,9 +393,9 @@ extends java.lang.Object</pre>
 <tr id="i14" class="altColor">
 <td class="colFirst"><code>abstract java.util.List&lt;java.lang.String&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doUpsert(io.inversion.Collection,java.util.List)">doUpsert</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
-        java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)</code></th>
+        java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;records)</code></th>
 <td class="colLast">
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.</div>
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.</div>
 </td>
 </tr>
 <tr id="i15" class="rowColor">
@@ -432,7 +428,7 @@ extends java.lang.Object</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i20" class="altColor">
-<td class="colFirst"><code>java.util.Map</code></td>
+<td class="colFirst"><code>java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getKey(io.inversion.Collection,java.lang.Object)">getKey</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
       java.lang.Object&nbsp;node)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -475,15 +471,15 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i28" class="altColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#makeRelationshipName(io.inversion.Collection,io.inversion.Relationship)">makeRelationshipName</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;resource,
-                    <a href="Relationship.html" title="class in io.inversion">Relationship</a>&nbsp;rel)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#makeRelationshipName(io.inversion.Collection,io.inversion.Relationship)">makeRelationshipName</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
+                    <a href="Relationship.html" title="class in io.inversion">Relationship</a>&nbsp;relationship)</code></th>
 <td class="colLast">
 <div class="block">Attempts to construct a sensible json property name for a Relationship.</div>
 </td>
 </tr>
 <tr id="i29" class="rowColor">
-<td class="colFirst"><code>java.util.Map</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mapTo(java.util.Map,io.inversion.Index,io.inversion.Index)">mapTo</a></span>&#8203;(java.util.Map&nbsp;srcRow,
+<td class="colFirst"><code>java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mapTo(java.util.Map,io.inversion.Index,io.inversion.Index)">mapTo</a></span>&#8203;(java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&nbsp;srcRow,
      <a href="Index.html" title="class in io.inversion">Index</a>&nbsp;srcCols,
      <a href="Index.html" title="class in io.inversion">Index</a>&nbsp;destCols)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -503,7 +499,7 @@ extends java.lang.Object</pre>
 <tr id="i32" class="altColor">
 <td class="colFirst"><code>java.util.List&lt;java.lang.String&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#patch(io.inversion.Collection,java.util.List)">patch</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
-     java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;nodes)</code></th>
+     java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;records)</code></th>
 <td class="colLast">
 <div class="block">Should be called by Actions instead of upsert() only when all records are strictly known to exist.</div>
 </td>
@@ -647,7 +643,7 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>collections</h4>
-<pre>protected&nbsp;java.util.ArrayList&lt;<a href="Collection.html" title="class in io.inversion">Collection</a>&gt; collections</pre>
+<pre>protected final&nbsp;java.util.ArrayList&lt;<a href="Collection.html" title="class in io.inversion">Collection</a>&gt; collections</pre>
 <div class="block">The Collections that are the REST interface to the backend tables (or buckets, folders, containers etc.) this Db exposes through an Api.</div>
 </li>
 </ul>
@@ -657,8 +653,46 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>includeTables</h4>
-<pre>protected&nbsp;java.util.Map&lt;java.lang.String,&#8203;java.lang.String&gt; includeTables</pre>
+<pre>protected final&nbsp;java.util.Map&lt;java.lang.String,&#8203;java.lang.String&gt; includeTables</pre>
 <div class="block">A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflicitive Collection creation.</div>
+</li>
+</ul>
+<a id="includeColumns">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>includeColumns</h4>
+<pre>protected final&nbsp;java.util.Set&lt;java.lang.String&gt; includeColumns</pre>
+<div class="block">OPTIONAL column names that should be included in RQL queries, upserts and patches.</div>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="#filterOutJsonProperty(io.inversion.Collection,java.lang.String)"><code>filterOutJsonProperty(Collection, String)</code></a></dd>
+</dl>
+</li>
+</ul>
+<a id="excludeColumns">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>excludeColumns</h4>
+<pre>protected final&nbsp;java.util.Set&lt;java.lang.String&gt; excludeColumns</pre>
+<div class="block">OPTIONAL column names that should be excluded from RQL queries, upserts and patches.</div>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="#filterOutJsonProperty(io.inversion.Collection,java.lang.String)"><code>filterOutJsonProperty(Collection, String)</code></a></dd>
+</dl>
+</li>
+</ul>
+<a id="reservedParams">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>reservedParams</h4>
+<pre>protected final&nbsp;java.util.Set&lt;java.lang.String&gt; reservedParams</pre>
+<div class="block">These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves</div>
 </li>
 </ul>
 <a id="bootstrap">
@@ -704,44 +738,6 @@ extends java.lang.Object</pre>
 <h4>endpointPath</h4>
 <pre>protected&nbsp;<a href="utils/Path.html" title="class in io.inversion.utils">Path</a> endpointPath</pre>
 <div class="block">Used to differentiate which Collection is being referred by a Request when an Api supports Collections with the same name from different Dbs.</div>
-</li>
-</ul>
-<a id="includeColumns">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>includeColumns</h4>
-<pre>protected&nbsp;java.util.Set&lt;java.lang.String&gt; includeColumns</pre>
-<div class="block">OPTIONAL column names that should be included in RQL queries, upserts and patches.</div>
-<dl>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#filterOutJsonProperty(io.inversion.Collection,java.lang.String)"><code>filterOutJsonProperty(Collection, String)</code></a></dd>
-</dl>
-</li>
-</ul>
-<a id="excludeColumns">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>excludeColumns</h4>
-<pre>protected&nbsp;java.util.Set&lt;java.lang.String&gt; excludeColumns</pre>
-<div class="block">OPTIONAL column names that should be excluded from RQL queries, upserts and patches.</div>
-<dl>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#filterOutJsonProperty(io.inversion.Collection,java.lang.String)"><code>filterOutJsonProperty(Collection, String)</code></a></dd>
-</dl>
-</li>
-</ul>
-<a id="reservedParams">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>reservedParams</h4>
-<pre>protected&nbsp;java.util.Set&lt;java.lang.String&gt; reservedParams</pre>
-<div class="block">These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves</div>
 </li>
 </ul>
 <a id="dryRun">
@@ -804,8 +800,9 @@ extends java.lang.Object</pre>
  This implementation really only manages starting/started state, with the heaving lifting of bootstrapping delegated to <a href="#doStartup(io.inversion.Api)"><code>doStartup(Api)</code></a>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>api</code> - </dd>
+<dd><code>api</code> - the api to start</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#doStartup(io.inversion.Api)"><code>doStartup(Api)</code></a></dd>
 </dl>
@@ -824,6 +821,8 @@ extends java.lang.Object</pre>
  <p>
  The default implementation, when <a href="#isBootstrap()"><code>isBootstrap()</code></a> is true, calls <a href="#configDb()"><code>configDb()</code></a> once globally and <a href="#configApi(io.inversion.Api)"><code>configApi(Api)</code></a> once for each Api passed in.</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>api</code> - the api to start</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#configDb()"><code>configDb()</code></a>, 
 <a href="#configApi(io.inversion.Api)"><code>configApi(Api)</code></a></dd>
@@ -872,6 +871,10 @@ extends java.lang.Object</pre>
 <h4>doShutdown</h4>
 <pre class="methodSignature">protected&nbsp;void&nbsp;doShutdown&#8203;(<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;api)</pre>
 <div class="block">Made to be overridden by subclasses or anonymous inner classes to do specific cleanup</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>api</code> - the api shutting down</dd>
+</dl>
 </li>
 </ul>
 <a id="isRunning(io.inversion.Api)">
@@ -898,7 +901,7 @@ extends java.lang.Object</pre>
  delegating the work to <a href="#doSelect(io.inversion.Collection,java.util.List)"><code>doSelect(Collection, List)</code></a> where all ins and outs are based on columnName.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>collection</code> - </dd>
+<dd><code>collection</code> - the collection being queried</dd>
 <dd><code>params</code> - RQL terms that have been translated to use Property jsonNames</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A list of maps with keys as Property jsonNames</dd>
@@ -919,7 +922,7 @@ extends java.lang.Object</pre>
 <div class="block">Finds all records that match the supplied RQL query terms.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>collection</code> - </dd>
+<dd><code>collection</code> - the collection to query</dd>
 <dd><code>queryTerms</code> - RQL terms that have been translated to use Property columnNames not jsonNames</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A list of maps with keys as Property columnNames not jsonNames</dd>
@@ -958,8 +961,8 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>getKey</h4>
-<pre class="methodSignature">public&nbsp;java.util.Map&nbsp;getKey&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
-                            java.lang.Object&nbsp;node)</pre>
+<pre class="methodSignature">public&nbsp;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&nbsp;getKey&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
+                                                                     java.lang.Object&nbsp;node)</pre>
 </li>
 </ul>
 <a id="mapTo(java.util.Map,io.inversion.Index,io.inversion.Index)">
@@ -968,9 +971,9 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>mapTo</h4>
-<pre class="methodSignature">public&nbsp;java.util.Map&nbsp;mapTo&#8203;(java.util.Map&nbsp;srcRow,
-                           <a href="Index.html" title="class in io.inversion">Index</a>&nbsp;srcCols,
-                           <a href="Index.html" title="class in io.inversion">Index</a>&nbsp;destCols)</pre>
+<pre class="methodSignature">public&nbsp;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&nbsp;mapTo&#8203;(java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&nbsp;srcRow,
+                                                                    <a href="Index.html" title="class in io.inversion">Index</a>&nbsp;srcCols,
+                                                                    <a href="Index.html" title="class in io.inversion">Index</a>&nbsp;destCols)</pre>
 </li>
 </ul>
 <a id="doUpsert(io.inversion.Collection,java.util.List)">
@@ -980,9 +983,9 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>doUpsert</h4>
 <pre class="methodSignature">public abstract&nbsp;java.util.List&lt;java.lang.String&gt;&nbsp;doUpsert&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
-                                                          java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)
+                                                          java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;records)
                                                    throws <a href="ApiException.html" title="class in io.inversion">ApiException</a></pre>
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.
  <p>
  Keys that are not supplied in the call but that exist in the row in the target DB should not be modified.
  <p>
@@ -990,7 +993,7 @@ extends java.lang.Object</pre>
  tables unique index constraints allowing an update to take place instead
  of an insert if the row already exists in the underlying data source.
  <p>
- IMPORTANT #1 - implementors should note that the keys on each row in <code>rows</code> may be different.
+ IMPORTANT #1 - implementors should note that the keys on each record may be different.
  <p>
  IMPORTANT #2 - strict POST/PUT vs POST/PATCH semantics are implementation specific.
  For example, a RDBMS backed implementation may choose to upsert only the supplied
@@ -1000,8 +1003,8 @@ extends java.lang.Object</pre>
  this a POST/PUT.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>collection</code> - </dd>
-<dd><code>rows</code> - </dd>
+<dd><code>collection</code> - the collection being modified</dd>
+<dd><code>records</code> - the records being modified</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the encoded resource key for every supplied row</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -1016,15 +1019,17 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>patch</h4>
 <pre class="methodSignature">public&nbsp;java.util.List&lt;java.lang.String&gt;&nbsp;patch&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
-                                              java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;nodes)
+                                              java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;records)
                                        throws <a href="ApiException.html" title="class in io.inversion">ApiException</a></pre>
 <div class="block">Should be called by Actions instead of upsert() only when all records are strictly known to exist.
  <p>
  The default implementation simply calls upsert().</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>collection</code> - </dd>
-<dd><code>nodes</code> - the key/value pairs to update on existing records</dd>
+<dd><code>collection</code> - the collection to patch</dd>
+<dd><code>records</code> - the key/value pairs to update on existing records</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the keys of all resources modified</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -1063,8 +1068,8 @@ extends java.lang.Object</pre>
  that each row will reference the same index.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>collection</code> - </dd>
-<dd><code>indexValues</code> - </dd>
+<dd><code>collection</code> - the collection being modified</dd>
+<dd><code>indexValues</code> - the identifiers for the records to delete</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -1100,7 +1105,7 @@ extends java.lang.Object</pre>
  as all it does is reflectively build Relationships off of Indexes that are on the Collections.</div>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
+<dd><code><a href="ApiException.html" title="class in io.inversion">ApiException</a></code> - when configuration fails</dd>
 </dl>
 </li>
 </ul>
@@ -1141,9 +1146,9 @@ extends java.lang.Object</pre>
 <div class="block">Attempts to camelCase and pluralize the table name to make it an attractive REST collection name.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>tableName</code> - </dd>
+<dd><code>tableName</code> - the name of an underlying datasource table to be turned into a pretty REST collection name</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>a camelCased and pluralied version of tableName</dd>
+<dd>a camelCased and pluralized version of tableName</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#beautifyName(java.lang.String)"><code>beautifyName(String)</code></a></dd>
 </dl>
@@ -1175,8 +1180,8 @@ extends java.lang.Object</pre>
 <ul class="blockList">
 <li class="blockList">
 <h4>makeRelationshipName</h4>
-<pre class="methodSignature">protected&nbsp;java.lang.String&nbsp;makeRelationshipName&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;resource,
-                                                <a href="Relationship.html" title="class in io.inversion">Relationship</a>&nbsp;rel)</pre>
+<pre class="methodSignature">protected&nbsp;java.lang.String&nbsp;makeRelationshipName&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
+                                                <a href="Relationship.html" title="class in io.inversion">Relationship</a>&nbsp;relationship)</pre>
 <div class="block">Attempts to construct a sensible json property name for a Relationship.
  <p>
  For example, a "ONE Author TO_MANY Books" relationship might show up as "books" on the Author collection and "Author" on the Books collection.
@@ -1188,10 +1193,10 @@ extends java.lang.Object</pre>
  was Book.primaryAuthorKey, the relationship would be named "primaryAuthorKey".</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>resource</code> - </dd>
-<dd><code>rel</code> - </dd>
+<dd><code>collection</code> - the collection the relationship name being created will belong to</dd>
+<dd><code>relationship</code> - the relationship</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the json property name for this Relationship.</dd>
+<dd>the json property name representing this Relationship.</dd>
 </dl>
 </li>
 </ul>
@@ -1206,8 +1211,8 @@ extends java.lang.Object</pre>
 <div class="block">Casts value as Property.type.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>property</code> - </dd>
-<dd><code>value</code> - </dd>
+<dd><code>property</code> - the property the value is assigned to</dd>
+<dd><code>value</code> - the value to cast to the datatype of property</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd><code>value</code> cast to <code>Property.type</code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -1226,8 +1231,8 @@ extends java.lang.Object</pre>
 <div class="block">Casts value to as type.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>type</code> - </dd>
-<dd><code>value</code> - </dd>
+<dd><code>type</code> - the type to cast to</dd>
+<dd><code>value</code> - the value to cast</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd><code>value</code> cast to <code>type</code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -1317,6 +1322,10 @@ extends java.lang.Object</pre>
  <p>
  If there is no "|" then the beautified tableName is used for the collectionName.</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>includeTables</code> - underlying data source tables that should be included as REST collections</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#beautifyCollectionName(java.lang.String)"><code>beautifyCollectionName(String)</code></a></dd>
 </dl>
@@ -1350,6 +1359,8 @@ extends java.lang.Object</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>collections</code> - to include (add not replace)</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 </dl>
 </li>
 </ul>
@@ -1378,9 +1389,10 @@ extends java.lang.Object</pre>
  This does not prevent the underlying Property from being part of a Collection object model and the names here don't actually have to be Properties.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>collection</code> - </dd>
-<dd><code>name</code> - </dd>
+<dd><code>collection</code> - the collection in question</dd>
+<dd><code>name</code> - the name of the property to optionally filter</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if the property should be excluded</dd>
 </dl>
 </li>
 </ul>
@@ -1409,10 +1421,6 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>getName</h4>
 <pre class="methodSignature">public&nbsp;java.lang.String&nbsp;getName()</pre>
-<dl>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>the name</dd>
-</dl>
 </li>
 </ul>
 <a id="withName(java.lang.String)">
@@ -1426,6 +1434,8 @@ extends java.lang.Object</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>name</code> - the name to set</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
 </dl>
 </li>
 </ul>

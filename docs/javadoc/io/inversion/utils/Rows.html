@@ -454,7 +454,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <div class="block">Creates a Rows with a single Row with keys/columns equal to <code>row.getKeySet()</code></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>row</code> - </dd>
+<dd><code>row</code> - key pars to add</dd>
 </dl>
 </li>
 </ul>
@@ -468,7 +468,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <div class="block">Creates a Rows with keys/columns equal to <code>keys</code></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>keys</code> - </dd>
+<dd><code>keys</code> - the column names</dd>
 </dl>
 </li>
 </ul>
@@ -482,7 +482,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <div class="block">Creates a Rows with keys/columns equal to <code>keys</code></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>keys</code> - </dd>
+<dd><code>keys</code> - the column keys</dd>
 </dl>
 </li>
 </ul>
@@ -548,6 +548,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <div class="block">Adds a new empty Row to the end of the list.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the new last/current row</dd>
 </dl>
 </li>
 </ul>
@@ -563,7 +564,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>map</code> - the key/values to add to the new Row</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the new Row</dd>
+<dd>the new last/current Row</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#addRow()"><code>addRow()</code></a></dd>
 </dl>
@@ -587,7 +588,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <dd><code>index</code> - the position to insert the new Row or -1 to indicate the 'at the end'</dd>
 <dd><code>map</code> - the key/values to add to the new Row</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the new Row</dd>
+<dd>the new last/current Row</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#addRow(int,java.lang.Object%5B%5D)"><code>addRow(int, Object[])</code></a></dd>
 </dl>
@@ -605,7 +606,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>values</code> - the values to add to the new Row</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the new Row</dd>
+<dd>the new last/current Row</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#addRow(int,java.lang.Object%5B%5D)"><code>addRow(int, Object[])</code></a></dd>
 </dl>
@@ -625,7 +626,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <dd><code>index</code> - the position to insert the new Row or -1 to indicate the 'at the end'</dd>
 <dd><code>values</code> - the values to add to the new Row</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the new Row</dd>
+<dd>the new last/current Row</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#addRow(int,java.lang.Object%5B%5D)"><code>addRow(int, Object[])</code></a></dd>
 </dl>
@@ -643,7 +644,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>values</code> - the values to add to the new Row</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the new Row</dd>
+<dd>the new last/current Row</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#addRow(int,java.lang.Object%5B%5D)"><code>addRow(int, Object[])</code></a></dd>
 </dl>
@@ -665,7 +666,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <dd><code>index</code> - the position to insert the new Row or -1 to indicate the 'at the end'</dd>
 <dd><code>values</code> - the values to add to the new Row</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the new Row</dd>
+<dd>the new last/current Row</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="#addRow(int,java.lang.Object%5B%5D)"><code>addRow(int, Object[])</code></a></dd>
 </dl>
@@ -685,8 +686,8 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
  automatically becomes the new last column for all rows.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>key</code> - </dd>
-<dd><code>value</code> - </dd>
+<dd><code>key</code> - the row key</dd>
+<dd><code>value</code> - the value to store</dd>
 </dl>
 </li>
 </ul>
@@ -700,7 +701,7 @@ extends java.util.ArrayList&lt;<a href="Rows.Row.html" title="class in io.invers
 <div class="block">Adds <code>value</code> to the end of <code>lastRow</code>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>value</code> - </dd>
+<dd><code>value</code> - the value to store</dd>
 </dl>
 </li>
 </ul>

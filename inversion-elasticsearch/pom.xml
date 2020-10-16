@@ -47,7 +47,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-elasticsearch</artifactId>
-      <version>1.11.852</version>
+      <version>1.11.880</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

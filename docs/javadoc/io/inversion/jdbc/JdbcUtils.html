@@ -564,12 +564,7 @@ extends java.lang.Object</pre>
 <h4>execute</h4>
 <pre class="methodSignature">public static&nbsp;java.lang.Object&nbsp;execute&#8203;(java.sql.Connection&nbsp;conn,
                                        java.lang.String&nbsp;sql,
-                                       java.lang.Object...&nbsp;vals)
-                                throws java.lang.Exception</pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.Exception</code></dd>
-</dl>
+                                       java.lang.Object...&nbsp;vals)</pre>
 </li>
 </ul>
 <a id="isSelect(java.lang.String)">
@@ -590,10 +585,10 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public static&nbsp;<a href="../utils/Rows.html" title="class in io.inversion.utils">Rows</a>&nbsp;selectRows&#8203;(java.sql.Connection&nbsp;conn,
                               java.lang.String&nbsp;sql,
                               java.lang.Object...&nbsp;vals)
-                       throws java.lang.Exception</pre>
+                       throws java.sql.SQLException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.Exception</code></dd>
+<dd><code>java.sql.SQLException</code></dd>
 </dl>
 </li>
 </ul>
@@ -606,10 +601,10 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public static&nbsp;<a href="../utils/Rows.Row.html" title="class in io.inversion.utils">Rows.Row</a>&nbsp;selectRow&#8203;(java.sql.Connection&nbsp;conn,
                                  java.lang.String&nbsp;sql,
                                  java.lang.Object...&nbsp;vals)
-                          throws java.lang.Exception</pre>
+                          throws java.sql.SQLException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.Exception</code></dd>
+<dd><code>java.sql.SQLException</code></dd>
 </dl>
 </li>
 </ul>
@@ -622,10 +617,10 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public static&nbsp;int&nbsp;selectInt&#8203;(java.sql.Connection&nbsp;conn,
                             java.lang.String&nbsp;sql,
                             java.lang.Object...&nbsp;vals)
-                     throws java.lang.Exception</pre>
+                     throws java.sql.SQLException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.Exception</code></dd>
+<dd><code>java.sql.SQLException</code></dd>
 </dl>
 </li>
 </ul>
@@ -638,10 +633,10 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public static&nbsp;java.lang.Object&nbsp;selectValue&#8203;(java.sql.Connection&nbsp;conn,
                                            java.lang.String&nbsp;sql,
                                            java.lang.Object...&nbsp;vals)
-                                    throws java.lang.Exception</pre>
+                                    throws java.sql.SQLException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.Exception</code></dd>
+<dd><code>java.sql.SQLException</code></dd>
 </dl>
 </li>
 </ul>
@@ -674,10 +669,10 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public static&nbsp;java.lang.Object&nbsp;insertMap&#8203;(java.sql.Connection&nbsp;conn,
                                          java.lang.String&nbsp;tableName,
                                          java.util.Map&nbsp;row)
-                                  throws java.lang.Exception</pre>
+                                  throws java.sql.SQLException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.Exception</code></dd>
+<dd><code>java.sql.SQLException</code></dd>
 </dl>
 </li>
 </ul>
@@ -690,10 +685,10 @@ extends java.lang.Object</pre>
 <pre class="methodSignature">public static&nbsp;java.util.List&nbsp;insertMaps&#8203;(java.sql.Connection&nbsp;conn,
                                         java.lang.String&nbsp;tableName,
                                         java.util.List&nbsp;maps)
-                                 throws java.lang.Exception</pre>
+                                 throws java.sql.SQLException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.Exception</code></dd>
+<dd><code>java.sql.SQLException</code></dd>
 </dl>
 </li>
 </ul>
@@ -733,10 +728,10 @@ extends java.lang.Object</pre>
                                                             java.lang.String&nbsp;tableName,
                                                             java.util.List&lt;java.lang.String&gt;&nbsp;keyCols,
                                                             java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)
-                                                     throws java.lang.Exception</pre>
+                                                     throws java.sql.SQLException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.Exception</code></dd>
+<dd><code>java.sql.SQLException</code></dd>
 </dl>
 </li>
 </ul>
@@ -762,21 +757,21 @@ extends java.lang.Object</pre>
                                               java.lang.String&nbsp;tableName,
                                               java.util.List&lt;java.lang.String&gt;&nbsp;primaryKeyCols,
                                               java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)
-                                       throws java.lang.Exception</pre>
+                                       throws java.sql.SQLException</pre>
 <div class="block">Batches <code>rows</code> into groups containing identical keys and then
  inserts rows that are missing indexCols key values or attempts an upsert
  for rows that have the key values...the row could have the key but still
  not exist in the db in cases where the key is not an autoincrement number.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>conn</code> - </dd>
-<dd><code>tableName</code> - </dd>
-<dd><code>primaryKeyCols</code> - </dd>
-<dd><code>rows</code> - </dd>
+<dd><code>conn</code> - the jdbc connection</dd>
+<dd><code>tableName</code> - the table to upsert into</dd>
+<dd><code>primaryKeyCols</code> - a unique key for the table that will constrain the upsert</dd>
+<dd><code>rows</code> - the data to upsert</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the primaryKeyCols values for all rows upserted</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
-<dd><code>java.lang.Exception</code></dd>
+<dd><code>java.sql.SQLException</code> - when the upsert fails</dd>
 </dl>
 </li>
 </ul>
@@ -788,10 +783,10 @@ extends java.lang.Object</pre>
 <h4>runSql</h4>
 <pre class="methodSignature">public static&nbsp;void&nbsp;runSql&#8203;(java.sql.Connection&nbsp;conn,
                           java.lang.String&nbsp;sqlString)
-                   throws java.lang.Exception</pre>
+                   throws java.sql.SQLException</pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.Exception</code></dd>
+<dd><code>java.sql.SQLException</code></dd>
 </dl>
 </li>
 </ul>
@@ -803,16 +798,10 @@ extends java.lang.Object</pre>
 <h4>runSql</h4>
 <pre class="methodSignature">public static&nbsp;void&nbsp;runSql&#8203;(java.sql.Connection&nbsp;conn,
                           java.io.InputStream&nbsp;ddlStream)
-                   throws java.lang.Exception</pre>
+                   throws java.sql.SQLException</pre>
 <dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>conn</code> - </dd>
-<dd><code>ddlStream</code> - </dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
-<dd><code>java.lang.Exception</code></dd>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#readSql(java.io.InputStream)"><code>readSql(java.io.InputStream)</code></a></dd>
+<dd><code>java.sql.SQLException</code></dd>
 </dl>
 </li>
 </ul>
@@ -823,15 +812,10 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>readSql</h4>
 <pre class="methodSignature">public static&nbsp;java.util.List&lt;java.lang.String&gt;&nbsp;readSql&#8203;(java.lang.String&nbsp;string)
-                                                throws java.io.IOException</pre>
+                                                throws java.sql.SQLException</pre>
 <dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>string</code> - </dd>
-<dt><span class="returnLabel">Returns:</span></dt>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.io.IOException</code></dd>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#readSql(java.io.InputStream)"><code>readSql(java.io.InputStream)</code></a></dd>
+<dd><code>java.sql.SQLException</code></dd>
 </dl>
 </li>
 </ul>
@@ -842,16 +826,17 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>readSql</h4>
 <pre class="methodSignature">public static&nbsp;java.util.List&lt;java.lang.String&gt;&nbsp;readSql&#8203;(java.io.InputStream&nbsp;ddlStream)
-                                                throws java.io.IOException</pre>
+                                                throws java.sql.SQLException</pre>
 <div class="block">Breaks the input stream up into a list of sql statements where statements are
  terminated by ";".  Lines starting with "--" or "#" are considred comments are
  are ignored.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>ddlStream</code> - </dd>
+<dd><code>ddlStream</code> - a stream of ddl text</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the text broken into individual sql statements</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.io.IOException</code></dd>
+<dd><code>java.sql.SQLException</code> - when io fails</dd>
 </dl>
 </li>
 </ul>

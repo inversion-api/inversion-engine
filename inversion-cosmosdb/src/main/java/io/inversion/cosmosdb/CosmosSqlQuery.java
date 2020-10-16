@@ -88,14 +88,20 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
         Object partKey    = null;
         String partKeyCol;
-        Index  partKeyIdx = collection.getIndex("PartitionKey");
+        Index  partKeyIdx = collection.getIndexByType(CosmosDb.INDEX_TYPE_PARTITION_KEY);
         if (partKeyIdx != null) {
             //-- the only way to turn cross partition querying off is to
             //-- have a single partition key identified in your query.
             //-- If we have a pk term but it is nested in an expression
             //-- the we can't be sure the cosmos query planner can use it.
-            partKeyCol = partKeyIdx.getProperty(0).getColumnName();
+            partKeyCol = partKeyIdx.getName();//getProperty(0).getColumnName();
             Term partKeyTerm = findTerm(partKeyCol, "eq");
+
+            if(partKeyTerm == null) {
+                //TODO: need to get all of them...but then what
+                partKeyCol = partKeyIdx.getProperty(0).getColumnName();
+                partKeyTerm = findTerm(partKeyCol, "eq");
+            }
 
             if (partKeyTerm != null && partKeyTerm.getParent() == null) {
                 partKey = partKeyTerm.getToken(1);

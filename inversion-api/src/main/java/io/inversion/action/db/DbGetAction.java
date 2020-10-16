@@ -603,7 +603,7 @@ public class DbGetAction extends Action<DbGetAction> {
             String parentEk  = Collection.encodeResourceKey(idxToMatchVals);
             String relatedEk = Collection.encodeResourceKey(idxToRetrieveVals);
 
-            related.add(new DefaultKeyValue<String, String>(parentEk, relatedEk));
+            related.add(new DefaultKeyValue<>(parentEk, relatedEk));
         }
 
         return related;

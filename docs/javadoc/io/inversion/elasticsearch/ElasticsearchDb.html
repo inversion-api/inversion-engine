@@ -158,7 +158,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <th class="colLast" scope="col">Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>protected static int[]</code></td>
+<td class="colFirst"><code>protected int[]</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#allowedFailResponseCodes">allowedFailResponseCodes</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -168,17 +168,17 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>static int</code></td>
+<td class="colFirst"><code>int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#maxElasticQuerySize">maxElasticQuerySize</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>protected static int</code></td>
+<td class="colFirst"><code>protected int</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#maxRequestDuration">maxRequestDuration</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>protected static java.lang.String</code></td>
+<td class="colFirst"><code>protected java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#url">url</a></span></code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -259,7 +259,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>protected void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#deleteRow(io.inversion.Collection,java.util.Map)">deleteRow</a></span>&#8203;(<a href="../Collection.html" title="class in io.inversion">Collection</a>&nbsp;table,
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#deleteRow(io.inversion.Collection,java.util.Map)">deleteRow</a></span>&#8203;(<a href="../Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
          java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&nbsp;indexValues)</code></th>
 <td class="colLast">
 <div class="block">Deletes a single specific resource.</div>
@@ -278,7 +278,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doUpsert(io.inversion.Collection,java.util.List)">doUpsert</a></span>&#8203;(<a href="../Collection.html" title="class in io.inversion">Collection</a>&nbsp;table,
         java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)</code></th>
 <td class="colLast">
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.</div>
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.</div>
 </td>
 </tr>
 <tr id="i6" class="altColor">
@@ -333,13 +333,13 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <!--   -->
 </a>
 <h3>Field Detail</h3>
-<a id="url">
+<a id="defaultSource">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>url</h4>
-<pre>protected static&nbsp;java.lang.String url</pre>
+<h4>defaultSource</h4>
+<pre>public final&nbsp;java.lang.String defaultSource</pre>
 </li>
 </ul>
 <a id="maxRequestDuration">
@@ -348,7 +348,11 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <ul class="blockList">
 <li class="blockList">
 <h4>maxRequestDuration</h4>
-<pre>protected static&nbsp;int maxRequestDuration</pre>
+<pre>protected final&nbsp;int maxRequestDuration</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../constant-values.html#io.inversion.elasticsearch.ElasticsearchDb.maxRequestDuration">Constant Field Values</a></dd>
+</dl>
 </li>
 </ul>
 <a id="allowedFailResponseCodes">
@@ -357,7 +361,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <ul class="blockList">
 <li class="blockList">
 <h4>allowedFailResponseCodes</h4>
-<pre>protected static final&nbsp;int[] allowedFailResponseCodes</pre>
+<pre>protected final&nbsp;int[] allowedFailResponseCodes</pre>
 </li>
 </ul>
 <a id="maxElasticQuerySize">
@@ -366,16 +370,16 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <ul class="blockList">
 <li class="blockList">
 <h4>maxElasticQuerySize</h4>
-<pre>public static&nbsp;int maxElasticQuerySize</pre>
+<pre>public&nbsp;int maxElasticQuerySize</pre>
 </li>
 </ul>
-<a id="defaultSource">
+<a id="url">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>defaultSource</h4>
-<pre>public&nbsp;java.lang.String defaultSource</pre>
+<h4>url</h4>
+<pre>protected&nbsp;java.lang.String url</pre>
 </li>
 </ul>
 </li>
@@ -449,6 +453,8 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#doSelect(io.inversion.Collection,java.util.List)">doSelect</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection to query</dd>
 <dd><code>columnMappedTerms</code> - RQL terms that have been translated to use Property columnNames not jsonNames</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>A list of maps with keys as Property columnNames not jsonNames</dd>
@@ -477,6 +483,9 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#delete(io.inversion.Collection,java.util.List)">delete</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection being modified</dd>
+<dd><code>indexValues</code> - the identifiers for the records to delete</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -488,14 +497,14 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <ul class="blockList">
 <li class="blockList">
 <h4>deleteRow</h4>
-<pre class="methodSignature">protected&nbsp;void&nbsp;deleteRow&#8203;(<a href="../Collection.html" title="class in io.inversion">Collection</a>&nbsp;table,
+<pre class="methodSignature">protected&nbsp;void&nbsp;deleteRow&#8203;(<a href="../Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
                          java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&nbsp;indexValues)
                   throws <a href="../ApiException.html" title="class in io.inversion">ApiException</a></pre>
 <div class="block">Deletes a single specific resource.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>table</code> - </dd>
-<dd><code>indexValues</code> - </dd>
+<dd><code>collection</code> - the collection to delete from</dd>
+<dd><code>indexValues</code> - identifiers for the records to delete</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
 </dl>
@@ -511,7 +520,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
                                java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)
                         throws <a href="../ApiException.html" title="class in io.inversion">ApiException</a></pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../Db.html#doUpsert(io.inversion.Collection,java.util.List)">Db</a></code></span></div>
-<div class="block">Upserts the key/values pairs for each row into the underlying data source.
+<div class="block">Upserts the key/values pairs for each record into the underlying data source.
  <p>
  Keys that are not supplied in the call but that exist in the row in the target DB should not be modified.
  <p>
@@ -519,7 +528,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
  tables unique index constraints allowing an update to take place instead
  of an insert if the row already exists in the underlying data source.
  <p>
- IMPORTANT #1 - implementors should note that the keys on each row in <code>rows</code> may be different.
+ IMPORTANT #1 - implementors should note that the keys on each record may be different.
  <p>
  IMPORTANT #2 - strict POST/PUT vs POST/PATCH semantics are implementation specific.
  For example, a RDBMS backed implementation may choose to upsert only the supplied
@@ -530,6 +539,9 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../Db.html#doUpsert(io.inversion.Collection,java.util.List)">doUpsert</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a>&gt;</code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>table</code> - the collection being modified</dd>
+<dd><code>rows</code> - the records being modified</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the encoded resource key for every supplied row</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
@@ -571,7 +583,7 @@ extends <a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="El
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../Db.html#configDb()">configDb</a></code>&nbsp;in class&nbsp;<code><a href="../Db.html" title="class in io.inversion">Db</a>&lt;<a href="ElasticsearchDb.html" title="class in io.inversion.elasticsearch">ElasticsearchDb</a>&gt;</code></dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code></dd>
+<dd><code><a href="../ApiException.html" title="class in io.inversion">ApiException</a></code> - when configuration fails</dd>
 </dl>
 </li>
 </ul>

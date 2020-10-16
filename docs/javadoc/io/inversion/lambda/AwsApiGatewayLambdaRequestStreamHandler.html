@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -209,8 +209,7 @@ implements com.amazonaws.services.lambda.runtime.RequestStreamHandler</pre>
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>protected <a href="../Api.html" title="class in io.inversion">Api</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#buildApi(java.lang.String,java.lang.String)">buildApi</a></span>&#8203;(java.lang.String&nbsp;configProfile,
-        java.lang.String&nbsp;servletPath)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#buildApi(io.inversion.Engine)">buildApi</a></span>&#8203;(<a href="../Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine)</code></th>
 <td class="colLast">
 <div class="block">Optional subclass override hook to supply your own custom wired up Api.</div>
 </td>
@@ -251,28 +250,21 @@ implements com.amazonaws.services.lambda.runtime.RequestStreamHandler</pre>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
-<td class="colFirst"><code><a href="../Chain.html" title="class in io.inversion">Chain</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#runRequest(java.io.InputStream,java.io.OutputStream,com.amazonaws.services.lambda.runtime.Context)">runRequest</a></span>&#8203;(java.io.InputStream&nbsp;inputStream,
-          java.io.OutputStream&nbsp;outputStream,
-          com.amazonaws.services.lambda.runtime.Context&nbsp;context)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setApi(io.inversion.Api)">setApi</a></span>&#8203;(<a href="../Api.html" title="class in io.inversion">Api</a>&nbsp;api)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setDebug(boolean)">setDebug</a></span>&#8203;(boolean&nbsp;debug)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#setEngine(io.inversion.Engine)">setEngine</a></span>&#8203;(<a href="../Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#writeResponse(io.inversion.Response,java.io.OutputStream)">writeResponse</a></span>&#8203;(<a href="../Response.html" title="class in io.inversion">Response</a>&nbsp;res,
              java.io.OutputStream&nbsp;outputStream)</code></th>
@@ -367,22 +359,6 @@ implements com.amazonaws.services.lambda.runtime.RequestStreamHandler</pre>
 </dl>
 </li>
 </ul>
-<a id="runRequest(java.io.InputStream,java.io.OutputStream,com.amazonaws.services.lambda.runtime.Context)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>runRequest</h4>
-<pre class="methodSignature">public&nbsp;<a href="../Chain.html" title="class in io.inversion">Chain</a>&nbsp;runRequest&#8203;(java.io.InputStream&nbsp;inputStream,
-                        java.io.OutputStream&nbsp;outputStream,
-                        com.amazonaws.services.lambda.runtime.Context&nbsp;context)
-                 throws java.io.IOException</pre>
-<dl>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.io.IOException</code></dd>
-</dl>
-</li>
-</ul>
 <a id="buildEngine(java.lang.String,java.lang.String)">
 <!--   -->
 </a>
@@ -399,26 +375,30 @@ implements com.amazonaws.services.lambda.runtime.RequestStreamHandler</pre>
  <p>
  If <code>api</code> is null, it calls buildApi() which by default does nothing and is itself designed as an override hook.</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>configProfile</code> - the configuration runtime profile</dd>
+<dd><code>servletPath</code> - the servlet path</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator.</dd>
+<dd>an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Config/Configurator.</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#buildApi(java.lang.String,java.lang.String)"><code>buildApi(java.lang.String, java.lang.String)</code></a></dd>
+<dd><a href="#buildApi(io.inversion.Engine)"><code>buildApi(io.inversion.Engine)</code></a></dd>
 </dl>
 </li>
 </ul>
-<a id="buildApi(java.lang.String,java.lang.String)">
+<a id="buildApi(io.inversion.Engine)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>buildApi</h4>
-<pre class="methodSignature">protected&nbsp;<a href="../Api.html" title="class in io.inversion">Api</a>&nbsp;buildApi&#8203;(java.lang.String&nbsp;configProfile,
-                       java.lang.String&nbsp;servletPath)</pre>
+<pre class="methodSignature">protected&nbsp;<a href="../Api.html" title="class in io.inversion">Api</a>&nbsp;buildApi&#8203;(<a href="../Engine.html" title="class in io.inversion">Engine</a>&nbsp;engine)</pre>
 <div class="block">Optional subclass override hook to supply your own custom wired up Api.
  <p>
  If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api
- or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Confg/Configurator.</div>
+ or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Config/Configurator.</div>
 <dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>engine</code> - the engine that will host the Api</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>null unless you override this method to construct an Api.</dd>
 <dt><span class="seeLabel">See Also:</span></dt>

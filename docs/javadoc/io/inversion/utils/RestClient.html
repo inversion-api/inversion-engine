@@ -234,7 +234,7 @@ extends java.lang.Object</pre>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colFirst"><code>static class&nbsp;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="RestClient.FutureResponse.html" title="class in io.inversion.utils">RestClient.FutureResponse</a></span></code></th>
 <td class="colLast">
 <div class="block">A RunnableFuture that blocks on get() until the execution of the Request has returned the Response.</div>
@@ -529,9 +529,7 @@ extends java.lang.Object</pre>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="RestClient.Executor.html" title="class in io.inversion.utils">RestClient.Executor</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getExecutor()">getExecutor</a></span>()</code></th>
-<td class="colLast">
-<div class="block">Gets <code>executor</code> and calling buildExecutor to construct a new one if <code>executor</code> is null.</div>
-</td>
+<td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
 <td class="colFirst"><code>org.apache.commons.collections4.multimap.ArrayListValuedHashMap&lt;java.lang.String,&#8203;java.lang.String&gt;</code></td>
@@ -785,6 +783,74 @@ extends java.lang.Object</pre>
 <!--   -->
 </a>
 <h3>Field Detail</h3>
+<a id="includeForwardHeaders">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>includeForwardHeaders</h4>
+<pre>protected final&nbsp;java.util.Set includeForwardHeaders</pre>
+<div class="block">Always forward these headers.</div>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="#shouldForwardHeader(java.lang.String)"><code>shouldForwardHeader(String)</code></a></dd>
+</dl>
+</li>
+</ul>
+<a id="excludeForwardHeaders">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>excludeForwardHeaders</h4>
+<pre>protected final&nbsp;java.util.Set excludeForwardHeaders</pre>
+<div class="block">Never forward these headers.</div>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="#shouldForwardHeader(java.lang.String)"><code>shouldForwardHeader(String)</code></a></dd>
+</dl>
+</li>
+</ul>
+<a id="forcedHeaders">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>forcedHeaders</h4>
+<pre>protected final&nbsp;org.apache.commons.collections4.multimap.ArrayListValuedHashMap&lt;java.lang.String,&#8203;java.lang.String&gt; forcedHeaders</pre>
+<div class="block">Headers that are always sent regardless of <code>forwardHeaders</code>, <code>includeForwardHeaders</code> and <code>excludeForwardHeaders</code> state.
+ <p>
+ These headers will overwrite any caller supplied or forwarded header with the same key, not append to the value list.</div>
+</li>
+</ul>
+<a id="whitelistParams">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>whitelistParams</h4>
+<pre>protected final&nbsp;java.util.Set&lt;java.lang.String&gt; whitelistParams</pre>
+<div class="block">Always forward these params.</div>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="#shouldForwardParam(java.lang.String)"><code>shouldForwardParam(String)</code></a></dd>
+</dl>
+</li>
+</ul>
+<a id="blacklistParams">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>blacklistParams</h4>
+<pre>protected final&nbsp;java.util.Set&lt;java.lang.String&gt; blacklistParams</pre>
+<div class="block">Never forward these params.</div>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="#shouldForwardParam(java.lang.String)"><code>shouldForwardParam(String)</code></a></dd>
+</dl>
+</li>
+</ul>
 <a id="name">
 <!--   -->
 </a>
@@ -838,46 +904,6 @@ extends java.lang.Object</pre>
  Default value is 1024.</div>
 </li>
 </ul>
-<a id="includeForwardHeaders">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>includeForwardHeaders</h4>
-<pre>protected&nbsp;java.util.Set includeForwardHeaders</pre>
-<div class="block">Always forward these headers.</div>
-<dl>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#shouldForwardHeader(java.lang.String)"><code>shouldForwardHeader(String)</code></a></dd>
-</dl>
-</li>
-</ul>
-<a id="excludeForwardHeaders">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>excludeForwardHeaders</h4>
-<pre>protected&nbsp;java.util.Set excludeForwardHeaders</pre>
-<div class="block">Never forward these headers.</div>
-<dl>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#shouldForwardHeader(java.lang.String)"><code>shouldForwardHeader(String)</code></a></dd>
-</dl>
-</li>
-</ul>
-<a id="forcedHeaders">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>forcedHeaders</h4>
-<pre>protected&nbsp;org.apache.commons.collections4.multimap.ArrayListValuedHashMap&lt;java.lang.String,&#8203;java.lang.String&gt; forcedHeaders</pre>
-<div class="block">Headers that are always sent regardless of <code>forwardHeaders</code>, <code>includeForwardHeaders</code> and <code>excludeForwardHeaders</code> state.
- <p>
- These headers will overwrite any caller supplied or forwarded header with the same key, not append to the value list.</div>
-</li>
-</ul>
 <a id="forwardParams">
 <!--   -->
 </a>
@@ -886,36 +912,6 @@ extends java.lang.Object</pre>
 <h4>forwardParams</h4>
 <pre>protected&nbsp;boolean forwardParams</pre>
 <div class="block">Indicates the params from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted params.</div>
-</li>
-</ul>
-<a id="whitelistParams">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>whitelistParams</h4>
-<pre>protected&nbsp;java.util.Set&lt;java.lang.String&gt; whitelistParams</pre>
-<div class="block">Always forward these params.
- <p></div>
-<dl>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#shouldForwardParam(java.lang.String)"><code>shouldForwardParam(String)</code></a></dd>
-</dl>
-</li>
-</ul>
-<a id="blacklistParams">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>blacklistParams</h4>
-<pre>protected&nbsp;java.util.Set&lt;java.lang.String&gt; blacklistParams</pre>
-<div class="block">Never forward these params.
- <p></div>
-<dl>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="#shouldForwardParam(java.lang.String)"><code>shouldForwardParam(String)</code></a></dd>
-</dl>
 </li>
 </ul>
 <a id="executor">
@@ -1075,6 +1071,8 @@ extends java.lang.Object</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>fullUrlOrRelativePath</code> - may be a full url or relative to the <a href="#url"><code>url</code></a> property if set, can have a query string or not</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a FutureResponse that will asynchronously resolve to a Response</dd>
 </dl>
 </li>
 </ul>
@@ -1091,6 +1089,8 @@ extends java.lang.Object</pre>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>fullUrlOrRelativePath</code> - may be a full url or relative to the <a href="#url"><code>url</code></a> property if set, can have a query string or not</dd>
 <dd><code>queryString</code> - additional query string params in name=value@amp;name2=value2 style</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a FutureResponse that will asynchronously resolve to a Response</dd>
 </dl>
 </li>
 </ul>
@@ -1107,6 +1107,8 @@ extends java.lang.Object</pre>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>fullUrlOrRelativePath</code> - may be a full url or relative to the <a href="#url"><code>url</code></a> property if set, can have a query string or not</dd>
 <dd><code>params</code> - query strings passed in as a map</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a FutureResponse that will asynchronously resolve to a Response</dd>
 </dl>
 </li>
 </ul>
@@ -1123,6 +1125,8 @@ extends java.lang.Object</pre>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>fullUrlOrRelativePath</code> - may be a full url or relative to the <a href="#url"><code>url</code></a> property if set, can have a query string or not</dd>
 <dd><code>queryStringNameValuePairs</code> - additional query string name/value pairs</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a FutureResponse that will asynchronously resolve to a Response</dd>
 </dl>
 </li>
 </ul>
@@ -1139,6 +1143,8 @@ extends java.lang.Object</pre>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>fullUrlOrRelativePath</code> - may be a full url or relative to the <a href="#url"><code>url</code></a> property if set</dd>
 <dd><code>body</code> - the optional JSON to post</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a FutureResponse that will asynchronously resolve to a Response</dd>
 </dl>
 </li>
 </ul>
@@ -1155,6 +1161,8 @@ extends java.lang.Object</pre>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>fullUrlOrRelativePath</code> - may be a full url or relative to the <a href="#url"><code>url</code></a> property if set</dd>
 <dd><code>body</code> - the optional JSON to put</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a FutureResponse that will asynchronously resolve to a Response</dd>
 </dl>
 </li>
 </ul>
@@ -1171,6 +1179,8 @@ extends java.lang.Object</pre>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>fullUrlOrRelativePath</code> - may be a full url or relative to the <a href="#url"><code>url</code></a> property if set</dd>
 <dd><code>body</code> - the optional JSON patch</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a FutureResponse that will asynchronously resolve to a Response</dd>
 </dl>
 </li>
 </ul>
@@ -1185,6 +1195,8 @@ extends java.lang.Object</pre>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>fullUrlOrRelativePath</code> - may be a full url or relative to the <a href="#url"><code>url</code></a> property if set</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a FutureResponse that will asynchronously resolve to a Response</dd>
 </dl>
 </li>
 </ul>
@@ -1210,7 +1222,7 @@ extends java.lang.Object</pre>
 <dd><code>retryMax</code> - how many times the client should retry if the Request is not successful, if less than zero then this.retriesMax is used</dd>
 <dd><code>headers</code> - headers that will always be sent regardless of <a href="#includeForwardHeaders"><code>includeForwardHeaders</code></a>, <a href="#excludeForwardHeaders"><code>excludeForwardHeaders</code></a> but may be overwritten by <a href="#forcedHeaders"><code>forcedHeaders</code></a></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>a FutureResponse that will asynchronously resolve to a Result</dd>
+<dd>a FutureResponse that will asynchronously resolve to a Response</dd>
 </dl>
 </li>
 </ul>
@@ -1262,8 +1274,9 @@ extends java.lang.Object</pre>
  </pre></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>request</code> - </dd>
+<dd><code>request</code> - the request to make</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>a Response containing the server response data or error data.  Will not be null.</dd>
 </dl>
 </li>
 </ul>
@@ -1280,8 +1293,8 @@ extends java.lang.Object</pre>
  You can override this to provide your own timeout policy.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>request</code> - </dd>
-<dd><code>response</code> - </dd>
+<dd><code>request</code> - the Request being made</dd>
+<dd><code>response</code> - the Response being computed</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the number of milliseconds to wait before retrying the Request</dd>
 </dl>
@@ -1303,8 +1316,8 @@ extends java.lang.Object</pre>
  <p></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>request</code> - </dd>
-<dd><code>response</code> - </dd>
+<dd><code>request</code> - the Request being made</dd>
+<dd><code>response</code> - the Response being computed</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if this request should be retried</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
@@ -1329,8 +1342,10 @@ extends java.lang.Object</pre>
  Use of this method is wrapped by getHttpClient() which controls concurrency so this method should not be called more than once per instance if
  an error is not thrown.</div>
 <dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>an HttpClient that can be use to make concurrent asynchronous requests.</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code>java.lang.Exception</code></dd>
+<dd><code>java.lang.Exception</code> - if HttpClient construction fails</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="http://literatejava.com/networks/ignore-ssl-certificate-errors-apache-httpclient-4-4/">Ignore SSL Certificate Errors</a></dd>
 </dl>
@@ -1542,9 +1557,9 @@ extends java.lang.Object</pre>
 <li class="blockList">
 <h4>getExecutor</h4>
 <pre class="methodSignature">public&nbsp;<a href="RestClient.Executor.html" title="class in io.inversion.utils">RestClient.Executor</a>&nbsp;getExecutor()</pre>
-<div class="block">Gets <code>executor</code> and calling buildExecutor to construct a new one if <code>executor</code> is null.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>lazy constructs <code>executor</code> if necessary.</dd>
 </dl>
 </li>
 </ul>
@@ -1569,6 +1584,7 @@ extends java.lang.Object</pre>
  You can dependency inject your Executor or override this method to provide advanced customizations.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>a default new Executor.</dd>
 </dl>
 </li>
 </ul>

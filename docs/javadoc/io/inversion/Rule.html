@@ -460,6 +460,36 @@ implements java.lang.Comparable&lt;R&gt;</pre>
 <pre>protected final transient&nbsp;org.slf4j.Logger log</pre>
 </li>
 </ul>
+<a id="includeMatchers">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>includeMatchers</h4>
+<pre>protected final&nbsp;java.util.List&lt;<a href="Rule.RuleMatcher.html" title="class in io.inversion">Rule.RuleMatcher</a>&gt; includeMatchers</pre>
+<div class="block">Method/path combinations that would cause this Rule to be included in the relevant processing.</div>
+</li>
+</ul>
+<a id="excludeMatchers">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>excludeMatchers</h4>
+<pre>protected final&nbsp;java.util.List&lt;<a href="Rule.RuleMatcher.html" title="class in io.inversion">Rule.RuleMatcher</a>&gt; excludeMatchers</pre>
+<div class="block">Method/path combinations that would cause this Rule to be excluded from the relevant processing.</div>
+</li>
+</ul>
+<a id="configMap">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>configMap</h4>
+<pre>protected final transient&nbsp;<a href="utils/JSNode.html" title="class in io.inversion.utils">JSNode</a> configMap</pre>
+<div class="block"><code>JSNode</code> is used because it implements a case insensitive map without modifying the keys</div>
+</li>
+</ul>
 <a id="name">
 <!--   -->
 </a>
@@ -478,36 +508,6 @@ implements java.lang.Comparable&lt;R&gt;</pre>
 <h4>order</h4>
 <pre>protected&nbsp;int order</pre>
 <div class="block">Rules are always processed in sequence sorted by ascending order.</div>
-</li>
-</ul>
-<a id="includeMatchers">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>includeMatchers</h4>
-<pre>protected&nbsp;java.util.List&lt;<a href="Rule.RuleMatcher.html" title="class in io.inversion">Rule.RuleMatcher</a>&gt; includeMatchers</pre>
-<div class="block">Method/path combinations that would cause this Rule to be included in the relevant processing.</div>
-</li>
-</ul>
-<a id="excludeMatchers">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>excludeMatchers</h4>
-<pre>protected&nbsp;java.util.List&lt;<a href="Rule.RuleMatcher.html" title="class in io.inversion">Rule.RuleMatcher</a>&gt; excludeMatchers</pre>
-<div class="block">Method/path combinations that would cause this Rule to be excluded from the relevant processing.</div>
-</li>
-</ul>
-<a id="configMap">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>configMap</h4>
-<pre>protected transient&nbsp;<a href="utils/JSNode.html" title="class in io.inversion.utils">JSNode</a> configMap</pre>
-<div class="block"><code>JSNode</code> is used because it implements a case insensitive map without modifying the keys</div>
 </li>
 </ul>
 <a id="configStr">
@@ -577,6 +577,7 @@ implements java.lang.Comparable&lt;R&gt;</pre>
  of no configuration was provided by the developer.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
+<dd>the default include match "*","*"</dd>
 </dl>
 </li>
 </ul>
