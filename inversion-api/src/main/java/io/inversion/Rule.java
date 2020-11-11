@@ -389,6 +389,12 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
             withPaths(paths);
         }
 
+        public boolean hasMethod(String method)
+        {
+            return methods.size() == 0 || methods.contains(method);
+        }
+
+
         public void withMethods(String... methods) {
             for (String method : Utils.explode(",", methods)) {
                 if ("*".equals(method)) {
@@ -423,6 +429,14 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
 
         public void withPaths(List<Path> paths) {
             this.paths.addAll(paths);
+        }
+
+        public Set<String> getMethods() {
+            return methods;
+        }
+
+        public List<Path> getPaths() {
+            return paths;
         }
 
         public String toString() {
