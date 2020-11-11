@@ -22,11 +22,43 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Contains the Collections, Endpoints and Actions that make up a REST API.
+ */
 public class Api extends Rule<Api> {
+
+    /**
+     * The underlying data sources for the Api.
+     */
     protected final           List<Db>          dbs         = new ArrayList<>();
+
+    /**
+     * The Request HTTP method/path combinations that map to a distinct set of Actions.
+     * <p>
+     * A single Endpoint will be selected to run to service a Request.  Any additional
+     * Path matching rules that exist on these Endpoint's Actions will be interpreted
+     * as relative to the end of the selected Endpoint's Path match.
+     */
     protected final           List<Endpoint>    endpoints   = new ArrayList<>();
+
+    /**
+     * Actions that may be selected to run regardless of the matched Endpoint.
+     * <p>
+     * The Action's Path match statements will be considered relative to the Api's
+     * base URL NOT relative to the selected Endpoint.
+     */
     protected final           List<Action>      actions     = new ArrayList<>();
+
+    /**
+     * The data objects being served by this API.  In a simple API these may map
+     * one-to-one to, for example, database tables from a JdbcDb connecting to a
+     * RDBMS such as MySql or SqlServer.
+     */
     protected final           List<Collection>  collections = new ArrayList<>();
+
+    /**
+     * Listeners that receive callbacks on startup/shutdown/request/error.
+     */
     protected final transient List<ApiListener> listeners   = new ArrayList<>();
     transient protected       String            hash        = null;
     protected                 boolean           debug       = false;
@@ -52,7 +84,7 @@ public class Api extends Rule<Api> {
         return new RuleMatcher(null, new Path(parts));
     }
 
-    public synchronized Api startup() {
+    synchronized Api startup() {
         if (started || starting) //starting is an accidental recursion guard
             return this;
 
@@ -84,7 +116,7 @@ public class Api extends Rule<Api> {
         return started;
     }
 
-    public void shutdown() {
+    void shutdown() {
         for (Db db : dbs) {
             db.shutdown(this);
         }
@@ -202,26 +234,21 @@ public class Api extends Rule<Api> {
         return this;
     }
 
-    public Api withEndpoints(Endpoint... endpoints) {
-        for (Endpoint endpoint : endpoints)
-            withEndpoint(endpoint);
-
-        return this;
-    }
-
-    public Api withEndpoint(Endpoint endpoint) {
-        if (!endpoints.contains(endpoint)) {
-            boolean inserted = false;
-            for (int i = 0; i < endpoints.size(); i++) {
-                if (endpoint.getOrder() < endpoints.get(i).getOrder()) {
-                    endpoints.add(i, endpoint);
-                    inserted = true;
-                    break;
+    public Api withEndpoint(Endpoint... endpoints) {
+        for (Endpoint endpoint : endpoints) {
+            if (!this.endpoints.contains(endpoint)) {
+                boolean inserted = false;
+                for (int i = 0; i < this.endpoints.size(); i++) {
+                    if (endpoint.getOrder() < this.endpoints.get(i).getOrder()) {
+                        this.endpoints.add(i, endpoint);
+                        inserted = true;
+                        break;
+                    }
                 }
-            }
 
-            if (!inserted)
-                endpoints.add(endpoint);
+                if (!inserted)
+                    this.endpoints.add(endpoint);
+            }
         }
         return this;
     }
@@ -269,16 +296,20 @@ public class Api extends Rule<Api> {
         return new ArrayList<>(actions);
     }
 
-    public Api withActions(Action... actions) {
+    /**
+     * Add Action(s) may be selected to run across multiple Endpoints.
+     * @param actions actions to match and conditionally run across all Requests
+     * @return this
+     */
+    public synchronized Api withActions(Action... actions) {
         for (Action action : actions)
-            withAction(action);
-
+            if (!this.actions.contains(action))
+                this.actions.add(action);
         return this;
     }
 
     public Api withAction(Action action) {
-        if (!actions.contains(action))
-            actions.add(action);
+
 
         return this;
     }

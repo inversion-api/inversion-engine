@@ -503,7 +503,7 @@ public abstract class Db<T extends Db> {
             //when the foreign key is only one column but the related primary key is multiple columns, encode the FK as an resourceKey.
             String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
 
-            for (String key : new ArrayList<String>(srcRow.keySet()))
+            for (String key : new ArrayList<>(srcRow.keySet()))
                 srcRow.remove(key);
 
             srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);

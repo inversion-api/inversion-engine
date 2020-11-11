@@ -57,47 +57,6 @@ public class Chain {
         return get().size();
     }
 
-    //   public static String buildLink(String collectionKey, String resourceKey)
-    //   {
-    //      Request req = Chain.top().getRequest();
-    //      String url = req.getUrl().toString();
-    //      if (url.indexOf("?") >= 0)
-    //         url = url.substring(0, url.indexOf("?"));
-    //
-    //      if (req.getRelationshipKey() != null)
-    //      {
-    //         url = url.substring(0, url.lastIndexOf("/"));
-    //      }
-    //
-    //      if (req.getResourceKey() != null)
-    //      {
-    //         url = url.substring(0, url.lastIndexOf("/"));
-    //      }
-    //
-    //      if (collectionKey != null && req.getCollectionKey() != null)
-    //      {
-    //         url = url.substring(0, url.lastIndexOf("/"));
-    //      }
-    //
-    //      if (collectionKey != null)
-    //         url += "/" + collectionKey;
-    //
-    //      if (resourceKey != null)
-    //         url += "/" + resourceKey;
-    //
-    //      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
-    //      {
-    //         String newUrl = req.getApi().getUrl();
-    //         while (newUrl.endsWith("/"))
-    //            newUrl = newUrl.substring(0, newUrl.length() - 1);
-    //
-    //         url = newUrl + url.substring(url.indexOf("/", 8));
-    //      }
-    //
-    //      return url;
-    //
-    //   }
-
     public static Chain first() {
         Stack<Chain> stack = get();
         if (!stack.empty()) {
