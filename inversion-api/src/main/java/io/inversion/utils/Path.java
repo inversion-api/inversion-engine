@@ -331,6 +331,22 @@ public class Path {
         return null;
     }
 
+    //TODO DOCUMENT ME
+    public String getRegex(int index)
+    {
+        try {
+            String part = get(index);
+            part = part.substring(part.indexOf("{") + 1);
+            part = part.substring(0, part.indexOf("}"));
+            return part.substring(part.indexOf(":") + 1);
+        }
+        catch(IndexOutOfBoundsException e)
+        {
+            //
+        }
+        return null;
+    }
+
     /**
      * Square brackets, '[]', indicate that a path path (and by implication, all following parts) are considered optional for path matching.
      * <p>
