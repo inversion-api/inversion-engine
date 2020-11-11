@@ -1339,17 +1339,17 @@ public class Utils {
             }
 
             switch (type.toLowerCase()) {
-                case "s":
-                case "string":
                 case "char":
                 case "nchar":
+                case "clob":
+                    return value.toString().trim();
+                case "s":
+                case "string":
                 case "varchar":
                 case "nvarchar":
                 case "longvarchar":
                 case "longnvarchar":
                     return value.toString();
-                case "clob":
-                    return value.toString().trim();
                 case "n":
                 case "number":
                 case "numeric":
