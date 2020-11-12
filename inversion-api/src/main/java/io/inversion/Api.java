@@ -309,8 +309,8 @@ public class Api extends Rule<Api> {
     }
 
     public Api withAction(Action action) {
-
-
+        if (!this.actions.contains(action))
+            this.actions.add(action);
         return this;
     }
 
