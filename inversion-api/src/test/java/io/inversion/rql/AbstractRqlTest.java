@@ -188,10 +188,11 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
             if (Utils.empty(expected))
                 expected = "YOU NEED TO SUPPLY A MATCH FOR THIS TEST: " + maybeMatch;
 
-            if (!verifyTest(testKey, queryString, expected, res)) {
+            if (!verifyTest(testKey, queryString, expected, res) || res.getStatusCode() > 299) {
                 System.out.println("FAILED: " + testKey);
                 System.out.println(" - expected: " + expected);
-                System.out.println(" - received: " + (Results.LAST_QUERY != null ? Results.LAST_QUERY : maybeMatch));
+                System.out.println(" - received: " + (Results.LAST_QUERY != null ? Results.LAST_QUERY : maybeMatch) + " BAD STATUS " + res.getStatusCode() + (res.getError() != null ? res.getError().getMessage() : res.getErrorContent()));
+
                 res.dump();
                 failures.put(testKey, res.getStatus() + " - " + maybeMatch);
             }
