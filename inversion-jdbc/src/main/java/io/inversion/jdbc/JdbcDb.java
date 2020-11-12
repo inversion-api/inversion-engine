@@ -284,7 +284,7 @@ public class JdbcDb extends Db<JdbcDb> {
     public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
         try {
             for (Map<String, Object> row : rows) {
-                for (String key : row.keySet()) {
+                for (String key : new ArrayList<>(row.keySet())) {
                     if (table.getPropertyByColumnName(key) == null)
                         row.remove(key);
                 }
@@ -301,7 +301,7 @@ public class JdbcDb extends Db<JdbcDb> {
     public void doPatch(Collection table, List<Map<String, Object>> rows) throws ApiException {
         try {
             for (Map<String, Object> row : rows) {
-                for (String key : row.keySet()) {
+                for (String key : new ArrayList<>(row.keySet())) {
                     if (table.getPropertyByColumnName(key) == null)
                         row.remove(key);
                 }
@@ -478,7 +478,6 @@ public class JdbcDb extends Db<JdbcDb> {
             //-- upserts won't work if you can't upsert an idresource field
             //-- https://stackoverflow.com/questions/10116759/set-idresource-insert-off-for-all-tables
             config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
-
         }
 
         return new HikariDataSource(config);

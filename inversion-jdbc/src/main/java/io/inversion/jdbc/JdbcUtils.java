@@ -100,7 +100,7 @@ public class JdbcUtils {
         }
     }
 
-    public static Object execute(Connection conn, String sql, Object... vals) {
+    public static Object execute(Connection conn, String sql, Object... vals) throws SQLException {
         if (vals != null && vals.length == 1 && vals[0] instanceof Collection)
             vals = ((Collection) vals[0]).toArray();
 
@@ -163,6 +163,7 @@ public class JdbcUtils {
         } catch (Exception e) {
             notifyError("execute", sql, vals, e);
             ex = new SQLException(e.getMessage() + " SQL=" + sql, Utils.getCause(e));
+            throw (SQLException)ex;
         } finally {
             close(rs, stmt);
             notifyAfter("execute", sql, vals, ex, rtval);
@@ -249,10 +250,15 @@ public class JdbcUtils {
         } catch (Exception e) {
             if (ex == null)
                 ex = e;
+
+            notifyError("selectRows", sql, vals, e);
+            ex = new SQLException(e.getMessage() + " SQL=" + sql + " ERROR=" + e.getMessage(), Utils.getCause(e));
+            throw (SQLException)ex;
         } finally {
             close(stmt, rs);
             notifyAfter("selectRows", sql, vals, ex, rows);
         }
+
         return rows;
     }
 
@@ -283,159 +289,6 @@ public class JdbcUtils {
         String lc = sql.toLowerCase().trim();
         return lc.startsWith("insert ") || lc.startsWith("merge ");
     }
-
-    //   public static <T> T selectObject(Connection conn, String sql, Class<T> clazz, Object... vals) throws SQLException
-    //   {
-    //      Row row = selectRow(conn, sql, vals);
-    //      if (row != null)
-    //      {
-    //         Object o = clazz.getDeclaredConstructor().newInstance();
-    //         poplulate(o, row);
-    //         return (T) o;
-    //      }
-    //
-    //      return null;
-    //   }
-
-    //   public static Object poplulate(Object o, Map<String, Object> row)
-    //   {
-    //      for (Field field : getFields(o.getClass()))
-    //      {
-    //         try
-    //         {
-    //            Object val = row.get(field.getName());
-    //            if (val != null)
-    //            {
-    //               val = convert(val, field.getType());
-    //
-    //               if (val != null && val instanceof Collection)
-    //               {
-    //                  Collection coll = (Collection) field.get(o);
-    //                  coll.addAll((Collection) val);
-    //               }
-    //               else
-    //               {
-    //                  field.set(o, val);
-    //               }
-    //            }
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //            //OK
-    //         }
-    //      }
-    //
-    //      return o;
-    //   }
-
-    //   public static <T> T convert(Object value, Class<T> type)
-    //   {
-    //      if (value == null)
-    //         return null;
-    //
-    //      if (type.isAssignableFrom(value.getClass()))
-    //      {
-    //         return (T) value;
-    //      }
-    //
-    //      if (type.equals(boolean.class) || type.equals(Boolean.class))
-    //      {
-    //         if (Number.class.isAssignableFrom(value.getClass()))
-    //         {
-    //            long num = Long.parseLong(value + "");
-    //            if (num <= 0)
-    //               return (T) Boolean.FALSE;
-    //            else
-    //               return (T) Boolean.TRUE;
-    //         }
-    //         if (value instanceof Boolean)
-    //            return (T) value;
-    //      }
-    //      if (value instanceof Number)
-    //      {
-    //         if (type.equals(Long.class) || type.equals(long.class))
-    //         {
-    //            value = ((Number) value).longValue();
-    //            return (T) value;
-    //         }
-    //         else if (type.equals(Integer.class) || type.equals(int.class))
-    //         {
-    //            value = ((Number) value).intValue();
-    //            return (T) value;
-    //         }
-    //         else if (type.isAssignableFrom(long.class))
-    //         {
-    //            value = ((Number) value).longValue();
-    //            return (T) value;
-    //         }
-    //      }
-    //
-    //      String str = value + "";
-    //
-    //      if (String.class.isAssignableFrom(type))
-    //      {
-    //         return (T) str;
-    //      }
-    //      else if (boolean.class.isAssignableFrom(type))
-    //      {
-    //         str = str.toLowerCase();
-    //         return (T) (Boolean) (str.equals("true") || str.equals("t") || str.equals("1"));
-    //      }
-    //      else if (int.class.isAssignableFrom(type))
-    //      {
-    //         return (T) (Integer) Integer.parseInt(str);
-    //      }
-    //      else if (long.class.isAssignableFrom(type))
-    //      {
-    //         return (T) (Long) Long.parseLong(str);
-    //      }
-    //      else if (float.class.isAssignableFrom(type))
-    //      {
-    //         return (T) (Float) Float.parseFloat(str);
-    //      }
-    //      else if (Collection.class.isAssignableFrom(type))
-    //      {
-    //         Collection list = new ArrayList<>();
-    //         String[] parts = str.split(",");
-    //         for (String part : parts)
-    //         {
-    //            part = part.trim();
-    //            list.add(part);
-    //         }
-    //         return (T) list;
-    //      }
-    //      else
-    //      {
-    //         System.err.println("Can't cast: " + str + " - class " + type.getName());
-    //      }
-    //
-    //      return (T) value;
-    //   }
-    //
-    //   public static List<Field> getFields(Class clazz)
-    //   {
-    //      List<Field> fields = new ArrayList<>();
-    //
-    //      do
-    //      {
-    //         if (clazz.getName().startsWith("java"))
-    //            break;
-    //
-    //         Field[] farr = clazz.getDeclaredFields();
-    //         if (farr != null)
-    //         {
-    //            for (Field f : farr)
-    //            {
-    //               f.setAccessible(true);
-    //            }
-    //            fields.addAll(Arrays.asList(farr));
-    //         }
-    //         clazz = clazz.getSuperclass();
-    //      }
-    //      while (clazz != null && !Object.class.equals(clazz));
-    //
-    //      return fields;
-    //   }
 
    /*
    +------------------------------------------------------------------------------+
@@ -514,7 +367,7 @@ public class JdbcUtils {
                 }
 
             }
-            stmt.execute();
+            stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();
             while (rs.next()) {
                 Object key = rs.getObject(1);

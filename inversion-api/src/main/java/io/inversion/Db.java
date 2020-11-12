@@ -346,7 +346,10 @@ public abstract class Db<T extends Db> {
                             //-- returned from the db
                             Object val = row.remove(colName);
                             if (!node.containsKey(attrName))
+                            {
+                                val = castDbOutput(attr, val);
                                 node.put(attrName, val);
+                            }
                         }
                     }
 
@@ -411,7 +414,7 @@ public abstract class Db<T extends Db> {
                     copied.add(colName.toLowerCase());
 
                     Object attrValue = node.get(attrName);
-                    Object colValue  = collection.getDb().cast(attr, attrValue);
+                    Object colValue  = collection.getDb().castJsonInput(attr, attrValue);
                     mapped.put(colName, colValue);
                 }
             }
@@ -577,7 +580,7 @@ public abstract class Db<T extends Db> {
                 } else {
                     Property collProp = collection.getProperty(jsonProp);
                     if (collProp != null) {
-                        value = cast(collProp, value);
+                        value = castJsonInput(collProp, value);
                         row.put(collProp.getColumnName(), value);
                     } else {
                         //TODO: need test case here
@@ -957,15 +960,27 @@ public abstract class Db<T extends Db> {
     }
 
     /**
+     * Casts value as Property.type
+     * @param property the property the value is assigned to
+     * @param value the value pulled from the DB
+     * @return <code>value</code> cast to <code>Property.type</code>
+     * @see Utils#castDbOutput(String, Object)
+     */
+    public Object castDbOutput(Property property, Object value)
+    {
+        return Utils.castDbOutput(property != null ? property.getType() : null, value);
+    }
+
+    /**
      * Casts value as Property.type.
      *
      * @param property the property the value is assigned to
      * @param value    the value to cast to the datatype of property
      * @return <code>value</code> cast to <code>Property.type</code>
-     * @see Utils#cast(String, Object)
+     * @see Utils#castJsonInput(String, Object)
      */
-    public Object cast(Property property, Object value) {
-        return Utils.cast(property != null ? property.getType() : null, value);
+    public Object castJsonInput(Property property, Object value) {
+        return Utils.castJsonInput(property != null ? property.getType() : null, value);
     }
 
     /**
@@ -974,10 +989,10 @@ public abstract class Db<T extends Db> {
      * @param type  the type to cast to
      * @param value the value to cast
      * @return <code>value</code> cast to <code>type</code>
-     * @see Utils#cast(String, Object)
+     * @see Utils#castJsonInput(String, Object)
      */
-    public Object cast(String type, Object value) {
-        return Utils.cast(type, value);
+    public Object castJsonInput(String type, Object value) {
+        return Utils.castJsonInput(type, value);
     }
 
     protected void mapToJsonNames(Collection collection, Term term) {

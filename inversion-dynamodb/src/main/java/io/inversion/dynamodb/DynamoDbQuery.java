@@ -518,10 +518,10 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
         {
             String partKeyCol = partKey.getToken(0);
             String type       = collection.getProperty(partKeyCol).getType();
-            Object partKeyVal = getDb().cast(type, partKey.getToken(1));
+            Object partKeyVal = getDb().castJsonInput(type, partKey.getToken(1));
 
             String sortKeyCol = sortKey.getToken(0);
-            Object sortKeyVal = getDb().cast(collection.getProperty(sortKeyCol).getType(), sortKey.getToken(1));
+            Object sortKeyVal = getDb().castJsonInput(collection.getProperty(sortKeyCol).getType(), sortKey.getToken(1));
 
             return new GetItemSpec().withPrimaryKey(partKeyCol, partKeyVal, sortKeyCol, sortKeyVal);
         }
@@ -567,8 +567,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
                     throw ApiException.new400BadRequest("Invalid column in 'after' key: {}", after);
 
-                Object hashValue = db.cast(afterHashKeyCol, after.getToken(1));
-                Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(3)) : null;
+                Object hashValue = db.castJsonInput(afterHashKeyCol, after.getToken(1));
+                Object sortValue = afterSortKeyCol != null ? db.castJsonInput(afterSortKeyCol, after.getToken(3)) : null;
 
                 if (afterSortKeyCol != null) {
                     querySpec.withExclusiveStartKey(afterHashKeyCol.getColumnName(), hashValue, afterSortKeyCol.getColumnName(), sortValue);
@@ -611,8 +611,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 if (afterHashKeyCol == null || (after.size() > 2 && afterSortKeyCol == null))
                     throw ApiException.new400BadRequest("Invalid column in 'after' key: {}");
 
-                Object hashValue = db.cast(afterHashKeyCol, after.getToken(1));
-                Object sortValue = afterSortKeyCol != null ? db.cast(afterSortKeyCol, after.getToken(3)) : null;
+                Object hashValue = db.castJsonInput(afterHashKeyCol, after.getToken(1));
+                Object sortValue = afterSortKeyCol != null ? db.castJsonInput(afterSortKeyCol, after.getToken(3)) : null;
 
                 if (afterSortKeyCol != null) {
                     scanSpec.withExclusiveStartKey(afterHashKeyCol.getColumnName(), hashValue, afterSortKeyCol.getColumnName(), sortValue);
@@ -709,7 +709,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
         } else if (term.isLeaf()) {
             String   colName = term.getParent().getToken(0);
             Property col     = collection.getProperty(colName);
-            Object   value   = db.cast(col, term.getToken());
+            Object   value   = db.castJsonInput(col, term.getToken());
 
             if ("null".equalsIgnoreCase(value + ""))
                 value = null;

@@ -215,7 +215,7 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
                 if (col == null)
                     throw ApiException.new500InternalServerError("Unable to find column '{}' on table '{}'", columnName, coll.getTableName());
 
-                value = db.cast(col, value);
+                value = db.castJsonInput(col, value);
 
             }
         }

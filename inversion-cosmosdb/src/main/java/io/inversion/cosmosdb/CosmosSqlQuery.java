@@ -112,7 +112,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
         boolean partKeyMissing = false;
         if (partKey != null) {
-            partKey = getDb().cast(partKeyIdx.getProperty(0), partKey);
+            partKey = getDb().castJsonInput(partKeyIdx.getProperty(0), partKey);
             options.setEnableCrossPartitionQuery(false);
             options.setPartitionKey(new PartitionKey(partKey));
         } else {

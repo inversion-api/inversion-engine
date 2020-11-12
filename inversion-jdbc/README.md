@@ -42,3 +42,4 @@ docker start mysql57
 docker start sqlserver2017
 docker start postgres95
 
+To run integration tests run: "./gradlew test -Dtest.profile=integration"

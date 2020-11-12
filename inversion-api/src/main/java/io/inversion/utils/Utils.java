@@ -643,7 +643,7 @@ public class Utils {
      *
      * @param date the date string to parse
      * @return the parsed date
-     * @see #cast(String, Object)
+     * @see #castJsonInput(String, Object)
      */
     public static Date date(String date) {
         try {
@@ -1320,7 +1320,26 @@ public class Utils {
         return value;
     }
 
-    public static Object cast(String type, Object value) {
+    public static Object castDbOutput(String type, Object value) {
+
+        if (type == null || value == null)
+            return value;
+
+        type = type.toLowerCase();
+
+        if("json".equalsIgnoreCase(type))
+            return JSNode.parseJson(value.toString());
+
+        if(Utils.in(type, "char", "nchar", "clob"))
+            value.toString().trim();
+
+        if(value instanceof Date && Utils.in(type, "date", "datetime", "timestamp"))
+            formatIso8601((Date)value);
+
+        return value;
+    }
+
+    public static Object castJsonInput(String type, Object value) {
         try {
             if (value == null)
                 return null;
@@ -1349,6 +1368,7 @@ public class Utils {
                 case "nvarchar":
                 case "longvarchar":
                 case "longnvarchar":
+                case "json" :
                     return value.toString();
                 case "n":
                 case "number":
@@ -1404,7 +1424,6 @@ public class Utils {
                         return JSNode.parseJsonArray(value + "");
 
                 case "object":
-
                     if (value instanceof JSNode)
                         return value;
                     else {

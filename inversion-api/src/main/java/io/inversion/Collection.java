@@ -828,7 +828,7 @@ public class Collection extends Rule<Collection> implements Serializable {
                 if (((String) value).length() == 0)
                     throw ApiException.new400BadRequest("A key component can not be empty '{}'", inKeys);
 
-                value = getDb().cast(index.getProperty(i), value);
+                value = getDb().castJsonInput(index.getProperty(i), value);
                 row.set(i, value);
             }
             rows.addRow(row);

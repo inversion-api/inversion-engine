@@ -126,7 +126,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 results.withFoundRows(foundRows);
                 results.withRows(rows);
             } catch (Exception ex) {
-                System.out.println(sql);
+                //System.out.println(sql);
                 ex.printStackTrace();
                 throw ApiException.new500InternalServerError(ex);
             }
