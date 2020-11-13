@@ -50,9 +50,9 @@
 
 buildscript {
     repositories {
-        jcenter()
-        mavenLocal()
+		mavenLocal()
 		mavenCentral()
+		//jcenter()
     }
 
     dependencies {
@@ -139,6 +139,7 @@ subprojects {
 	repositories {
 		mavenLocal()
 		mavenCentral()
+		//jcenter()
 		maven { url 'https://jitpack.io' }
 	}
 

@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":6,"i9":10,"i10":6,"i11":10,"i12":10,"i13":10,"i14":6,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":6,"i10":10,"i11":6,"i12":10,"i13":10,"i14":10,"i15":6,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -321,35 +321,43 @@ extends java.lang.Object</pre>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>java.lang.Object</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cast(io.inversion.Property,java.lang.Object)">cast</a></span>&#8203;(<a href="Property.html" title="class in io.inversion">Property</a>&nbsp;property,
-    java.lang.Object&nbsp;value)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#castDbOutput(io.inversion.Property,java.lang.Object)">castDbOutput</a></span>&#8203;(<a href="Property.html" title="class in io.inversion">Property</a>&nbsp;property,
+            java.lang.Object&nbsp;value)</code></th>
 <td class="colLast">
-<div class="block">Casts value as Property.type.</div>
+<div class="block">Casts value as Property.type</div>
 </td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>java.lang.Object</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#cast(java.lang.String,java.lang.Object)">cast</a></span>&#8203;(java.lang.String&nbsp;type,
-    java.lang.Object&nbsp;value)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#castJsonInput(io.inversion.Property,java.lang.Object)">castJsonInput</a></span>&#8203;(<a href="Property.html" title="class in io.inversion">Property</a>&nbsp;property,
+             java.lang.Object&nbsp;value)</code></th>
+<td class="colLast">
+<div class="block">Casts value as Property.type.</div>
+</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>java.lang.Object</code></td>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#castJsonInput(java.lang.String,java.lang.Object)">castJsonInput</a></span>&#8203;(java.lang.String&nbsp;type,
+             java.lang.Object&nbsp;value)</code></th>
 <td class="colLast">
 <div class="block">Casts value to as type.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#configApi(io.inversion.Api)">configApi</a></span>&#8203;(<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;api)</code></th>
 <td class="colLast">
 <div class="block">Adds all non excluded Collections to the Api via Api.withCollection</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#configDb()">configDb</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Subclasses should reflectively create Collections and Properties, Indexes, and Relationships here.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#delete(io.inversion.Collection,java.util.List)">delete</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
       java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;indexValues)</code></th>
@@ -357,13 +365,13 @@ extends java.lang.Object</pre>
 <div class="block">Deletes rows identified by the unique index values from the underlying data source.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doPatch(io.inversion.Collection,java.util.List)">doPatch</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
        java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>abstract <a href="Results.html" title="class in io.inversion">Results</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doSelect(io.inversion.Collection,java.util.List)">doSelect</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
         java.util.List&lt;<a href="rql/Term.html" title="class in io.inversion.rql">Term</a>&gt;&nbsp;queryTerms)</code></th>
@@ -371,26 +379,26 @@ extends java.lang.Object</pre>
 <div class="block">Finds all records that match the supplied RQL query terms.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doShutdown()">doShutdown</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doShutdown(io.inversion.Api)">doShutdown</a></span>&#8203;(<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;api)</code></th>
 <td class="colLast">
 <div class="block">Made to be overridden by subclasses or anonymous inner classes to do specific cleanup</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doStartup(io.inversion.Api)">doStartup</a></span>&#8203;(<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;api)</code></th>
 <td class="colLast">
 <div class="block">Made to be overridden by subclasses or anonymous inner classes to do specific init of an Api.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>abstract java.util.List&lt;java.lang.String&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#doUpsert(io.inversion.Collection,java.util.List)">doUpsert</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
         java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;records)</code></th>
@@ -398,7 +406,7 @@ extends java.lang.Object</pre>
 <div class="block">Upserts the key/values pairs for each record into the underlying data source.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#filterOutJsonProperty(io.inversion.Collection,java.lang.String)">filterOutJsonProperty</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
                      java.lang.String&nbsp;name)</code></th>
@@ -407,69 +415,69 @@ extends java.lang.Object</pre>
  <code>excludeColumns</code> or is a valid Property columnName.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code><a href="Collection.html" title="class in io.inversion">Collection</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCollectionByTableName(java.lang.String)">getCollectionByTableName</a></span>&#8203;(java.lang.String&nbsp;tableName)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>java.util.List&lt;<a href="Collection.html" title="class in io.inversion">Collection</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getCollections()">getCollections</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="utils/Path.html" title="class in io.inversion.utils">Path</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getEndpointPath()">getEndpointPath</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getHref(java.lang.Object)">getHref</a></span>&#8203;(java.lang.Object&nbsp;hrefOrNode)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getKey(io.inversion.Collection,java.lang.Object)">getKey</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
       java.lang.Object&nbsp;node)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getName()">getName</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>protected <a href="Property.html" title="class in io.inversion">Property</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getProperty(java.lang.String,java.lang.String)">getProperty</a></span>&#8203;(java.lang.String&nbsp;tableName,
            java.lang.String&nbsp;columnName)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#getType()">getType</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isBootstrap()">isBootstrap</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isDryRun()">isDryRun</a></span>()</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isRunning(io.inversion.Api)">isRunning</a></span>&#8203;(<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;api)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#isType(java.lang.String...)">isType</a></span>&#8203;(java.lang.String...&nbsp;types)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#makeRelationshipName(io.inversion.Collection,io.inversion.Relationship)">makeRelationshipName</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
                     <a href="Relationship.html" title="class in io.inversion">Relationship</a>&nbsp;relationship)</code></th>
@@ -477,26 +485,26 @@ extends java.lang.Object</pre>
 <div class="block">Attempts to construct a sensible json property name for a Relationship.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mapTo(java.util.Map,io.inversion.Index,io.inversion.Index)">mapTo</a></span>&#8203;(java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&nbsp;srcRow,
      <a href="Index.html" title="class in io.inversion">Index</a>&nbsp;srcCols,
      <a href="Index.html" title="class in io.inversion">Index</a>&nbsp;destCols)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>protected java.util.Set&lt;<a href="rql/Term.html" title="class in io.inversion.rql">Term</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mapToColumnNames(io.inversion.Collection,io.inversion.rql.Term)">mapToColumnNames</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
                 <a href="rql/Term.html" title="class in io.inversion.rql">Term</a>&nbsp;term)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#mapToJsonNames(io.inversion.Collection,io.inversion.rql.Term)">mapToJsonNames</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
               <a href="rql/Term.html" title="class in io.inversion.rql">Term</a>&nbsp;term)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>java.util.List&lt;java.lang.String&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#patch(io.inversion.Collection,java.util.List)">patch</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
      java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;records)</code></th>
@@ -504,12 +512,12 @@ extends java.lang.Object</pre>
 <div class="block">Should be called by Actions instead of upsert() only when all records are strictly known to exist.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#removeCollection(io.inversion.Collection)">removeCollection</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;table)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code><a href="Results.html" title="class in io.inversion">Results</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#select(io.inversion.Collection,java.util.Map)">select</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
       java.util.Map&lt;java.lang.String,&#8203;java.lang.String&gt;&nbsp;params)</code></th>
@@ -517,67 +525,67 @@ extends java.lang.Object</pre>
 <div class="block">Finds all records that match the supplied RQL query terms.</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shutdown()">shutdown</a></span>()</code></th>
 <td class="colLast">
 <div class="block">Shutsdown all running Apis.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shutdown(io.inversion.Api)">shutdown</a></span>&#8203;(<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;api)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#startup(io.inversion.Api)">startup</a></span>&#8203;(<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;api)</code></th>
 <td class="colLast">
 <div class="block">Called by an Api to as part of Api.startup().</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>java.util.List&lt;java.lang.String&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#upsert(io.inversion.Collection,java.util.List)">upsert</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
       java.util.List&lt;java.util.Map&lt;java.lang.String,&#8203;java.lang.Object&gt;&gt;&nbsp;rows)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withBootstrap(boolean)">withBootstrap</a></span>&#8203;(boolean&nbsp;bootstrap)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withCollection(io.inversion.Collection)">withCollection</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withCollections(io.inversion.Collection...)">withCollections</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>...&nbsp;collections)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withDryRun(boolean)">withDryRun</a></span>&#8203;(boolean&nbsp;dryRun)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withEndpointPath(io.inversion.utils.Path)">withEndpointPath</a></span>&#8203;(<a href="utils/Path.html" title="class in io.inversion.utils">Path</a>&nbsp;endpointPath)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withExcludeColumns(java.lang.String...)">withExcludeColumns</a></span>&#8203;(java.lang.String...&nbsp;columnNames)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withIncludeColumns(java.lang.String...)">withIncludeColumns</a></span>&#8203;(java.lang.String...&nbsp;columnNames)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withIncludeTable(java.lang.String,java.lang.String)">withIncludeTable</a></span>&#8203;(java.lang.String&nbsp;tableName,
                 java.lang.String&nbsp;collectionName)</code></th>
@@ -585,21 +593,21 @@ extends java.lang.Object</pre>
 <div class="block">Whitelists tableName as an underlying table that should be reflectively bootstrapped and exposed as collectionName.</div>
 </td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withIncludeTables(java.lang.String)">withIncludeTables</a></span>&#8203;(java.lang.String&nbsp;includeTables)</code></th>
 <td class="colLast">
 <div class="block">Utility that parses a comma and pipe separated list of table name to collection name mappings.</div>
 </td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withName(java.lang.String)">withName</a></span>&#8203;(java.lang.String&nbsp;name)</code></th>
 <td class="colLast">
 <div class="block">The name of the Db is used primarily for autowiring "name.property" bean props from</div>
 </td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code><a href="Db.html" title="type parameter in Db">T</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withType(java.lang.String)">withType</a></span>&#8203;(java.lang.String&nbsp;type)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -1200,14 +1208,34 @@ extends java.lang.Object</pre>
 </dl>
 </li>
 </ul>
-<a id="cast(io.inversion.Property,java.lang.Object)">
+<a id="castDbOutput(io.inversion.Property,java.lang.Object)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>cast</h4>
-<pre class="methodSignature">public&nbsp;java.lang.Object&nbsp;cast&#8203;(<a href="Property.html" title="class in io.inversion">Property</a>&nbsp;property,
-                             java.lang.Object&nbsp;value)</pre>
+<h4>castDbOutput</h4>
+<pre class="methodSignature">public&nbsp;java.lang.Object&nbsp;castDbOutput&#8203;(<a href="Property.html" title="class in io.inversion">Property</a>&nbsp;property,
+                                     java.lang.Object&nbsp;value)</pre>
+<div class="block">Casts value as Property.type</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>property</code> - the property the value is assigned to</dd>
+<dd><code>value</code> - the value pulled from the DB</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd><code>value</code> cast to <code>Property.type</code></dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="utils/Utils.html#castDbOutput(java.lang.String,java.lang.Object)"><code>Utils.castDbOutput(String, Object)</code></a></dd>
+</dl>
+</li>
+</ul>
+<a id="castJsonInput(io.inversion.Property,java.lang.Object)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>castJsonInput</h4>
+<pre class="methodSignature">public&nbsp;java.lang.Object&nbsp;castJsonInput&#8203;(<a href="Property.html" title="class in io.inversion">Property</a>&nbsp;property,
+                                      java.lang.Object&nbsp;value)</pre>
 <div class="block">Casts value as Property.type.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1216,18 +1244,18 @@ extends java.lang.Object</pre>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd><code>value</code> cast to <code>Property.type</code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="utils/Utils.html#cast(java.lang.String,java.lang.Object)"><code>Utils.cast(String, Object)</code></a></dd>
+<dd><a href="utils/Utils.html#castJsonInput(java.lang.String,java.lang.Object)"><code>Utils.castJsonInput(String, Object)</code></a></dd>
 </dl>
 </li>
 </ul>
-<a id="cast(java.lang.String,java.lang.Object)">
+<a id="castJsonInput(java.lang.String,java.lang.Object)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>cast</h4>
-<pre class="methodSignature">public&nbsp;java.lang.Object&nbsp;cast&#8203;(java.lang.String&nbsp;type,
-                             java.lang.Object&nbsp;value)</pre>
+<h4>castJsonInput</h4>
+<pre class="methodSignature">public&nbsp;java.lang.Object&nbsp;castJsonInput&#8203;(java.lang.String&nbsp;type,
+                                      java.lang.Object&nbsp;value)</pre>
 <div class="block">Casts value to as type.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1236,7 +1264,7 @@ extends java.lang.Object</pre>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd><code>value</code> cast to <code>type</code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="utils/Utils.html#cast(java.lang.String,java.lang.Object)"><code>Utils.cast(String, Object)</code></a></dd>
+<dd><a href="utils/Utils.html#castJsonInput(java.lang.String,java.lang.Object)"><code>Utils.castJsonInput(String, Object)</code></a></dd>
 </dl>
 </li>
 </ul>

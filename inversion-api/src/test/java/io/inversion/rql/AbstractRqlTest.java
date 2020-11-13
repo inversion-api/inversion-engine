@@ -188,10 +188,10 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
             if (Utils.empty(expected))
                 expected = "YOU NEED TO SUPPLY A MATCH FOR THIS TEST: " + maybeMatch;
 
-            if (!verifyTest(testKey, queryString, expected, res) || res.getStatusCode() > 299) {
+            if (!verifyTest(testKey, queryString, expected, res)) {
                 System.out.println("FAILED: " + testKey);
                 System.out.println(" - expected: " + expected);
-                System.out.println(" - received: " + (Results.LAST_QUERY != null ? Results.LAST_QUERY : maybeMatch) + " BAD STATUS " + res.getStatusCode() + (res.getError() != null ? res.getError().getMessage() : res.getErrorContent()));
+                System.out.println(" - received: " + (Results.LAST_QUERY != null ? Results.LAST_QUERY : maybeMatch));
 
                 res.dump();
                 failures.put(testKey, res.getStatus() + " - " + maybeMatch);
@@ -253,7 +253,16 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
 
         debug = debug.replace("SQL_CALC_FOUND_ROWS ", "").toLowerCase();
 
-        return debug.contains(expectedMatch.toLowerCase());
+        boolean doesContain = debug.contains(expectedMatch.toLowerCase());
+        if(doesContain)
+        {
+            //if the tests produced an error, make sure the users is matching against the error
+            if(res.getError() != null) {
+                String errorContent = res.getError().getMessage();
+                doesContain = errorContent.contains(expectedMatch);
+            }
+        }
+        return doesContain;
     }
 
     public AbstractRqlTest withTestRequest(String testKey, String testRql) {

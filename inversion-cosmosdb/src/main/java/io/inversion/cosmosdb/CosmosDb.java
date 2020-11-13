@@ -108,11 +108,7 @@ public class CosmosDb extends Db<CosmosDb> {
             if (values.size() == partitionIdx.size()) {
 
                 //-- remove any explicit partitionKey query params supplied by the users
-                for (Term term : new ArrayList<Term>(columnMappedTerms)) {
-                    if (term.hasToken("eq") && partitionIdx.getName().equals(term.getToken(0))) {
-                        columnMappedTerms.remove(term);
-                    }
-                }
+                columnMappedTerms.removeIf(term -> term.hasToken("eq") && partitionIdx.getName().equals(term.getToken(0)));
 
                 String partitionKey = io.inversion.Collection.encodeResourceKey(values, partitionIdx);
                 columnMappedTerms.add(Term.term(null, "eq", partitionIdx.getName(), partitionKey));

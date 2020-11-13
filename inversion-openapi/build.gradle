@@ -1,0 +1,10 @@
+dependencies {
+
+    compile project(':inversion-api')
+    compile group: 'io.swagger.core.v3', name: 'swagger-models', version: '2.1.5'
+    compile group: 'io.swagger.core.v3', name: 'swagger-core', version: '2.1.5'
+
+    testCompile project(':inversion-jdbc')
+    testCompile project(':inversion-jdbc').sourceSets.test.output
+    testCompile project(':inversion-spring-boot')
+}

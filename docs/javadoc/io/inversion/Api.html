@@ -26,7 +26,7 @@
     catch(err) {
     }
 //-->
-var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10};
+var data = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -141,6 +141,7 @@ $('.navPadding').css('padding-top', $('.fixedNav').css("height"));
 <hr>
 <pre>public class <span class="typeNameLabel">Api</span>
 extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="Api.html" title="class in io.inversion">Api</a>&gt;</pre>
+<div class="block">Contains the Collections, Endpoints and Actions that make up a REST API.</div>
 </li>
 </ul>
 </div>
@@ -197,17 +198,23 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <tr class="altColor">
 <td class="colFirst"><code>protected java.util.List&lt;<a href="Action.html" title="class in io.inversion">Action</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#actions">actions</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Actions that may be selected to run regardless of the matched Endpoint.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected java.util.List&lt;<a href="Collection.html" title="class in io.inversion">Collection</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#collections">collections</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">The data objects being served by this API.</div>
+</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>protected java.util.List&lt;<a href="Db.html" title="class in io.inversion">Db</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#dbs">dbs</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">The underlying data sources for the Api.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected boolean</code></td>
@@ -217,7 +224,9 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <tr class="altColor">
 <td class="colFirst"><code>protected java.util.List&lt;<a href="Endpoint.html" title="class in io.inversion">Endpoint</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#endpoints">endpoints</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">The Request HTTP method/path combinations that map to a distinct set of Actions.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
@@ -227,7 +236,9 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <tr class="altColor">
 <td class="colFirst"><code>protected java.util.List&lt;<a href="Api.ApiListener.html" title="interface in io.inversion">Api.ApiListener</a>&gt;</code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#listeners">listeners</a></span></code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Listeners that receive callbacks on startup/shutdown/request/error.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected java.lang.String</code></td>
@@ -368,68 +379,55 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr id="i16" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#shutdown()">shutdown</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i17" class="rowColor">
-<td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#startup()">startup</a></span>()</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withAction(io.inversion.Action)">withAction</a></span>&#8203;(<a href="Action.html" title="class in io.inversion">Action</a>&nbsp;action)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withActions(io.inversion.Action...)">withActions</a></span>&#8203;(<a href="Action.html" title="class in io.inversion">Action</a>...&nbsp;actions)</code></th>
-<td class="colLast">&nbsp;</td>
+<td class="colLast">
+<div class="block">Add Action(s) may be selected to run across multiple Endpoints.</div>
+</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withApiListener(io.inversion.Api.ApiListener)">withApiListener</a></span>&#8203;(<a href="Api.ApiListener.html" title="interface in io.inversion">Api.ApiListener</a>&nbsp;listener)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withCollection(io.inversion.Collection)">withCollection</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;coll)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>&lt;T extends <a href="Db.html" title="class in io.inversion">Db</a>&gt;<br><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withDb(io.inversion.Db)">withDb</a></span>&#8203;(<a href="Db.html" title="class in io.inversion">Db</a>&lt;T&gt;&nbsp;db)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withDbs(io.inversion.Db...)">withDbs</a></span>&#8203;(<a href="Db.html" title="class in io.inversion">Db</a>...&nbsp;dbs)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withEndpoint(io.inversion.Endpoint)">withEndpoint</a></span>&#8203;(<a href="Endpoint.html" title="class in io.inversion">Endpoint</a>&nbsp;endpoint)</code></th>
+<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withEndpoint(io.inversion.Endpoint...)">withEndpoint</a></span>&#8203;(<a href="Endpoint.html" title="class in io.inversion">Endpoint</a>...&nbsp;endpoints)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withEndpoint(java.lang.String,java.lang.String,io.inversion.Action...)">withEndpoint</a></span>&#8203;(java.lang.String&nbsp;methods,
             java.lang.String&nbsp;includePaths,
             <a href="Action.html" title="class in io.inversion">Action</a>...&nbsp;actions)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
-<td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
-<th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withEndpoints(io.inversion.Endpoint...)">withEndpoints</a></span>&#8203;(<a href="Endpoint.html" title="class in io.inversion">Endpoint</a>...&nbsp;endpoints)</code></th>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr id="i27" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withHash(java.lang.String)">withHash</a></span>&#8203;(java.lang.String&nbsp;hash)</code></th>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withRelationship(io.inversion.Collection,java.lang.String,io.inversion.Collection,java.lang.String,io.inversion.Property...)">withRelationship</a></span>&#8203;(<a href="Collection.html" title="class in io.inversion">Collection</a>&nbsp;parentCollection,
                 java.lang.String&nbsp;parentPropertyName,
@@ -440,7 +438,7 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <div class="block">Creates a ONE_TO_MANY Relationship from the parent to child collection and the inverse MANY_TO_ONE from the child to the parent.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withRelationship(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String...)">withRelationship</a></span>&#8203;(java.lang.String&nbsp;parentCollectionName,
                 java.lang.String&nbsp;parentPropertyName,
@@ -451,7 +449,7 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <div class="block">This method takes String instead of actual Collections and Properties as a convenience to people hand wiring up an Api.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code><a href="Api.html" title="class in io.inversion">Api</a></code></td>
 <th class="colSecond" scope="row"><code><span class="memberNameLink"><a href="#withUrl(java.lang.String)">withUrl</a></span>&#8203;(java.lang.String&nbsp;url)</code></th>
 <td class="colLast">&nbsp;</td>
@@ -494,6 +492,7 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <li class="blockList">
 <h4>dbs</h4>
 <pre>protected final&nbsp;java.util.List&lt;<a href="Db.html" title="class in io.inversion">Db</a>&gt; dbs</pre>
+<div class="block">The underlying data sources for the Api.</div>
 </li>
 </ul>
 <a id="endpoints">
@@ -503,6 +502,11 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <li class="blockList">
 <h4>endpoints</h4>
 <pre>protected final&nbsp;java.util.List&lt;<a href="Endpoint.html" title="class in io.inversion">Endpoint</a>&gt; endpoints</pre>
+<div class="block">The Request HTTP method/path combinations that map to a distinct set of Actions.
+ <p>
+ A single Endpoint will be selected to run to service a Request.  Any additional
+ Path matching rules that exist on these Endpoint's Actions will be interpreted
+ as relative to the end of the selected Endpoint's Path match.</div>
 </li>
 </ul>
 <a id="actions">
@@ -512,6 +516,10 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <li class="blockList">
 <h4>actions</h4>
 <pre>protected final&nbsp;java.util.List&lt;<a href="Action.html" title="class in io.inversion">Action</a>&gt; actions</pre>
+<div class="block">Actions that may be selected to run regardless of the matched Endpoint.
+ <p>
+ The Action's Path match statements will be considered relative to the Api's
+ base URL NOT relative to the selected Endpoint.</div>
 </li>
 </ul>
 <a id="collections">
@@ -521,6 +529,9 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <li class="blockList">
 <h4>collections</h4>
 <pre>protected final&nbsp;java.util.List&lt;<a href="Collection.html" title="class in io.inversion">Collection</a>&gt; collections</pre>
+<div class="block">The data objects being served by this API.  In a simple API these may map
+ one-to-one to, for example, database tables from a JdbcDb connecting to a
+ RDBMS such as MySql or SqlServer.</div>
 </li>
 </ul>
 <a id="listeners">
@@ -530,6 +541,7 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <li class="blockList">
 <h4>listeners</h4>
 <pre>protected final transient&nbsp;java.util.List&lt;<a href="Api.ApiListener.html" title="interface in io.inversion">Api.ApiListener</a>&gt; listeners</pre>
+<div class="block">Listeners that receive callbacks on startup/shutdown/request/error.</div>
 </li>
 </ul>
 <a id="hash">
@@ -615,15 +627,6 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 </dl>
 </li>
 </ul>
-<a id="startup()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>startup</h4>
-<pre class="methodSignature">public&nbsp;<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;startup()</pre>
-</li>
-</ul>
 <a id="isStarted()">
 <!--   -->
 </a>
@@ -631,15 +634,6 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <li class="blockList">
 <h4>isStarted</h4>
 <pre class="methodSignature">public&nbsp;boolean&nbsp;isStarted()</pre>
-</li>
-</ul>
-<a id="shutdown()">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>shutdown</h4>
-<pre class="methodSignature">public&nbsp;void&nbsp;shutdown()</pre>
 </li>
 </ul>
 <a id="removeExcludes()">
@@ -780,22 +774,13 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
                         <a href="Action.html" title="class in io.inversion">Action</a>...&nbsp;actions)</pre>
 </li>
 </ul>
-<a id="withEndpoints(io.inversion.Endpoint...)">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>withEndpoints</h4>
-<pre class="methodSignature">public&nbsp;<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;withEndpoints&#8203;(<a href="Endpoint.html" title="class in io.inversion">Endpoint</a>...&nbsp;endpoints)</pre>
-</li>
-</ul>
-<a id="withEndpoint(io.inversion.Endpoint)">
+<a id="withEndpoint(io.inversion.Endpoint...)">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>withEndpoint</h4>
-<pre class="methodSignature">public&nbsp;<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;withEndpoint&#8203;(<a href="Endpoint.html" title="class in io.inversion">Endpoint</a>&nbsp;endpoint)</pre>
+<pre class="methodSignature">public&nbsp;<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;withEndpoint&#8203;(<a href="Endpoint.html" title="class in io.inversion">Endpoint</a>...&nbsp;endpoints)</pre>
 </li>
 </ul>
 <a id="withRelationship(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String...)">
@@ -868,6 +853,13 @@ extends <a href="Rule.html" title="class in io.inversion">Rule</a>&lt;<a href="A
 <li class="blockList">
 <h4>withActions</h4>
 <pre class="methodSignature">public&nbsp;<a href="Api.html" title="class in io.inversion">Api</a>&nbsp;withActions&#8203;(<a href="Action.html" title="class in io.inversion">Action</a>...&nbsp;actions)</pre>
+<div class="block">Add Action(s) may be selected to run across multiple Endpoints.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>actions</code> - actions to match and conditionally run across all Requests</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>this</dd>
+</dl>
 </li>
 </ul>
 <a id="withAction(io.inversion.Action)">
