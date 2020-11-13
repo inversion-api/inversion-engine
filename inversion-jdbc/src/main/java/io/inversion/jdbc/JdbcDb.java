@@ -477,7 +477,12 @@ public class JdbcDb extends Db<JdbcDb> {
         } else if (isType("sqlserver")) {
             //-- upserts won't work if you can't upsert an idresource field
             //-- https://stackoverflow.com/questions/10116759/set-idresource-insert-off-for-all-tables
-            config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
+            //20201113 WB - this script should not have been applied on each connection.  It
+            //started to cause connection timeouts when pool tried to create new connections causing
+            //the pool to continually retry and hammer the DB if there we a large number of tables.
+            //going to put this in documentation for manual inclusion in your sqlserver ddl instead of
+            //something inversion does automatically.
+            //config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
         }
 
         return new HikariDataSource(config);
