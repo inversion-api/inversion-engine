@@ -9,14 +9,14 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-spring-boot</artifactId>
-  <version>0.9.12</version>
+  <version>0.9.14</version>
   <name>inversion-spring-boot</name>
   <description>Inversion Cloud API Engine</description>
-  <url>http://inversion.io</url>
+  <url>https://inversion.io</url>
   <licenses>
     <license>
       <name>The Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
   <developers>
@@ -29,13 +29,13 @@
   <scm>
     <connection>https://github.com/inversion-api/inversion-engine.git</connection>
     <developerConnection>https://github.com/inversion-api/inversion-engine.git</developerConnection>
-    <url>http://inversion.io</url>
+    <url>https://inversion.io</url>
   </scm>
   <dependencies>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-api</artifactId>
-      <version>0.9.12</version>
+      <version>0.9.14</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
