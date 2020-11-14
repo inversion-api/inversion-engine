@@ -48,7 +48,8 @@
 
 buildscript {
     repositories {
-		jcenter()
+		//jcenter()
+		maven { url 'https://repo1.maven.org/maven2'}
     }
 
     dependencies {
@@ -107,8 +108,6 @@ tasks.withType(Javadoc) {
 build.finalizedBy(allJavadocs)
 	
 allprojects {
-
-	apply plugin: 'com.jfrog.artifactory'
 	group = 'io.inversion'
 	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
 	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")
@@ -128,12 +127,14 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     apply plugin: 'com.jfrog.bintray'
+	apply plugin: 'com.jfrog.artifactory'
     
     sourceCompatibility = 1.8
 	targetCompatibility = 1.8
 	
 	repositories {
-		jcenter()
+		//jcenter()
+		maven { url 'https://repo1.maven.org/maven2'}
 		maven { url 'https://jitpack.io' }
 	}
 
@@ -237,47 +238,47 @@ subprojects {
 			websiteUrl = 'http://inversion.io'
 	        issueTrackerUrl = 'https://github.com/inversion-api/inversion-engine/issues'
 	 		vcsUrl = 'https://github.com/inversion-api/inversion-engine.git'
-	
+
 	        licenses = ['Apache-2.0']
 	        labels = ['rest', 'api', 'mysql', 'dynamodb']
-			
+
 			version {
 				name = project.version
 				released  = new Date()
 			}
 		}
 	}
-	
+
 	artifactoryPublish {
         publications(publishing.publications.mavenJava)
     }
 }
 
 
-artifactoryPublish.skip=true
-
-	
-artifactory {
-    contextUrl = 'http://oss.jfrog.org'
-    publish {
-        repository {
-            repoKey = 'oss-snapshot-local'
-            username = bintrayUser
-            password = bintrayKey
-        }
-        defaults {
-            publications('mavenJava')
-            publishArtifacts = true
-            publishPom = true
-            properties = [
-                    'build.number': buildNumber,
-                    'build.name': project.name
-            ]
-        }
-    }
-    resolve {
-        repoKey = 'jcenter'
-    }
-    clientConfig.info.setBuildNumber(buildNumber)
-    clientConfig.info.setBuildName(project.name)
-}
+//artifactoryPublish.skip=true
+//
+//
+//artifactory {
+//    contextUrl = 'https://oss.jfrog.org'
+//    publish {
+//        repository {
+//            repoKey = 'oss-snapshot-local'
+//            username = bintrayUser
+//            password = bintrayKey
+//        }
+//        defaults {
+//            publications('mavenJava')
+//            publishArtifacts = true
+//            publishPom = true
+//            properties = [
+//                    'build.number': buildNumber,
+//                    'build.name': project.name
+//            ]
+//        }
+//    }
+//    resolve {
+//        repoKey = 'jcenter'
+//    }
+//    clientConfig.info.setBuildNumber(buildNumber)
+//    clientConfig.info.setBuildName(project.name)
+//}
