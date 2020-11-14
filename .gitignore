@@ -35,6 +35,8 @@ classes
 output
 logs
 
+
+inversion.properties.merged
 inversion99.properties
 northwind.mv.db
 northwind.trace.db
