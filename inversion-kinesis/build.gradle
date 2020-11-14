@@ -1,7 +1,7 @@
 dependencies {
 
-    compile project(':inversion-api')
-	compile "com.amazonaws:aws-java-sdk-kinesis:${awsSdkVersion}"
+    api project(':inversion-api')
+    api "com.amazonaws:aws-java-sdk-kinesis:${awsSdkVersion}"
 
 
 }

@@ -45,14 +45,10 @@
  *   - https://stackoverflow.com/questions/35851251/gradle-artifactory-plugin-how-to-publish-artifacts-from-multiple-modules-in-a
  *
  */
- 
-
 
 buildscript {
     repositories {
-		mavenLocal()
-		mavenCentral()
-		//jcenter()
+		jcenter()
     }
 
     dependencies {
@@ -66,12 +62,12 @@ buildscript {
         classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
     }
     
-    configurations.classpath {
-        resolutionStrategy {
-            cacheDynamicVersionsFor 0, 'seconds'
-            cacheChangingModulesFor 0, 'seconds'
-        }
-    }
+//    configurations.classpath {
+//        resolutionStrategy {
+//            cacheDynamicVersionsFor 0, 'seconds'
+//            cacheChangingModulesFor 0, 'seconds'
+//        }
+//    }
 }
 
 plugins {
@@ -137,16 +133,12 @@ subprojects {
 	targetCompatibility = 1.8
 	
 	repositories {
-		mavenLocal()
-		mavenCentral()
-		//jcenter()
+		jcenter()
 		maven { url 'https://jitpack.io' }
 	}
 
 	dependencies {
-	
 		testCompile 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
-		//testCompile 'junit:junit:4.12'
 	}
 	
 	task sourcesJar(type: Jar) {
@@ -180,8 +172,6 @@ subprojects {
 	}
 	project.getGradle().getTaskGraph().whenReady {
 	    tasks.withType(GenerateMavenPom.class) {
-	        //destination = file("$buildDir/pom.xml")
-	        //destination = file("pom.xml")
 	        destination = file("$buildDir/../pom.xml")
 	    }
 	}
@@ -211,11 +201,11 @@ subprojects {
 	            pom {
 	                name = project.name
 	                description = 'Inversion Cloud API Engine'
-	                url = 'http://inversion.io'
+	                url = 'https://inversion.io'
 	                licenses {
 	                    license {
 	                        name = 'The Apache License, Version 2.0'
-	                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+	                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
 	                    }
 	                }
 	                developers {
@@ -228,7 +218,7 @@ subprojects {
 	                scm {
 	                    connection = 'https://github.com/inversion-api/inversion-engine.git'
 	                    developerConnection = 'https://github.com/inversion-api/inversion-engine.git'
-	                    url = 'http://inversion.io'
+	                    url = 'https://inversion.io'
 	                }
 	            }
 	        }
