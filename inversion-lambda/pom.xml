@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-lambda</artifactId>
-  <version>0.9.10</version>
+  <version>0.9.12</version>
   <name>inversion-lambda</name>
   <description>Inversion Cloud API Engine</description>
   <url>http://inversion.io</url>
@@ -35,7 +35,7 @@
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-api</artifactId>
-      <version>0.9.10</version>
+      <version>0.9.12</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
