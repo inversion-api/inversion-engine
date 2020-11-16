@@ -240,7 +240,7 @@ subprojects {
 	 		vcsUrl = 'https://github.com/inversion-api/inversion-engine.git'
 
 	        licenses = ['Apache-2.0']
-	        labels = ['rest', 'api', 'mysql', 'dynamodb']
+	        labels = ['rest', 'api', 'mysql', 'postgress', 'mssql', 'dynamodb', 'cosmosdb', 'elasticsearch', 'nosql']
 
 			version {
 				name = project.version

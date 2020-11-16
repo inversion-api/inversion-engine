@@ -2,11 +2,11 @@ dependencies {
 
     api project(':inversion-api')
 
-    api group: 'com.zaxxer', name: 'HikariCP', version: '3.4.2'
-    api group: 'com.h2database', name: 'h2', version: '1.4.200'
-    api group: 'mysql', name: 'mysql-connector-java', version: '8.0.19'
-    api group: 'org.postgresql', name: 'postgresql', version: '42.2.10'
-    api group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '8.2.0.jre8'
+    api group: "com.zaxxer", name: "HikariCP", version: "${hikariVersion}"
+    api group: "com.h2database", name: "h2", version: "${h2Version}"
+    api group: "mysql", name: "mysql-connector-java", version: "${mysqlVersion}"
+    api group: "org.postgresql", name: "postgresql", version: "${postgresVersion}"
+    api group: "com.microsoft.sqlserver", name: "mssql-jdbc", version: "${mssqlVersion}"
 
     testImplementation project(':inversion-api').sourceSets.test.output
     testImplementation project(':inversion-spring-boot')

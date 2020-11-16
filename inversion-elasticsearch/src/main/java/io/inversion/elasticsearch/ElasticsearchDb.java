@@ -85,7 +85,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
 
     private RestHighLevelClient buildElasticClient(String url) {
         RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(//
-                HttpHost.create(url)).setMaxRetryTimeoutMillis(maxRequestDuration));
+               HttpHost.create(url)));
         // TODO throw ApiException.new500InternalServerError(error) if the client does not have the proper settings
         return client;
     }
@@ -145,9 +145,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
             //         result.withNext(next)
 
             SearchHits hits = res.getHits();
-            System.out.println("total hits: " + hits.totalHits); // TODO verify toString() output is pretty
-
-            long totalHits = hits.getTotalHits();
+            System.out.println("total hits: " + hits.getTotalHits().value); // TODO verify toString() output is pretty
 
             SearchHit[] hitArray = hits.getHits();
 
@@ -155,7 +153,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
                 result.withRow(hit.getSourceAsMap()); // TODO verify getSourceAsMap()
             }
 
-            result.withFoundRows((int) totalHits);
+            result.withFoundRows((int) hits.getTotalHits().value);
         } else
             System.out.println("request failed :*(");
 

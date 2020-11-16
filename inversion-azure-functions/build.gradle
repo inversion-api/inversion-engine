@@ -1,6 +1,6 @@
 dependencies {
 
-    api group: 'com.microsoft.azure.functions', name: 'azure-functions-java-library', version: '1.3.1'
+    api group: 'com.microsoft.azure.functions', name: 'azure-functions-java-library', version: "${azureFunctionsVersion}"
 
     api project(':inversion-api')
     api project(':inversion-jdbc')

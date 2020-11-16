@@ -1,6 +1,6 @@
 dependencies {
 
-    api "com.amazonaws:aws-java-sdk-dynamodb:${awsSdkVersion}"
+    api "com.amazonaws:aws-java-sdk-dynamodb:${awsVersion}"
     api project(':inversion-api')
     api project(':inversion-jdbc')
 

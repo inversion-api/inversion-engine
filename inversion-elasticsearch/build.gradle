@@ -1,8 +1,8 @@
 dependencies {
     api project(':inversion-api')
     api project(':inversion-jdbc')
-    api "com.amazonaws:aws-java-sdk-elasticsearch:${awsSdkVersion}"
-    api 'org.elasticsearch.client:elasticsearch-rest-high-level-client:6.4.+'
+    api "com.amazonaws:aws-java-sdk-elasticsearch:${awsVersion}"
+    api "org.elasticsearch.client:elasticsearch-rest-high-level-client:${elasticsearchVersion}"
 
 
     testImplementation  project(':inversion-api').sourceSets.test.output

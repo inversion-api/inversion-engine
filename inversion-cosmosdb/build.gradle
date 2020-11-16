@@ -1,6 +1,6 @@
 dependencies {
 
-    api "com.microsoft.azure:azure-documentdb:${azureSdkVersion}"
+    api "com.microsoft.azure:azure-documentdb:${azureCosmosVersion}"
     api project(':inversion-api')
     api project(':inversion-jdbc')
 

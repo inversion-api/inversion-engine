@@ -1,7 +1,7 @@
 dependencies {
 
     api project(':inversion-api')
-    api "com.amazonaws:aws-java-sdk-s3:${awsSdkVersion}"
+    api "com.amazonaws:aws-java-sdk-s3:${awsVersion}"
 	
 
 }
