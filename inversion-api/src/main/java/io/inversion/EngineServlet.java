@@ -16,17 +16,8 @@
  */
 package io.inversion;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
+import io.inversion.Request.Upload;
+import io.inversion.utils.Utils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -34,39 +25,46 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-
-import io.inversion.Request.Upload;
-import io.inversion.Request.Uploader;
-import io.inversion.utils.Utils;
+import java.io.*;
+import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 public class EngineServlet extends HttpServlet {
-    static class EngineServletLocal {
-        static ThreadLocal<HttpServletRequest>  request  = new ThreadLocal();
-        static ThreadLocal<HttpServletResponse> response = new ThreadLocal();
-
-        public static void set(HttpServletRequest req, HttpServletResponse res) {
-            request.set(req);
-            response.set(res);
-        }
-
-        public static void setRequest(HttpServletRequest req) {
-            request.set(req);
-        }
-
-        public static void setResponse(HttpServletResponse res) {
-            response.set(res);
-        }
-
-        public static HttpServletRequest getRequest() {
-            return request.get();
-        }
-
-        public static HttpServletResponse getResponse() {
-            return response.get();
-        }
-    }
-
     Engine engine = null;//new Engine();
+
+    public static String readBody(HttpServletRequest request) throws ApiException {
+        if (request == null)
+            return null;
+
+        StringBuilder  stringBuilder  = new StringBuilder();
+        BufferedReader bufferedReader = null;
+
+        try {
+            InputStream inputStream = request.getInputStream();
+            if (inputStream != null) {
+                if ("gzip".equalsIgnoreCase(request.getHeader("Content-Encoding")))
+                    inputStream = new GZIPInputStream(inputStream, 1024);
+                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                char[] charBuffer = new char[128];
+                int    bytesRead;
+                while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
+                    stringBuilder.append(charBuffer, 0, bytesRead);
+                }
+            }
+        } catch (Exception ex) {
+            throw ApiException.new400BadRequest(ex, "Unable to read request body");
+        } finally {
+            if (bufferedReader != null) {
+                try {
+                    bufferedReader.close();
+                } catch (IOException ex) {
+                    //throw ex;
+                }
+            }
+        }
+
+        return stringBuilder.toString();
+    }
 
     public void destroy() {
         engine.shutdown();
@@ -88,8 +86,8 @@ public class EngineServlet extends HttpServlet {
     public void service(HttpServletRequest httpReq, HttpServletResponse httpResp) throws ServletException, IOException {
         EngineServletLocal.set(httpReq, httpResp);
 
-        Response res = null;
-        Request  req = null;
+        Response res;
+        Request  req;
 
         try {
             String method = httpReq.getMethod();
@@ -103,7 +101,7 @@ public class EngineServlet extends HttpServlet {
                 urlstr += "?" + query;
             }
 
-            Map                 headers    = new HashMap();
+            Map                 headers    = new HashMap<>();
             Enumeration<String> headerEnum = httpReq.getHeaderNames();
             while (headerEnum.hasMoreElements()) {
                 String key = headerEnum.nextElement();
@@ -111,7 +109,7 @@ public class EngineServlet extends HttpServlet {
                 headers.put(key, val);
             }
 
-            Map                 params       = new HashMap();
+            Map                 params       = new HashMap<>();
             Enumeration<String> paramsEnumer = httpReq.getParameterNames();
             while (paramsEnumer.hasMoreElements()) {
                 String key = paramsEnumer.nextElement();
@@ -124,41 +122,38 @@ public class EngineServlet extends HttpServlet {
             req = new Request(method, urlstr, headers, params, body);
             req.withRemoteAddr(httpReq.getRemoteAddr());
 
-            req.withUploader(new Uploader() {
-                @Override
-                public List<Upload> getUploads() {
-                    try {
-                        String      fileName    = null;
-                        long        fileSize    = 0;
-                        String      requestPath = null;
-                        InputStream inputStream = null;
+            req.withUploader(() -> {
+                try {
+                    String      fileName    = null;
+                    long        fileSize    = 0;
+                    String      requestPath = null;
+                    InputStream inputStream = null;
 
-                        for (Part part : httpReq.getParts()) {
-                            if (part.getName() == null) {
-                                continue;
-                            }
-                            if (part.getName().equals("file")) {
-                                inputStream = part.getInputStream();
-                                fileName = part.getSubmittedFileName();
-                                fileSize = part.getSize();
-                            } else if (part.getName().equals("requestPath")) {
-                                requestPath = Utils.read(part.getInputStream());
-                                if (requestPath.indexOf("/") == 0)
-                                    requestPath = requestPath.substring(1);
-                            }
+                    for (Part part : httpReq.getParts()) {
+                        if (part.getName() == null) {
+                            continue;
                         }
-
-                        List uploads = new ArrayList();
-
-                        if (inputStream != null) {
-                            uploads.add(new Upload(fileName, fileSize, requestPath, inputStream));
+                        if (part.getName().equals("file")) {
+                            inputStream = part.getInputStream();
+                            fileName = part.getSubmittedFileName();
+                            fileSize = part.getSize();
+                        } else if (part.getName().equals("requestPath")) {
+                            requestPath = Utils.read(part.getInputStream());
+                            if (Utils.startsWith(requestPath, "/"))
+                                requestPath = requestPath.substring(1);
                         }
-                        return uploads;
-                    } catch (Exception ex) {
-                        Utils.rethrow(ex);
                     }
-                    return null;
+
+                    List uploads = new ArrayList<>();
+
+                    if (inputStream != null) {
+                        uploads.add(new Upload(fileName, fileSize, requestPath, inputStream));
+                    }
+                    return uploads;
+                } catch (Exception ex) {
+                    Utils.rethrow(ex);
                 }
+                return null;
             });
 
             res = new Response();
@@ -171,42 +166,6 @@ public class EngineServlet extends HttpServlet {
         }
     }
 
-    public static String readBody(HttpServletRequest request) throws ApiException {
-        if (request == null)
-            return null;
-
-        StringBuilder  stringBuilder  = new StringBuilder();
-        BufferedReader bufferedReader = null;
-
-        try {
-            InputStream inputStream = request.getInputStream();
-            if (inputStream != null) {
-                if ("gzip".equalsIgnoreCase(request.getHeader("Content-Encoding")))
-                    inputStream = new GZIPInputStream(inputStream, 1024);
-                bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-                char[] charBuffer = new char[128];
-                int    bytesRead  = -1;
-                while ((bytesRead = bufferedReader.read(charBuffer)) > 0) {
-                    stringBuilder.append(charBuffer, 0, bytesRead);
-                }
-            } else {
-                stringBuilder.append("");
-            }
-        } catch (Exception ex) {
-            ApiException.throw400BadRequest(ex, "Unable to read request body");
-        } finally {
-            if (bufferedReader != null) {
-                try {
-                    bufferedReader.close();
-                } catch (IOException ex) {
-                    //throw ex;
-                }
-            }
-        }
-
-        return stringBuilder.toString();
-    }
-
     void writeResponse(Request req, Response res, HttpServletResponse http) throws Exception {
         String method = req != null ? req.getMethod() : null;
 
@@ -215,8 +174,8 @@ public class EngineServlet extends HttpServlet {
         OutputStream out = http.getOutputStream();
         try {
             for (String key : res.getHeaders().keySet()) {
-                List         values = res.getHeaders().get(key);
-                StringBuffer buff   = new StringBuffer();
+                List          values = res.getHeaders().get(key);
+                StringBuilder buff   = new StringBuilder();
                 for (int i = 0; i < values.size(); i++) {
                     buff.append(values.get(i));
                     if (i < values.size() - 1)
@@ -240,6 +199,32 @@ public class EngineServlet extends HttpServlet {
         } finally {
             out.flush();
             out.close();
+        }
+    }
+
+    static class EngineServletLocal {
+        static final ThreadLocal<HttpServletRequest>  request  = new ThreadLocal();
+        static final ThreadLocal<HttpServletResponse> response = new ThreadLocal();
+
+        public static void set(HttpServletRequest req, HttpServletResponse res) {
+            request.set(req);
+            response.set(res);
+        }
+
+        public static HttpServletRequest getRequest() {
+            return request.get();
+        }
+
+        public static void setRequest(HttpServletRequest req) {
+            request.set(req);
+        }
+
+        public static HttpServletResponse getResponse() {
+            return response.get();
+        }
+
+        public static void setResponse(HttpServletResponse res) {
+            response.set(res);
         }
     }
 }

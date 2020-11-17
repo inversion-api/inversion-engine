@@ -26,8 +26,8 @@ import java.util.Map;
 
 class JdbcConnectionLocal {
 
-    static Map<Db, Map<Thread, Connection>> dbToThreadMap = new Hashtable();
-    static Map<Thread, Map<Db, Connection>> threadToDbMap = new Hashtable();
+    static final Map<Db, Map<Thread, Connection>> dbToThreadMap = new Hashtable();
+    static final Map<Thread, Map<Db, Connection>> threadToDbMap = new Hashtable();
 
     public static void closeAll() {
         for (Thread thread : threadToDbMap.keySet()) {
@@ -59,20 +59,11 @@ class JdbcConnectionLocal {
     }
 
     static void putConnection(Db db, Thread thread, Connection connection) {
-        Map<Thread, Connection> threadToConnMap = dbToThreadMap.get(db);
-        if (threadToConnMap == null) {
-            threadToConnMap = new Hashtable();
-            dbToThreadMap.put(db, threadToConnMap);
-        }
+        Map<Thread, Connection> threadToConnMap = dbToThreadMap.computeIfAbsent(db, k -> new Hashtable());
         threadToConnMap.put(thread, connection);
 
-        Map<Db, Connection> dbToConnMap = threadToDbMap.get(thread);
-        if (dbToConnMap == null) {
-            dbToConnMap = new Hashtable();
-            threadToDbMap.put(thread, dbToConnMap);
-        }
+        Map<Db, Connection> dbToConnMap = threadToDbMap.computeIfAbsent(thread, k -> new Hashtable());
         dbToConnMap.put(db, connection);
-
     }
 
     public static void commit() throws Exception {

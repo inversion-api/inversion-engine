@@ -114,6 +114,7 @@ public class Relationship implements Serializable {
 
     /**
      * @param related the related to set
+     * @return this
      */
     public Relationship withRelated(Collection related) {
         this.related = related;
@@ -141,6 +142,7 @@ public class Relationship implements Serializable {
 
     /**
      * @param name the name to set
+     * @return this
      */
     public Relationship withName(String name) {
         this.name = name;
@@ -148,18 +150,13 @@ public class Relationship implements Serializable {
     }
 
     public boolean equals(Object obj) {
-        if (obj == null)
+        if (!(obj instanceof Relationship))
             return false;
 
         if (obj == this)
             return true;
 
         return toString().equals(obj.toString());
-    }
-
-    public int hashCode() {
-        //return toString().hashCode();
-        return super.hashCode();
     }
 
     public String toString() {
@@ -189,6 +186,7 @@ public class Relationship implements Serializable {
 
     /**
      * @param type the type to set
+     * @return this
      */
     public Relationship withType(String type) {
         this.type = type;

@@ -1,10 +1,10 @@
 dependencies {
 
-	compile project(':inversion-api')
+	api project(':inversion-api')
 
-	compile  'net.jodah:expiringmap:0.5.+'
-	compile  'org.graalvm.js:js-scriptengine:19.2.+'
-	compile  'org.apache.velocity:velocity-engine-core:2.0'
+	api  "net.jodah:expiringmap:${jodahMapVersion}"
+	api  "org.graalvm.js:js-scriptengine:${graalvmJsVersion}"
+	api  "org.apache.velocity:velocity-engine-core:${velocityEngineVersion}"
 	
 
 }

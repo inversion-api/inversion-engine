@@ -53,7 +53,7 @@ public class TestCompressedResourceKeysAsForeignKey {
 
     @Test
     public void get_encodedCompoundResourceKeyAsForeignKey() {
-        Response res = null;
+        Response res;
 
         res = engine.get("person/persons?expands=props").dump();
         assertEquals("employee~12345", res.find("data.0.props.0.personresourcekey"));
@@ -71,18 +71,18 @@ public class TestCompressedResourceKeysAsForeignKey {
 
         //-- insert with the ONE_TO_MANY parent as the json parent
         JSNode newPerson = new JSNode("type", "employee", "Identifier", "33333", "props", new JSArray(new JSNode("name", "testProp1", "value", "testValue1")));
-        res = engine.post("person/persons", newPerson).dump();
+        engine.post("person/persons", newPerson).dump();
         res = engine.get("person/persons/employee~33333?expands=props").dump();
         assertEquals("http://localhost/person/persons/employee~33333", res.find("data.0.props.0.person"));
 
         //-- insert with the MANY_TO_ONE child as the json parent
         JSNode newProp = new JSNode("name", "testProp2", "value", "testValue2", "person", new JSNode("type", "employee", "Identifier", "4444"));
-        res = engine.post("person/props", newProp).dump().assertOk();
+        res = engine.post("person/props", newProp).assertOk();
 
         String newUrl = res.findString("data.0.href");
-        res = engine.get(newUrl + "?expands=person").dump().assertOk();
+        res = engine.get(newUrl + "?expands=person").assertOk();
 
-        res = engine.get("http://localhost/person/persons/employee~4444?expands=props").dump().assertOk();
+        res = engine.get("http://localhost/person/persons/employee~4444?expands=props").assertOk();
         assertEquals("http://localhost/person/persons/employee~4444", res.find("data.0.props.0.person"));
 
     }

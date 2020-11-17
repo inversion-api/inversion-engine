@@ -33,13 +33,15 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Exposes the tables of a JDBC data source as REST <code>Collections</code>.
  */
 public class JdbcDb extends Db<JdbcDb> {
 
-    static Map<String, String> DEFAULT_DRIVERS = new HashMap();
+    static final Map<String, String> DEFAULT_DRIVERS = new HashMap<>();
+    static final Map<Db, DataSource> pools           = new Hashtable<>();
 
     static {
         DEFAULT_DRIVERS.put("h2", "org.h2.Driver");
@@ -48,78 +50,10 @@ public class JdbcDb extends Db<JdbcDb> {
         DEFAULT_DRIVERS.put("sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
     }
 
-    static Map<Db, DataSource> pools                    = new Hashtable();
-
-    protected char             stringQuote              = '\'';
-    protected char             columnQuote              = '"';
-
-    /**
-     * The JDBC driver class name.
-     */
-    protected String           driver                   = null;
-
-    /**
-     * The JDBC url.
-     * <p>
-     * Generally you will want to have this value dependency inject this at runtime by setting "${name}.url=${MY_DB_URL}" somewhere
-     * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
-     *
-     * @see Config
-     * @see Configuration
-     */
-    protected String           url                      = null;
-
-    /**
-     * The JDBC username.
-     * <p>
-     * Generally you will want to have this value dependency inject this at runtime by setting "${name}.user=${MY_DB_USER_NAME}" somewhere
-     * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
-     *
-     * @see Config
-     * @see Configuration
-     */
-    protected String           user                     = null;
-
-    /**
-     * The JDBC password.
-     * <p>
-     * Generally you will want to have this value dependency inject this at runtime by setting "${name}.user=${MY_DB_USER_NAME}" somewhere
-     * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
-     *
-     * @see Config
-     * @see Configuration
-     */
-    protected String           pass                     = null;
-
-    /**
-     * The maximum number of connections in the JDBC Connection pool, defaults to 50.
-     */
-    protected int              poolMax                  = 50;
-
-    protected int              idleConnectionTestPeriod = 3600;           // in seconds
-
-    /**
-     * Should the JDBC connection be set to autoCommit.
-     * <p>
-     * By default, autoCommit is false because the system is setup to execute all sql statements for a single Request
-     * inside of one transaction that commits just before the root Response is returned to the caller.
-     */
-    protected boolean          autoCommit               = false;
-
-    /**
-     * For MySQL only, set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
-     */
-    protected boolean          calcRowsFound            = true;
-
-    /**
-     * Urls to DDL files that should be executed on startup of this Db.
-     */
-    protected List<String>     ddlUrls                  = new ArrayList();
-
     static {
         JdbcUtils.addSqlListener(new SqlListener() {
 
-            ch.qos.logback.classic.Logger log = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(JdbcDb.class);
+            final ch.qos.logback.classic.Logger log = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(JdbcDb.class);
 
             @Override
             public void onError(String method, String sql, Object args, Exception ex) {
@@ -141,7 +75,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 String debugType = "unknown";
 
                 if (Chain.peek() != null) {
-                    Collection coll = Chain.peek().getRequest().getCollection();
+                    Collection coll = Chain.top().getRequest().getCollection();
                     if (coll != null && coll.getDb() != null) {
                         Db db = coll.getDb();
                         debugType = db.getType().toLowerCase();
@@ -154,13 +88,70 @@ public class JdbcDb extends Db<JdbcDb> {
                 sql = sql.replaceAll("\r", "");
                 sql = sql.replaceAll("\n", " ");
                 sql = sql.trim().replaceAll(" +", " ");
-                StringBuffer buff = new StringBuffer("");
+                StringBuilder buff = new StringBuilder();
                 buff.append(debugPrefix).append(" -> '").append(sql).append("'").append(" args=").append(args).append(" error='").append(ex != null ? ex.getMessage() : "").append("'");
                 String msg = buff.toString();
                 Chain.debug(msg);
             }
         });
     }
+
+    /**
+     * Urls to DDL files that should be executed on startup of this Db.
+     */
+    protected final List<String> ddlUrls                  = new ArrayList<>();
+    protected       char         stringQuote              = '\'';
+    protected       char         columnQuote              = '"';
+    /**
+     * The JDBC driver class name.
+     */
+    protected       String       driver                   = null;
+    /**
+     * The JDBC url.
+     * <p>
+     * Generally you will want to have this value dependency inject this at runtime by setting "${name}.url=${MY_DB_URL}" somewhere
+     * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
+     *
+     * @see Config
+     * @see Configuration
+     */
+    protected       String       url                      = null;
+    /**
+     * The JDBC username.
+     * <p>
+     * Generally you will want to have this value dependency inject this at runtime by setting "${name}.user=${MY_DB_USER_NAME}" somewhere
+     * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
+     *
+     * @see Config
+     * @see Configuration
+     */
+    protected       String       user                     = null;
+    /**
+     * The JDBC password.
+     * <p>
+     * Generally you will want to have this value dependency inject this at runtime by setting "${name}.user=${MY_DB_USER_NAME}" somewhere
+     * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
+     *
+     * @see Config
+     * @see Configuration
+     */
+    protected       String       pass                     = null;
+    /**
+     * The maximum number of connections in the JDBC Connection pool, defaults to 50.
+     */
+    protected       int          poolMax                  = 50;
+    protected       int          idleConnectionTestPeriod = 3600;           // in seconds
+    /**
+     * Should the JDBC connection be set to autoCommit.
+     * <p>
+     * By default, autoCommit is false because the system is setup to execute all sql statements for a single Request
+     * inside of one transaction that commits just before the root Response is returned to the caller.
+     */
+    protected       boolean      autoCommit               = false;
+    /**
+     * For MySQL only, set this to false to turn off SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS()
+     */
+    protected       boolean      calcRowsFound            = true;
 
     public JdbcDb() {
         //System.out.println("SqlDb() <init>");
@@ -207,7 +198,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 try {
                     JdbcConnectionLocal.commit();
                 } catch (Exception ex) {
-                    ApiException.throw500InternalServerError(ex, "Error committing tansaction");
+                    throw ApiException.new500InternalServerError(ex, "Error committing tansaction");
                 }
             }
 
@@ -264,19 +255,19 @@ public class JdbcDb extends Db<JdbcDb> {
         url = url != null ? url : getUrl();
 
         if (url != null) {
-            if (url.indexOf("mysql") >= 0)
+            if (url.contains("mysql"))
                 return "mysql";
 
-            if (url.indexOf("postgres") >= 0)
+            if (url.contains("postgres"))
                 return "postgres";
 
-            if (url.indexOf("redshift") >= 0)
+            if (url.contains("redshift"))
                 return "redshift";
 
-            if (url.indexOf("sqlserver") >= 0)
+            if (url.contains("sqlserver"))
                 return "sqlserver";
 
-            if (url.indexOf("h2") >= 0)
+            if (url.contains("h2"))
                 return "h2";
         }
 
@@ -285,7 +276,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
     @Override
     public Results doSelect(Collection coll, List<Term> columnMappedTerms) throws ApiException {
-        SqlQuery query = new SqlQuery(this, coll, columnMappedTerms);
+        SqlQuery<JdbcDb> query = new SqlQuery<>(this, coll, columnMappedTerms);
         return query.doSelect();
     }
 
@@ -293,31 +284,24 @@ public class JdbcDb extends Db<JdbcDb> {
     public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
         try {
             for (Map<String, Object> row : rows) {
-                for (String key : (Set<String>) new HashSet(row.keySet())) {
+                for (String key : new ArrayList<>(row.keySet())) {
                     if (table.getPropertyByColumnName(key) == null)
                         row.remove(key);
                 }
             }
 
-            List upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
-
-            for (int i = 0; i < upserted.size(); i++) {
-                String resourceKey = table.encodeResourceKey((Row) upserted.get(i));
-                upserted.set(i, resourceKey);
-            }
-
-            return upserted;
+            List<Row> upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+            return upserted.stream().map(table::encodeResourceKey).collect(Collectors.toList());
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
-        return null;
     }
 
     @Override
     public void doPatch(Collection table, List<Map<String, Object>> rows) throws ApiException {
         try {
             for (Map<String, Object> row : rows) {
-                for (String key : (Set<String>) new HashSet(row.keySet())) {
+                for (String key : new ArrayList<>(row.keySet())) {
                     if (table.getPropertyByColumnName(key) == null)
                         row.remove(key);
                 }
@@ -325,7 +309,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
     }
 
@@ -340,7 +324,7 @@ public class JdbcDb extends Db<JdbcDb> {
             if (firstRow.size() == 1) {
                 String keyCol = firstRow.keySet().iterator().next();
 
-                List values = new ArrayList();
+                List values = new ArrayList<>();
                 for (Map resourceKey : columnMappedIndexValues) {
                     values.add(resourceKey.values().iterator().next());
                 }
@@ -350,48 +334,53 @@ public class JdbcDb extends Db<JdbcDb> {
                 sql += " WHERE " + quoteCol(keyCol) + " IN (" + JdbcUtils.getQuestionMarkStr(columnMappedIndexValues.size()) + ")";
                 JdbcUtils.execute(getConnection(), sql, values.toArray());
             } else {
-                String sql = "";
-                sql += " DELETE FROM " + quoteCol(table.getTableName());
-                sql += " WHERE ";
+                StringBuilder sql = new StringBuilder();
+                sql.append(" DELETE FROM ").append(quoteCol(table.getTableName()));
+                sql.append(" WHERE ");
 
-                List values = new ArrayList();
+                List values = new ArrayList<>();
                 for (Map<String, Object> resourceKey : columnMappedIndexValues) {
                     if (values.size() > 0)
-                        sql += " OR ";
-                    sql += "(";
+                        sql.append(" OR ");
+                    sql.append("(");
 
                     int i = 0;
                     for (String key : resourceKey.keySet()) {
                         i++;
                         if (i > 1)
-                            sql += "AND ";
-                        sql += quoteCol(key) + " = ? ";
+                            sql.append("AND ");
+                        sql.append(quoteCol(key)).append(" = ? ");
                         values.add(resourceKey.get(key));
                     }
-                    sql += ")";
+                    sql.append(")");
                 }
-                JdbcUtils.execute(getConnection(), sql, values.toArray());
+                JdbcUtils.execute(getConnection(), sql.toString(), values.toArray());
             }
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         }
     }
 
     /**
      * Shortcut for getConnection(true);
+     *
+     * @return a connection
      */
     public Connection getConnection() throws ApiException {
-        Connection conn = getConnection(true);
-        return conn;
+        return getConnection(true);
     }
 
     /**
-     * Returns a JDBC connection that is shared on the ThreadLocal
-     * with autoCommit managed by this Db and an EngineListener.
+     * Returns a JDBC connection to the underlying JDBC db.
+     * <p>
+     * If managed is true the Connection is shared on the ThreadLocal with autoCommit managed by this Db and an EngineListener.
+     * Callers should NOT close this connection.  It will not create a connection pool leak.  All managed connections attached
+     * to the ThreadLocal are closed/returned to the pool when the Engine finishes serving a s Request.
+     * <p>
+     * If managed is false, a completely new Connection is returned.
      *
-     * @param managed
-     * @return
-     * @throws ApiException
+     * @param managed should this be a net new collection or a pool connection that is automatically closed when the Request ends
+     * @return a Connection
      */
     public Connection getConnection(boolean managed) throws ApiException {
         return getConnection0(managed);
@@ -423,8 +412,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             return conn;
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex, "Unable to get DB connection");
-            return null;
+            throw ApiException.new500InternalServerError(ex, "Unable to get DB connection");
         }
     }
 
@@ -454,8 +442,8 @@ public class JdbcDb extends Db<JdbcDb> {
                     if (Utils.empty(ddlUrl))
                         continue;
 
-                    if (ddlUrl.indexOf(":/") < 0)
-                        ddlUrl = getClass().getClassLoader().getResource(ddlUrl).toString();
+                    if (!ddlUrl.contains(":/"))
+                        ddlUrl = getClass().getClassLoader().getResource(ddlUrl) + "";
 
                     JdbcUtils.runSql(conn, new URL(ddlUrl).openStream());
                 }
@@ -473,7 +461,7 @@ public class JdbcDb extends Db<JdbcDb> {
         System.out.println("CREATING CONNECTION POOL: " + getUser() + "@" + getUrl());
 
         HikariConfig config = new HikariConfig();
-        String driver = getDriver();
+        String       driver = getDriver();
         config.setDriverClassName(driver);
         config.setJdbcUrl(getUrl());
         config.setUsername(getUser());
@@ -489,13 +477,15 @@ public class JdbcDb extends Db<JdbcDb> {
         } else if (isType("sqlserver")) {
             //-- upserts won't work if you can't upsert an idresource field
             //-- https://stackoverflow.com/questions/10116759/set-idresource-insert-off-for-all-tables
-            config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
-
+            //20201113 WB - this script should not have been applied on each connection.  It
+            //started to cause connection timeouts when pool tried to create new connections causing
+            //the pool to continually retry and hammer the DB if there we a large number of tables.
+            //going to put this in documentation for manual inclusion in your sqlserver ddl instead of
+            //something inversion does automatically.
+            //config.setConnectionInitSql("EXEC sp_MSforeachtable @command1=\"PRINT '?'; SET IDENTITY_INSERT ? ON\", @whereand = ' AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = o.id  AND is_identity = 1) and o.type = ''U'''");
         }
 
-        DataSource pool = new HikariDataSource(config);
-
-        return pool;
+        return new HikariDataSource(config);
     }
 
     @Override
@@ -514,7 +504,7 @@ public class JdbcDb extends Db<JdbcDb> {
             DatabaseMetaData dbmd = conn.getMetaData();
 
             //-- only here to map jdbc type integer codes to strings ex "4" to "BIGINT" or whatever it is
-            Map<String, String> types = new HashMap<String, String>();
+            Map<String, String> types = new HashMap<>();
             for (Field field : Types.class.getFields()) {
                 types.put(field.get(null) + "", field.getName());
             }
@@ -533,7 +523,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 schemaGuesses.add(0, "dbo");
 
                 String schema = getUrl();
-                int idx = schema.toLowerCase().indexOf("databasename=");
+                int    idx    = schema.toLowerCase().indexOf("databasename=");
                 if (idx > -1) {
                     idx = idx + "databasename=".length();
                 }
@@ -561,9 +551,9 @@ public class JdbcDb extends Db<JdbcDb> {
 
             if (hasNext)
                 do {
-                    String tableCat = rs.getString("TABLE_CAT");
+                    String tableCat   = rs.getString("TABLE_CAT");
                     String tableSchem = rs.getString("TABLE_SCHEM");
-                    String tableName = rs.getString("TABLE_NAME");
+                    String tableName  = rs.getString("TABLE_NAME");
 
                     //-- double check not to add system tables in sqlserver
                     if (isType("sqlserver")) {
@@ -581,7 +571,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
                     while (colsRs.next()) {
                         String colName = colsRs.getString("COLUMN_NAME");
-                        Object type = colsRs.getString("DATA_TYPE");
+                        Object type    = colsRs.getString("DATA_TYPE");
                         String colType = types.get(type);
 
                         boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
@@ -606,17 +596,21 @@ public class JdbcDb extends Db<JdbcDb> {
                         switch (indexMd.getInt("TYPE")) {
                             case DatabaseMetaData.tableIndexClustered:
                                 idxType = "Clustered";
+                                break;
                             case DatabaseMetaData.tableIndexHashed:
                                 idxType = "Hashed";
+                                break;
                             case DatabaseMetaData.tableIndexOther:
                                 idxType = "Other";
+                                break;
                             case DatabaseMetaData.tableIndexStatistic:
                                 idxType = "Statistic";
+                                break;
                         }
 
-                        Property column = table.getProperty(colName);
-                        Object nonUnique = indexMd.getObject("NON_UNIQUE") + "";
-                        boolean unique = !(nonUnique.equals("true") || nonUnique.equals("1"));
+                        Property column    = table.getProperty(colName);
+                        Object   nonUnique = indexMd.getObject("NON_UNIQUE") + "";
+                        boolean  unique    = !(nonUnique.equals("true") || nonUnique.equals("1"));
 
                         //this looks like it only supports single column indexes but if
                         //an index with this name already exists, that means this is another
@@ -627,7 +621,9 @@ public class JdbcDb extends Db<JdbcDb> {
                     indexMd.close();
 
                 } while (rs.next());
-            rs.close();
+
+            if (rs != null)
+                rs.close();
 
             //-- now link all of the fks to pks
             //-- this is done after the first loop
@@ -659,9 +655,9 @@ public class JdbcDb extends Db<JdbcDb> {
                         //String pkName = keyMd.getString("PK_NAME");
                         String fkName = keyMd.getString("FK_NAME");
 
-                        String fkTableName = keyMd.getString("FKTABLE_NAME");
+                        String fkTableName  = keyMd.getString("FKTABLE_NAME");
                         String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
-                        String pkTableName = keyMd.getString("PKTABLE_NAME");
+                        String pkTableName  = keyMd.getString("PKTABLE_NAME");
                         String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
 
                         Property fk = getProperty(fkTableName, fkColumnName);
@@ -680,7 +676,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             rs.close();
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         } finally {
             Utils.close(rs);
         }

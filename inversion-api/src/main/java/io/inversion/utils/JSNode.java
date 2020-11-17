@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Yet another JavaScript/JSON map object representation with a few superpowers.
@@ -54,17 +55,17 @@ import java.util.*;
  * Under the covers this Jackson is used as the json parser.
  *
  * @see JSArray
- * @see JSONPath - https://github.com/json-path/JsonPath
- * @see JSONPointer - https://tools.ietf.org/html/rfc6901
- * @see JSONPatch - https://github.com/flipkart-incubator/zjsonpatch
+ * @see <a href="https://github.com/json-path/JsonPath">JSONPath</a>
+ * @see <a href="https://tools.ietf.org/html/rfc6901">JSONPointer</a>
+ * @see <a href="https://github.com/flipkart-incubator/zjsonpatch">JSONPatch</a>
  */
 public class JSNode implements Map<String, Object> {
     /**
      * Maps the lower case JSProperty.name to the property for case
-     * insensitive lookup with the ability to preserve the origional
+     * insensitive lookup with the ability to preserve the original
      * case.
      */
-    LinkedHashMap<String, JSProperty> properties = new LinkedHashMap();
+    LinkedHashMap<String, JSProperty> properties = new LinkedHashMap<>();
 
     /**
      * Creates an empty JSNode.
@@ -78,7 +79,7 @@ public class JSNode implements Map<String, Object> {
      * <p>
      * The first and every other element in <code>nameValuePairs</code> should be a string.
      *
-     * @param nameValuePairs
+     * @param nameValuePairs the name value pairs to add
      * @see #with(Object...)
      */
     public JSNode(Object... nameValuePairs) {
@@ -88,12 +89,277 @@ public class JSNode implements Map<String, Object> {
     /**
      * Creates a JSNode with <code>nameValuePairs</code> as the initial properties.
      *
-     * @param map
+     * @param nameValuePairs the name value pairs to add
      * @see #putAll(Map)
      */
     public JSNode(Map nameValuePairs) {
         putAll(nameValuePairs);
     }
+
+    /**
+     * Turns a JSON string in to JSNode (maps), JSArray (lists), String numbers and booleans.
+     * <p>
+     * Jackson is the underlying parser
+     *
+     * @param json the json string to parse
+     * @return a String, number, boolean, JSNode or JSArray
+     */
+    public static Object parseJson(String json) {
+        try {
+            ObjectMapper mapper   = new ObjectMapper();
+            JsonNode     rootNode = mapper.readValue(json, JsonNode.class);
+
+            Object parsed = JSNode.mapNode(rootNode);
+            return parsed;
+        } catch (Exception ex) {
+            String msg = "Error parsing JSON:" + ex.getMessage();
+
+            if (!(ex instanceof JsonParseException)) {
+                msg += "\r\nSource:" + json;
+            }
+
+            throw new RuntimeException("400 Bad Request: '" + msg + "'");
+        }
+    }
+
+    /**
+     * Utility overloading of {@link #parseJson(String)} to cast the return as a JSNode
+     *
+     * @param json the json string to parse
+     * @return the result of parsing the json document cast to a JSNode
+     * @throws ClassCastException if the result of parsing is not a JSNode
+     */
+    public static JSNode parseJsonNode(String json) throws ClassCastException {
+        return ((JSNode) JSNode.parseJson(json));
+    }
+
+    /**
+     * Utility overloading of {@link #parseJson(String)} to cast the return as a JSArray
+     *
+     * @param json a json string containing an as the root element
+     * @return the result of parsing the json document cast to a JSArray
+     * @throws ClassCastException if the result of parsing is not a JSArray
+     */
+    public static JSArray parseJsonArray(String json) {
+        return ((JSArray) JSNode.parseJson(json));
+    }
+
+    static String toJson(JSNode node, boolean pretty, boolean lowercasePropertyNames) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            JsonGenerator         json = new JsonFactory().createGenerator(baos);
+            if (pretty)
+                json.useDefaultPrettyPrinter();
+
+            JSNode.writeNode(node, json, new HashSet(), lowercasePropertyNames);
+            json.flush();
+            baos.flush();
+
+            return new String(baos.toByteArray());
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    static Object mapNode(JsonNode json) {
+        if (json == null)
+            return null;
+
+        if (json.isNull())
+            return null;
+
+        if (json.isValueNode()) {
+            if (json.isNumber())
+                return json.numberValue();
+
+            if (json.isBoolean())
+                return json.booleanValue();
+
+            return json.asText();
+        }
+
+        if (json.isArray()) {
+            JSArray retVal;
+            retVal = new JSArray();
+
+            for (JsonNode child : json) {
+                retVal.add(mapNode(child));
+            }
+
+            return retVal;
+        } else if (json.isObject()) {
+            JSNode retVal;
+            retVal = new JSNode();
+
+            Iterator<String> it = json.fieldNames();
+            while (it.hasNext()) {
+                String   field = it.next();
+                JsonNode value = json.get(field);
+                retVal.put(field, mapNode(value));
+            }
+            return retVal;
+        }
+
+        throw new RuntimeException("unparseable json:" + json);
+    }
+
+    static void writeNode(JSNode node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception {
+        JSProperty href = node.getProperty("href");
+
+        if (visited.contains(node)) {
+            if (href != null) {
+                json.writeStartObject();
+                json.writeStringField("@link", href.getValue() + "");
+                json.writeEndObject();
+            } else {
+                throw ApiException.new500InternalServerError("Your JSNode document contains the same object in multiple locations without a 'href' property.");
+            }
+            return;
+        }
+        visited.add(node);
+
+        if (node instanceof JSArray) {
+            JSNode.writeArrayNode(((JSArray) node), json, visited, lowercaseNames);
+            return;
+        }
+
+        json.writeStartObject();
+
+        if (href != null)
+            json.writeStringField("href", href.getValue() + "");
+
+        for (String key : node.keySet()) {
+            JSProperty p = node.getProperty(key);
+            if (p == href)
+                continue;
+
+            String name  = p.getName();
+            Object value = p.getValue();
+
+            if (value == null) {
+                json.writeNullField(name);
+            } else if (value instanceof JSNode) {
+                json.writeFieldName(lowercaseNames ? name.toLowerCase() : name);
+                writeNode((JSNode) value, json, visited, lowercaseNames);
+            } else if (value instanceof String) {
+                if(value.equals("null"))
+                    json.writeNullField(name);
+                else
+                    json.writeStringField(name, (String) value);
+            } else if (value instanceof Boolean) {
+                json.writeBooleanField(name, (Boolean) value);
+            } else if (value instanceof Integer) {
+                json.writeNumberField(name, (Integer) value);
+            } else if (value instanceof Long) {
+                json.writeNumberField(name, (Long) value);
+            } else if (value instanceof Float) {
+                json.writeNumberField(name, (Float) value);
+            } else if (value instanceof Double) {
+                json.writeNumberField(name, (Double) value);
+            } else if (value instanceof BigInteger) {
+                json.writeNumberField(name, ((BigInteger) value).intValue());
+            } else if (value instanceof BigDecimal) {
+                json.writeNumberField(name, (BigDecimal) value);
+            } else if (value instanceof Date) {
+                json.writeStringField(name, Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
+            } else {
+                String strVal = value + "";
+                if ("null".equals(strVal)) {
+                    json.writeNullField(name);
+                } else {
+                    strVal = JSNode.encodeStringValue(strVal);
+                    json.writeStringField(name, strVal);
+                }
+            }
+        }
+        json.writeEndObject();
+    }
+
+    static void writeArrayNode(JSArray array, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception {
+        json.writeStartArray();
+        for (Object value : array.asList()) {
+            if (value == null) {
+                json.writeNull();
+            } else if (value instanceof JSNode) {
+                writeNode((JSNode) value, json, visited, lowercaseNames);
+            } else {
+                if (value instanceof String) {
+                    if(value.equals("null"))
+                        json.writeNull();
+                    else
+                        json.writeString(value.toString());
+                } else if (value instanceof Boolean) {
+                    json.writeBoolean((Boolean) value);
+                } else if (value instanceof Integer) {
+                    json.writeNumber((Integer) value);
+                } else if (value instanceof Long) {
+                    json.writeNumber((Long) value);
+                } else if (value instanceof Float) {
+                    json.writeNumber((Float) value);
+                } else if (value instanceof Double) {
+                    json.writeNumber((Double) value);
+                } else if (value instanceof BigInteger) {
+                    json.writeNumber((BigInteger) value);
+                } else if (value instanceof BigDecimal) {
+                    json.writeNumber((BigDecimal) value);
+                } else if (value instanceof Date) {
+                    json.writeString(Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
+                } else {
+                    json.writeString(JSNode.encodeStringValue(value.toString()));
+                }
+            }
+        }
+        json.writeEndArray();
+    }
+
+    /**
+     * Replaces JSON control characters with spaces.
+     *
+     * @param str the string to encode
+     * @return str with control characters replaced with spaces
+     * @see <a href="https://stackoverflow.com/questions/14028716/how-to-remove-control-characters-from-java-string">How to remove control characters from java Strings</a>
+     */
+    static String encodeStringValue(String str) {
+        if (str == null)
+            return null;
+
+        str = str.replaceAll("[\\p{Cntrl}\\p{Cc}\\p{Cf}\\p{Co}\\p{Cn}\u00A0&&[^\r\n\t]]", " ");
+        return str;
+    }
+
+    /**
+     * Simply replaces "/" with "."
+     * <p>
+     * Slashes in property names (seriously a stupid idea anyway) which is supported
+     * by JSON Pointer is not supported.
+     *
+     * @param jsonPointer a slash based path expression
+     * @return a dot based path expression
+     */
+    static String fromJsonPointer(String jsonPointer) {
+        return jsonPointer.replace('/', '.');
+    }
+
+    /**
+     * Converts a proper json path statement into its "relaxed dotted wildcard" form
+     * so that it is easier to parse.
+     */
+    static String fromJsonPath(String jsonPath) {
+        if (jsonPath.charAt(0) == '$')
+            jsonPath = jsonPath.substring(1);
+
+        jsonPath = jsonPath.replace("@.", "@_"); //from jsonpath spec..switching to "_" to make parsing easier
+        jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[", "$1.["); //from json path spec array[index] converted to array.[index]. to support array.index.value legacy format.
+        jsonPath = jsonPath.replace("..", "**."); //translate from jsonpath format
+        jsonPath = jsonPath.replaceAll("([a-zA-Z])[*]", "$1.*"); //translate from jsonpath format
+        jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[([0-9]*)\\]", "$1.$2"); // x[1] to x.1
+        jsonPath = jsonPath.replaceAll("\\.\\[([0-9]*)\\]", ".$1"); //translate .[1]. to .1. */
+        jsonPath = jsonPath.replace("[*]", "*");
+
+        //System.out.println(pathStr);
+        return jsonPath;
+    }
+
 
     /**
      * A heroically permissive finder supporting JSON Pointer, JSONPath and
@@ -113,8 +379,8 @@ public class JSNode implements Map<String, Object> {
      *   <li>'**.myProp.*.value' finds 'value' as a grandchild anywhere under me.
      *   <li>'**.*' returns every element of the document.
      *   <li>'**.5' gets the 6th element of every array.
-     *   <li>'**.book[?(@.isbn)]' finds all books with an isbn
-     *   <il>'**.[?(@.author = 'Herman Melville')]' fins all book with author 'Herman Melville'
+     *   <li>'**.book[?(&#064;.isbn)]' finds all books with an isbn
+     *   <li>'**.[?(&#064;.author = 'Herman Melville')]' finds all book with author 'Herman Melville'
      * </ul>
      * <p>
      * Arrays indexes are treated just like property names but with integer names.
@@ -138,9 +404,9 @@ public class JSNode implements Map<String, Object> {
      *  <li>SUPPORTED $..author                                  //all authors
      *  <li>SUPPORTED $.store..price                             //the prices of all books
      *  <li>SUPPORTED $..book[2]                                 //the third book
-     *  <li>SUPPORTED $..book[?(@.price<10)]                     //all books priced < 10
-     *  <li>SUPPORTED $..[?(@.price<10)]                         //find any node with a price property
-     *  <li>SUPPORTED $..[?(@.*.price<10)]                       //find the parent of any node with a price property
+     *  <li>SUPPORTED $..book[?(@.price@lt;10)]                  //all books priced @lt; 10
+     *  <li>SUPPORTED $..[?(@.price@lt;10)]                      //find any node with a price property
+     *  <li>SUPPORTED $..[?(@.*.price@lt;10)]                    //find the parent of any node with a price property
      *  <li>SUPPORTED $..book[?(@.author = 'Herman Melville')]   //all books where 'Herman Melville' is the author
      *  <li>SUPPORTED $..*                                       //all members of JSON structure.
      *  <li>TODO      $..book[(@.length-1)]                      //the last book in order
@@ -158,10 +424,10 @@ public class JSNode implements Map<String, Object> {
      * The JSON Path following boolean comparison operators are supported:
      * <ul>
      *  <li> =
-     *  <li>>
-     *  <li><
-     *  <li>>=
-     *  <li><=
+     *  <li>@gt;
+     *  <li>@lt;
+     *  <li>@gt;=
+     *  <li>@lt;=
      *  <li>!=
      * </ul>
      *
@@ -169,9 +435,12 @@ public class JSNode implements Map<String, Object> {
      * JsonPath bracket-notation such as  "$['store']['book'][0]['title']"
      * is currently not supported.
      *
-     * @see JSON Pointer - https://tools.ietf.org/html/rfc6901
-     * @see JSON Path - https://goessner.net/articles/JsonPath/
-     * @see JSON Path - https://github.com/json-path/JsonPath
+     * @param pathExpression defines the properties to find
+     * @param qty            the maximum number of results
+     * @return an array of found values
+     * @see <a href="https://tools.ietf.org/html/rfc6901">JSON Pointer</a>
+     * @see <a href="https://goessner.net/articles/JsonPath/">JSON Path</a>
+     * @see <a href="https://github.com/json-path/JsonPath">JSON Path</a>
      */
     public JSArray findAll(String pathExpression, int qty) {
         pathExpression = fromJsonPointer(pathExpression);
@@ -185,13 +454,13 @@ public class JSNode implements Map<String, Object> {
                 "]'\"", //closeQuoteStr
                 "]", //breakIncludedChars
                 ".", //breakExcludedChars
-                "", //unquuotedIgnoredChars
-                ". \t", //leadingIgoredChars
+                "", //unquotedIgnoredChars
+                ". \t", //leadingIgnoredChars
                 jsonPath //chars
         );
 
         List<String> path = tok.asList();
-        return findAll0(path, qty, new ArrayList());
+        return findAll0(path, qty, new ArrayList<>());
     }
 
     List findAll0(List<String> path, int qty, List collected) {
@@ -217,13 +486,9 @@ public class JSNode implements Map<String, Object> {
                 }
             }
         } else if ("**".equals(nextSegment)) {
-            if (path.size() == 1) {
-                //** does not collect anything.  **/* would collect everything
-            } else {
+            if (path.size() != 1) {
                 List<String> nextPath = path.subList(1, path.size());
-
                 this.findAll0(nextPath, qty, collected);
-
                 for (Object value : values()) {
                     if (value instanceof JSNode) {
                         ((JSNode) value).findAll0(path, qty, collected);
@@ -241,11 +506,11 @@ public class JSNode implements Map<String, Object> {
                         "'\"", //closeQuoteStr
                         "?=<>!", //breakIncludedChars...breakAfter
                         "]=<>! ", //breakExcludedChars...breakBefore
-                        "[()", //unquuotedIgnoredChars
-                        "]. \t", //leadingIgoredChars
+                        "[()", //unquotedIgnoredChars
+                        "]. \t", //leadingIgnoredChars
                         expr);
 
-                String token   = null;
+                String token;
                 String func    = null;
                 String subpath = null;
                 String op      = null;
@@ -260,6 +525,7 @@ public class JSNode implements Map<String, Object> {
                 //-- $..book[:2] -> :2
                 //-- $..book[?(@.isbn)] -> ? @_isbn
                 //-- $..book[?(@.price<10)] -> ?
+
 
                 while ((token = tokenizer.next()) != null) {
                     if (token.equals("?")) {
@@ -407,7 +673,7 @@ public class JSNode implements Map<String, Object> {
         return null;
     }
 
-    public JSArray patch(JSArray patches) {
+    public void patch(JSArray patches) {
         //-- migrate legacy "." based paths to JSONPointer
         for (JSNode patch : patches.asNodeList()) {
             String path = patch.getString("path");
@@ -436,8 +702,6 @@ public class JSNode implements Map<String, Object> {
         } catch (Exception e) {
             Utils.rethrow(e);
         }
-
-        return null;
     }
 
     JSProperty getProperty(String name) {
@@ -462,7 +726,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
+     * @param name the case insensitive property name to retrieve.
      * @return the value of property <code>name</code> cast to a JSNode if exists else null
      * @throws ClassCastException if the object found is not a JSNode
      * @see #get(Object)
@@ -474,7 +738,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
+     * @param name the case insensitive property name to retrieve.
      * @return the value of property <code>name</code> cast to a JSArray if exists else null
      * @throws ClassCastException if the object found is not a JSArray
      * @see #get(Object)
@@ -486,7 +750,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
+     * @param name the case insensitive property name to retrieve.
      * @return the stringified value of property <code>name</code> if it exists else null
      * @see #get(Object)
      */
@@ -500,7 +764,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
+     * @param name the case insensitive property name to retrieve.
      * @return the value of property <code>name</code> stringified and parsed as an int if it exists else -1
      * @see #get(Object)
      */
@@ -515,7 +779,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
+     * @param name the case insensitive property name to retrieve.
      * @return the value of property <code>name</code> stringified and parsed as a double if it exists else -1
      * @see #get(Object)
      */
@@ -530,7 +794,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
+     * @param name the case insensitive property name to retrieve.
      * @return the value of property <code>name</code> stringified and parsed as a boolean if it exists else false
      * @see #get(Object)
      */
@@ -545,7 +809,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #find(String)}
      *
-     * @param name
+     * @param pathExpression specifies the nodes to find
      * @return the first value found at <code>pathExpression</code> cast as a JSNode if exists else null
      * @throws ClassCastException if the object found is not a JSNode
      * @see #find(String)
@@ -557,7 +821,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #find(String)}
      *
-     * @param name
+     * @param pathExpression specifies the properties to find
      * @return the first value found at <code>pathExpression</code> cast as a JSArray if exists else null
      * @throws ClassCastException if the object found is not a JSArray
      * @see #find(String)
@@ -569,7 +833,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #find(String)}
      *
-     * @param pathExpression
+     * @param pathExpression specifies the properties to find
      * @return the first value found at <code>pathExpression</code> stringified if exists else null
      * @see #find(String)
      */
@@ -584,7 +848,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #find(String)}
      *
-     * @param pathExpression
+     * @param pathExpression specifies the properties to find
      * @return the first value found at <code>pathExpression</code> stringified and parsed as an int if exists else -1
      * @see #find(String)
      */
@@ -599,7 +863,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #find(String)}
      *
-     * @param pathExpression
+     * @param pathExpression specifies the properties to find
      * @return the first value found at <code>pathExpression</code> stringified and parsed as a double if exists else -1
      * @see #find(String)
      */
@@ -614,7 +878,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #find(String)}
      *
-     * @param pathExpression
+     * @param pathExpression specifies the properties to find
      * @return the first value found at <code>pathExpression</code> stringified and parsed as a boolean if exists else false
      * @see #find(String)
      */
@@ -629,6 +893,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #findAll(String, int)} that returns the first item found
      *
+     * @param pathExpression specifies the properties to find
      * @return the first item found at <code>pathExpression</code>
      * @see #findAll(String, int)
      */
@@ -643,7 +908,7 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #findAll(String, int)}
      *
-     * @param pathExpression
+     * @param pathExpression specifies the properties to find
      * @return all items found for <code>pathExpression</code>
      * @see #findAll(String, int)
      */
@@ -654,12 +919,13 @@ public class JSNode implements Map<String, Object> {
     /**
      * Convenience overloading of {@link #findAll(String, int)}
      *
-     * @param pathExpression
-     * @return all items found for <code>pathExpression</code> cast as a List<JSNode>
+     * @param pathExpression specifies the properties to find
+     * @return all items found for <code>pathExpression</code> cast as a List
      * @see #findAll(String, int)
      */
     public List<JSNode> findAllNodes(String pathExpression) {
-        return (List<JSNode>) findAll(pathExpression).asList();
+        @SuppressWarnings({"inconvertable"}) List found = findAll(pathExpression).asList();
+        return found;
     }
 
     @Override
@@ -669,8 +935,8 @@ public class JSNode implements Map<String, Object> {
     }
 
     @Override
-    public void putAll(Map map) {
-        for (Object key : map.keySet()) {
+    public void putAll(Map<? extends String, ? extends Object> map) {
+        for (String key : map.keySet()) {
             put(key.toString(), map.get(key));
         }
     }
@@ -678,16 +944,15 @@ public class JSNode implements Map<String, Object> {
     /**
      * Vanity method to make sure the attributes prints out first
      *
-     * @param name
-     * @param value
-     * @return
+     * @param name  the property name
+     * @param value the property value
+     * @return the previous value of the property if it exists or null
      */
     public Object putFirst(String name, Object value) {
         LinkedHashMap<String, JSProperty> temp = new LinkedHashMap();
+        temp.put(name.toLowerCase(), new JSProperty(name, value));
 
-        JSProperty prop = temp.put(name.toLowerCase(), new JSProperty(name, value));
-
-        this.properties.remove(name.toLowerCase());
+        JSProperty prop = this.properties.remove(name.toLowerCase());
         temp.putAll(this.properties);
         this.properties = temp;
 
@@ -777,68 +1042,18 @@ public class JSNode implements Map<String, Object> {
         return property;
     }
 
-    static class JSProperty {
-        String name  = null;
-        Object value = null;
-
-        public JSProperty(String name, Object value) {
-            super();
-            this.name = name;
-            this.value = value;
-        }
-
-        public String toString() {
-            return name + " = " + value;
-        }
-
-        /**
-         * @return the name
-         */
-        public String getName() {
-            return name;
-        }
-
-        /**
-         * @param name the name to set
-         */
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        /**
-         * @return the value
-         */
-        public Object getValue() {
-            return value;
-        }
-
-        /**
-         * @param value the value to set
-         */
-        public void setValue(Object value) {
-            this.value = value;
-        }
-    }
-
-    public Map asMap() {
+    public Map<? extends String, ? extends Object> asMap() {
         Map map = new LinkedHashMap();
         for (JSProperty p : properties.values()) {
             String name  = p.name;
             Object value = p.value;
-
-            if (value instanceof JSArray) {
-                //map.put(name, ((JSArray) p.getValue()).asList());
-                map.put(name, value);
-            } else {
-
-                map.put(name, value);
-            }
+            map.put(name, value);
         }
         return map;
     }
 
     /**
-     * Makes a deep copy of this JSNode by stringifying/parsing
+     * Makes a deep copy of this JSNode by stringifying/parsing.
      *
      * @return a deep copy of this node.
      */
@@ -864,37 +1079,39 @@ public class JSNode implements Map<String, Object> {
      * Easy alternative to 'instanceof' to differentiate JSNode from JSArray (which subclasses JSNode).
      *
      * @return true if this class is a subclass of JSArray.
-     * @see JSArray.isArray()
+     * @see JSArray#isArray()
      */
     public boolean isArray() {
         return false;
     }
 
     /**
-     * Pretty prints the JSNode with properties written out in their original case.
+     * @return json string, pretty printed with properties written out in their original case.
      */
     @Override
     public String toString() {
-        return JSNode.toJson((JSNode) this, true, false);
+        return JSNode.toJson(this, true, false);
     }
 
     /**
      * Prints the JSNode with properties written out in their original case.
      *
      * @param pretty should spaces and carriage returns be added to the doc for readability
+     * @return json string, with properties written out in their original case optional pretty printed.
      */
     public String toString(boolean pretty) {
-        return JSNode.toJson((JSNode) this, pretty, false);
+        return JSNode.toJson(this, pretty, false);
     }
 
     /**
      * Prints the JSNode
      *
-     * @param pretty should spaces and carriage returns be added to the doc for readability
-     * @lowercasePropertyNames when true all property names are printed in lower case instead of their original case
+     * @param pretty                 should spaces and carriage returns be added to the doc for readability
+     * @param lowercasePropertyNames when true all property names are printed in lower case instead of their original case
+     * @return a json string
      */
     public String toString(boolean pretty, boolean lowercasePropertyNames) {
-        return JSNode.toJson((JSNode) this, pretty, lowercasePropertyNames);
+        return JSNode.toJson(this, pretty, lowercasePropertyNames);
     }
 
     /**
@@ -904,6 +1121,11 @@ public class JSNode implements Map<String, Object> {
     public int size() {
         return properties.size();
     }
+
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //-- The following methods are static parse/print related
 
     /**
      * @return true if <code>size() == 0</code>
@@ -950,8 +1172,9 @@ public class JSNode implements Map<String, Object> {
      * @return all property name / value pairs
      */
     @Override
-    public Set<Map.Entry<String, Object>> entrySet() {
-        return asMap().entrySet();
+    public Set<Entry<String, Object>> entrySet() {
+        Map<String, Object> map = (Map<String, Object>) asMap();
+        return map.entrySet();
     }
 
     /**
@@ -964,7 +1187,6 @@ public class JSNode implements Map<String, Object> {
      * differences between JSNode and JSArray.
      * <p>
      * For example:
-     * <p>
      * <pre>
      * JSNode node = response.getJson();//don't know if this is a JSNode or JSArray
      * for(Object value : node.asList())
@@ -974,17 +1196,17 @@ public class JSNode implements Map<String, Object> {
      * </pre>
      *
      * @return A List with this node as the only value.
-     * @see JSArray.asList()
+     * @see JSArray#asList()
      * @see #asNodeList()
      */
     public List asList() {
-        ArrayList list = new ArrayList();
+        ArrayList list = new ArrayList<>();
         list.add(this);
         return list;
     }
 
     /**
-     * Returns this object as the only element in a List<JSNode>
+     * Returns this object as the only element in a List
      * <p>
      * JSArray overrides this method to return all of its elements in a list.
      * <p>
@@ -993,7 +1215,6 @@ public class JSNode implements Map<String, Object> {
      * differences between JSNode and JSArray.
      * <p>
      * For example:
-     * <p>
      * <pre>
      * JSNode node = response.getJson();//don't know if this is a JSNode or JSArray
      * for(JSNode child : node.asList())
@@ -1006,7 +1227,8 @@ public class JSNode implements Map<String, Object> {
      * @see #asList()
      */
     public List<JSNode> asNodeList() {
-        return asList();
+        @SuppressWarnings({"inconvertable"}) List list = asList();
+        return list;
     }
 
     /**
@@ -1019,294 +1241,77 @@ public class JSNode implements Map<String, Object> {
      * @return a JSArray with 'this' as the only element.
      * @see #asList()
      * @see #asNodeList()
-     * @see JSArray.asArray()
+     * @see JSArray#asArray()
      */
     public JSArray asArray() {
         return new JSArray(this);
     }
 
-    //--------------------------------------------------------------------------------------
-    //--------------------------------------------------------------------------------------
-    //--------------------------------------------------------------------------------------
-    //-- The following methods are static parse/print related
-
     /**
-     * Turns a JSON string in to JSNode (maps), JSArray (lists), String numbers and booleans.
-     * <p>
-     * Jackson is the underlying parser
+     * Convenience method that calls asList().stream().
      *
-     * @param json the json string to parse
-     * @return a String, number, boolean, JSNode or JSArray
+     * @return asList().stream()
      */
-    public static Object parseJson(String json) {
-        try {
-            ObjectMapper mapper   = new ObjectMapper();
-            JsonNode     rootNode = mapper.readValue(json, JsonNode.class);
-
-            Object parsed = JSNode.mapNode(rootNode);
-            return parsed;
-        } catch (Exception ex) {
-            String msg = "Error parsing JSON:" + ex.getMessage();
-
-            if (!(ex instanceof JsonParseException)) {
-                msg += "\r\nSource:" + json;
-            }
-
-            throw new RuntimeException("400 Bad Request: '" + msg + "'");
-        }
+    public Stream stream() {
+        return asList().stream();
     }
 
-    /**
-     * Utility overloading of {@link #parseJson(String)} to cast the return as a JSNode
-     *
-     * @param json
-     * @return the result of parsing the json document cast to a JSNode
-     * @throws ClassCastException if the result of parsing is not a JSNode
-     */
-    public static JSNode parseJsonNode(String json) throws ClassCastException {
-        return ((JSNode) JSNode.parseJson(json));
-    }
+    static class JSProperty {
+        String name;
+        Object value;
 
-    /**
-     * Utility overloading of {@link #parseJson(String)} to cast the return as a JSArray
-     *
-     * @param json
-     * @return the result of parsing the json document cast to a JSArray
-     * @throws ClassCastException if the result of parsing is not a JSArray
-     */
-    public static JSArray parseJsonArray(String json) {
-        return ((JSArray) JSNode.parseJson(json));
-    }
-
-    static String toJson(JSNode node, boolean pretty, boolean lowercasePropertyNames) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            JsonGenerator         json = new JsonFactory().createGenerator(baos);
-            if (pretty)
-                json.useDefaultPrettyPrinter();
-
-            JSNode.writeNode(node, json, new HashSet(), lowercasePropertyNames);
-            json.flush();
-            baos.flush();
-
-            return new String(baos.toByteArray());
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    static void writeArrayNode(JSArray array, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception {
-        json.writeStartArray();
-        for (Object obj : array.asList()) {
-            if (obj == null) {
-                json.writeNull();
-            } else if (obj instanceof JSNode) {
-                writeNode((JSNode) obj, json, visited, lowercaseNames);
-            } else if (obj instanceof BigDecimal) {
-                json.writeNumber((BigDecimal) obj);
-            } else if (obj instanceof Double) {
-                json.writeNumber((Double) obj);
-            } else if (obj instanceof Float) {
-                json.writeNumber((Float) obj);
-            } else if (obj instanceof Integer) {
-                json.writeNumber((Integer) obj);
-            } else if (obj instanceof Long) {
-                json.writeNumber((Long) obj);
-            } else if (obj instanceof BigDecimal) {
-                json.writeNumber((BigDecimal) obj);
-            } else if (obj instanceof BigDecimal) {
-                json.writeNumber((BigDecimal) obj);
-            } else if (obj instanceof Boolean) {
-                json.writeBoolean((Boolean) obj);
-            } else {
-                json.writeString(encodeStringValue(obj + ""));
-            }
-        }
-        json.writeEndArray();
-    }
-
-    static Object mapNode(JsonNode json) {
-        if (json == null)
-            return null;
-
-        if (json.isNull())
-            return null;
-
-        if (json.isValueNode()) {
-            if (json.isNumber())
-                return json.numberValue();
-
-            if (json.isBoolean())
-                return json.booleanValue();
-
-            return json.asText();
+        public JSProperty(String name, Object value) {
+            super();
+            this.name = name;
+            this.value = value;
         }
 
-        if (json.isArray()) {
-            JSArray retVal = null;
-            retVal = new JSArray();
-
-            for (JsonNode child : json) {
-                retVal.add(mapNode(child));
-            }
-
-            return retVal;
-        } else if (json.isObject()) {
-            JSNode retVal = null;
-            retVal = new JSNode();
-
-            Iterator<String> it = json.fieldNames();
-            while (it.hasNext()) {
-                String   field = it.next();
-                JsonNode value = json.get(field);
-                retVal.put(field, mapNode(value));
-            }
-            return retVal;
+        public String toString() {
+            return name + " = " + value;
         }
 
-        throw new RuntimeException("unparsable json:" + json);
-    }
-
-    /**
-     * Replaces JSON control characters with spaces.
-     *
-     * @param str
-     * @return str with control characters replaced with spaces
-     * @see https://stackoverflow.com/questions/14028716/how-to-remove-control-characters-from-java-string
-     */
-    static String encodeStringValue(String str) {
-        if (str == null)
-            return null;
-
-        str = str.replaceAll("[\\p{Cntrl}\\p{Cc}\\p{Cf}\\p{Co}\\p{Cn}\u00A0&&[^\r\n\t]]", " ");
-        return str;
-    }
-
-    static void writeNode(JSNode node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception {
-        JSProperty href = node.getProperty("href");
-
-        if (visited.contains(node)) {
-            if (href != null) {
-                json.writeStartObject();
-                if (href != null) {
-                    json.writeStringField("@link", href.getValue() + "");
-                }
-
-                json.writeEndObject();
-            } else {
-                ApiException.throw500InternalServerError("Your JSNode document contains the same object in multiple locations without a 'href' property.");
-            }
-            return;
-        }
-        visited.add(node);
-
-        if (node instanceof JSArray) {
-            JSNode.writeArrayNode(((JSArray) node), json, visited, lowercaseNames);
-            return;
+        /**
+         * @return the name
+         */
+        public String getName() {
+            return name;
         }
 
-        json.writeStartObject();
-
-        if (href != null)
-            json.writeStringField("href", href.getValue() + "");
-
-        for (String key : node.keySet()) {
-            JSProperty p = node.getProperty(key);
-            if (p == href)
-                continue;
-
-            String name  = p.getName();
-            Object value = p.getValue();
-
-            if (value == null) {
-                json.writeNullField(name);
-            } else if (value instanceof JSNode) {
-                if (!lowercaseNames)
-                    json.writeFieldName(name);
-                else
-                    json.writeFieldName(name.toLowerCase());
-
-                writeNode((JSNode) value, json, visited, lowercaseNames);
-            } else if (value instanceof Date) {
-                json.writeStringField(name, Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
-            } else if (value instanceof BigDecimal) {
-                json.writeNumberField(name, (BigDecimal) value);
-            } else if (value instanceof Double) {
-                json.writeNumberField(name, (Double) value);
-            } else if (value instanceof Float) {
-                json.writeNumberField(name, (Float) value);
-            } else if (value instanceof Integer) {
-                json.writeNumberField(name, (Integer) value);
-            } else if (value instanceof Long) {
-                json.writeNumberField(name, (Long) value);
-            } else if (value instanceof BigDecimal) {
-                json.writeNumberField(name, (BigDecimal) value);
-            } else if (value instanceof BigInteger) {
-                json.writeNumberField(name, ((BigInteger) value).intValue());
-            } else if (value instanceof Boolean) {
-                json.writeBooleanField(name, (Boolean) value);
-            } else {
-                String strVal = value + "";
-                if ("null".equals(strVal)) {
-                    json.writeNullField(name);
-                } else {
-                    strVal = JSNode.encodeStringValue(strVal);
-                    json.writeStringField(name, strVal);
-                }
-            }
+        /**
+         * @param name the name to set
+         */
+        public void setName(String name) {
+            this.name = name;
         }
-        json.writeEndObject();
-    }
 
-    /**
-     * Simply replaces "/"s with "."
-     * <p>
-     * Slashes in property names (seriously a stupid idea anyway) which is supported
-     * by JSON Pointer is not supported.
-     *
-     * @param jsonPointer
-     * @return
-     */
-    static String fromJsonPointer(String jsonPointer) {
-        return jsonPointer.replace('/', '.');
-    }
+        /**
+         * @return the value
+         */
+        public Object getValue() {
+            return value;
+        }
 
-    /**
-     * Converts a proper json path statement into its "relaxed dotted wildcard" form
-     * so that it is easier to parse.
-     */
-    static String fromJsonPath(String jsonPath) {
-        if (jsonPath.charAt(0) == '$')
-            jsonPath = jsonPath.substring(1, jsonPath.length());
-
-        jsonPath = jsonPath.replace("@.", "@_"); //from jsonpath spec..switching to "_" to make parsing easier
-        jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[", "$1.["); //from json path spec array[index] converted to array.[index]. to support arra.index.value legacy format.
-        jsonPath = jsonPath.replace("..", "**."); //translate from jsonpath format
-        jsonPath = jsonPath.replaceAll("([a-zA-Z])[*]", "$1.*"); //translate from jsonpath format
-        jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[([0-9]*)\\]", "$1.$2"); // x[1] to x.1
-        jsonPath = jsonPath.replaceAll("\\.\\[([0-9]*)\\]", ".$1"); //translate .[1]. to .1. */
-        jsonPath = jsonPath.replace("[*]", "*");
-
-        //System.out.println(pathStr);
-        return jsonPath;
+        /**
+         * @param value the value to set
+         */
+        public void setValue(Object value) {
+            this.value = value;
+        }
     }
 
     static class JSONPathTokenizer {
-        char[] chars = null;
-        int    head  = 0;
-
-        char    escapeChar = '\\';
-        boolean escaped    = false;
-        boolean quoted     = false;
-
-        StringBuffer next = new StringBuffer();
-
-        Set openQuotes      = null;
-        Set closeQuotes     = null;
-        Set breakIncluded   = null;
-        Set breakExcluded   = null;
-        Set unquotedIgnored = null;
-        Set leadingIgnored  = null;
+        final char escapeChar = '\\';
+        final Set  openQuotes;
+        final Set  closeQuotes;
+        final Set  breakIncluded;
+        final Set  breakExcluded;
+        final Set  unquotedIgnored;
+        final Set  leadingIgnored;
+        char[]        chars   = null;
+        int           head    = 0;
+        boolean       escaped = false;
+        boolean       quoted  = false;
+        StringBuilder next    = new StringBuilder();
 
         public JSONPathTokenizer(String openQuoteChars, String closeQuoteChars, String breakIncludedChars, String breakExcludedChars, String unquotedIgnoredChars, String leadingIgnoredChars) {
             this(openQuoteChars, closeQuoteChars, breakIncludedChars, breakExcludedChars, unquotedIgnoredChars, leadingIgnoredChars, null);
@@ -1326,14 +1331,14 @@ public class JSNode implements Map<String, Object> {
         /**
          * Resets any ongoing tokenization to tokenize this new string;
          *
-         * @param chars
+         * @param chars the characters to tokenize
          */
         public JSONPathTokenizer withChars(String chars) {
             if (chars != null) {
                 this.chars = chars.toCharArray();
             }
             head = 0;
-            next = new StringBuffer();
+            next = new StringBuilder();
             escaped = false;
             quoted = false;
 
@@ -1341,8 +1346,8 @@ public class JSNode implements Map<String, Object> {
         }
 
         public List<String> asList() {
-            List<String> list = new ArrayList();
-            String       next = null;
+            List<String> list = new ArrayList<>();
+            String       next;
             while ((next = next()) != null)
                 list.add(next);
 
@@ -1352,7 +1357,7 @@ public class JSNode implements Map<String, Object> {
         Set toSet(String string) {
             Set resultSet = new HashSet();
             for (int i = 0; i < string.length(); i++)
-                resultSet.add(new Character(string.charAt(i)));
+                resultSet.add(string.charAt(i));
 
             return resultSet;
         }
@@ -1409,7 +1414,7 @@ public class JSNode implements Map<String, Object> {
                 throw new RuntimeException("Unable to parse hanging escape character: \"" + String.valueOf(chars) + "\": -> '" + new String(chars) + "'");
 
             String str = next.toString().trim();
-            next = new StringBuffer();
+            next = new StringBuilder();
 
             if (str.length() == 0)
                 str = null;

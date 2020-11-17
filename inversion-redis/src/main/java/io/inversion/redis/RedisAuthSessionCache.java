@@ -32,7 +32,7 @@ import redis.clients.jedis.JedisPoolConfig;
 public class RedisAuthSessionCache extends InMemorySessionDao {
     protected final Logger log = LoggerFactory.getLogger(RedisAuthSessionCache.class);
 
-    protected ObjectMapper om = new ObjectMapper();
+    protected final ObjectMapper om = new ObjectMapper();
 
     // configurable inversion.props
     protected String redisHost = null;
@@ -56,40 +56,34 @@ public class RedisAuthSessionCache extends InMemorySessionDao {
 
     @Override
     public User doGet(String sessionKey) {
-        return (User) execute(new JedisCallback() {
-            public Object doWithJedis(Jedis jedis) throws Exception {
-                User   user     = null;
-                String userJson = jedis.get(key(sessionKey));
-                if (userJson != null) {
-                    // reset the ttl after a successful get call
-                    jedis.expire(key(sessionKey), redisTtl);
-                    user = om.readValue(userJson, User.class);
-                }
-                return user;
+        return (User) execute(jedis -> {
+            User   user     = null;
+            String userJson = jedis.get(key(sessionKey));
+            if (userJson != null) {
+                // reset the ttl after a successful get call
+                jedis.expire(key(sessionKey), redisTtl);
+                user = om.readValue(userJson, User.class);
             }
+            return user;
         });
     }
 
     @Override
     public void doPut(String sessionKey, User user) {
         if (sessionKey != null && user != null) {
-            execute(new JedisCallback() {
-                public Object doWithJedis(Jedis jedis) throws Exception {
-                    String userJson = om.writeValueAsString(user);
-                    jedis.setex(key(sessionKey), redisTtl, userJson);
-                    return null;
-                }
+            execute(jedis -> {
+                String userJson = om.writeValueAsString(user);
+                jedis.setex(key(sessionKey), redisTtl, userJson);
+                return null;
             });
         }
     }
 
     @Override
     public void doDelete(String sessionKey) {
-        execute(new JedisCallback() {
-            public Object doWithJedis(Jedis jedis) throws Exception {
-                jedis.del(key(sessionKey));
-                return null;
-            }
+        execute(jedis -> {
+            jedis.del(key(sessionKey));
+            return null;
         });
     }
 
@@ -120,10 +114,6 @@ public class RedisAuthSessionCache extends InMemorySessionDao {
         }
 
         return returnVal;
-    }
-
-    interface JedisCallback {
-        public Object doWithJedis(Jedis jedis) throws Exception;
     }
 
     Jedis getJedis() {
@@ -272,6 +262,10 @@ public class RedisAuthSessionCache extends InMemorySessionDao {
     public RedisAuthSessionCache withKeyPrefix(String keyPrefix) {
         setKeyPrefix(keyPrefix);
         return this;
+    }
+
+    interface JedisCallback {
+        Object doWithJedis(Jedis jedis) throws Exception;
     }
 
 }

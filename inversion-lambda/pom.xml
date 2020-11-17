@@ -9,14 +9,14 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-lambda</artifactId>
-  <version>0.9.9</version>
+  <version>0.9.14</version>
   <name>inversion-lambda</name>
   <description>Inversion Cloud API Engine</description>
-  <url>http://inversion.io</url>
+  <url>https://inversion.io</url>
   <licenses>
     <license>
       <name>The Apache License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
   <developers>
@@ -29,19 +29,19 @@
   <scm>
     <connection>https://github.com/inversion-api/inversion-engine.git</connection>
     <developerConnection>https://github.com/inversion-api/inversion-engine.git</developerConnection>
-    <url>http://inversion.io</url>
+    <url>https://inversion.io</url>
   </scm>
   <dependencies>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-api</artifactId>
-      <version>0.9.9</version>
+      <version>0.9.14</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-lambda-java-core</artifactId>
-      <version>1.2.0</version>
+      <version>1.2.1</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

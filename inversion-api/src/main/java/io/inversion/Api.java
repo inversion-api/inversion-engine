@@ -22,43 +22,50 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Contains the Collections, Endpoints and Actions that make up a REST API.
+ */
 public class Api extends Rule<Api> {
-    transient volatile  boolean started  = false;
-    transient volatile  boolean starting = false;
-    transient protected String  hash     = null;
-    transient           long    loadTime = 0;
-
-    protected boolean debug = false;
-
-    protected String url = null;
-
-    protected List<Db>         dbs         = new ArrayList();
-    protected List<Endpoint>   endpoints   = new ArrayList();
-    protected List<Action>     actions     = new ArrayList();
-    protected List<Collection> collections = new ArrayList();
-
-    protected transient List<ApiListener> listeners = new ArrayList();
 
     /**
-     * Listener that can be registered with an {@code Api} to receive lifecycle,
-     * per request and per error callback notifications.
+     * The underlying data sources for the Api.
      */
-    public static interface ApiListener {
-        default void onStartup(Api api) {
-        }
+    protected final           List<Db>          dbs         = new ArrayList<>();
 
-        default void onShutdown(Api api) {
-        }
+    /**
+     * The Request HTTP method/path combinations that map to a distinct set of Actions.
+     * <p>
+     * A single Endpoint will be selected to run to service a Request.  Any additional
+     * Path matching rules that exist on these Endpoint's Actions will be interpreted
+     * as relative to the end of the selected Endpoint's Path match.
+     */
+    protected final           List<Endpoint>    endpoints   = new ArrayList<>();
 
-        default void afterRequest(Request req, Response res) {
-        }
+    /**
+     * Actions that may be selected to run regardless of the matched Endpoint.
+     * <p>
+     * The Action's Path match statements will be considered relative to the Api's
+     * base URL NOT relative to the selected Endpoint.
+     */
+    protected final           List<Action>      actions     = new ArrayList<>();
 
-        default void afterError(Request req, Response res) {
-        }
+    /**
+     * The data objects being served by this API.  In a simple API these may map
+     * one-to-one to, for example, database tables from a JdbcDb connecting to a
+     * RDBMS such as MySql or SqlServer.
+     */
+    protected final           List<Collection>  collections = new ArrayList<>();
 
-        default void beforeFinally(Request req, Response res) {
-        }
-    }
+    /**
+     * Listeners that receive callbacks on startup/shutdown/request/error.
+     */
+    protected final transient List<ApiListener> listeners   = new ArrayList<>();
+    transient protected       String            hash        = null;
+    protected                 boolean           debug       = false;
+    protected                 String            url         = null;
+    transient volatile        boolean           started     = false;
+    transient volatile        boolean           starting    = false;
+    transient                 long              loadTime    = 0;
 
     public Api() {
     }
@@ -69,7 +76,7 @@ public class Api extends Rule<Api> {
 
     @Override
     protected RuleMatcher getDefaultIncludeMatch() {
-        List parts = new ArrayList();
+        List<String> parts = new ArrayList<>();
         if (name != null) {
             parts.add(name);
         }
@@ -77,7 +84,7 @@ public class Api extends Rule<Api> {
         return new RuleMatcher(null, new Path(parts));
     }
 
-    public synchronized Api startup() {
+    synchronized Api startup() {
         if (started || starting) //starting is an accidental recursion guard
             return this;
 
@@ -109,15 +116,15 @@ public class Api extends Rule<Api> {
         return started;
     }
 
-    public void shutdown() {
+    void shutdown() {
         for (Db db : dbs) {
             db.shutdown(this);
         }
     }
 
     public void removeExcludes() {
-        for (Db db : getDbs()) {
-            for (Collection coll : (List<Collection>) db.getCollections()) {
+        for (Db<Db> db : getDbs()) {
+            for (Collection coll : db.getCollections()) {
                 if (coll.isExclude()) {
                     db.removeCollection(coll);
                 } else {
@@ -183,11 +190,12 @@ public class Api extends Rule<Api> {
      * @return the dbs
      */
     public List<Db> getDbs() {
-        return new ArrayList(dbs);
+        return new ArrayList<>(dbs);
     }
 
     /**
      * @param dbs the dbs to set
+     * @return this
      */
     public Api withDbs(Db... dbs) {
         for (Db db : dbs)
@@ -196,11 +204,11 @@ public class Api extends Rule<Api> {
         return this;
     }
 
-    public Api withDb(Db db) {
+    public <T extends Db> Api withDb(Db<T> db) {
         if (!dbs.contains(db)) {
             dbs.add(db);
 
-            for (Collection coll : (List<Collection>) db.getCollections()) {
+            for (Collection coll : db.getCollections()) {
                 withCollection(coll);
             }
         }
@@ -217,7 +225,7 @@ public class Api extends Rule<Api> {
     }
 
     public List<Endpoint> getEndpoints() {
-        return new ArrayList(endpoints);
+        return new ArrayList<>(endpoints);
     }
 
     public Api withEndpoint(String methods, String includePaths, Action... actions) {
@@ -226,26 +234,21 @@ public class Api extends Rule<Api> {
         return this;
     }
 
-    public Api withEndpoints(Endpoint... endpoints) {
-        for (Endpoint endpoint : endpoints)
-            withEndpoint(endpoint);
-
-        return this;
-    }
-
-    public Api withEndpoint(Endpoint endpoint) {
-        if (!endpoints.contains(endpoint)) {
-            boolean inserted = false;
-            for (int i = 0; i < endpoints.size(); i++) {
-                if (endpoint.getOrder() < endpoints.get(i).getOrder()) {
-                    endpoints.add(i, endpoint);
-                    inserted = true;
-                    break;
+    public Api withEndpoint(Endpoint... endpoints) {
+        for (Endpoint endpoint : endpoints) {
+            if (!this.endpoints.contains(endpoint)) {
+                boolean inserted = false;
+                for (int i = 0; i < this.endpoints.size(); i++) {
+                    if (endpoint.getOrder() < this.endpoints.get(i).getOrder()) {
+                        this.endpoints.add(i, endpoint);
+                        inserted = true;
+                        break;
+                    }
                 }
-            }
 
-            if (!inserted)
-                endpoints.add(endpoint);
+                if (!inserted)
+                    this.endpoints.add(endpoint);
+            }
         }
         return this;
     }
@@ -253,6 +256,13 @@ public class Api extends Rule<Api> {
     /**
      * This method takes String instead of actual Collections and Properties as a convenience to people hand wiring up an Api.
      * The referenced Collections and Properties actually have to exist already or you will get a NPE.
+     *
+     * @param parentCollectionName the name of the parent collection
+     * @param parentPropertyName   the name of the json property for the parent that references the child
+     * @param childCollectionName  the target child collection name
+     * @param childPropertyName    the name of hte json property for the child that references the parent
+     * @param childFkProps         names of the existing Properties that make up the foreign key
+     * @return this
      */
     public Api withRelationship(String parentCollectionName, String parentPropertyName, String childCollectionName, String childPropertyName, String... childFkProps) {
         Collection parentCollection = getCollection(parentCollectionName);
@@ -269,6 +279,13 @@ public class Api extends Rule<Api> {
      * For collections backed by relational data sources (like a SQL db) the length of <code>childFkProps</code> will generally match the
      * length of <code>parentCollections</code> primary index.  If the two don't match, then <code>childFkProps</code> must be 1.  In this
      * case, the compound primary index of parentCollection will be encoded as an resourceKey in the single child table property.
+     *
+     * @param parentCollection   the collection to add the relationship to
+     * @param parentPropertyName the name of the json property for the parent that references the child
+     * @param childCollection    the target child collection
+     * @param childPropertyName  the name of hte json property for the child that references the parent
+     * @param childFkProps       Properties that make up the foreign key
+     * @return this
      */
     public Api withRelationship(Collection parentCollection, String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps) {
         parentCollection.withOneToManyRelationship(parentPropertyName, childCollection, childPropertyName, childFkProps);
@@ -276,20 +293,24 @@ public class Api extends Rule<Api> {
     }
 
     public List<Action> getActions() {
-        return new ArrayList(actions);
+        return new ArrayList<>(actions);
     }
 
-    public Api withActions(Action... actions) {
+    /**
+     * Add Action(s) may be selected to run across multiple Endpoints.
+     * @param actions actions to match and conditionally run across all Requests
+     * @return this
+     */
+    public synchronized Api withActions(Action... actions) {
         for (Action action : actions)
-            withAction(action);
-
+            if (!this.actions.contains(action))
+                this.actions.add(action);
         return this;
     }
 
     public Api withAction(Action action) {
-        if (!actions.contains(action))
-            actions.add(action);
-
+        if (!this.actions.contains(action))
+            this.actions.add(action);
         return this;
     }
 
@@ -318,6 +339,32 @@ public class Api extends Rule<Api> {
 
     public List<ApiListener> getApiListeners() {
         return Collections.unmodifiableList(listeners);
+    }
+
+    /**
+     * Listener that can be registered with an {@code Api} to receive lifecycle,
+     * per request and per error callback notifications.
+     */
+    public interface ApiListener {
+        default void onStartup(Api api) {
+            //implement me
+        }
+
+        default void onShutdown(Api api) {
+            //implement me
+        }
+
+        default void afterRequest(Request req, Response res) {
+            //implement me
+        }
+
+        default void afterError(Request req, Response res) {
+            //implement me
+        }
+
+        default void beforeFinally(Request req, Response res) {
+            //implement me
+        }
     }
 
 }

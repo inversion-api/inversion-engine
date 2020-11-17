@@ -26,7 +26,7 @@ public class Group<T extends Group, P extends Query> extends Builder<T, P> {
     }
 
     public List<String> getGroupBy() {
-        List<String> groups = new ArrayList();
+        List<String> groups = new ArrayList<>();
         for (Term group : findAll("group")) {
             for (Term term : group.getTerms()) {
                 if (term.isLeaf())

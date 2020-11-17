@@ -103,6 +103,7 @@ public class MockAction extends Action<MockAction> {
             try {
                 stream = new URL(jsonUrl).openStream();
             } catch (Exception ex) {
+                //intentionally empty
             }
 
             if (stream == null) {
@@ -126,7 +127,7 @@ public class MockAction extends Action<MockAction> {
             if (stream != null) {
                 json = JSNode.parseJsonNode(Utils.read(stream));
             } else {
-                ApiException.throw500InternalServerError("Unable to locate jsonUrl '{}'. Please check your configuration", jsonUrl);
+                throw ApiException.new500InternalServerError("Unable to locate jsonUrl '{}'. Please check your configuration", jsonUrl);
             }
 
         }

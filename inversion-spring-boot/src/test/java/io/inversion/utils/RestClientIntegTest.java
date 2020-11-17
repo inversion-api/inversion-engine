@@ -1,21 +1,15 @@
 package io.inversion.utils;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import io.inversion.*;
+import io.inversion.spring.InversionMain;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.zip.GZIPInputStream;
 
-import org.junit.jupiter.api.Test;
-
-import io.inversion.Action;
-import io.inversion.Api;
-import io.inversion.ApiException;
-import io.inversion.Request;
-import io.inversion.Response;
-import io.inversion.spring.InversionMain;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RestClientIntegTest {
 
@@ -27,16 +21,16 @@ public class RestClientIntegTest {
             public void run(Request req, Response res) throws ApiException {
 
                 if (!"yep".equals(req.getJson().find("testing")))
-                    ApiException.throw500InternalServerError();
+                    throw ApiException.new500InternalServerError();
 
                 res.withJson(req.getJson());
             }
         }));
 
         RestClient client = new RestClient();
-        Response resp = client.post("http://localhost:8080/testme", new JSNode("testing", "yep")).get();
-        resp.dump().assertOk();
-        assertTrue("yep".equals(resp.find("testing")));
+        Response   resp   = client.post("http://localhost:8080/testme", new JSNode("testing", "yep")).get();
+        resp.assertOk();
+        assertEquals(resp.find("testing"), "yep");
     }
 
     @Test
@@ -49,7 +43,7 @@ public class RestClientIntegTest {
                 res.data().add(new JSNode("hello", "world"));
 
                 //this forces the payload response over the 1KB size to trigger gzip compression
-                StringBuffer big = new StringBuffer("");
+                StringBuilder big = new StringBuilder();
                 for (int i = 0; i < 2048; i++) {
                     big.append("0");
                 }
@@ -66,16 +60,16 @@ public class RestClientIntegTest {
         assertEquals("gzip", conn.getHeaderField("Content-Encoding"));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Utils.pipe(new GZIPInputStream(conn.getInputStream()), out);
-        String str = new String(out.toByteArray());
+        String str     = new String(out.toByteArray());
         JSNode payload = JSNode.parseJsonNode(str);
         assertEquals("world", payload.find("data.0.hello"));
 
         //-- now do the test again and the result should be the same
         //-- but the HttpClient will auto decode and remove/hide the Content-Encoding header
         RestClient client = new RestClient();
-        Response resp = client.get("http://localhost:8080/testme").get();
-        resp.dump().assertOk();
-        assertTrue("world".equals(resp.find("data.0.hello")));
+        Response   resp   = client.get("http://localhost:8080/testme").get();
+        resp.assertOk();
+        assertEquals(resp.find("data.0.hello"), "world");
 
     }
 

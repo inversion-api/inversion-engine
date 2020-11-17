@@ -33,7 +33,7 @@ public class JSArray extends JSNode implements Iterable {
      * <p>
      * This replaces the use of the JSNode.properties map from the superclass.
      */
-    protected List objects = new ArrayList();
+    protected List objects = new ArrayList<>();
 
     public JSArray(Object... objects) {
         if (objects != null && objects.length == 1 && objects[0].getClass().isArray()) {
@@ -48,7 +48,7 @@ public class JSArray extends JSNode implements Iterable {
 
     /**
      * @return true
-     * @see JSNode.isArray()
+     * @see JSNode#isArray()
      */
     @Override
     public boolean isArray() {
@@ -73,8 +73,8 @@ public class JSArray extends JSNode implements Iterable {
      * <p>
      * Put/set/add are basically synonyms.
      *
-     * @param index
-     * @param value
+     * @param index the zero based property index to store
+     * @param value a JSNode, JSArray, or compatible Java type
      * @return the prior value at <code>index</code>
      * @see #set(int, Object)
      */
@@ -87,10 +87,10 @@ public class JSArray extends JSNode implements Iterable {
      * <p>
      * Put/set/add are basically synonyms.
      *
-     * @param index
-     * @param value
+     * @param index the zero based property index to store
+     * @param value a JSNode, JSArray, or compatible Java type
      * @return the prior value at <code>index</code> if it exists
-     * @throws ArrayIndexOutOfBoundsException only if index is < 0
+     * @throws ArrayIndexOutOfBoundsException only if index is @lt; 0
      */
     public Object set(int index, Object value) throws ArrayIndexOutOfBoundsException {
         if (index < 0)
@@ -105,26 +105,26 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Overloading of {@link #set(int, Object)}
      *
-     * @param index
-     * @param object
+     * @param index the zero based property index to store
+     * @param value a JSNode, JSArray, or compatible Java type
      */
-    public void add(int index, Object object) {
-        objects.add(index, object);
+    public void add(int index, Object value) {
+        objects.add(index, value);
     }
 
     /**
      * Adds <code>object</code> to the end of {@link #objects}
      *
-     * @param object
+     * @param value a JSNode, JSArray, or compatible Java type
      */
-    public void add(Object object) {
-        objects.add(object);
+    public void add(Object value) {
+        objects.add(value);
     }
 
     /**
      * Adds all elements from <code>array</code> to the end of {@link #objects}
      *
-     * @param array
+     * @param array an array of elements to add
      */
     public void addAll(JSArray array) {
         objects.addAll(array.asList());
@@ -133,6 +133,7 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Override of JSNode.remove(Object) to parse <code>index</code> as an Integer and remove the column from {@link #objects} instead of removing the key from JSNode.properties
      *
+     * @param index a value that should parse to an integer
      * @return the prior value at <code>index</code> if it exits
      * @see #remove(int)
      */
@@ -158,6 +159,8 @@ public class JSArray extends JSNode implements Iterable {
 
     /**
      * Override of JSNode.get(Object) to parse <code>index</code> as an Integer and pull from {@link #objects} instead of JSNode.properties
+     *
+     * @param index the zero based property index to get
      */
     @Override
     public Object get(Object index) {
@@ -167,7 +170,7 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Gets the object at <code>index</code> and will not throw ArrayIndexOutOfBoundsException
      *
-     * @param index
+     * @param index the zero based property index to get
      * @return the object at <code>index</code> if it exists else, null
      */
     public Object get(int index) {
@@ -179,7 +182,7 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(int)}
      *
-     * @param name
+     * @param index the zero based property index to get
      * @return the value at <code>index</code> cast to a JSNode if exists else null
      * @throws ClassCastException if the object found is not a JSNode
      * @see #get(Object)
@@ -191,8 +194,8 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
-     * @return the value at <cod>index</code> cast to a JSArray if exists else null
+     * @param index the zero based property index to get
+     * @return the value at <code>index</code> cast to a JSArray if exists else null
      * @throws ClassCastException if the object found is not a JSArray
      * @see #get(Object)
      */
@@ -203,7 +206,7 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
+     * @param index the zero based property index to get
      * @return the value of property <code>name</code> stringified if it exists else null
      * @see #get(Object)
      */
@@ -217,8 +220,8 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
-     * @return the value at <cod>index</code> stringified and parsed as an int if it exists else -1
+     * @param index the zero based property index to get
+     * @return the value at <code>index</code> stringified and parsed as an int if it exists else -1
      * @see #get(Object)
      */
     public int getInt(int index) {
@@ -232,8 +235,8 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(Object)}
      *
-     * @param name
-     * @return the value at <cod>index</code> stringified and parsed as a double if it exists else -1
+     * @param index the zero based property index to get
+     * @return the value at <code>index</code> stringified and parsed as a double if it exists else -1
      * @see #get(Object)
      */
     public double getDouble(int index) {
@@ -247,8 +250,8 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * Convenience overloading of {@link #get(int)}
      *
-     * @param name
-     * @return the value at <cod>index</code> stringified and parsed as a boolean if it exists else false
+     * @param index the zero based property index to get
+     * @return the value at <code>index</code> stringified and parsed as a boolean if it exists else false
      * @see #get(Object)
      */
     public boolean getBoolean(int index) {
@@ -276,8 +279,21 @@ public class JSArray extends JSNode implements Iterable {
     /**
      * @return simply returns 'this';
      */
+    @Override
     public JSArray asArray() {
         return this;
+    }
+
+    /**
+     * @return a map of array index as strings to their value
+     */
+    @Override
+    public Map asMap() {
+        Map map = new LinkedHashMap();
+        for (int i = 0; i < objects.size(); i++) {
+            map.put(i + "", objects.get(i));
+        }
+        return map;
     }
 
     public boolean contains(Object object) {

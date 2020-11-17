@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class PathTest {
     @Test
     public void extract_stopsOnWildcard() {
-        Map params = new HashMap();
+        Map params = new HashMap<>();
 
         Path rule = new Path("part1/part2/*");
         Path path = new Path("/part1/part2/part3/part4");
@@ -40,7 +40,7 @@ public class PathTest {
 
     @Test
     public void extract_stopsOnOptional() {
-        Map params = new HashMap();
+        Map params = new HashMap<>();
 
         Path rule = new Path("part1/[part2]/part3/*");
         Path path = new Path("/part1/part2/part3/part4");
@@ -54,7 +54,7 @@ public class PathTest {
 
     @Test
     public void extract_stopsOnOptionalWithColonVarParsing() {
-        Map<String, String> params = new HashMap();
+        Map<String, String> params = new HashMap<>();
 
         Path rule = new Path("part1/:part2/part3/[{varName1:part4}]/[:varName2]/*");
         Path path = new Path("part1/val2/part3/part4/part5/part6/part7/part8/part9");
@@ -72,7 +72,7 @@ public class PathTest {
 
     @Test
     public void extract_stopsOnOptionalWithBracketVarParsing() {
-        Map<String, String> params = new HashMap();
+        Map<String, String> params = new HashMap<>();
 
         Path rule = new Path("part1/{part2}/part3/*");
         Path path = new Path("part1/val2/part3/part4");
@@ -87,7 +87,7 @@ public class PathTest {
 
     @Test
     public void extract_stopsOnOptionalWithRegexVarParsing() {
-        Map<String, String> params = new HashMap();
+        Map<String, String> params = new HashMap<>();
 
         Path rule = new Path("part1/{part2:[0-9a-zA-Z]{1,8}}/part3/*");
         Path path = new Path("part1/val2/part3/part4");
@@ -104,7 +104,7 @@ public class PathTest {
     public void extract_regexDoesNotMatch_error() {
         boolean error = false;
         try {
-            Map<String, String> params = new HashMap();
+            Map<String, String> params = new HashMap<>();
             Path                rule   = new Path("part1/{part2:[0-9a-zA-Z]{1,8}}/part3/*");
             Path                path   = new Path("part1/23452345234523452345/part3/part4");
 
@@ -119,7 +119,7 @@ public class PathTest {
     public void extract_pathDoesNotMatch_error() {
         boolean error = false;
         try {
-            Map<String, String> params  = new HashMap();
+            Map<String, String> params  = new HashMap<>();
             Path                rule    = new Path("part1/part2/part3/*");
             Path                path    = new Path("part1/part5/part3/part4");
             Path                matched = rule.extract(params, path);
@@ -131,7 +131,7 @@ public class PathTest {
 
     @Test
     public void extract_stopsOnOptionalWithDollarVarParsing() {
-        Map<String, String> params = new HashMap();
+        Map<String, String> params = new HashMap<>();
 
         Path rule = new Path("part1/${part2}/part3/*");
         Path path = new Path("part1/val2/part3/part4");
@@ -146,7 +146,7 @@ public class PathTest {
 
     @Test
     public void extract_missingClosingBracketIsConsideredLiteralNotVariable() {
-        Map<String, String> params = new HashMap();
+        Map<String, String> params = new HashMap<>();
 
         Path rule = new Path("part1/{part2/part3/*");
         Path path = new Path("part1/val2/part3/part4");

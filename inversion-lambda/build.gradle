@@ -1,7 +1,7 @@
 dependencies {
 
-	compile project(':inversion-api')
-	compile 'com.amazonaws:aws-lambda-java-core:1.2.0'
+	api project(':inversion-api')
+	api "com.amazonaws:aws-lambda-java-core:${awsLambdaVersion}"
 	
 
 }

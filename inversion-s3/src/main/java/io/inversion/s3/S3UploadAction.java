@@ -55,7 +55,7 @@ import java.util.Map;
  * <p>
  * do this
  * <p>
- * action.config=dynamicBasePath=yyyy/MM/dd&bucket=somebucket
+ * action.config=dynamicBasePath=yyyy/MM/dd@amp;bucket=somebucket
  * <p>
  * While accessKey/secreKey/awsRegion CAN be set either on the Handler
  * or on the Action in this way, if you control the host environment
@@ -65,13 +65,25 @@ import java.util.Map;
  */
 public class S3UploadAction extends Action<S3UploadAction> {
 
-    protected String s3AccessKey = null;
-    protected String s3SecretKey = null;
-    protected String s3AwsRegion = null;
+    protected final String s3AccessKey = null;
+    protected final String s3SecretKey = null;
+    protected final String s3AwsRegion = null;
 
-    protected String s3Bucket   = null;
-    protected String s3BasePath = "uploads";
-    protected String s3DatePath = "yyyy/MM/dd";
+    protected final String s3Bucket   = null;
+    protected final String s3BasePath = "uploads";
+    protected final String s3DatePath = "yyyy/MM/dd";
+
+    private static String getHash(MessageDigest digest) throws IOException {
+        byte[]        md5sum = digest.digest();
+        BigInteger    bigInt = new BigInteger(1, md5sum);
+        StringBuilder output = new StringBuilder(bigInt.toString(16));
+
+        while (output.length() < 32) {
+            output.insert(0, "0");
+        }
+
+        return output.toString();
+    }
 
     @Override
     public void run(Request req, Response res) throws ApiException {
@@ -101,7 +113,7 @@ public class S3UploadAction extends Action<S3UploadAction> {
             }
 
             //String pathAndFileName = buildFullPath(fileName, requestPath);
-            Map<String, Object> responseContent = new HashMap<>();
+            Map<String, Object> responseContent;
 
             try {
                 responseContent = saveFile(req.getChain(), uploadStream, fileName, requestPath);
@@ -115,7 +127,7 @@ public class S3UploadAction extends Action<S3UploadAction> {
             responseContent.put("fileSizeBytes", fileSize);
             res.withJson(new JSNode(responseContent));
         } catch (Exception ex) {
-            ApiException.throw500InternalServerError(ex);
+            throw ApiException.new500InternalServerError(ex);
         } finally {
             if (uploadStream != null) {
                 Utils.close(uploadStream);
@@ -165,7 +177,7 @@ public class S3UploadAction extends Action<S3UploadAction> {
 
         if (datePath != null) {
             datePath = new SimpleDateFormat(datePath).format(new Date());
-            sb.append(datePath + "/");
+            sb.append(datePath).append("/");
         }
 
         if (requestPath != null) {
@@ -187,7 +199,7 @@ public class S3UploadAction extends Action<S3UploadAction> {
         String secretKey = chain.getConfig("s3SecretKey", this.s3SecretKey);
         String awsRegion = chain.getConfig("s3AwsRegion", this.s3AwsRegion);
 
-        AmazonS3ClientBuilder builder = null;
+        AmazonS3ClientBuilder builder;
         if (accessKey != null) {
             BasicAWSCredentials creds = new BasicAWSCredentials(accessKey, secretKey);
             builder = AmazonS3ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(creds));
@@ -199,17 +211,5 @@ public class S3UploadAction extends Action<S3UploadAction> {
             builder.withRegion(awsRegion);
         }
         return builder.build();
-    }
-
-    private static String getHash(MessageDigest digest) throws IOException {
-        byte[]     md5sum = digest.digest();
-        BigInteger bigInt = new BigInteger(1, md5sum);
-        String     output = bigInt.toString(16);
-
-        while (output.length() < 32) {
-            output = "0" + output;
-        }
-
-        return output;
     }
 }

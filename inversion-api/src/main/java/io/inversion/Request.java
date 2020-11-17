@@ -34,7 +34,7 @@ public class Request {
 
     protected String                                 referrer   = null;
     protected String                                 remoteAddr = null;
-    protected ArrayListValuedHashMap<String, String> headers    = new ArrayListValuedHashMap();
+    protected ArrayListValuedHashMap<String, String> headers    = new ArrayListValuedHashMap<>();
 
     protected Url    url    = null;
     protected String method = null;
@@ -112,7 +112,7 @@ public class Request {
         }
 
         if (headers != null && headers.size() > 0)
-            this.headers = new ArrayListValuedHashMap(headers);
+            this.headers = new ArrayListValuedHashMap<>(headers);
 
         if (retryMax > -1)
             this.retryMax = retryMax;
@@ -164,6 +164,7 @@ public class Request {
     }
 
     /**
+     * @param collectionKeys the name of the collection to check for
      * @return true if any of the <code>collectionKeys</code> case insensitive match <code>collectoinKey</code>
      */
     public boolean hasCollectionKey(String... collectionKeys) {
@@ -244,22 +245,26 @@ public class Request {
         try {
             json = JSNode.parseJsonNode(body);
         } catch (Exception ex) {
-            ApiException.throw400BadRequest("Unparsable JSON body");
+            throw ApiException.new400BadRequest("Unparsable JSON body");
         }
 
         return json;
     }
 
     /**
-     * Attempts to massage an inbound json body into an array
-     * according to:
-     * 1. if getBody() is a JSArray return it.
-     * 1. if getBody() is a JSNode with a "data" array prop, return it
-     * 1. if getBody() is a JSNode wrap it in an array and return it.
-     * 1. if getBody() is not a JSNode and getBody() is null, return
-     * an empty array.
+     * Attempts to massage an inbound json body into an array.
+     * <p>
+     * This is useful so actions can treat all inbound requests as if they are arrays instead of having to check.
+     * <p>
+     * Conversion rules:
+     * <ol>
+     *   <li>if getBody() is a JSArray return it.
+     *   <li>if getBody() is a JSNode with a "data" array prop, return it
+     *   <li>if getBody() is a JSNode wrap it in an array and return it.
+     *   <li>if getBody() is not a JSNode and getBody() is null, return an empty array.
+     * </ol>
      *
-     * @return
+     * @return the JSON boty messaged into an array
      */
     public JSArray getData() {
         JSNode node = getJson();
@@ -365,7 +370,7 @@ public class Request {
     }
 
     /**
-     * Returns the URL path with the apiPath subtracted from the beginning
+     * @return the request path with the apiPath subtracted from the beginning
      */
     public Path getPath() {
         Path path = url.getPath();
@@ -412,8 +417,7 @@ public class Request {
     }
 
     public String getApiUrl() {
-        String apiUrl = url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + apiPath;
-        return apiUrl;
+        return url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + apiPath;
     }
 
     public Path getApiPath() {
@@ -505,16 +509,15 @@ public class Request {
      * Implemented by different runtimes, for example a servlet vs a lambda, to enable different file upload mechanisms.
      */
     public interface Uploader {
-
-        public List<Upload> getUploads();
+        List<Upload> getUploads();
     }
 
     public static class Upload {
 
-        String      fileName    = null;
-        long        fileSize    = 0;
-        String      requestPath = null;
-        InputStream inputStream = null;
+        String      fileName;
+        long        fileSize;
+        String      requestPath;
+        InputStream inputStream;
 
         public Upload(String fileName, long fileSize, String requestPath, InputStream inputStream) {
             super();
@@ -581,9 +584,9 @@ public class Request {
      */
     public static class Validation {
 
-        Object value              = null;
-        String customErrorMessage = null;
-        String propOrPath         = null;
+        final String customErrorMessage;
+        final String propOrPath;
+        Object value;
 
         public Validation(Request req, String propOrPath, String customErrorMessage) {
             value = req.getUrl().getParam(propOrPath);
@@ -605,7 +608,8 @@ public class Request {
          * found at <code>pathOrProp</code>.  If <code>childProps</code> are null/empty
          * then  <code>pathOrProp</code> must not be null.
          *
-         * @return
+         * @param childProps the child properties to check for
+         * @return this
          * @throws ApiException 400 if the referenced validation is null.
          */
         public Validation required(String... childProps) {
@@ -664,8 +668,10 @@ public class Request {
                     //ignore numeric type conversion error.
                 }
             }
+            if (value instanceof Comparable)
+                return ((Comparable) value).compareTo(compareTo);
 
-            return ((Comparable) value).compareTo(compareTo);
+            return (value + "").compareTo(compareTo + "");
         }
 
         public Validation gt(Object compareTo) {
@@ -850,15 +856,14 @@ public class Request {
         }
 
         /**
-         * Throws an ApiException 400 using the provided custom error message.  If a custom error message
-         * was not provided, a default error message is utilized.
+         * Throws an ApiException 400 using customErrorMessage or defaultErrorMessage
          *
-         * @param defaultErrorMessage
-         * @throws ApiException
+         * @param defaultErrorMessage the default error message
+         * @throws ApiException always
          */
-        protected void fail(String defaultErrorMessage) {
+        protected void fail(String defaultErrorMessage) throws ApiException {
             String message = customErrorMessage != null ? customErrorMessage : defaultErrorMessage;
-            ApiException.throw400BadRequest(message);
+            throw ApiException.new400BadRequest(message);
         }
     }
 

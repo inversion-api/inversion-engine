@@ -17,9 +17,9 @@
 package io.inversion;
 
 public class Change {
-    protected String method        = null;
-    protected String collectionKey = null;
-    protected Object resourceKey   = null;
+    protected String method;
+    protected String collectionKey;
+    protected Object resourceKey;
 
     public Change(String method, String collectionKey, Object resourceKey) {
         super();

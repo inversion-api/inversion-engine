@@ -251,8 +251,8 @@ Valid based URL formats are:
 A default configuration would then offer Endpoint URLs such as below where ${COLLECTION} is the pluralized version of your table names.  Non 
 plural versions will be redirected to the plural url.
  * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/
- * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/${ENTITY_ID}
- * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/${ENTITY_ID}/${RELATIONSHIP}
+ * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/${RESOURCE}
+ * ${API_URL}/[${OPTIONAL_ENDPOINT_PATH}]/${COLLECTION}/${RESOURCE}/${RELATIONSHIP}
 
 Examples example:  
  * 'http&#58;//localhost/johns_books/orders' would return a paginated listing of all orders from the api with an accountCode and apiCode of 'johns_books'

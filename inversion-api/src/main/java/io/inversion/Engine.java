@@ -20,6 +20,7 @@ import ch.qos.logback.classic.Level;
 import io.inversion.Api.ApiListener;
 import io.inversion.Chain.ActionMatch;
 import io.inversion.rql.RqlParser;
+import io.inversion.rql.Term;
 import io.inversion.utils.*;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
@@ -33,21 +34,23 @@ import java.util.stream.Collectors;
  */
 public class Engine extends Rule<Engine> {
 
-    /**
-     * The last {@code Response} served by this Engine, primarily used for writing test cases.
-     */
-    protected transient volatile Response lastResponse = null;
+    static {
+        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
+        logger.setLevel(Level.WARN);
+    }
 
     /**
      * Listeners that will receive Engine and Api lifecycle, request, and error callbacks.
      */
-    protected transient List<EngineListener> listeners = new ArrayList();
-
+    protected final transient    List<EngineListener> listeners        = new ArrayList<>();
+    /**
+     * The last {@code Response} served by this Engine, primarily used for writing test cases.
+     */
+    protected transient volatile Response             lastResponse     = null;
     /**
      * The {@code Api}s being service by this Engine
      */
-    protected List<Api> apis = new Vector();
-
+    protected                    List<Api>            apis             = new Vector<>();
     /**
      * Base value for the CORS "Access-Control-Allow-Headers" response header.
      * <p>
@@ -56,54 +59,21 @@ public class Engine extends Rule<Engine> {
      * <p>
      * Unless you are really doing something specific with browser security you probably won't need to customize this list.
      */
-    protected String corsAlloweHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,content-type,host,user-agent,x-auth-token";
-
+    protected                    String               corsAllowHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,content-type,host,user-agent,x-auth-token";
     /**
      * Optional override for the configPath sys/env prop used by Config to locate configuration property files
      *
-     * @see Config.loadConfiguration
+     * @see Config#loadConfiguration(String, String)
      */
-    protected String configPath = null;
-
+    protected                    String               configPath       = null;
     /**
      * Optional override for the sys/env prop used by Config to determine which profile specific configuration property files to load
      *
-     * @see Config.loadConfiguration
+     * @see Config#loadConfiguration(String, String)
      */
-    protected String configProfile = null;
-
-    transient volatile boolean started  = false;
-    transient volatile boolean starting = false;
-
-    static {
-        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
-        logger.setLevel(Level.WARN);
-    }
-
-    /**
-     * Receives {@code Engine} and {@code Api} lifecycle,
-     * per request and per error callback notifications.
-     */
-    public static interface EngineListener extends ApiListener {
-
-        /**
-         * Notified when the Engine is starting prior to accepting
-         * any requests which allows listeners to perform additional configuration.
-         *
-         * @param engine
-         */
-        default void onStartup(Engine engine) {
-        }
-
-        /**
-         * Notified when the Engine is shutting down and has stopped receiving requests
-         * allowing listeners to perform any resource cleanup.
-         *
-         * @param engine
-         */
-        default void onShutdown(Engine engine) {
-        }
-    }
+    protected                    String               configProfile    = null;
+    transient volatile           boolean              started          = false;
+    transient volatile           boolean              starting         = false;
 
     public Engine() {
 
@@ -115,13 +85,24 @@ public class Engine extends Rule<Engine> {
                 withApi(api);
     }
 
+    public static void applyPathParams(Map<String, String> pathParams, Url url, JSNode json) {
+        pathParams.keySet().forEach(url::clearParams);
+        pathParams.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> url.withParam(e.getKey(), e.getValue()));
+
+        if (json != null) {
+            json.stream()
+                    .filter(node -> node instanceof JSNode && !(node instanceof JSArray))
+                    .forEach(node -> pathParams.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> ((JSNode) node).put(e.getKey(), e.getValue())));
+        }
+    }
+
     /**
      * Convenient pre-startup hook for subclasses guaranteed to only be called once.
      * <p>
      * Called after <code>starting</code> has been set to true but before the {@code Configurator} is run or  any {@code Api}s have been started.
      */
     protected void startup0() {
-
+        //implement me
     }
 
     /**
@@ -130,7 +111,7 @@ public class Engine extends Rule<Engine> {
      * An Engine can only be started once.
      * Any calls to <code>startup</code> after the initial call will not have any affect.
      *
-     * @return
+     * @return this Engine
      */
     public synchronized Engine startup() {
         if (started || starting) //accidental recursion guard
@@ -154,12 +135,12 @@ public class Engine extends Rule<Engine> {
                 hasApi = true;
 
                 if (api.getEndpoints().size() == 0)
-                    ApiException.throw500InternalServerError("CONFIGURATION ERROR: You have configured an Api without any Endpoints.");
+                    throw ApiException.new500InternalServerError("CONFIGURATION ERROR: You have configured an Api without any Endpoints.");
 
                 startupApi(api);
             }
             if (!hasApi)
-                ApiException.throw500InternalServerError("CONFIGURATION ERROR: You don't have any Apis configured.");
+                throw ApiException.new500InternalServerError("CONFIGURATION ERROR: You don't have any Apis configured.");
 
             //-- debug output
             for (Api api : apis) {
@@ -170,15 +151,15 @@ public class Engine extends Rule<Engine> {
                     System.out.println("  - ENDPOINT:   " + e);
                 }
 
-                List<String> strs = new ArrayList();
+                List<String> collectionDebugs = new ArrayList<>();
                 for (Collection c : api.getCollections()) {
                     if (c.getDb() != null && c.getDb().getEndpointPath() != null)
-                        strs.add(c.getDb().getEndpointPath() + c.getName());
+                        collectionDebugs.add(c.getDb().getEndpointPath() + c.getName());
                     else
-                        strs.add(c.getName());
+                        collectionDebugs.add(c.getName());
                 }
-                Collections.sort(strs);
-                for (String coll : strs) {
+                Collections.sort(collectionDebugs);
+                for (String coll : collectionDebugs) {
                     System.out.println("  - COLLECTION: " + coll);
                 }
             }
@@ -213,25 +194,25 @@ public class Engine extends Rule<Engine> {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST GET Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      * <p>
      * GET requests for a specific resource should return 200 of 404.
      * GET requests with query string search conditions should return 200 even if the search did not yield any results.
      *
      * @param url the url that will be serviced by this Engine
      * @return the Response generated by handling the Request
-     * @see #service(Request, Response);
-     * @see io.inversion.rest.DbGetAction
+     * @see #service(Request, Response)
+     * @see io.inversion.action.db.DbGetAction
      */
     public Response get(String url) {
-        return service("GET", url, (String) null);
+        return service("GET", url, null);
     }
 
     /**
      * Convenience overloading of {@code #service(Request, Response)} to run a REST GET Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      * <p>
      * GET requests for a specific resource should return 200 of 404.
      * GET requests with query string search conditions should return 200 even if the search did not yield any results.
@@ -239,8 +220,8 @@ public class Engine extends Rule<Engine> {
      * @param url    the url that will be serviced by this Engine
      * @param params additional key/value pairs to add to the url query string
      * @return the Response generated by handling the Request
-     * @see #service(Request, Response);
-     * @see io.inversion.rest.DbGetAction
+     * @see #service(Request, Response)
+     * @see io.inversion.action.db.DbGetAction
      */
     public Response get(String url, Map<String, String> params) {
         return service("GET", url, null, params);
@@ -250,21 +231,21 @@ public class Engine extends Rule<Engine> {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST GET Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      * <p>
      * GET requests for a specific resource should return 200 of 404.
      * GET requests with query string search conditions should return 200 even if the search did not yield any results.
      *
-     * @param url    the url that will be serviced by this Engine
-     * @param params additional keys (no values) to add to the url query string
+     * @param url        the url that will be serviced by this Engine
+     * @param queryTerms additional keys (no values) to add to the url query string
      * @return the Response generated by handling the Request
-     * @see #service(Request, Response);
-     * @see io.inversion.rest.DbGetAction
+     * @see #service(Request, Response)
+     * @see io.inversion.action.db.DbGetAction
      */
     public Response get(String url, List queryTerms) {
         if (queryTerms != null && queryTerms.size() > 0) {
-            Map<String, String> params = new HashMap();
-            queryTerms.forEach(key -> params.put(key.toString(), null));
+            Map<String, String> params = new HashMap<>();
+            queryTerms.stream().filter(Objects::nonNull).forEach(key -> params.put(key.toString(), null));
             return service("GET", url, null, params);
         } else {
             return service("GET", url, null, null);
@@ -275,15 +256,15 @@ public class Engine extends Rule<Engine> {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST POST Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      * <p>
      * Successful POSTs that create a new resource should return a 201.
      *
      * @param url  the url that will be serviced by this Engine
      * @param body the JSON body to POST which will be stringified first
      * @return the Response generated by handling the Request
-     * @see #service(Request, Response);
-     * @see io.inversion.rest.DbPostAction
+     * @see #service(Request, Response)
+     * @see io.inversion.action.db.DbPostAction
      */
     public Response post(String url, JSNode body) {
         return service("POST", url, body.toString());
@@ -293,7 +274,7 @@ public class Engine extends Rule<Engine> {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST PUT Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      * <p>
      * Successful PUTs that update an existing resource should return a 204.
      * If the PUT references a resource that does not exist, a 404 will be returned.
@@ -301,8 +282,8 @@ public class Engine extends Rule<Engine> {
      * @param url  the url that will be serviced by this Engine
      * @param body the JSON body to POST which will be stringified first
      * @return the Response generated by handling the Request
-     * @see #service(Request, Response);
-     * @see io.inversion.rest.DbPutAction
+     * @see #service(Request, Response)
+     * @see io.inversion.action.db.DbPutAction
      */
     public Response put(String url, JSNode body) {
         return service("PUT", url, body.toString());
@@ -312,16 +293,16 @@ public class Engine extends Rule<Engine> {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST PATCH Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      * <p>
-     * Successful PATCHs that update an existing resource should return a 204.
+     * Successful PATCHes that update an existing resource should return a 204.
      * If the PATCH references a resource that does not exist, a 404 will be returned.
      *
      * @param url  the url for a specific resource that should be PATCHed that will be serviced by this Engine
      * @param body the JSON body to POST which will be stringified first
      * @return the Response generated by handling the Request
-     * @see #service(Request, Response);
-     * @see io.inversion.rest.DbPatchAction
+     * @see #service(Request, Response)
+     * @see io.inversion.action.db.DbPatchAction
      */
     public Response patch(String url, JSNode body) {
         return service("PATCH", url, body.toString());
@@ -331,27 +312,28 @@ public class Engine extends Rule<Engine> {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST DELETE Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      *
      * @param url the url of the resource to be DELETED
      * @return the Response generated by handling the Request with status 204 if the delete was successful or 404 if the resource was not found
-     * @see #service(Request, Response);
-     * @see io.inversion.rest.DbDeleteAction
+     * @see #service(Request, Response)
+     * @see io.inversion.action.db.DbDeleteAction
      */
     public Response delete(String url) {
-        return service("DELETE", url, (String) null);
+        return service("DELETE", url, null);
     }
 
     /**
      * Convenience overloading of {@code #service(Request, Response)} to run a REST DELETE Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      *
-     * @param url the url of the resource to be DELETED
+     * @param url   the url of the resource to be DELETED
+     * @param hrefs the hrefs of the resource to delete
      * @return the Response generated by handling the Request with status 204 if the delete was successful or 404 if the resource was not found
-     * @see #service(Request, Response);
-     * @see io.inversion.rest.DbDeleteAction
+     * @see #service(Request, Response)
+     * @see io.inversion.action.db.DbDeleteAction
      */
     public Response delete(String url, JSArray hrefs) {
         return service("DELETE", url, hrefs.toString());
@@ -361,12 +343,12 @@ public class Engine extends Rule<Engine> {
      * Convenience overloading of {@code #service(Request, Response)}
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      *
      * @param method the http method of the requested operation
      * @param url    the url that will be serviced by this Engine
      * @return the Response generated by handling the Request
-     * @see #service(Request, Response);
+     * @see #service(Request, Response)
      */
     public Response service(String method, String url) {
         return service(method, url, null);
@@ -376,13 +358,13 @@ public class Engine extends Rule<Engine> {
      * Convenience overloading of {@code #service(Request, Response)}
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      *
      * @param method the http method of the requested operation
      * @param url    the url that will be serviced by this Engine.
      * @param body   a stringified JSON body presumably to PUT/POST/PATCH
      * @return the Response generated by handling the Request
-     * @see #service(Request, Response);
+     * @see #service(Request, Response)
      */
     public Response service(String method, String url, String body) {
         return service(method, url, body, null);
@@ -392,14 +374,14 @@ public class Engine extends Rule<Engine> {
      * Convenience overloading of {@code #service(Request, Response)}
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestCleint}.
+     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
      *
      * @param method the http method of the requested operation
      * @param url    the url that will be serviced by this Engine.
      * @param body   a stringified JSON body presumably to PUT/POST/PATCH
      * @param params additional key/value pairs to add to the url query string
      * @return the Response generated by handling the Request
-     * @see #service(Request, Response);
+     * @see #service(Request, Response)
      */
     public Response service(String method, String url, String body, Map<String, String> params) {
         Request req = new Request(method, url, body);
@@ -433,11 +415,11 @@ public class Engine extends Rule<Engine> {
      *   <li>https://localhost/v1/library/books?ISBN=1234567890
      *   <li>/v1/library/books?ISBN=1234567890
      *   <li>v1/library/books?ISBN=1234567890
-     * <ul>
+     * </ul>
      *
-     * @param req
-     * @param res
-     * @return
+     * @param req the api Request
+     * @param res the api Response
+     * @return the Chain representing all of the actions executed in populating the Response
      */
     public Chain service(Request req, Response res) {
         Chain chain = null;
@@ -454,14 +436,11 @@ public class Engine extends Rule<Engine> {
             //--
             //-- CORS header setup
             //--
-            String allowedHeaders    = new String(this.corsAlloweHeaders);
+            String allowedHeaders    = this.corsAllowHeaders;
             String corsRequestHeader = req.getHeader("Access-Control-Request-Header");
-            if (corsRequestHeader != null) {
-                List<String> headers = Arrays.asList(corsRequestHeader.split(","));
-                for (String h : headers) {
-                    h = h.trim();
-                    allowedHeaders = allowedHeaders.concat(h).concat(",");
-                }
+            if (corsRequestHeader != null) for (String h : corsRequestHeader.split(",")) {
+                h = h.trim();
+                allowedHeaders = allowedHeaders.concat(h).concat(",");
             }
             res.withHeader("Access-Control-Allow-Origin", "*");
             res.withHeader("Access-Control-Allow-Credentials", "true");
@@ -472,14 +451,14 @@ public class Engine extends Rule<Engine> {
             //-- End CORS Header Setup
 
             if (req.isMethod("options")) {
-                //this is a CORS preflight request. All of hte work was done bove
+                //this is a CORS preflight request. All of the work was done above
                 res.withStatus(Status.SC_200_OK);
                 return chain;
             }
 
             Url url = req.getUrl();
 
-            if (url.toString().indexOf("/favicon.ico") >= 0) {
+            if (url.toString().contains("/favicon.ico")) {
                 res.withStatus(Status.SC_404_NOT_FOUND);
                 return chain;
             }
@@ -501,7 +480,7 @@ public class Engine extends Rule<Engine> {
                 for (String key : urlParams.keySet()) {
 
                     if (key.indexOf("_") > 0) {
-                        List illegals = RqlParser.parse(key, urlParams.get(key)).stream().filter(t -> !t.isLeaf() && t.getToken().startsWith("_")).collect(Collectors.toList());
+                        List<Term> illegals = RqlParser.parse(key, urlParams.get(key)).stream().filter(t -> !t.isLeaf() && t.getToken().startsWith("_")).collect(Collectors.toList());
                         if (illegals.size() > 0) {
                             req.getUrl().clearParams(key);
                         }
@@ -512,19 +491,18 @@ public class Engine extends Rule<Engine> {
             String method = req.getMethod();
 
             Path                parts      = new Path(url.getPath());
-            Map<String, String> pathParams = new HashMap();
+            Map<String, String> pathParams = new HashMap<>();
 
             Path containerPath = match(method, parts);
 
             if (containerPath == null)
-                ApiException.throw400BadRequest("Somehow a request was routed to your Engine with an unsupported containerPath. This is a configuration error.");
+                throw ApiException.new400BadRequest("Somehow a request was routed to your Engine with an unsupported containerPath. This is a configuration error.");
 
             if (containerPath != null)
-                containerPath = containerPath.extract(pathParams, parts);
+                containerPath.extract(pathParams, parts);
 
-            Path afterContainerPath = new Path(parts);
-            Path afterApiPath       = null;
-            Path afterEndpointPath  = null;
+            Path afterApiPath      = null;
+            Path afterEndpointPath = null;
 
             for (Api api : apis) {
                 Path apiPath = api.match(method, parts);
@@ -590,21 +568,21 @@ public class Engine extends Rule<Engine> {
             }
 
             if (req.getApi() == null) {
-                ApiException.throw400BadRequest("No API found matching URL: '{}'", url);
+                throw ApiException.new400BadRequest("No API found matching URL: '{}'", url);
             }
 
             if (req.getEndpoint() == null) {
-                String buff = "";
+                StringBuilder buff = new StringBuilder();
                 for (Endpoint e : req.getApi().getEndpoints()) {
                     if (!e.isInternal())
-                        buff += e.toString() + " | ";
+                        buff.append(e.toString()).append(" | ");
                 }
 
-                ApiException.throw404NotFound("No Endpoint found matching '{}:{}' Valid endpoints are: {}", req.getMethod(), url, buff);
+                throw ApiException.new404NotFound("No Endpoint found matching '{}:{}' Valid endpoints are: {}", req.getMethod(), url, buff.toString());
             }
 
             //this will get all actions specifically configured on the endpoint
-            List<ActionMatch> actions = new ArrayList();
+            List<ActionMatch> actions = new ArrayList<>();
 
             for (Action action : req.getEndpoint().getActions()) {
                 Path actionPath = action.match(method, afterEndpointPath);
@@ -624,7 +602,7 @@ public class Engine extends Rule<Engine> {
             }
 
             if (actions.size() == 0)
-                ApiException.throw404NotFound("No Actions are configured to handle your request.  Check your server configuration.");
+                throw ApiException.new404NotFound("No Actions are configured to handle your request.  Check your server configuration.");
 
             Collections.sort(actions);
 
@@ -685,7 +663,7 @@ public class Engine extends Rule<Engine> {
                 try {
                     listener.afterError(req, res);
                 } catch (Exception ex2) {
-                    log.warn("Error notifying EngineListner.beforeError", ex);
+                    log.warn("Error notifying EngineListener.beforeError", ex);
                 }
 
             }
@@ -695,7 +673,7 @@ public class Engine extends Rule<Engine> {
                 try {
                     listener.beforeFinally(req, res);
                 } catch (Exception ex) {
-                    log.warn("Error notifying EngineListner.onFinally", ex);
+                    log.warn("Error notifying EngineListener.onFinally", ex);
                 }
             }
 
@@ -714,34 +692,13 @@ public class Engine extends Rule<Engine> {
         return chain;
     }
 
-    public static void applyPathParams(Map<String, String> pathParams, Url url, JSNode json) {
-        pathParams.keySet().forEach(param -> url.clearParams(param));
-        pathParams.keySet().forEach(param -> {
-            if (pathParams.get(param) != null) {
-                url.withParam(param, pathParams.get(param));
-            }
-        });
-
-        if (json != null) {
-            json.asList().forEach(n -> {
-                if (n instanceof JSNode && !((JSNode) n).isArray()) {
-                    pathParams.keySet().forEach(param -> {
-                        if (pathParams.get(param) != null) {
-                            ((JSNode) n).put(param, pathParams.get(param));
-                        }
-                    });
-                }
-            });
-        }
-    }
-
     /**
      * This is specifically pulled out so you can mock Engine invocations
      * in test cases.
      *
-     * @param chain
-     * @param actions
-     * @throws ApiException
+     * @param chain   the Chain of the running Request
+     * @param actions the Actions that should be run to service the Request
+     * @throws ApiException when something goes wrong
      */
     void run(Chain chain, List<ActionMatch> actions) throws ApiException {
         chain.withActions(actions).go();
@@ -753,36 +710,35 @@ public class Engine extends Rule<Engine> {
 
         String method = req != null ? req.getMethod() : null;
 
-        if ("OPTIONS".equals(method)) {
-            //
-        } else {
+        if (!"OPTIONS".equals(method)) {
             if (debug) {
                 res.debug("\r\n<< response -------------\r\n");
                 res.debug(res.getStatusCode());
             }
 
-            String output = res.getText();
-            if (output != null) {
-                if (res.getContentType() == null) {
-                    if (output.indexOf("<html") > -1)
-                        res.withContentType("text/html");
-                    else
-                        res.withContentType("text/text");
-                }
-            } else if (!Utils.empty(res.getRedirect())) {
+            if (!Utils.empty(res.getRedirect())) {
                 res.withHeader("Location", res.getRedirect());
                 res.withStatus(Status.SC_308_PERMANENT_REDIRECT);
-            } else if (output == null && res.getJson() != null) {
-                output = res.getJson().toString();
+            } else {
+                String output      = res.getContent();
+                String contentType = res.getContentType();
+                if (output != null && contentType == null) {
+                    if (res.getJson() != null)
+                        contentType = "application/json";
+                    else if (output.contains("<html"))
+                        contentType = "text/html";
+                    else
+                        contentType = "text/text";
 
-                if (res.getContentType() == null)
-                    res.withContentType("application/json");
+                    res.withContentType(contentType);
+                }
+                res.out(output);
             }
 
             if (debug) {
                 for (String key : res.getHeaders().keySet()) {
-                    List         values = res.getHeaders().get(key);
-                    StringBuffer buff   = new StringBuffer();
+                    List          values = res.getHeaders().get(key);
+                    StringBuilder buff   = new StringBuilder();
                     for (int i = 0; i < values.size(); i++) {
                         buff.append(values.get(i));
                         if (i < values.size() - 1)
@@ -793,8 +749,6 @@ public class Engine extends Rule<Engine> {
 
                 res.debug("\r\n-- done -----------------\r\n");
             }
-
-            res.out(output);
 
             if (explain) {
                 res.withOutput(res.getDebug());
@@ -809,8 +763,8 @@ public class Engine extends Rule<Engine> {
     /**
      * Registers <code>listener</code> to receive Engine, Api, request and error callbacks.
      *
-     * @param listener
-     * @return
+     * @param listener the listener to add
+     * @return this
      */
     public Engine withEngineListener(EngineListener listener) {
         if (!listeners.contains(listener))
@@ -819,7 +773,7 @@ public class Engine extends Rule<Engine> {
     }
 
     LinkedHashSet<ApiListener> getApiListeners(Request req) {
-        LinkedHashSet listeners = new LinkedHashSet();
+        LinkedHashSet<ApiListener> listeners = new LinkedHashSet<>();
         if (req.getApi() != null) {
             listeners.addAll(req.getApi().getApiListeners());
         }
@@ -829,14 +783,7 @@ public class Engine extends Rule<Engine> {
     }
 
     public List<Api> getApis() {
-        return new ArrayList(apis);
-    }
-
-    /*
-    Gets all apis of the same apiName
-     */
-    public synchronized List<Api> findApis(String apiName) {
-        return apis.stream().filter(api -> apiName.equalsIgnoreCase(api.getName())).collect(Collectors.toList());
+        return new ArrayList<>(apis);
     }
 
     public synchronized Api getApi(String apiName) {
@@ -853,7 +800,7 @@ public class Engine extends Rule<Engine> {
         if (apis.contains(api))
             return this;
 
-        List<Api> newList = new ArrayList(apis);
+        List<Api> newList = new ArrayList<>(apis);
 
         Api existingApi = getApi(api.getName());
         if (existingApi != null && existingApi != api) {
@@ -894,15 +841,14 @@ public class Engine extends Rule<Engine> {
     }
 
     /**
-     * Removes the api, notifies EngineListeners and calls api.shutdown()
+     * Removes the api, notifies EngineListeners and calls api.shutdown().
      *
-     * @param api
+     * @param api the api to be removed
      */
     public synchronized void removeApi(Api api) {
-        List newList = new ArrayList(apis);
+        List<Api> newList = new ArrayList<>(apis);
         newList.remove(api);
         apis = newList;
-
         shutdownApi(api);
     }
 
@@ -925,8 +871,8 @@ public class Engine extends Rule<Engine> {
         }
     }
 
-    public Engine withAllowHeaders(String allowedHeaders) {
-        this.corsAlloweHeaders = allowedHeaders;
+    public Engine withAllowHeaders(String allowHeaders) {
+        this.corsAllowHeaders = allowHeaders;
         return this;
     }
 
@@ -939,9 +885,7 @@ public class Engine extends Rule<Engine> {
 
     public URL getResource(String name) {
         try {
-            URL url = null;
-
-            url = getClass().getClassLoader().getResource(name);
+            URL url = getClass().getClassLoader().getResource(name);
             if (url == null) {
                 File file = new File(System.getProperty("user.dir"), name);
                 if (file.exists())
@@ -970,6 +914,33 @@ public class Engine extends Rule<Engine> {
     public Engine withConfigProfile(String configProfile) {
         this.configProfile = configProfile;
         return this;
+    }
+
+    /**
+     * Receives {@code Engine} and {@code Api} lifecycle,
+     * per request and per error callback notifications.
+     */
+    public interface EngineListener extends ApiListener {
+
+        /**
+         * Notified when the Engine is starting prior to accepting
+         * any requests which allows listeners to perform additional configuration.
+         *
+         * @param engine the Engine starting
+         */
+        default void onStartup(Engine engine) {
+            //implement me
+        }
+
+        /**
+         * Notified when the Engine is shutting down and has stopped receiving requests
+         * allowing listeners to perform any resource cleanup.
+         *
+         * @param engine the Engine stopping
+         */
+        default void onShutdown(Engine engine) {
+            //implement me
+        }
     }
 
 }

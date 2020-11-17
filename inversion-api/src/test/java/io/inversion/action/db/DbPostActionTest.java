@@ -20,10 +20,9 @@ import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DbPostActionTest {
     @Test
@@ -44,14 +43,13 @@ public class DbPostActionTest {
 
         JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
-        DbPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2")), "");
+        DbPostAction.collapse(collapsed, false, Collections.singleton("child2"), "");
 
         JSNode benchmark = JSNode.parseJsonNode(parent.toString());
-        benchmark = JSNode.parseJsonNode(parent.toString());
         benchmark.remove("child2");
         benchmark.put("child2", new JSNode("href", "http://child2"));
 
-        assertTrue(benchmark.toString().equals(collapsed.toString()));
+        assertEquals(collapsed.toString(), benchmark.toString());
 
     }
 
@@ -74,10 +72,9 @@ public class DbPostActionTest {
 
         JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
-        DbPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("arrChildren")), "");
+        DbPostAction.collapse(collapsed, false, Collections.singleton("arrChildren"), "");
 
         JSNode benchmark = JSNode.parseJsonNode(parent.toString());
-        benchmark = JSNode.parseJsonNode(parent.toString());
         benchmark.remove("arrChildren");
         arrChildren = new JSArray();
         for (int i = 0; i < 5; i++) {
@@ -85,7 +82,7 @@ public class DbPostActionTest {
         }
         benchmark.put("arrChildren", arrChildren);
 
-        assertTrue(benchmark.toString().equals(collapsed.toString()));
+        assertEquals(collapsed.toString(), benchmark.toString());
 
     }
 
@@ -111,13 +108,12 @@ public class DbPostActionTest {
 
         JSNode collapsed = JSNode.parseJsonNode(parent.toString());
 
-        DbPostAction.collapse(collapsed, false, new HashSet(Arrays.asList("child2.child3")), "");
+        DbPostAction.collapse(collapsed, false, Collections.singleton("child2.child3"), "");
 
         JSNode benchmark = JSNode.parseJsonNode(parent.toString());
-        benchmark = JSNode.parseJsonNode(parent.toString());
         benchmark.getNode("child2").getNode("child3").remove("name");
 
-        assertTrue(benchmark.toString().equals(collapsed.toString()));
+        assertEquals(collapsed.toString(), benchmark.toString());
 
     }
 

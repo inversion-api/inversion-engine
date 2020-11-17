@@ -1,32 +1,29 @@
 dependencies {
 
-    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '4.0.+'
-    compile group: 'javax.xml.bind', name: 'jaxb-api', version: '2.4.+'
+    api group: "javax.servlet", name: "javax.servlet-api", version: "${servletApiVersion}"
+    api group: "javax.xml.bind", name: "jaxb-api", version: "${javaxJaxbVersion}"
+    api group: "org.slf4j", name: "slf4j-api", version: "${slf4jVersion}"
+    api group: "ch.qos.logback", name: "logback-classic", version: "${logbackVersion}"
 
-    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.+'
-    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.+'
-    
-    
-    compile group: 'org.apache.commons', name: 'commons-configuration2', version: '2.7'
-    
-    compile group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
-    compile group: 'org.apache.commons', name: 'commons-collections4', version: '4.3'
-    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.+'	
-    compile group: 'org.apache.commons', name: 'commons-csv', version: '1.4'
-    compile group: 'org.apache.commons', name: 'commons-text', version: '1.8'
+    api group: "org.apache.commons", name: "commons-configuration2", version: "${commonsConfiguration2Version}"
+    api group: "commons-beanutils", name: "commons-beanutils", version: "${commonsBeanUtilsVersion}"
+    api group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
+    api group: "org.apache.commons", name: "commons-lang3", version: "${commonsLang3Version}"
+    api group: "org.apache.commons", name: "commons-csv", version: "${commonsCsvVersion}"
+    api group: "org.apache.commons", name: "commons-text", version: "${commonsTextVersion}"
 
-    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.+'
-    compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.5.+'
-    
-    //JSON parsing 
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.10.3'
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.3'
-	
-	//JSON Patch 
-	compile group: 'com.flipkart.zjsonpatch',    name: 'zjsonpatch', version: '0.4.10'
+    api group: "org.apache.httpcomponents", name: "httpclient", version: "${httpclientVersion}"
+    api group: "org.apache.httpcomponents", name: "httpmime", version: "${httpmimeVersion}"
+
+    //JSON parsing
+    api group: "com.fasterxml.jackson.core", name: "jackson-core", version: "${jacksonCoreVersion}"
+    api group: "com.fasterxml.jackson.core", name: "jackson-databind", version: "${jacksonDatabindVersion}"
+
+    //JSON Patch
+    api group: "com.flipkart.zjsonpatch",    name: "zjsonpatch", version: "${zjsonpatchVersion}"
 
     //JWT support
-    compile group: 'com.auth0', name: 'java-jwt', version: '3.1.+'
+    api group: "com.auth0", name: "java-jwt", version: "${auth0JwtVersion}"
     
 
        

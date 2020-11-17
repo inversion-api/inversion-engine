@@ -24,7 +24,7 @@ import io.inversion.Action;
  * 'download' attempts to download the specified key.
  * 'marker' determines where paging should begin
  * <p>
- * Supports simple RQL functions: eq & sw
+ * Supports simple RQL functions: eq,sw
  * <p>
  * TODO it would be awesome if a user could request several files to be downloaded.
  * The files would be zipped and returned to the client.  A zip would be named

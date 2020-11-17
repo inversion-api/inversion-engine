@@ -1,25 +1,25 @@
 dependencies {
 
-	compile project(':inversion-api')
-	compile project(':inversion-cosmosdb')
-	compile project(':inversion-dynamodb')
-	compile project(':inversion-elasticsearch')
-	compile project(':inversion-jdbc')
-	compile project(':inversion-kinesis')
-	compile project(':inversion-lambda')
-	compile project(':inversion-redis')
-	compile project(':inversion-s3')
-	compile project(':inversion-script')
-	compile project(':inversion-spring-boot')
-	
+	api project(':inversion-api')
+	api project(':inversion-cosmosdb')
+	api project(':inversion-dynamodb')
+	api project(':inversion-elasticsearch')
+	api project(':inversion-jdbc')
+	api project(':inversion-kinesis')
+	api project(':inversion-lambda')
+	api project(':inversion-redis')
+	api project(':inversion-s3')
+	api project(':inversion-script')
+	api project(':inversion-spring-boot')
 
-	compile group: 'com.azure', name: 'azure-data-appconfiguration', version: '1.1.1'
-    compile group: 'com.azure', name: 'azure-security-keyvault-secrets', version: '4.1.0'
-    compile group: 'com.azure', name: 'azure-identity', version: '1.0.4'
-    
-    compile group: 'mysql', name: 'mysql-connector-java', version: '8.0.19'
-    compile group: 'org.postgresql', name: 'postgresql', version: '42.2.10'
-    compile group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '8.2.0.jre8'
+
+	api group: "com.azure", name: "azure-data-appconfiguration", version: "${azureAppconfigurationVersion}"
+	api group: "com.azure", name: "azure-security-keyvault-secrets", version: "${azureKeyVaultVersion}"
+	api group: "com.azure", name: "azure-identity", version: "${azureIdentityVersion}"
+
+	//api group: "mysql", name: "mysql-connector-java", version: "8.0.19"
+	//api group: "org.postgresql", name: "postgresql", version: "42.2.10"
+	//api group: "com.microsoft.sqlserver", name: "mssql-jdbc", version: "8.2.0.jre8"
 	
 
 

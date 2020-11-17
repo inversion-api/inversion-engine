@@ -16,15 +16,14 @@
  */
 package io.inversion.spring;
 
+import io.inversion.Api;
+import io.inversion.Engine;
+import io.inversion.utils.Utils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-
-import io.inversion.Api;
-import io.inversion.Engine;
-import io.inversion.utils.Utils;
 
 /**
  * Launches your Api in an SpringBoot embedded Tomcat.
@@ -35,7 +34,7 @@ import io.inversion.utils.Utils;
  */
 public class InversionMain {
 
-    protected static Engine             engine  = null;
+    protected static Engine engine = null;
 
     protected static ApplicationContext context = null;
 
@@ -49,14 +48,8 @@ public class InversionMain {
         context = null;
     }
 
-    public ApplicationContext getContext() {
-        return context;
-    }
-
     /**
      * Convenience method for launching a Engine that will be configured via config files.
-     *
-     * @param api
      */
     public static void run() {
         run(new Engine());
@@ -65,7 +58,8 @@ public class InversionMain {
     /**
      * Convenience method for launching a Engine with a single API.
      *
-     * @param api
+     * @param api the Api to run
+     * @return the SpringBoot ApplicationContext for the running server
      */
     public static ApplicationContext run(Api api) {
         return run(new Engine().withApi(api));
@@ -81,8 +75,8 @@ public class InversionMain {
             context = SpringApplication.run(InversionMain.class);
         } catch (Throwable e) {
             e = Utils.getCause(e);
-            if (Utils.getStackTraceString(e).indexOf("A child container failed during start") > -1) {
-                String msg = "";
+            if (Utils.getStackTraceString(e).contains("A child container failed during start")) {
+                String msg;
                 msg = " README FOR HELP!!!!!!!";
                 msg += "\n";
                 msg += "\n It looks like you are getting a frustrating Tomcat startup error.";
@@ -107,6 +101,10 @@ public class InversionMain {
             Utils.rethrow(e);
         }
 
+        return context;
+    }
+
+    public ApplicationContext getContext() {
         return context;
     }
 

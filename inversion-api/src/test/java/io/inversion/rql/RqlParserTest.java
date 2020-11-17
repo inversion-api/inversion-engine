@@ -32,9 +32,8 @@ public class RqlParserTest {
 
     @Test
     public void test1() throws Exception {
-        RqlParser parser = new RqlParser();
 
-        List<List> tests = new ArrayList();
+        List<List> tests = new ArrayList<>();
 
         add(tests, "eq(column,String)", "column=String");
         add(tests, "eq(column,string)", "column=    string");
@@ -79,7 +78,7 @@ public class RqlParserTest {
             for (int j = 1; j < test.size(); j++) {
                 Object query = test.get(j).toString();
                 if (query instanceof String)
-                    query = parser.parse(query.toString()).toString();
+                    query = RqlParser.parse(query.toString()).toString();
                 else
                     query = query.toString();
 
@@ -93,12 +92,11 @@ public class RqlParserTest {
 
     @Test
     public void test2() throws Exception {
-        RqlParser parser = new RqlParser();
-        Term      t      = parser.parse("w(name,'BANANA KG (RESEAU')");
+        Term t = RqlParser.parse("w(name,'BANANA KG (RESEAU')");
 
         assertEquals("BANANA KG (RESEAU", t.getTerm(1).getToken());
 
-        t = parser.parse("w(name,'BANANA KG (RESEAU)')");
+        t = RqlParser.parse("w(name,'BANANA KG (RESEAU)')");
         assertEquals("BANANA KG (RESEAU)", t.getTerm(1).getToken());
     }
 }

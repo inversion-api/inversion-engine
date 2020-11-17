@@ -1,13 +1,8 @@
 package io.inversion.elasticsearch;
 
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
-
-import io.inversion.Db;
-import io.inversion.rql.AbstractRqlTest;
 //FIXME
 // @TestInstance(Lifecycle.PER_CLASS)
-public class ElasticRqlUnitTest{// extends AbstractRqlTest {
+public class ElasticRqlUnitTest {// extends AbstractRqlTest {
 
 //    public ElasticRqlUnitTest() {
 //        super("northwind/elasticsearch/", "elasticsearch");

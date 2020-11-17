@@ -23,8 +23,8 @@ package io.inversion.rql;
  * limit(limit, [offset])
  * pageSize(pageSize)
  *
- * @param <T>
- * @param <P>
+ * @param <T> the subclass of Page
+ * @param <P> the subclass of Query
  */
 public class Page<T extends Page, P extends Query> extends Builder<T, P> {
     public static final int DEFAULT_LIMIT = 100;
@@ -94,7 +94,7 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P> {
                 page = (offset / limit) + 1;
             }
         }
-        return page < 1 ? 1 : page;
+        return Math.max(page, 1);
     }
 
     public int getPageNum() {

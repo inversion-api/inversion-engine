@@ -23,16 +23,31 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import java.util.*;
 
 public class Chain {
-    static ThreadLocal<Stack<Chain>> chainLocal = new ThreadLocal();
+    static          ThreadLocal<Stack<Chain>>          chainLocal = new ThreadLocal<>();
+    protected final Engine                             engine;
+    protected final List<ActionMatch>                  actions    = new ArrayList<>();
+    protected final Request                            request;
+    protected final Response                           response;
+    protected final CaseInsensitiveMap<String, Object> vars       = new CaseInsensitiveMap<>();
+    protected       int                                next       = 0;
+    protected       boolean                            canceled   = false;
+    protected       User                               user       = null;
+    protected       Chain                              parent     = null;
+
+    private Chain(Engine engine, Request req, Response res) {
+        this.engine = engine;
+        this.request = req;
+        this.response = res;
+    }
 
     public static void resetAll() {
-        chainLocal = new ThreadLocal();
+        chainLocal = new ThreadLocal<>();
     }
 
     protected static Stack<Chain> get() {
-        Stack stack = chainLocal.get();
+        Stack<Chain> stack = chainLocal.get();
         if (stack == null) {
-            stack = new Stack();
+            stack = new Stack<>();
             chainLocal.set(stack);
         }
         return stack;
@@ -50,12 +65,18 @@ public class Chain {
         return null;
     }
 
+    public static Chain top() throws ApiException {
+        Stack<Chain> stack = get();
+        if (!stack.empty())
+            return stack.peek();
+        throw ApiException.new500InternalServerError("Attempting to call Chain.top() when there is no Chain on the ThreadLocal.");
+    }
+
     public static Chain peek() {
         Stack<Chain> stack = get();
         if (!stack.empty())
             return stack.peek();
         return null;
-
     }
 
     public static Chain push(Engine engine, Request req, Response res) {
@@ -97,15 +118,15 @@ public class Chain {
             return;
         }
 
-        String prefix = "[" + stack.size() + "]: ";
+        StringBuilder prefix = new StringBuilder("[" + stack.size() + "]: ");
         for (int i = 1; i < stack.size(); i++)
-            prefix += "   ";
+            prefix.append("   ");
 
         if (msgs != null && msgs.length == 1 && msgs[0].toString().trim().length() == 0)
             return;
 
         Chain root = stack.get(0);
-        root.response.debug(prefix, msgs);
+        root.response.debug(prefix.toString(), msgs);
     }
 
     public static String buildLink(Collection collection) {
@@ -113,20 +134,17 @@ public class Chain {
     }
 
     public static String buildLink(Collection collection, Object resourceKey, String subCollectionKey) {
-        Request req = peek().getRequest();
+        Request req = top().getRequest();
 
         String collectionKey = collection.getName();
 
         if (req.getCollection() == collection)
             collectionKey = req.getCollectionKey();
 
-        String url = req.getApiUrl();
+        StringBuilder url = new StringBuilder(Utils.empty(req.getApiUrl()) ? "" : req.getApiUrl());
 
-        if (url == null)
-            url = "";
-
-        if (!url.endsWith("/"))
-            url += "/";
+        if (!Utils.endsWith(url, "/"))
+            url.append("/");
 
         if (req.getCollection() != null && (collection == req.getCollection() || collection.getDb() == req.getCollection().getDb()))//
         {
@@ -136,7 +154,7 @@ public class Chain {
             Path epp = req.getEndpointPath();
 
             if (epp != null && epp.size() > 0) {
-                url += epp + "/";
+                url.append(epp).append("/");
             }
         } else if (collection.getDb().getEndpointPath() != null) {
             Path epP = collection.getDb().getEndpointPath();
@@ -146,8 +164,8 @@ public class Chain {
                     break;
 
                 if (epP.isVar(i)) {
-                    String value = null;
-                    String name  = epP.getVarName(i);
+                    String value;
+                    String name = epP.getVarName(i);
                     switch (name.toLowerCase()) {
                         case "collection":
                             value = collection.getName();
@@ -162,108 +180,47 @@ public class Chain {
                             value = req.getUrl().getParam(name);
                     }
                     if (value == null)
-                        ApiException.throw500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
+                        throw ApiException.new500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
 
-                    url += epP.get(i) + "/";
+                    url.append(epP.get(i)).append("/");
                 } else {
-                    url += epP.get(i) + "/";
+                    url.append(epP.get(i)).append("/");
                 }
             }
 
-            url += collection.getDb().getEndpointPath() + "/";
+            url.append(collection.getDb().getEndpointPath()).append("/");
         }
 
         if (!Utils.empty(collectionKey)) {
-            if (!url.endsWith("/"))
-                url += "/";
+            if (!Utils.endsWith(url, "/"))
+                url.append("/");
 
-            url += collectionKey;
+            url.append(collectionKey);
         }
 
         if (!Utils.empty(resourceKey))
-            url += "/" + resourceKey.toString();
+            url.append("/").append(resourceKey.toString());
 
         if (!Utils.empty(subCollectionKey))
-            url += "/" + subCollectionKey;
+            url.append("/").append(subCollectionKey);
 
-        if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl())) {
+        if (req.getApi().getUrl() != null && !Utils.startsWith(url, req.getApi().getUrl())) {
             String newUrl = req.getApi().getUrl();
             while (newUrl.endsWith("/"))
                 newUrl = newUrl.substring(0, newUrl.length() - 1);
 
-            url = newUrl + url.substring(url.indexOf("/", 8));
+            url = new StringBuilder(newUrl).append(url.substring(url.indexOf("/", 8)));
         }
 
         if (req.getApi() != null) {
             if (Utils.empty(req.getApi().getUrl())) {
                 String proto = req.getHeader("x-forwarded-proto");
                 if (!Utils.empty(proto)) {
-                    url = proto + url.substring(url.indexOf(':'), url.length());
+                    url = new StringBuilder(proto).append(url.substring(url.indexOf(":")));
                 }
             }
         }
-        return url;
-    }
-
-    //   public static String buildLink(String collectionKey, String resourceKey)
-    //   {
-    //      Request req = Chain.peek().getRequest();
-    //      String url = req.getUrl().toString();
-    //      if (url.indexOf("?") >= 0)
-    //         url = url.substring(0, url.indexOf("?"));
-    //
-    //      if (req.getRelationshipKey() != null)
-    //      {
-    //         url = url.substring(0, url.lastIndexOf("/"));
-    //      }
-    //
-    //      if (req.getResourceKey() != null)
-    //      {
-    //         url = url.substring(0, url.lastIndexOf("/"));
-    //      }
-    //
-    //      if (collectionKey != null && req.getCollectionKey() != null)
-    //      {
-    //         url = url.substring(0, url.lastIndexOf("/"));
-    //      }
-    //
-    //      if (collectionKey != null)
-    //         url += "/" + collectionKey;
-    //
-    //      if (resourceKey != null)
-    //         url += "/" + resourceKey;
-    //
-    //      if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
-    //      {
-    //         String newUrl = req.getApi().getUrl();
-    //         while (newUrl.endsWith("/"))
-    //            newUrl = newUrl.substring(0, newUrl.length() - 1);
-    //
-    //         url = newUrl + url.substring(url.indexOf("/", 8));
-    //      }
-    //
-    //      return url;
-    //
-    //   }
-
-    protected Engine            engine   = null;
-    protected List<ActionMatch> actions  = new ArrayList();
-    protected Request           request  = null;
-    protected Response          response = null;
-
-    protected int     next     = 0;
-    protected boolean canceled = false;
-
-    protected User user = null;
-
-    protected CaseInsensitiveMap vars = new CaseInsensitiveMap();
-
-    protected Chain parent = null;
-
-    private Chain(Engine engine, Request req, Response res) {
-        this.engine = engine;
-        this.request = req;
-        this.response = res;
+        return url.toString();
     }
 
     public Chain withUser(User user) {
@@ -293,8 +250,8 @@ public class Chain {
     /**
      * Storage for chain steps to communicate with each other.
      *
-     * @param key
-     * @return
+     * @param key the name of the value to retrieve
+     * @return the value if it exists otherwise null
      */
     public Object get(String key) {
         if (vars.containsKey(key))
@@ -317,7 +274,7 @@ public class Chain {
         return null;
     }
 
-    public Object remove(Object key) {
+    public Object remove(String key) {
         if (vars.containsKey(key))
             return vars.remove(key);
 
@@ -326,18 +283,18 @@ public class Chain {
 
     /**
      * Returns the combined list of endpoint/action stack/request params
-     * for the suppled key
+     * for the supplied key
      * <p>
      * This for example, allows you to add to but not remove from
      * a configured "excludes" parameter
      * <p>
      * All returned values are lower case
      *
-     * @param key
-     * @return
+     * @param key the name of the param to merge
+     * @return the combined list of values found for key
      */
     public Set<String> mergeEndpointActionParamsConfig(String key) {
-        List<String> values = new LinkedList();
+        List<String> values = new LinkedList<>();
 
         String value = request.getEndpoint().getConfig(key);
         if (value != null) {
@@ -365,11 +322,11 @@ public class Chain {
             values.set(i, value);
         }
 
-        return new LinkedHashSet(values);
+        return new LinkedHashSet<>(values);
     }
 
     public Map<String, String> getConfig() {
-        Map<String, String> config = new HashMap();
+        Map<String, String> config = new HashMap<>();
         for (String key : getConfigKeys()) {
             config.put(key, getConfig(key));
         }
@@ -394,7 +351,7 @@ public class Chain {
     }
 
     public String getConfig(String key) {
-        return getConfig(key, (String) null);
+        return getConfig(key, null);
     }
 
     public String getConfig(String key, String defaultValue) {
@@ -411,7 +368,7 @@ public class Chain {
             }
         }
 
-        String value = null;
+        String value;
 
         for (int i = next - 1; i >= 0; i--) {
             value = actions.get(i).action.getConfig(key);
@@ -430,7 +387,7 @@ public class Chain {
 
     public void go() throws ApiException {
         while (next()) {
-            ;
+            //intentionally empty
         }
     }
 
@@ -439,7 +396,7 @@ public class Chain {
             ActionMatch actionMatch = actions.get(next);
             next += 1;
 
-            Map<String, String> pathParams = new HashMap();
+            Map<String, String> pathParams = new HashMap<>();
             actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
 
             Engine.applyPathParams(pathParams, request.getUrl(), request.getJson());
@@ -471,7 +428,7 @@ public class Chain {
     }
 
     public List<ActionMatch> getActions() {
-        return new ArrayList(actions);
+        return new ArrayList<>(actions);
     }
 
     public Chain withActions(List<ActionMatch> actions) {
@@ -497,9 +454,9 @@ public class Chain {
     }
 
     static class ActionMatch implements Comparable<ActionMatch> {
-        Path   rule   = null;
-        Path   path   = null;
-        Action action = null;
+        final Path   rule;
+        final Path   path;
+        final Action action;
 
         public ActionMatch(Path rule, Path path, Action action) {
             super();

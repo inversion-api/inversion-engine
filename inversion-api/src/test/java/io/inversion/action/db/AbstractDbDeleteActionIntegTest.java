@@ -32,7 +32,10 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 
     @Test
     public void testSingleDelete() throws Exception {
-        Response res    = null;
+        if (!isIntegTest())
+            return;
+
+        Response res;
         Engine   engine = engine();
 
         res = engine.get(url("orderdetails?limit=1&sort=orderid"));
@@ -49,10 +52,13 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 
     @Test
     public void testBatchHrefDelete() throws Exception {
-        Response res    = null;
+        if (!isIntegTest())
+            return;
+
+        Response res;
         Engine   engine = engine();
 
-        res = engine.get(url("orderdetails?limit=10&sort=orderid")).dump().assertOk();
+        res = engine.get(url("orderdetails?limit=10&sort=orderid")).assertOk();
 
         JSArray hrefs = new JSArray();
 
@@ -60,7 +66,7 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 
         assertEquals(10, hrefs.size());
 
-        res = engine.delete(url("orderdetails"), hrefs);
+        engine.delete(url("orderdetails"), hrefs);
 
         for (int i = 0; i < hrefs.size(); i++)
             engine.get(hrefs.getString(i)).hasStatus(404);

@@ -15,14 +15,6 @@
  */
 package io.inversion.elasticsearch;
 
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 /**
  * @author kfrankic
  */

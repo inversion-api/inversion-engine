@@ -45,14 +45,11 @@
  *   - https://stackoverflow.com/questions/35851251/gradle-artifactory-plugin-how-to-publish-artifacts-from-multiple-modules-in-a
  *
  */
- 
-
 
 buildscript {
     repositories {
-        jcenter()
-        mavenLocal()
-		mavenCentral()
+		//jcenter()
+		maven { url 'https://repo1.maven.org/maven2'}
     }
 
     dependencies {
@@ -66,12 +63,12 @@ buildscript {
         classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
     }
     
-    configurations.classpath {
-        resolutionStrategy {
-            cacheDynamicVersionsFor 0, 'seconds'
-            cacheChangingModulesFor 0, 'seconds'
-        }
-    }
+//    configurations.classpath {
+//        resolutionStrategy {
+//            cacheDynamicVersionsFor 0, 'seconds'
+//            cacheChangingModulesFor 0, 'seconds'
+//        }
+//    }
 }
 
 plugins {
@@ -111,8 +108,6 @@ tasks.withType(Javadoc) {
 build.finalizedBy(allJavadocs)
 	
 allprojects {
-
-	apply plugin: 'com.jfrog.artifactory'
 	group = 'io.inversion'
 	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
 	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")
@@ -132,20 +127,19 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     apply plugin: 'com.jfrog.bintray'
+	apply plugin: 'com.jfrog.artifactory'
     
     sourceCompatibility = 1.8
 	targetCompatibility = 1.8
 	
 	repositories {
-		mavenLocal()
-		mavenCentral()
+		//jcenter()
+		maven { url 'https://repo1.maven.org/maven2'}
 		maven { url 'https://jitpack.io' }
 	}
 
 	dependencies {
-	
 		testCompile 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
-		//testCompile 'junit:junit:4.12'
 	}
 	
 	task sourcesJar(type: Jar) {
@@ -167,6 +161,10 @@ subprojects {
   		if (System.properties['test.profile'] != 'integration') {
     		exclude '**/*IntegTest*'
   		}
+		testLogging {
+			outputs.upToDateWhen {false}
+			showStandardStreams = true
+		}
 	}
 
 	//causes a new ${subpoject}/pom.xml file to be generated after each build
@@ -175,8 +173,6 @@ subprojects {
 	}
 	project.getGradle().getTaskGraph().whenReady {
 	    tasks.withType(GenerateMavenPom.class) {
-	        //destination = file("$buildDir/pom.xml")
-	        //destination = file("pom.xml")
 	        destination = file("$buildDir/../pom.xml")
 	    }
 	}
@@ -191,26 +187,26 @@ subprojects {
 	            artifact sourcesJar
 	            artifact javadocJar
 	            
-	            //-- uncommenting the following will generate poms with concrete  
-	            //-- version dependencies instead of dynamic depedencies
+	            //-- the following will generate poms with resolved dependencies
+	            //-- instead of potentially dynamic dependencies declared in the gradle build
 	            //-- https://docs.gradle.org/current/userguide/publishing_maven.html
-	            //versionMapping {
-	            //    usage('java-api') {
-	            //        fromResolutionOf('runtimeClasspath')
-	            //    }
-	            //    usage('java-runtime') {
-	            //        fromResolutionResult()
-	            //    }
-	            //}
-	            
+	            versionMapping {
+	                usage('java-api') {
+	                    fromResolutionOf('runtimeClasspath')
+	                }
+	                usage('java-runtime') {
+	                    fromResolutionResult()
+	                }
+	            }
+
 	            pom {
 	                name = project.name
 	                description = 'Inversion Cloud API Engine'
-	                url = 'http://inversion.io'
+	                url = 'https://inversion.io'
 	                licenses {
 	                    license {
 	                        name = 'The Apache License, Version 2.0'
-	                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+	                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
 	                    }
 	                }
 	                developers {
@@ -223,7 +219,7 @@ subprojects {
 	                scm {
 	                    connection = 'https://github.com/inversion-api/inversion-engine.git'
 	                    developerConnection = 'https://github.com/inversion-api/inversion-engine.git'
-	                    url = 'http://inversion.io'
+	                    url = 'https://inversion.io'
 	                }
 	            }
 	        }
@@ -242,47 +238,47 @@ subprojects {
 			websiteUrl = 'http://inversion.io'
 	        issueTrackerUrl = 'https://github.com/inversion-api/inversion-engine/issues'
 	 		vcsUrl = 'https://github.com/inversion-api/inversion-engine.git'
-	
+
 	        licenses = ['Apache-2.0']
-	        labels = ['rest', 'api', 'mysql', 'dynamodb']
-			
+	        labels = ['rest', 'api', 'mysql', 'postgress', 'mssql', 'dynamodb', 'cosmosdb', 'elasticsearch', 'nosql']
+
 			version {
 				name = project.version
 				released  = new Date()
 			}
 		}
 	}
-	
+
 	artifactoryPublish {
         publications(publishing.publications.mavenJava)
     }
 }
 
 
-artifactoryPublish.skip=true
-
-	
-artifactory {
-    contextUrl = 'http://oss.jfrog.org'
-    publish {
-        repository {
-            repoKey = 'oss-snapshot-local'
-            username = bintrayUser
-            password = bintrayKey
-        }
-        defaults {
-            publications('mavenJava')
-            publishArtifacts = true
-            publishPom = true
-            properties = [
-                    'build.number': buildNumber,
-                    'build.name': project.name
-            ]
-        }
-    }
-    resolve {
-        repoKey = 'jcenter'
-    }
-    clientConfig.info.setBuildNumber(buildNumber)
-    clientConfig.info.setBuildName(project.name)
-}
+//artifactoryPublish.skip=true
+//
+//
+//artifactory {
+//    contextUrl = 'https://oss.jfrog.org'
+//    publish {
+//        repository {
+//            repoKey = 'oss-snapshot-local'
+//            username = bintrayUser
+//            password = bintrayKey
+//        }
+//        defaults {
+//            publications('mavenJava')
+//            publishArtifacts = true
+//            publishPom = true
+//            properties = [
+//                    'build.number': buildNumber,
+//                    'build.name': project.name
+//            ]
+//        }
+//    }
+//    resolve {
+//        repoKey = 'jcenter'
+//    }
+//    clientConfig.info.setBuildNumber(buildNumber)
+//    clientConfig.info.setBuildName(project.name)
+//}

@@ -24,13 +24,13 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * The service builds a key from the request url & parameters.  If the key does not exist within Redis,
+ * The service builds a key from the request url and parameters.  If the key does not exist within Redis,
  * the request is passed along to the GetHandler.  The JSON response from the GetHandler will be inserted
  * into Redis with an expiration if the JSON is not null or empty.
  * <p>
  * The initial Redis check can be bypassed by including the skipCache (verify value below) request parameter.
  * <p>
- * The current implementation of Jedis.set() does not allow clobbering a key/value & expiration but will in
+ * The current implementation of Jedis.set() does not allow clobbering a key/value and expiration but will in
  * a future build. Because of that, Jedis.setex() is used.  Since the SET command options can replace SETNX,
  * SETEX, PSETEX, it is possible that in future versions of Redis these three commands will be deprecated
  * and finally removed.
@@ -143,29 +143,27 @@ public class RedisAction extends Action<RedisAction> {
     }
 
     /**
-     * Sorts the request parameters alphabetically
-     *
-     * @param requestParamMap map representing the request parameters
-     * @return a concatenated string of each param beginning with '?' and joined by '&'
+     * @param chain chain of the current request
+     * @return an alphabetically concatenated string of each param beginning with '?' and joined by '&'
      */
     String getCacheKey(Chain chain) {
         TreeMap<String, String> sortedKeyMap = new TreeMap<>(chain.getRequest().getUrl().getParams());
 
-        String sortedParams = "";
+        StringBuilder sortedParams = new StringBuilder();
 
         boolean isFirstParam = true;
 
         for (Map.Entry<String, String> entry : sortedKeyMap.entrySet()) {
             if (isFirstParam) {
-                sortedParams += "?";
+                sortedParams.append("?");
                 isFirstParam = false;
             } else
-                sortedParams += "&";
+                sortedParams.append("&");
 
-            sortedParams += entry.getKey();
+            sortedParams.append(entry.getKey());
 
             if (!entry.getValue().isEmpty()) {
-                sortedParams += "=" + entry.getValue();
+                sortedParams.append("=").append(entry.getValue());
             }
 
         }

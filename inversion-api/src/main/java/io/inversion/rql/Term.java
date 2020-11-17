@@ -23,10 +23,10 @@ import java.util.stream.Stream;
 
 public class Term implements Comparable<Term> {
 
-    public Term       parent = null;
-    public char       quote  = 0;
-    public String     token  = null;
-    public List<Term> terms  = new ArrayList();
+    public final List<Term> terms  = new ArrayList<>();
+    public       Term       parent = null;
+    public       char       quote  = 0;
+    public       String     token  = null;
 
     protected Term() {
 
@@ -35,6 +35,39 @@ public class Term implements Comparable<Term> {
     protected Term(Term parent, String token) {
         withParent(parent);
         withToken(token);
+    }
+
+    public static Term term(Term parent, String token, Object... terms) {
+        Term newTerm       = new Term(parent, token);
+        List deconstructed = deconstructed(new ArrayList<>(), terms);
+        for (Object aTerm : deconstructed) {
+            if (aTerm instanceof Term) {
+                newTerm.withTerm((Term) aTerm);
+            } else {
+                newTerm.withTerm(new Term(newTerm, aTerm.toString()));
+            }
+        }
+
+        return newTerm;
+    }
+
+    static List deconstructed(List found, Object... terms) {
+        if (terms.length == 1 && terms[0].getClass().isArray())
+            terms = (Object[]) terms[0];
+
+        for (Object o : terms) {
+            if (o instanceof Collection) {
+                ((Collection) o).forEach(o2 -> deconstructed(found, o2));
+            } else if (o.getClass().isArray()) {
+                Object[] arr = (Object[]) o;
+                for (Object o2 : arr) {
+                    deconstructed(found, o2);
+                }
+            } else {
+                found.add(o);
+            }
+        }
+        return found;
     }
 
     public Term copy() {
@@ -210,9 +243,7 @@ public class Term implements Comparable<Term> {
         if (term == this)
             throw new RuntimeException("A term can not be a child of itself");
 
-        if (terms.contains(term))
-            terms.remove(term);
-
+        terms.remove(term);
         terms.add(index, term);
 
         if (term.getParent() != this)
@@ -238,11 +269,11 @@ public class Term implements Comparable<Term> {
     }
 
     public String toString() {
-        StringBuffer buff = null;
+        StringBuilder buff;
         if (quote > 0) {
-            buff = new StringBuffer("").append(quote).append(getToken()).append(quote);
+            buff = new StringBuilder().append(quote).append(getToken()).append(quote);
         } else {
-            buff = new StringBuffer(getToken());
+            buff = new StringBuilder(getToken());
         }
         if (terms.size() > 0) {
             buff.append("(");
@@ -259,46 +290,13 @@ public class Term implements Comparable<Term> {
         return buff.toString();
     }
 
-    public static Term term(Term parent, String token, Object... terms) {
-        Term newTerm       = new Term(parent, token);
-        List deconstructed = deconstructed(new ArrayList(), terms);
-        for (Object aTerm : deconstructed) {
-            if (aTerm instanceof Term) {
-                newTerm.withTerm((Term) aTerm);
-            } else {
-                newTerm.withTerm(new Term(newTerm, aTerm.toString()));
-            }
-        }
-
-        return newTerm;
-    }
-
-    static List deconstructed(List found, Object... terms) {
-        if (terms.length == 1 && terms[0].getClass().isArray())
-            terms = (Object[]) terms[0];
-
-        for (Object o : terms) {
-            if (o instanceof Collection) {
-                ((Collection) o).forEach(o2 -> deconstructed(found, o2));
-            } else if (o.getClass().isArray()) {
-                Object[] arr = (Object[]) o;
-                for (Object o2 : arr) {
-                    deconstructed(found, o2);
-                }
-            } else {
-                found.add(o);
-            }
-        }
-        return found;
-    }
-
     /**
      * Returns a stream containing all Terms recursively.
      *
      * @return this term and all children recursively
      */
     public Stream<Term> stream() {
-        List<Term> list = new ArrayList();
+        List<Term> list = new ArrayList<>();
         collect(list);
         return list.stream();
     }
