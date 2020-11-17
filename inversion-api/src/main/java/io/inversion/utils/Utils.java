@@ -1327,17 +1327,19 @@ public class Utils {
 
         type = type.toLowerCase();
 
-        if("json".equalsIgnoreCase(type)) {
-            String raw=value.toString();
-            if (raw.isEmpty()) return JSNode.parseJson("{}");
-            return JSNode.parseJson(value.toString());
+        if ("json".equalsIgnoreCase(type)) {
+            String json = value.toString().trim();
+            if (json.isEmpty())
+                return new JSNode();
+            return JSNode.parseJson(json);
         }
-        
-        if(Utils.in(type, "char", "nchar", "clob"))
-            value.toString().trim();
 
-        if(value instanceof Date && Utils.in(type, "date", "datetime", "timestamp"))
-            formatIso8601((Date)value);
+        if (Utils.in(type, "char", "nchar", "clob"))
+            value = value.toString().trim();
+
+        if (value instanceof Date && Utils.in(type, "date", "datetime", "timestamp")) {
+            value = formatIso8601((Date) value);
+        }
 
         return value;
     }
@@ -1371,7 +1373,7 @@ public class Utils {
                 case "nvarchar":
                 case "longvarchar":
                 case "longnvarchar":
-                case "json" :
+                case "json":
                     return value.toString();
                 case "n":
                 case "number":
