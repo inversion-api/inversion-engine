@@ -1327,9 +1327,12 @@ public class Utils {
 
         type = type.toLowerCase();
 
-        if("json".equalsIgnoreCase(type))
+        if("json".equalsIgnoreCase(type)) {
+            String raw=value.toString();
+            if (raw.isEmpty()) return JSNode.parseJson("{}");
             return JSNode.parseJson(value.toString());
-
+        }
+        
         if(Utils.in(type, "char", "nchar", "clob"))
             value.toString().trim();
 
