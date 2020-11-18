@@ -25,7 +25,7 @@ public class MockActionA extends Action<MockActionA> {
     }
 
 
-    public MockActionA(String methods, String... includePaths) {
+    public MockActionA(String methods, String includePaths) {
         withIncludeOn(methods, includePaths);
     }
 
@@ -34,9 +34,9 @@ public class MockActionA extends Action<MockActionA> {
         if (req.isMethod("get")) {
             res.withRecord(new JSNode("primaryKey", 1, "firstName", "tester1", "className", getClass().getSimpleName()));
         } else if (req.isMethod("put", "post")) {
-
+            //-- none
         } else if (req.isMethod("delete")) {
-
+            //-- none
         }
     }
 

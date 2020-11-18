@@ -1,4 +1,20 @@
-package io.inversion.spring;
+/*
+ * Copyright (c) 2015-2020 Rocket Partners, LLC
+ * https://github.com/inversion-api
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.inversion.spring.support;
 
 import io.inversion.Engine;
 import io.inversion.EngineServlet;
@@ -16,6 +32,13 @@ import java.util.List;
 
 @Configuration
 public class InversionServletConfig {
+
+    public InversionServletConfig()
+    {
+        System.out.println("InversionServletConfig()<>");
+    }
+
+
     public static ServletRegistrationBean createDefaultInversionServlet(Engine engine) {
         EngineServlet servlet = new EngineServlet();
         servlet.setEngine(engine);
@@ -36,7 +59,7 @@ public class InversionServletConfig {
         boolean      done  = false;
         for (int i = 0; i < 100 && !done; i++) {
             String part = null;
-            for (Path path : engine.getIncludePaths()) {
+            for (Path path : engine.getAllIncludePaths()) {
                 if (part == null)
                     part = path.get(i);
 
@@ -71,11 +94,13 @@ public class InversionServletConfig {
 
     @Bean
     public ServletRegistrationBean inversionServlet(@Autowired Engine engine) {
+        //System.out.println("ServletRegistrationBean.inversionServlet(engine" + System.identityHashCode(engine) + ")");
         return createDefaultInversionServlet(engine);
     }
 
     @Bean
     public ConfigurableServletWebServerFactory servletContainer() {
+        //System.out.println("ConfigurableServletWebServerFactory.servletContainer()");
         return createDefaultServletContainer();
     }
 

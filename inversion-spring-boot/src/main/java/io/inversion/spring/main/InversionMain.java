@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.spring;
+package io.inversion.spring.main;
 
 import io.inversion.Api;
-import io.inversion.Engine;
+import io.inversion.spring.support.EnableInversion;
 import io.inversion.utils.Utils;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.web.servlet.ServletRegistrationBean;
-import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
 
 /**
  * Launches your Api in an SpringBoot embedded Tomcat.
@@ -32,47 +31,47 @@ import org.springframework.context.annotation.Bean;
  * regular Spring Boot users and would like to wire your Api up an a more "spring-ish"
  * way, please check out <code>io.inversion.service.spring.config.EnableInversion</code>
  */
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+@EnableInversion
 public class InversionMain {
-
-    protected static Engine engine = null;
 
     protected static ApplicationContext context = null;
 
     public static void main(String[] args) {
-        run(new Engine());
-    }
-
-    public static void exit() {
-        if (context != null)
-            SpringApplication.exit(context);
-        context = null;
-    }
-
-    /**
-     * Convenience method for launching a Engine that will be configured via config files.
-     */
-    public static void run() {
-        run(new Engine());
+        run(args, null);
     }
 
     /**
      * Convenience method for launching a Engine with a single API.
      *
-     * @param api the Api to run
+     * @param apis the Apis to run
      * @return the SpringBoot ApplicationContext for the running server
      */
-    public static ApplicationContext run(Api api) {
-        return run(new Engine().withApi(api));
+    public static ApplicationContext run(Api... apis) {
+        return run(new String[]{}, apis);
     }
 
-    public static ApplicationContext run(Engine engine) {
+    public static ApplicationContext run(String[] args, Api[] apis) {
         try {
 
             if (context != null)
                 exit();
 
-            InversionMain.engine = engine;
-            context = SpringApplication.run(InversionMain.class);
+            //SpringApplication app = new SpringApplication(InversionMain.class);
+//
+//            if(apis != null && apis.length > 0) {
+//                app.addInitializers(new ApplicationContextInitializer<ConfigurableApplicationContext>() {
+//                    @Override
+//                    public void initialize(ConfigurableApplicationContext ctx) {
+//                        for (Api api : apis) {
+//                            ((GenericApplicationContext)ctx).registerBean(Api.class, api);
+//                        }
+//                    }
+//                });
+//            };
+
+            //context = app.run(args);
+            context = SpringApplication.run(InversionMain.class, args);
         } catch (Throwable e) {
             e = Utils.getCause(e);
             if (Utils.getStackTraceString(e).contains("A child container failed during start")) {
@@ -104,18 +103,14 @@ public class InversionMain {
         return context;
     }
 
+    public static void exit() {
+        if (context != null)
+            SpringApplication.exit(context);
+        context = null;
+    }
+
     public ApplicationContext getContext() {
         return context;
-    }
-
-    @Bean
-    public ServletRegistrationBean inversionServlet() {
-        return InversionServletConfig.createDefaultInversionServlet(InversionMain.engine);
-    }
-
-    @Bean
-    public ConfigurableServletWebServerFactory servletContainer() {
-        return InversionServletConfig.createDefaultServletContainer();
     }
 
 }

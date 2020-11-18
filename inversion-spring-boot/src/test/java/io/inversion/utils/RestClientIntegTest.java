@@ -1,7 +1,7 @@
 package io.inversion.utils;
 
 import io.inversion.*;
-import io.inversion.spring.InversionMain;
+import io.inversion.spring.main.InversionMain;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;

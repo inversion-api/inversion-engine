@@ -19,8 +19,6 @@ package io.inversion.utils;
 import io.inversion.Collection;
 import io.inversion.*;
 import io.inversion.action.db.DbAction;
-import io.inversion.utils.Configurator.Encoder.Includer;
-import io.inversion.utils.Configurator.Encoder.Namer;
 import org.apache.commons.collections4.map.MultiKeyMap;
 import org.apache.commons.configuration2.Configuration;
 import org.slf4j.Logger;
@@ -95,9 +93,731 @@ import java.util.*;
 @SuppressWarnings("unchecked")
 public class Configurator {
 
+    /**
+     * If a bean property field name appears in this list, it will not be logged but replaced with "************"
+     * in the output.
+     * <p>
+     * Put values here in lower case.
+     */
+    public static final String[] MASKED_FIELDS = new String[]{"pass", "password", "credentials", "secret", "secretkey"};
+
+    public static final String MASK = "**************";
+
     static final Logger log = LoggerFactory.getLogger(Configurator.class);
 
     static final String ROOT_BEAN_NAME = "inversion";
+
+    /**
+     * Wires up an Api at runtime by reflectively setting bean properties based on key/value configuration properties.
+     *
+     * @param engine        the engine to be configured
+     * @param configuration the name/value pairs used to wire up the Api's that will be added to <code>engine</code>.
+     * @see Engine#startup()
+     * @see Config
+     */
+    public synchronized void configure(Engine engine, Configuration configuration) {
+        try {
+            Properties       props = new Properties();
+            Iterator<String> keys  = configuration.getKeys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                props.put(key, configuration.getString(key));
+            }
+
+
+            // decode everything into a map
+            //   -- will not write out ".class" properties.
+            // wire in all new objects from supplied properties
+            // bootstrap api
+            // remove any props that were applied in the first pass.
+            // apply remaining user supplied props to make sure they override bootstrapping
+
+            Encoder primaryEncoder = new Encoder();
+            primaryEncoder.encode(engine);
+            dump(primaryEncoder.props);
+
+            Map<String, Object> beans = new HashMap();
+            for (Object bean : primaryEncoder.names.keySet())
+                beans.put(primaryEncoder.names.get(bean), bean);
+
+            Decoder primaryDecoder = new Decoder();
+            primaryDecoder.beans.putAll(beans);
+            primaryDecoder.decode(props);
+
+            //-- these a shortcut bootstrapping options for
+            //-- apis configured primarily through configuration
+            if (primaryDecoder.findBeans(Api.class).size() == 0)
+                primaryDecoder.beans.put("api", new Api());
+
+            for (Api api : (List<Api>) primaryDecoder.findBeans(Api.class))
+                if (!engine.getApis().contains(api))
+                    engine.withApi(api);
+
+            for (Api api : engine.getApis()) {
+                if (api.getDbs().size() > 0 //
+                    && api.getActions().size() == 0
+                    && api.getEndpoints().size() == 0)
+                {
+                    Action action = new DbAction();
+                    Endpoint ep = new Endpoint().withAction(action);
+
+                    if(primaryDecoder.getBean("endpoint") == null)
+                    {
+                        primaryDecoder.beans.put("endpoint", ep);
+                        ep.withName("endpoint");
+                    }
+                    if(primaryDecoder.getBean("action") == null)
+                    {
+                        primaryDecoder.beans.put("action", action);
+                        action.withName("acton");
+                    }
+                    api.withEndpoint(ep);
+                }
+            }
+            //-- end config shortcut bootstrapping
+
+            //-- this will cause the Dbs to reflect their data sources and create Collections etc.
+            for (Api api : primaryDecoder.getBeans(Api.class))
+                for (Db db : api.getDbs())
+                    db.startup(api);
+
+
+            //-- now we re encode because we need to know the names of all the beans in case
+            //-- some properties were manually overridden
+            Encoder secondaryEncoder = new Encoder();
+            secondaryEncoder.encode(engine);
+
+            dump(secondaryEncoder.props);
+
+            //-- reverse the bean to key map
+            beans = new HashMap();
+            for (Object bean : secondaryEncoder.names.keySet())
+                beans.put(secondaryEncoder.names.get(bean), bean);
+
+            //-- remove all the props that were set in the
+            //-- primary decoding so you don't apply them twice
+            for (String key : primaryDecoder.applied.keySet())
+                props.remove(key);
+
+            Decoder seconderyDecoder = new Decoder();
+            seconderyDecoder.beans.putAll(beans);
+            seconderyDecoder.decode(props);
+
+            for (Rule rule : seconderyDecoder.getBeans(Rule.class)) {
+                rule.checkLazyConfig();
+            }
+
+            log.info("-- applied configuration properties ---------------------------");
+            Map<String, String> applied = new HashMap(primaryDecoder.applied);
+            applied.putAll(seconderyDecoder.applied);
+
+            for (String key : Decoder.sort(applied.keySet())) {
+                String value = applied.get(key);
+
+                log.info("   > " + maskOutput(key, value));
+            }
+            log.info("-- end applied configuration properties -----------------------");
+
+
+        } catch (Exception e) {
+            throw ApiException.new500InternalServerError(e, "Error loading configuration.");
+        }
+    }
+
+
+    static class Encoder {
+
+        static List<Field> excludeFields = new ArrayList<>();
+        static List excludeTypes = Utils.asList(Logger.class, Configurator.class);
+        static MultiKeyMap<String, String> defaults = new MultiKeyMap();
+
+        /**
+         * Encoding an object of this type will simply involve recording calling toString().
+         */
+        private static final Set<Class<?>> STRINGIFIED_TYPES = new HashSet<>();
+        static
+        {
+            STRINGIFIED_TYPES.add(Boolean.class);
+            STRINGIFIED_TYPES.add(Character.class);
+            STRINGIFIED_TYPES.add(Byte.class);
+            STRINGIFIED_TYPES.add(Short.class);
+            STRINGIFIED_TYPES.add(Integer.class);
+            STRINGIFIED_TYPES.add(Long.class);
+            STRINGIFIED_TYPES.add(Float.class);
+            STRINGIFIED_TYPES.add(Double.class);
+            STRINGIFIED_TYPES.add(Void.class);
+            STRINGIFIED_TYPES.add(String.class);
+            STRINGIFIED_TYPES.add(Path.class);
+        }
+
+        Properties                  props    = new Properties();
+        Map<Object, String>         names    = new HashMap<>();
+
+        Set<String>                 encoded  = new HashSet();
+
+        public String encode(Object object) throws Exception {
+            return encode0(object, props, names, defaults, encoded);
+        }
+
+        static String encode0(Object object, Properties props, Map<Object, String> names, MultiKeyMap defaults, Set encoded) throws Exception {
+            try {
+
+                if (object == null)
+                    return null;
+
+                if (STRINGIFIED_TYPES.contains(object.getClass()))
+                    return object + "";
+
+                final String name = getName(object, names);
+
+                if (!encoded.contains(object)) {
+                    encoded.add(object); //recursion guard
+
+                    List<Field> fields = Utils.getFields(object.getClass());
+
+                    if (!defaults.containsKey(object.getClass())) {
+                        Object clean        = null;
+                        try
+                        {
+                            for (Field field : fields) {
+                                if (!include(field))
+                                    continue;
+
+                                if(clean == null)
+                                    clean = object.getClass().getDeclaredConstructor().newInstance();
+
+                                try {
+                                    Object defaultValue = field.get(clean);
+                                    String encodedDefault = new Encoder().encode(defaultValue);
+                                    defaults.put(object.getClass(), field.getName(), encodedDefault);
+                                } catch (Exception ex) {
+                                    log.debug("Unable to determine default value for {}: ", field, ex);
+                                    Object defaultValue = field.get(clean);
+                                }
+                            }
+                        }
+                        catch(Exception ex)//-- probably no empty constructor
+                        {
+                            //put this here so future encoders won't try to load defaults
+                            defaults.put(object.getClass(), "__none", "__none");
+                        }
+
+
+                    }
+
+                    for (Field field : fields) {
+
+                        try {
+                            if (!include(field))
+                                continue;
+
+                            Object value    = field.get(object);
+                            String fieldKey = name + "." + field.getName();
+
+                            if (value != null) {
+                                if (value.getClass().isArray())
+                                    value = Utils.asList(value);
+
+                                if (value instanceof java.util.Collection) {
+                                    if (((java.util.Collection) value).size() == 0)
+                                        continue;
+
+                                    List values = new ArrayList<>();
+                                    for (Object child : ((java.util.Collection) value)) {
+                                        String childKey = encode0(child, props, names, defaults, encoded);
+                                        values.add(childKey);
+                                    }
+
+                                    String encodedProp =  Utils.implode(",", values);
+                                    Object defaultProp = defaults.get(object.getClass(), field.getName());
+
+                                    if(!Utils.equal(encodedProp, defaultProp))
+                                        props.put(fieldKey, encodedProp );
+
+                                } else if (value instanceof Map) {
+                                    Map map = (Map) value;
+                                    if (map.size() == 0)
+                                        continue;
+
+                                    for (Object mapKey : map.keySet()) {
+                                        String encodedKey   = encode0(mapKey, props, names, defaults, encoded);
+                                        String encodedValue = encode0(map.get(mapKey), props, names, defaults, encoded);
+                                        props.put(fieldKey + "." + encodedKey, encodedValue);
+                                    }
+                                } else {
+                                    if (STRINGIFIED_TYPES.contains(value.getClass())) {
+                                        Object defaultVal = defaults.get(object.getClass(), field.getName());
+                                        if (defaultVal != null && defaultVal.equals(value))
+                                            continue;
+                                    } else if (!include(field))
+                                        continue;
+
+                                    String encodedProp =  encode0(value, props, names, defaults, encoded);
+                                    Object defaultProp = defaults.get(object.getClass(), field.getName());
+
+                                    if(!Utils.equal(encodedProp, defaultProp))
+                                        props.put(fieldKey, encodedProp );
+                                }
+                            }
+                        } catch (Exception fieldEx) {
+                            log.warn("Skipping field encoding due to error: " + field, fieldEx);
+                        }
+                    }
+                }
+                return name;
+            } catch (Exception ex) {
+                log.warn("Error encoding " + object.getClass().getName() , ex);
+                throw ex;
+            }
+        }
+
+        static String getName(Object object, Map<Object, String> names) throws Exception {
+            if (names.containsKey(object))
+                return names.get(object);
+
+            String name = getName(object);
+            if (name != null) {
+                names.put(object, name);
+                return name;
+            }
+
+            name = "";
+
+            Field nameField = Utils.getField("name", object.getClass());
+            if (nameField != null) {
+                name = nameField.get(object) + "";
+            }
+
+            name = "_anonymous_" + object.getClass().getSimpleName() + "_" + name + "_" + names.size();
+            names.put(object, name);
+            return name;
+        }
+
+        static String getName(Object o) throws Exception {
+            Object name  = null;
+            Class  clazz = o.getClass();
+            if (o instanceof Engine) {
+                name = "engine";
+            } else if (o instanceof Api) {
+                name = ((Api) o).getName();
+            } else if (o instanceof Db)// || o instanceof Action || o instanceof Endpoint)
+            {
+                name = Utils.getField("name", clazz).get(o);
+            } else if (o instanceof Collection) {
+                Collection t = (Collection) o;
+                if (t.getDb() != null)
+                    name = t.getDb().getName() + ".collections." + t.getTableName();
+            } else if (o instanceof Property) {
+                Property col = (Property) o;
+                if (col.getCollection() != null && col.getCollection().getDb() != null)
+                    name = col.getCollection().getDb().getName() + ".collections." + col.getCollection().getTableName() + ".properties." + col.getColumnName();
+            } else if (o instanceof Index) {
+                Index index = (Index) o;
+                if (index.getCollection() != null && index.getCollection().getDb() != null)
+                    name = index.getCollection().getDb().getName() + ".collections." + index.getCollection().getTableName() + ".indexes." + index.getName();
+            } else if (o instanceof Relationship) {
+                Relationship rel = (Relationship) o;
+                if (rel.getCollection() != null)
+                    name = getName(rel.getCollection()) + ".relationships." + rel.getName();
+            }
+
+            if (name == null) {
+                try {
+                    name = Utils.getProperty("name", o);
+                } catch (Throwable ex) {
+                    System.err.println("Unable to determine name for bean: " + o);
+                }
+            }
+
+            if (name != null)
+                return name.toString();
+
+            return null;
+        }
+
+        static boolean excludeField(Field field) {
+
+            if(field.getName().equals("name"))//this is implicit in the property key
+                return true;
+
+            if(field.getName().indexOf("$") > -1)
+                return true;
+
+            if (Modifier.isStatic(field.getModifiers()))
+                return true;
+
+            if (Modifier.isTransient(field.getModifiers()))
+                return true;
+
+            if (Modifier.isPrivate(field.getModifiers()))
+                return true;
+
+            if (excludeFields.contains(field) || excludeTypes.contains(field.getType()))
+                return true;
+
+            return false;
+        }
+
+        static boolean excludeType(Class type) {
+            boolean exclude = excludeTypes.contains(type);
+            if (!exclude && type.getName().indexOf("org.springframework") > -1)
+                exclude = true;
+
+            return exclude;
+        }
+
+        static boolean include(Field field) {
+
+            if (excludeField(field))
+                return false;
+
+            Class c = field.getType();
+            if (java.util.Collection.class.isAssignableFrom(c)) {
+                Type t = field.getGenericType();
+                if (t instanceof ParameterizedType) {
+                    ParameterizedType pt = (ParameterizedType) t;
+                    if (pt.getActualTypeArguments()[0] instanceof TypeVariable) {
+                        //can't figure out the type so consider it important
+                        return true;
+                    } else if (pt.getActualTypeArguments()[0] instanceof ParameterizedType) {
+                        //TODO: is this the right decision
+                        return false;
+                    }
+
+                    c = (Class) pt.getActualTypeArguments()[0];
+                }
+
+                boolean inc = !excludeType(c);
+                return inc;
+            } else if (Properties.class.isAssignableFrom(c)) {
+                return true;
+            } else if (JSNode.class.isAssignableFrom(c)) {
+                return true;
+            } else if (Map.class.isAssignableFrom(c)) {
+                Type t = field.getGenericType();
+                if (t instanceof ParameterizedType) {
+                    ParameterizedType pt = (ParameterizedType) t;
+                    if (!(pt.getActualTypeArguments()[0] instanceof Class)
+                            || !(pt.getActualTypeArguments()[1] instanceof Class)) {
+                        System.out.println("Skipping : " + field);
+                        return false;
+                    }
+
+                    Class keyType   = (Class) pt.getActualTypeArguments()[0];
+                    Class valueType = (Class) pt.getActualTypeArguments()[1];
+
+                    return !excludeType(keyType) && !excludeType(valueType);
+                } else {
+                    throw new RuntimeException("You need to parameterize this object: " + field);
+                }
+            } else {
+                boolean inc = !excludeType(c);
+                return inc;
+            }
+        }
+    }
+
+    static class Decoder {
+
+        final Properties      props    = new Properties();
+        final TreeSet<String> propKeys = new TreeSet<>();
+
+        final Map<String, Object> beans   = new HashMap<>();
+        final Map<String, String> applied = new HashMap();
+
+        /**
+         * Sorts based on the number of "." characters first and then
+         * based on the string value.
+         *
+         * @param keys the keys to sort
+         * @return the sorted list of keys
+         */
+        public static List<String> sort(java.util.Collection keys) {
+            List<String> sorted = new ArrayList(keys);
+            sorted.sort((o1, o2) -> {
+                int count1 = o1.length() - o1.replace(".", "").length();
+                int count2 = o2.length() - o2.replace(".", "").length();
+                if (count1 != count2)
+                    return count1 > count2 ? 1 : -1;
+
+                return o1.compareTo(o2);
+            });
+
+            return sorted;
+        }
+
+        public void add(Properties props) {
+            this.props.putAll(props);
+            this.propKeys.addAll((Set) props.keySet());
+        }
+
+        public void add(String propsStr) {
+            Properties props = new Properties();
+            try {
+                props.load(new ByteArrayInputStream(propsStr.getBytes()));
+            } catch (Exception ex) {
+                Utils.rethrow(ex);
+            }
+            add(props);
+        }
+
+        public void add(String key, String value) {
+            props.put(key, value);
+            propKeys.add(key);
+        }
+
+        public void decode(Properties props) throws Exception {
+            add(props);
+            decode();
+        }
+
+        List<String> getKeys(String beanName) {
+            Set<String>       keys       = new HashSet<>();
+            String            beanPrefix = beanName + ".";
+            SortedSet<String> keySet     = propKeys.tailSet(beanPrefix);
+            for (String key : keySet) {
+                if (!key.startsWith(beanPrefix)) {
+                    break;
+                }
+                if (!(key.endsWith(".class") || key.endsWith(".className"))) {
+                    if (!keys.contains(beanName))
+                        keys.add(key);
+                }
+            }
+
+            for (Object p : System.getProperties().keySet()) {
+                String key = (String) p;
+                if (key.startsWith(beanPrefix) && !(key.endsWith(".class") || key.endsWith(".className"))) {
+                    if (!keys.contains(beanName))
+                        keys.add(key);
+                }
+            }
+
+            for (Object p : System.getenv().keySet()) {
+                String key = (String) p;
+                if (key.startsWith(beanPrefix) && !(key.endsWith(".class") || key.endsWith(".className"))) {
+                    if (!keys.contains(beanName))
+                        keys.add(key);
+                }
+            }
+
+            return new ArrayList(keys);
+        }
+
+        /**
+         * Four step process
+         * 1. Instantiate all beans
+         * 2. Set primitiave types on all beans
+         * 3. Set object types on all beans
+         * 4. Path compression
+         *
+         * @throws Exception when configuration fails
+         */
+        public void decode() throws Exception {
+            HashMap<String, Map> loaded = new LinkedHashMap();
+
+            //FIRST STEP
+            // - instantiate all beans
+
+            for (Object p : props.keySet()) {
+                String key = (String) p;
+                if (key.endsWith(".class") || key.endsWith(".className")) {
+                    String name = key.substring(0, key.lastIndexOf("."));
+                    String cn   = (String) props.get(key);
+                    Object obj;
+
+                    applied.put(key, cn);
+
+                    if (beans.containsKey(name))
+                        obj = beans.get(name);
+                    else {
+                        try {
+                            obj = Class.forName(cn).getDeclaredConstructor().newInstance();
+                            Field nameField = Utils.getField("name", obj.getClass());
+                            if(nameField != null)
+                                nameField.set(obj, name);
+                        } catch (Exception ex) {
+                            System.err.println("Error instantiating class: '" + cn + "'");
+                            throw ex;
+                        }
+                        beans.put(name, obj);
+                    }
+                    loaded.put(name, new HashMap<>());
+                }
+                if (key.lastIndexOf(".") < 0) {
+                    beans.put(key, cast0(props.getProperty(key)));
+                }
+            }
+
+            List<String> keys = new ArrayList(beans.keySet());
+            keys = sort(keys);
+
+            //LOOP THROUGH TWICE.
+            // - First loop, set atomic props
+            // - Second loop, set bean props
+
+            for (int i = 0; i <= 1; i++) {
+                boolean isFirstPassSoLoadOnlyPrimitives = i == 0;
+
+                for (String beanName : keys) {
+                    Object bean     = beans.get(beanName);
+                    List   beanKeys = getKeys(beanName);
+                    for (Object p : beanKeys) {
+                        String key = (String) p;
+
+                        if (key.endsWith(".class") || key.endsWith(".className"))
+                            continue;
+
+                        //make sure this only has a single "."
+                        if ((key.startsWith(beanName + ".") && key.lastIndexOf(".") == beanName.length())) {
+                            String prop     = key.substring(key.lastIndexOf(".") + 1);
+                            String valueStr = props.getProperty(key);
+
+                            if (valueStr != null)
+                                valueStr = valueStr.trim();
+
+                            //if (value != null && (value.length() == 0 || "null".equals(value)))
+                            if ("null".equalsIgnoreCase(valueStr)) {
+                                valueStr = null;
+                            }
+
+                            Object value = valueStr;
+                            if (!Utils.empty(valueStr) && beans.containsKey(valueStr)) {
+                                value = beans.get(valueStr);
+                            }
+
+                            boolean valueIsBean = (!(value == null || valueStr.equals("") || valueStr.equals("null")) && (beans.containsKey(value) || beans.containsKey(Utils.explode(",", valueStr).get(0))));
+
+                            if (isFirstPassSoLoadOnlyPrimitives && valueIsBean) {
+                                continue;
+                            } else if (!isFirstPassSoLoadOnlyPrimitives && !valueIsBean) {
+                                continue;
+                            }
+
+                            Field field = Utils.getField(prop, bean.getClass());
+                            if (field != null) {
+                                applied.put(key, valueStr);
+                                Class type = field.getType();
+                                if (type.isAssignableFrom(value.getClass())) {
+                                    field.set(bean, value);
+                                } else if (java.util.Collection.class.isAssignableFrom(type)) {
+                                    java.util.Collection list = (java.util.Collection) cast(key, valueStr, type, field, beans);
+                                    ((java.util.Collection) field.get(bean)).addAll(list);
+                                } else if (Map.class.isAssignableFrom(type)) {
+                                    Map map = (Map) cast(key, valueStr, type, null, beans);
+                                    ((Map) field.get(bean)).putAll(map);
+                                } else {
+                                    field.set(bean, cast(key, valueStr, type, null, beans));
+                                }
+                            } else {
+                                log.debug("Can't map: " + maskOutput(key, value + ""));
+                            }
+                        }
+                    }
+                }
+            }
+
+            //THIRD STEP
+            // - Perform implicit setters based on nested paths of keys
+
+            for (String beanName : keys) {
+                Object obj   = beans.get(beanName);
+                int    count = beanName.length() - beanName.replace(".", "").length();
+                if (count > 0) {
+                    String parentKey = beanName.substring(0, beanName.lastIndexOf("."));
+                    String propKey   = beanName.substring(beanName.lastIndexOf(".") + 1);
+                    if (beans.containsKey(parentKey)) {
+                        //               Object parent = beans.get(parentKey);
+                        //               System.out.println(parent);
+                    } else if (count > 1) {
+                        String mapKey = propKey;
+                        propKey = parentKey.substring(parentKey.lastIndexOf(".") + 1);
+                        parentKey = parentKey.substring(0, parentKey.lastIndexOf("."));
+
+                        Object parent = beans.get(parentKey);
+                        if (parent != null) {
+                            Field field = Utils.getField(propKey, parent.getClass());
+                            if (field != null) {
+                                if (Map.class.isAssignableFrom(field.getType())) {
+                                    Map map = (Map) field.get(parent);
+                                    if (!map.containsKey(mapKey))
+                                        map.put(mapKey, obj);
+                                } else if (java.util.Collection.class.isAssignableFrom(field.getType())) {
+                                    //System.err.println("You should consider adding " + parent.getClass().getName() + ".with" + propKey + "in camel case singular or plural form");//a settinger to accomodate property: " + beanName);
+                                    java.util.Collection list = (java.util.Collection) field.get(parent);
+                                    if (!list.contains(obj)) {
+                                        list.add(obj);
+                                    }
+                                } else {
+                                    log.warn("Unable to set nested value: '" + beanName + "'");
+                                }
+                            } else {
+                                log.warn("Field is not a mapped: '" + beanName + "'");
+                            }
+                        } else {
+                            log.debug("Missing parent for map compression: '" + beanName + "'");
+                        }
+                    }
+                }
+            }
+
+            for (String name : loaded.keySet()) {
+                Object bean       = beans.get(name);
+                Map    loadedPros = loaded.get(name);
+            }
+        }
+
+        public void putBean(String key, Object bean) {
+            beans.put(key, bean);
+        }
+
+        public Object getBean(String key) {
+            return beans.get(key);
+        }
+
+        public <T> List<T> getBeans(Class<T> type) {
+            List found = new ArrayList<>();
+            for (Object bean : beans.values()) {
+                if (type.isAssignableFrom(bean.getClass()))
+                    found.add(bean);
+            }
+            return found;
+        }
+
+        public <T> T getBean(Class<T> type) {
+            for (Object bean : beans.values()) {
+                if (type.isAssignableFrom(bean.getClass()))
+                    return (T) bean;
+            }
+            return null;
+        }
+
+        public List findBeans(Class type) {
+            List matches = new ArrayList<>();
+            for (Object bean : beans.values()) {
+                if (type.isAssignableFrom(bean.getClass()))
+                    matches.add(bean);
+            }
+            return matches;
+        }
+
+        protected Object cast0(String str) {
+            if ("true".equalsIgnoreCase(str))
+                return true;
+
+            if ("false".equalsIgnoreCase(str))
+                return true;
+
+            if (str.matches("\\d+"))
+                return Integer.parseInt(str);
+
+            return str;
+        }
+
+    }
+
+
+
 
     static <T> T cast(String key, String stringVal, Class<T> type, Field field, Map<String, Object> beans) throws Exception {
         if (String.class.isAssignableFrom(type)) {
@@ -166,12 +886,6 @@ public class Configurator {
         return null;
     }
 
-    //   public static Properties encode(Object... beans) throws Exception
-    //   {
-    //      Properties autoProps = Wirer.encode(new WirerSerializerNamer(), new WirerSerializerIncluder(), beans);
-    //      return autoProps;
-    //   }
-
     static Class getArrayElementClass(Class arrayClass) throws ClassNotFoundException {
         Class  subtype;
         String typeStr = arrayClass.toString();
@@ -197,216 +911,9 @@ public class Configurator {
         return subtype;
     }
 
-    /**
-     * Wires up an Api at runtime by reflectively setting bean properties based on key/value configuration properties.
-     *
-     * @param engine        the engine to be configured
-     * @param configuration the name/value pairs used to wire up the Api's that will be added to <code>engine</code>.
-     * @see Engine#startup()
-     * @see Config
-     */
-    public synchronized void configure(Engine engine, Configuration configuration) {
-        try {
-            Properties       props = new Properties();
-            Iterator<String> keys  = configuration.getKeys();
-            while (keys.hasNext()) {
-                String key = keys.next();
-                props.put(key, configuration.getString(key));
-            }
+    static void dump(Properties autoProps) {
 
-            if (engine.getApis().size() > 0) {
-                //-- DEPENDENCY INJECTION MODE
-                //--
-                //-- if there is already an API, don't load everything from scratch.
-                //-- just override/set any keys from the config on the target objects
-
-                Encoder encoder = new Encoder();
-                encoder.encode(new DefaultNamer(), new AllIncluder(), engine.getApis().toArray());
-
-                //dump(encoder.props);
-
-                Map<String, Object> beans = new HashMap<>();
-                for (Object bean : encoder.names.keySet()) {
-                    String key = encoder.names.get(bean);
-                    beans.put(key, bean);
-                }
-
-                for (String beanName : beans.keySet()) {
-                    for (Object propKey : props.keySet()) {
-                        if (propKey.toString().startsWith(beanName + ".")) {
-                            Object propVal = props.getProperty(propKey.toString());
-
-                            Object bean      = beans.get(beanName);
-                            String fieldName = propKey.toString().substring(beanName.length() + 1);
-                            try {
-                                Field field = Utils.getField(fieldName, bean.getClass());
-                                if (field != null) {
-                                    field.setAccessible(true);
-                                    propVal = cast((String) propKey, (String) propVal, field.getType(), field, beans);
-                                    field.set(bean, propVal);
-                                } else {
-                                    log.warn("Unable to find field '" + fieldName + "' on bean '" + beanName + "'");
-                                }
-                            } catch (Exception ex) {
-                                log.warn("Error setting property '" + propKey + "'", ex);
-                            }
-                        }
-                    }
-                }
-            } else {
-                //-- FULL WIRING MODE
-
-                Decoder w = new Decoder();
-                w.putBean(ROOT_BEAN_NAME, engine);
-                w.load(props);
-                loadConfig(engine, props);
-            }
-        } catch (Exception e) {
-            throw ApiException.new500InternalServerError(e, "Error loading configuration.");
-        }
-    }
-
-    void loadConfig(Engine engine, Properties properties) throws Exception {
-        Decoder decoder = new Decoder() {
-
-            //IMPORTANT IMPORTANT IMPORTANT
-            // add special case exceptions here for cases where users may add unclean data
-            // that should not be set directly on bean fields but should be passed the approperiate setter
-            public boolean handleProp(Object bean, String prop, String value) throws Exception {
-                //               if (bean instanceof Endpoint && "path".equalsIgnoreCase(value))
-                //               {
-                //                  //this is done as a special case because of the
-                //                  //special business logic in the setter
-                //                  ((Endpoint) bean).withPath(value);
-                //
-                //                  return true;
-                //               }
-
-                return false;
-            }
-
-            @Override
-            public void onLoad(String name, Object module, Map<String, Object> props) throws Exception {
-                Field field = Utils.getField("name", module.getClass());
-                if (field != null && field.get(module) == null)
-                    field.set(module, name);
-            }
-        };
-        decoder.load(properties);
-
-        //-- this just loads the bare bones config supplied
-        //-- in inversion*.properties files by the users.
-        autoWireApi(decoder);
-
-        for (Api api : decoder.getBeans(Api.class)) {
-            for (Db db : api.getDbs()) {
-                db.startup(api);
-            }
-        }
-
-        //-- this serializes out the object model that was bootsrapped off of the
-        //-- configuration files.  At this point the db.startup() has been called
-        //-- on all of the DBs and they configured collections on the Api.
-        Properties autoProps = new Encoder().encode(new DefaultNamer(), new DefaultIncluder(), decoder.getBeans(Api.class).toArray());
-        autoProps.putAll(properties);
-
-        for (Api api : decoder.getBeans(Api.class)) {
-            for (Db db : api.getDbs()) {
-                db.shutdown(api);
-            }
-        }
-
-        decoder.clear();
-        decoder.load(autoProps);
-
-        //dump(autoProps);
-
-        autoWireApi(decoder);
-
-        for (Api api : decoder.getBeans(Api.class)) {
-            engine.withApi(api);
-        }
-
-        for (String name : decoder.beans.keySet()) {
-            if (name.startsWith("_anonymous_")) {
-                Object bean      = decoder.beans.get(name);
-                Field  nameField = Utils.getField("name", bean.getClass());
-                if (nameField != null)
-                    nameField.set(bean, null);
-            }
-        }
-
-        for (Rule rule : decoder.getBeans(Rule.class)) {
-            rule.checkLazyConfig();
-        }
-
-    }
-
-    void autoWireApi(Decoder decoder) {
-        if (decoder.getBeans(Action.class).size() == 0 //
-                && decoder.getBeans(Db.class).size() > 0) {
-            decoder.putBean("action", new DbAction());
-        }
-
-        if (decoder.getBeans(Action.class).size() > 0) {
-            if (decoder.getBeans(Api.class).size() == 0) {
-                decoder.putBean("api", new Api());
-            }
-
-            if (decoder.getBeans(Endpoint.class).size() == 0) {
-                decoder.putBean("endpoint", new Endpoint());
-            }
-        }
-
-        for (Db db : decoder.getBeans(Db.class)) {
-            for (Collection collection : (List<Collection>) db.getCollections()) {
-                collection.withDb(db);
-            }
-        }
-
-        if (decoder.getBeans(Api.class).size() == 1) {
-            List found = decoder.getBeans(Db.class);
-
-            Api api = decoder.getBeans(Api.class).get(0);
-
-            if (api.getDbs().size() == 0)
-                api.withDbs((Db[]) found.toArray(new Db[0]));
-
-            Set<Action> privateActions = new HashSet();
-            found = decoder.getBeans(Endpoint.class);
-            if (api.getEndpoints().size() == 0) {
-                for (Endpoint ep : (List<Endpoint>) found) {
-                    api.withEndpoint(ep);
-                    privateActions.addAll(ep.getActions());
-                }
-            }
-
-            found = decoder.getBeans(Action.class);
-            if (api.getActions().size() == 0) {
-                for (Action action : (List<Action>) found) {
-                    if (!privateActions.contains(action))
-                        api.withAction(action);
-                }
-            }
-        }
-    }
-
-    void dump(Properties autoProps) {
-        //      if (!Utils.empty(configOut))
-        //      {
-        //         String fileName = "./" + configOut.trim();
-        //
-        //         File file = new File(fileName);
-        //
-        //         log.info("writing merged config file to: '" + file.getCanonicalPath() + "'");
-        //
-        //         file.getParentFile().mkdirs();
-        //         BufferedWriter out = new BufferedWriter(new FileWriter(file));
-
-        //properties are sorted based on the number of "." segments they contain so that "shallow"
-        //depth properties can be set before deeper depth properties.
         Properties sorted = new Properties() {
-
             public Enumeration keys() {
                 Vector v = new Vector(Decoder.sort(keySet()));
                 return v.elements();
@@ -416,624 +923,33 @@ public class Configurator {
         sorted.putAll(autoProps);
         autoProps = sorted;
 
-        //         //autoProps.store(out, "");
-        //
-        //         //               for (String key : AutoWire.sort(autoProps.keySet()))
-        //         //               {
-        //         //                  String value = autoProps.getProperty(key);
-        //         //                  if (shouldMask(key))
-        //         //                     value = "###############";
-        //         //               }
-        //         out.flush();
-        //         out.close();
-
         List<String> keys = Decoder.sort(autoProps.keySet());//new ArrayList(autoProps.keySet());
         Collections.sort(keys);
-        log.info("-- merged user supplied configuration -------------------------");
+
+        log.debug("-- configuration ----------------------------------------------");
         for (String key : keys) {
+
+            if(key.startsWith("_anonymous_"))
+                continue;
+
             String value = autoProps.getProperty(key);
 
-            //         if (shouldMask(key))
-            //            value = "###############";
+            if(value != null && value.startsWith("_anonymous_"))
+                continue;
 
-            log.info(" > " + key + "=" + value);
+            log.debug("   > " + maskOutput(key, value));
         }
-        log.info("-- end merged user supplied configuration ---------------------");
-
-        //      }
-    }
-
-    static class AllIncluder extends DefaultIncluder {
-
-        public AllIncluder() {
-            excludeTypes = Utils.asList(Logger.class);
-        }
-    }
-
-    static class DefaultIncluder implements Includer {
-
-        final List<Field> excludes = new ArrayList<>();                                                                 //TODO:  why was api.actions excluded?  //List<Field> excludes     =  Arrays.asList(Utils.getField("actions", Api.class));
-
-        List excludeTypes = Utils.asList(Logger.class,                                        //don't care to persist info on loggers
-                Action.class, Endpoint.class, Rule.class, Path.class);                                             //these are things that must be supplied by manual config so don't write them out.
-
-        @Override
-        public boolean include(Field field) {
-            ///if (field.getAnnotation(Ignore.class) != null || Modifier.isTransient(field.getModifiers()))
-            if (Modifier.isTransient(field.getModifiers()))
-                return false;
-
-            if (excludes.contains(field) || excludeTypes.contains(field.getType()))
-                return false;
-
-            Class c = field.getType();
-            if (java.util.Collection.class.isAssignableFrom(c)) {
-                Type t = field.getGenericType();
-                if (t instanceof ParameterizedType) {
-                    ParameterizedType pt = (ParameterizedType) t;
-                    if (pt.getActualTypeArguments()[0] instanceof TypeVariable) {
-                        //can't figure out the type so consider it important
-                        return true;
-                    }
-
-                    c = (Class) pt.getActualTypeArguments()[0];
-                }
-
-                boolean inc = !excludeTypes.contains(c);
-                return inc;
-            } else if (Properties.class.isAssignableFrom(c)) {
-                return true;
-            } else if (JSNode.class.isAssignableFrom(c)) {
-                return true;
-            } else if (Map.class.isAssignableFrom(c)) {
-                Type t = field.getGenericType();
-                if (t instanceof ParameterizedType) {
-                    ParameterizedType pt        = (ParameterizedType) t;
-                    Class             keyType   = (Class) pt.getActualTypeArguments()[0];
-                    Class             valueType = (Class) pt.getActualTypeArguments()[1];
-
-                    return !excludeTypes.contains(keyType) && !excludeTypes.contains(valueType);
-                } else {
-                    throw new RuntimeException("You need to parameterize this object: " + field);
-                }
-            } else {
-                boolean inc = !excludeTypes.contains(c);
-
-                if (!inc)
-                    System.out.println("skipping field: " + field);
-                return inc;
-            }
-        }
+        log.debug("-- end configuration ------------------------------------------");
 
     }
 
-    static class DefaultNamer implements Namer {
-
-        @Override
-        public String getName(Object o) throws Exception {
-            Object name  = null;
-            Class  clazz = o.getClass();
-            if (o instanceof Api) {
-                name = ((Api) o).getName();
-            } else if (o instanceof Db)// || o instanceof Action || o instanceof Endpoint)
-            {
-                name = Utils.getField("name", clazz).get(o);
-            } else if (o instanceof Collection) {
-                Collection t = (Collection) o;
-                if (t.getDb() != null)
-                    name = t.getDb().getName() + ".collections." + t.getTableName();
-            } else if (o instanceof Property) {
-                Property col = (Property) o;
-                if (col.getCollection() != null && col.getCollection().getDb() != null)
-                    name = col.getCollection().getDb().getName() + ".collections." + col.getCollection().getTableName() + ".properties." + col.getColumnName();
-            } else if (o instanceof Index) {
-                Index index = (Index) o;
-                if (index.getCollection() != null && index.getCollection().getDb() != null)
-                    name = index.getCollection().getDb().getName() + ".collections." + index.getCollection().getTableName() + ".indexes." + index.getName();
-            } else if (o instanceof Relationship) {
-                Relationship rel = (Relationship) o;
-                if (rel.getCollection() != null)
-                    name = getName(rel.getCollection()) + ".relationships." + rel.getName();
-            }
-
-            if (name == null)
-                name = Utils.getProperty("name", o);
-
-            if (name != null)
-                return name.toString();
-
-            return null;
-        }
+    static String maskOutput(String key, String value)
+    {
+        String field = Utils.substringAfter(key, ".").toLowerCase();
+        if(Utils.in(field, MASKED_FIELDS))
+            value = MASK;
+        return key + " = " + value;
     }
 
-    static class Decoder {
-
-        final Properties      props    = new Properties();
-        final TreeSet<String> propKeys = new TreeSet<>();
-
-        final Map<String, Object> beans = new HashMap<>();
-
-        /**
-         * Sorts based on the number of "." characters first and then
-         * based on the string value.
-         *
-         * @param keys the keys to sort
-         * @return the sorted list of keys
-         */
-        public static List<String> sort(java.util.Collection keys) {
-            List<String> sorted = new ArrayList(keys);
-            sorted.sort((o1, o2) -> {
-                int count1 = o1.length() - o1.replace(".", "").length();
-                int count2 = o2.length() - o2.replace(".", "").length();
-                if (count1 != count2)
-                    return count1 > count2 ? 1 : -1;
-
-                return o1.compareTo(o2);
-            });
-
-            return sorted;
-        }
-
-        //designed to be overridden
-        public void onLoad(String name, Object bean, Map<String, Object> properties) throws Exception {
-
-        }
-
-        //designed to be overridden
-        public boolean handleProp(Object bean, String prop, String value) throws Exception {
-            return false;
-        }
-
-        public void clear() {
-            props.clear();
-            beans.clear();
-            propKeys.clear();
-        }
-
-        public void add(Properties props) {
-            this.props.putAll(props);
-            this.propKeys.addAll((Set) props.keySet());
-        }
-
-        public void add(String propsStr) {
-            Properties props = new Properties();
-            try {
-                props.load(new ByteArrayInputStream(propsStr.getBytes()));
-            } catch (Exception ex) {
-                Utils.rethrow(ex);
-            }
-            add(props);
-        }
-
-        public void add(String key, String value) {
-            props.put(key, value);
-            propKeys.add(key);
-        }
-
-        public void load(Properties props) throws Exception {
-            add(props);
-            load();
-        }
-
-        String getProperty(String name) {
-            String value = System.getProperty(name);
-            if (value != null) {
-                //System.out.p("using syso prop for key: " + name);
-            } else {
-                value = System.getenv(name);
-                if (value != null) {
-                    //log.info("using env var for key: " + name);
-                } else {
-                    value = props.getProperty(name);
-                }
-            }
-            return value;
-        }
-
-        List<String> getKeys(String beanName) {
-            Set<String>       keys       = new HashSet<>();
-            String            beanPrefix = beanName + ".";
-            SortedSet<String> keySet     = propKeys.tailSet(beanPrefix);
-            for (String key : keySet) {
-                if (!key.startsWith(beanPrefix)) {
-                    break;
-                }
-                if (!(key.endsWith(".class") || key.endsWith(".className"))) {
-                    if (!keys.contains(beanName))
-                        keys.add(key);
-                }
-            }
-
-            for (Object p : System.getProperties().keySet()) {
-                String key = (String) p;
-                if (key.startsWith(beanPrefix) && !(key.endsWith(".class") || key.endsWith(".className"))) {
-                    if (!keys.contains(beanName))
-                        keys.add(key);
-                }
-            }
-
-            for (Object p : System.getenv().keySet()) {
-                String key = (String) p;
-                if (key.startsWith(beanPrefix) && !(key.endsWith(".class") || key.endsWith(".className"))) {
-                    if (!keys.contains(beanName))
-                        keys.add(key);
-                }
-            }
-
-            return new ArrayList(keys);
-        }
-
-        /**
-         * Four step process
-         * 1. Instantiate all beans
-         * 2. Set primitiave types on all beans
-         * 3. Set object types on all beans
-         * 4. Path compression
-         *
-         * @throws Exception when configuration fails
-         */
-        public void load() throws Exception {
-            HashMap<String, Map> loaded = new LinkedHashMap();
-
-            //FIRST STEP
-            // - instantiate all beans
-
-            for (Object p : props.keySet()) {
-                String key = (String) p;
-                if (key.endsWith(".class") || key.endsWith(".className")) {
-                    String name = key.substring(0, key.lastIndexOf("."));
-                    String cn   = (String) props.get(key);
-                    Object obj;
-                    try {
-                        obj = Class.forName(cn).getDeclaredConstructor().newInstance();
-                    } catch (Exception ex) {
-                        System.err.println("Error instantiating class: '" + cn + "'");
-                        throw ex;
-                    }
-
-                    loaded.put(name, new HashMap<>());
-                    beans.put(name, obj);
-                    //System.out.println(name + "->" + cn);
-                }
-                if (key.lastIndexOf(".") < 0) {
-                    beans.put(key, cast0(props.getProperty(key)));
-                }
-            }
-
-            List<String> keys = new ArrayList(beans.keySet());
-            keys = sort(keys);
-
-            //LOOP THROUGH TWICE.
-            // - First loop, set atomic props
-            // - Second loop, set bean props
-
-            for (int i = 0; i <= 1; i++) {
-                boolean isFirstPassSoLoadOnlyPrimitives = i == 0;
-
-                for (String beanName : keys) {
-                    Object obj      = beans.get(beanName);
-                    List   beanKeys = getKeys(beanName);
-                    for (Object p : beanKeys) {
-                        String key = (String) p;
-
-                        if (key.endsWith(".class") || key.endsWith(".className"))
-                            continue;
-
-                        if ((key.startsWith(beanName + ".") && key.lastIndexOf(".") == beanName.length())) {
-                            String prop  = key.substring(key.lastIndexOf(".") + 1);
-                            String value = getProperty(key);
-
-                            if (value != null)
-                                value = value.trim();
-
-                            //if (value != null && (value.length() == 0 || "null".equals(value)))
-                            if ("null".equals(value)) {
-                                value = null;
-                            }
-
-                            boolean valueIsBean = (!(value == null || value.equals("") || value.equals("null")) && (beans.containsKey(value) || beans.containsKey(Utils.explode(",", value).get(0))));
-
-                            if (isFirstPassSoLoadOnlyPrimitives && valueIsBean) {
-                                continue;
-                            } else if (!isFirstPassSoLoadOnlyPrimitives && !valueIsBean) {
-                                continue;
-                            }
-
-                            if (handleProp(obj, prop, value)) {
-                                //do nothing, already handled
-                            } else {
-                                Field field = Utils.getField(prop, obj.getClass());
-                                if (field != null) {
-                                    Class type = field.getType();
-
-                                    if (beans.containsKey(value) && type.isAssignableFrom(beans.get(value).getClass())) {
-                                        field.set(obj, beans.get(value));
-                                    } else if (java.util.Collection.class.isAssignableFrom(type)) {
-                                        java.util.Collection list = (java.util.Collection) cast(key, value, type, field, beans);
-                                        ((java.util.Collection) field.get(obj)).addAll(list);
-                                    } else if (Map.class.isAssignableFrom(type)) {
-                                        Map map = (Map) cast(key, value, type, null, beans);
-                                        ((Map) field.get(obj)).putAll(map);
-                                    } else {
-                                        field.set(obj, cast(key, value, type, null, beans));
-                                    }
-                                } else {
-                                    System.out.println("Can't map: " + key + " = " + value);
-                                }
-
-                            }
-                        }
-                    }
-                }
-            }
-
-            //THIRD STEP
-            // - Perform implicit setters based on nested paths of keys
-
-            for (String beanName : keys) {
-                Object obj   = beans.get(beanName);
-                int    count = beanName.length() - beanName.replace(".", "").length();
-                if (count > 0) {
-                    String parentKey = beanName.substring(0, beanName.lastIndexOf("."));
-                    String propKey   = beanName.substring(beanName.lastIndexOf(".") + 1);
-                    if (beans.containsKey(parentKey)) {
-                        //               Object parent = beans.get(parentKey);
-                        //               System.out.println(parent);
-                    } else if (count > 1) {
-                        String mapKey = propKey;
-                        propKey = parentKey.substring(parentKey.lastIndexOf(".") + 1);
-                        parentKey = parentKey.substring(0, parentKey.lastIndexOf("."));
-
-                        Object parent = beans.get(parentKey);
-                        if (parent != null) {
-                            Field field = Utils.getField(propKey, parent.getClass());
-                            if (field != null) {
-                                if (Map.class.isAssignableFrom(field.getType())) {
-                                    Map map = (Map) field.get(parent);
-                                    if (!map.containsKey(mapKey))
-                                        map.put(mapKey, obj);
-                                } else if (java.util.Collection.class.isAssignableFrom(field.getType())) {
-                                    //System.err.println("You should consider adding " + parent.getClass().getName() + ".with" + propKey + "in camel case singular or plural form");//a settinger to accomodate property: " + beanName);
-                                    java.util.Collection list = (java.util.Collection) field.get(parent);
-                                    if (!list.contains(obj)) {
-                                        list.add(obj);
-                                    }
-                                } else {
-                                    System.err.println("Unable to set nested value: '" + beanName + "'");
-                                }
-                            } else {
-                                System.err.println("Field is not a mapped: '" + beanName + "'");
-                            }
-                        } else {
-                            System.err.println("Missing parent for map compression: '" + beanName + "'");
-                        }
-                    }
-                }
-            }
-
-            for (String name : loaded.keySet()) {
-                Object bean       = beans.get(name);
-                Map    loadedPros = loaded.get(name);
-                onLoad(name, bean, loadedPros);
-            }
-
-        }
-
-        public void putBean(String key, Object bean) {
-            beans.put(key, bean);
-        }
-
-        public Object getBean(String key) {
-            return beans.get(key);
-        }
-
-        public <T> List<T> getBeans(Class<T> type) {
-            List found = new ArrayList<>();
-            for (Object bean : beans.values()) {
-                if (type.isAssignableFrom(bean.getClass()))
-                    found.add(bean);
-            }
-            return found;
-        }
-
-        public <T> T getBean(Class<T> type) {
-            for (Object bean : beans.values()) {
-                if (type.isAssignableFrom(bean.getClass()))
-                    return (T) bean;
-            }
-            return null;
-        }
-
-        public List findBeans(Class type) {
-            List matches = new ArrayList<>();
-            for (Object bean : beans.values()) {
-                if (type.isAssignableFrom(bean.getClass()))
-                    matches.add(bean);
-            }
-            return matches;
-        }
-
-        protected Object cast0(String str) {
-            if ("true".equalsIgnoreCase(str))
-                return true;
-
-            if ("false".equalsIgnoreCase(str))
-                return true;
-
-            if (str.matches("\\d+"))
-                return Integer.parseInt(str);
-
-            return str;
-        }
-
-    }
-
-    static class Encoder {
-
-        private static final Set<Class<?>> WRAPPER_TYPES = getWrapperTypes();
-        Properties                  props    = null;
-        Map<Object, String>         names    = null;
-        MultiKeyMap<String, String> defaults = null;
-
-        static String encode(Object object, Properties props, Namer namer, Includer includer, Map<Object, String> names, MultiKeyMap defaults) throws Exception {
-            try {
-                if (WRAPPER_TYPES.contains(object.getClass()))
-                    return object + "";
-
-                String name = getName(object, namer, names);
-
-                if (props.containsKey(name + ".class"))
-                    return name;
-
-                if (name != null)
-                    props.put(name + ".class", object.getClass().getName());
-
-                List<Field> fields = Utils.getFields(object.getClass());
-
-                if (!defaults.containsKey(object.getClass())) {
-                    for (Field field : fields) {
-                        if (Modifier.isTransient(field.getModifiers()))
-                            continue;
-
-                        if (Modifier.isStatic(field.getModifiers()))
-                            continue;
-
-                        if (Modifier.isFinal(field.getModifiers()))
-                            continue;
-
-                        try {
-                            Object clean        = object.getClass().getDeclaredConstructor().newInstance();
-                            Object defaultValue = field.get(clean);
-
-                            if (defaultValue != null && WRAPPER_TYPES.contains(defaultValue.getClass()))
-                                defaults.put(object.getClass(), field.getName(), defaultValue);
-                        } catch (Exception ex) {
-                            // ex.printStackTrace();
-                        }
-                    }
-                }
-
-                for (Field field : fields) {
-                    if (Modifier.isTransient(field.getModifiers()))
-                        continue;
-
-                    if (Modifier.isStatic(field.getModifiers()))
-                        continue;
-
-                    if (!includer.include(field))
-                        continue;
-
-                    Object value = field.get(object);
-
-                    String fieldKey = name + "." + field.getName();
-                    if (value != null) {
-                        if (value.getClass().isArray())
-                            value = Utils.asList(value);
-
-                        if (value instanceof java.util.Collection) {
-                            if (((java.util.Collection) value).size() == 0)
-                                continue;
-
-                            List values = new ArrayList<>();
-                            for (Object child : ((java.util.Collection) value)) {
-                                String childKey = encode(child, props, namer, includer, names, defaults);
-                                values.add(childKey);
-                            }
-                            if (name != null)
-                                props.put(fieldKey, Utils.implode(",", values));
-                        } else if (value instanceof Map) {
-                            Map map = (Map) value;
-                            if (map.size() == 0)
-                                continue;
-
-                            for (Object mapKey : map.keySet()) {
-                                String encodedKey   = encode(mapKey, props, namer, includer, names, defaults);
-                                String encodedValue = encode(map.get(mapKey), props, namer, includer, names, defaults);
-                                if (name != null)
-                                    props.put(fieldKey + "." + encodedKey, encodedValue);
-                            }
-                        } else {
-                            if (WRAPPER_TYPES.contains(value.getClass())) {
-                                Object defaultVal = defaults.get(object.getClass(), field.getName());
-                                if (defaultVal != null && defaultVal.equals(value))
-                                    continue;
-                            } else if (!includer.include(field))
-                                continue;
-
-                            if (name != null)
-                                props.put(fieldKey, encode(value, props, namer, includer, names, defaults));
-                        }
-                    }
-
-                }
-                return name;
-            } catch (Exception ex) {
-                System.err.println("Error encoding " + object.getClass().getName() + " - " + ex.getMessage());
-                ex.printStackTrace();
-                throw ex;
-            }
-        }
-
-        public static String getName(Object object, Namer namer, Map<Object, String> names) throws Exception {
-            if (names.containsKey(object))
-                return names.get(object);
-
-            if (namer != null) {
-                String name = namer.getName(object);
-                if (name != null) {
-                    names.put(object, name);
-                    return name;
-                }
-            }
-
-            String name = "";
-
-            Field nameField = Utils.getField("name", object.getClass());
-            if (nameField != null) {
-                name = nameField.get(object) + "";
-            }
-
-            name = "_anonymous_" + object.getClass().getSimpleName() + "_" + name + "_" + names.size();
-            names.put(object, name);
-            return name;
-        }
-
-        private static Set<Class<?>> getWrapperTypes() {
-            Set<Class<?>> ret = new HashSet<>();
-            ret.add(Boolean.class);
-            ret.add(Character.class);
-            ret.add(Byte.class);
-            ret.add(Short.class);
-            ret.add(Integer.class);
-            ret.add(Long.class);
-            ret.add(Float.class);
-            ret.add(Double.class);
-            ret.add(Void.class);
-            ret.add(String.class);
-            ret.add(Path.class);
-            return ret;
-        }
-
-        public Properties encode(Namer namer, Includer includer, Object... objects) throws Exception {
-            props = new Properties();
-            names = new HashMap<>();
-            defaults = new MultiKeyMap();
-
-            for (Object object : objects) {
-                encode(object, props, namer, includer, names, defaults);
-            }
-            return props;
-        }
-
-        interface Namer {
-
-            String getName(Object o) throws Exception;
-        }
-
-        interface Includer {
-
-            boolean include(Field field);
-        }
-    }
 
 }

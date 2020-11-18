@@ -19,7 +19,7 @@ package io.inversion.demo.jdbc;
 import io.inversion.Api;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDb;
-import io.inversion.spring.InversionMain;
+import io.inversion.spring.main.InversionMain;
 import io.inversion.utils.Utils;
 
 /**

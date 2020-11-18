@@ -962,11 +962,16 @@ public class Utils {
             Field[] farr = clazz.getDeclaredFields();
             for (Field f : farr) {
                 if (!found.contains(f.getName())) {
-                    f.setAccessible(true);
-                    found.add(f.getName());
-                    fields.add(f);
+                    try {
+                        f.setAccessible(true);
+                        found.add(f.getName());
+                        fields.add(f);
+                    } catch (Exception ex) {
+                        //ignore inaccessable fields
+                    }
+
                 } else {
-                    System.out.println("This super class property is being skipped because it is being hidden by a child class property with the same name...is this a design mistake? " + f);
+                    //System.out.println("This super class property is being skipped because it is being hidden by a child class property with the same name...is this a design mistake? " + f);
                 }
             }
             clazz = clazz.getSuperclass();
@@ -1014,7 +1019,7 @@ public class Utils {
                     return field.get(object);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            //ex.printStackTrace();
         }
         return null;
     }

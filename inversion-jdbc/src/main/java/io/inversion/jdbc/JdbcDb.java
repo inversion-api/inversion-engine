@@ -154,7 +154,7 @@ public class JdbcDb extends Db<JdbcDb> {
     protected       boolean      calcRowsFound            = true;
 
     public JdbcDb() {
-        //System.out.println("SqlDb() <init>");
+        //System.out.println("JdbcDb() <init>");
     }
 
     public JdbcDb(String name) {

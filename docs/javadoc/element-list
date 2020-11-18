@@ -18,5 +18,6 @@ io.inversion.rql
 io.inversion.s3
 io.inversion.script
 io.inversion.script.velocity
-io.inversion.spring
+io.inversion.spring.main
+io.inversion.spring.support
 io.inversion.utils
