@@ -375,6 +375,7 @@ public class AuthAction extends Action<AuthAction> {
                     //--
                     //-- multiple keys are supported so you can release keys with new signatures
                     //-- while supporting old signatures for some transition period.
+                    ex.printStackTrace();
                 }
             }
 
@@ -444,7 +445,7 @@ public class AuthAction extends Action<AuthAction> {
          * @return any jwt secrets found
          */
         protected List<String> getJwtSecrets(AuthAction action, String apiName, String tenant) {
-            List<String> secrets = new ArrayList<>();
+            LinkedHashSet<String> secrets = new LinkedHashSet<>();
 
             for (int i = 10; i >= 0; i--) {
 
@@ -466,7 +467,7 @@ public class AuthAction extends Action<AuthAction> {
                 }
             }
 
-            return secrets;
+            return new ArrayList(secrets);
         }
 
         public String signJwt(JWTCreator.Builder jwtBuilder, AuthAction action, String apiName, String tenant) throws IllegalArgumentException, JWTCreationException, UnsupportedEncodingException {
