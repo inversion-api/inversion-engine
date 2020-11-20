@@ -19,6 +19,7 @@ package io.inversion.utils;
 import io.inversion.ApiException;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.EnvironmentConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.SystemConfiguration;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 
@@ -196,7 +197,11 @@ public class Config {
 
                 if (url != null) {
                     System.out.println("  - loading file  : " + url);
-                    configuration.addConfiguration(configs.properties(url));
+                    PropertiesConfiguration fileConfig = configs.properties(url);
+                    if(!fileConfig.containsKey("source"))
+                        fileConfig.setProperty("source", url.toString());
+
+                    configuration.addConfiguration(fileConfig);
                 }
             }
         } catch (Exception ex) {

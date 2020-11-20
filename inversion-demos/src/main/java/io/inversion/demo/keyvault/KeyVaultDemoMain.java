@@ -25,7 +25,7 @@ import com.azure.security.keyvault.secrets.models.SecretProperties;
 import io.inversion.Api;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDb;
-import io.inversion.spring.InversionMain;
+import io.inversion.spring.main.InversionMain;
 import io.inversion.utils.Config;
 import io.inversion.utils.Utils;
 import org.apache.commons.configuration2.CompositeConfiguration;

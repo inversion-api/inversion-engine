@@ -35,80 +35,9 @@ public class DbPostAction extends Action<DbPostAction> {
      * When true, forces PUTs to have an resourceKey in the URL
      */
     protected boolean strictRest     = false;
-    protected boolean expandResponse = true;
+    protected boolean getResponse    = true;
 
-    /*
-     * Collapses nested objects so that relationships can be preserved but the fields
-     * of the nested child objects are not saved (except for FKs back to the parent
-     * object in the case of a ONE_TO_MANY relationship).
-     *
-     * This is intended to be used as a reciprocal to GetHandler "expands" when
-     * a client does not want to scrub their json model before posting changes to
-     * the parent document back to the parent collection.
-     */
-    public static void collapse(JSNode parent, boolean collapseAll, Set collapses, String path) {
-        for (String key : parent.keySet()) {
-            Object value = parent.get(key);
 
-            if (collapseAll || collapses.contains(nextPath(path, key))) {
-                if (value instanceof JSArray) {
-                    JSArray children = (JSArray) value;
-                    if (children.length() == 0)
-                        parent.remove(key);
-
-                    for (int i = 0; i < children.length(); i++) {
-                        if (children.get(i) == null) {
-                            children.remove(i);
-                            i--;
-                            continue;
-                        }
-
-                        if (children.get(i) instanceof JSArray || !(children.get(i) instanceof JSNode)) {
-                            children.remove(i);
-                            i--;
-                            continue;
-                        }
-
-                        JSNode child = children.getNode(i);
-                        for (String key2 : child.keySet()) {
-                            if (!key2.equalsIgnoreCase("href")) {
-                                child.remove(key2);
-                            }
-                        }
-
-                        if (child.keySet().size() == 0) {
-
-                            children.remove(i);
-                            i--;
-                            continue;
-                        }
-                    }
-                    if (children.length() == 0)
-                        parent.remove(key);
-
-                } else if (value instanceof JSNode) {
-                    JSNode child = (JSNode) value;
-                    for (String key2 : child.keySet()) {
-                        if (!key2.equalsIgnoreCase("href")) {
-                            child.remove(key2);
-                        }
-                    }
-                    if (child.keySet().size() == 0)
-                        parent.remove(key);
-                }
-            } else if (value instanceof JSArray) {
-                JSArray children = (JSArray) value;
-                for (int i = 0; i < children.length(); i++) {
-                    if (children.get(i) instanceof JSNode && !(children.get(i) instanceof JSArray)) {
-                        collapse(children.getNode(i), collapseAll, collapses, nextPath(path, key));
-                    }
-                }
-            } else if (value instanceof JSNode) {
-                collapse((JSNode) value, collapseAll, collapses, nextPath(path, key));
-            }
-
-        }
-    }
 
     public static String nextPath(String path, String next) {
         return Utils.empty(path) ? next : path + "." + next;
@@ -154,67 +83,20 @@ public class DbPostAction extends Action<DbPostAction> {
         List<String> resourceKeys = req.getCollection().getDb().patch(req.getCollection(), req.getJson().asNodeList());
 
         if (resourceKeys.size() > 0) {
+            res.withStatus(Status.SC_201_CREATED);
             String location = Chain.buildLink(req.getCollection(), Utils.implode(",", resourceKeys), null);
             res.withHeader("Location", location);
+
+            if(isGetResponse()){
+                Response getResponse = req.getChain().getEngine().service("GET", location);
+                res.getJson().put("data", getResponse.getData());
+            }
         }
-
+        else
+        {
+            res.withStatus(Status.SC_404_NOT_FOUND);
+        }
     }
-
-    //   String getHref(Object hrefOrNode)
-    //   {
-    //      if (hrefOrNode instanceof JSNode)
-    //         hrefOrNode = ((JSNode) hrefOrNode).get("href");
-    //
-    //      if (hrefOrNode instanceof String)
-    //         return (String) hrefOrNode;
-    //
-    //      return null;
-    //   }
-
-    //   Map getKey(Collection table, Object node)
-    //   {
-    //      if (node instanceof JSNode)
-    //         node = ((JSNode) node).getString("href");
-    //
-    //      if (node instanceof String)
-    //         return table.decodeResourceKey((String) node);
-    //
-    //      return null;
-    //   }
-
-    //   Map mapTo(Map srcRow, Index srcCols, Index destCols)
-    //   {
-    //      if (srcCols.size() != destCols.size() && destCols.size() == 1)
-    //      {
-    //         //when the foreign key is only one column but the related primary key is multiple
-    //         //columns, encode the FK as an resourceKey.
-    //         String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
-    //
-    //         for(Object key : srcRow.keySet())
-    //            srcRow.remove(key);
-    //
-    //         srcRow.put(destCols.getProperty(0).getColumnName(), resourceKey);
-    //      }
-    //      else
-    //      {
-    //         if (srcCols.size() != destCols.size())
-    //            throw ApiException.new500InternalServerError("Unable to map from index '{}' to '{}'", srcCols.toString(), destCols);
-    //
-    //         if (srcRow == null)
-    //            return Collections.EMPTY_MAP;
-    //
-    //         if (srcCols != destCols)
-    //         {
-    //            for (int i = 0; i < srcCols.size(); i++)
-    //            {
-    //               String key = srcCols.getProperty(i).getColumnName();
-    //               Object value = srcRow.remove(key);
-    //               srcRow.put(destCols.getProperty(i).getColumnName(), value);
-    //            }
-    //         }
-    //      }
-    //      return srcRow;
-    //   }
 
     public void upsert(Request req, Response res) throws ApiException {
         if (strictRest) {
@@ -259,25 +141,33 @@ public class DbPostAction extends Action<DbPostAction> {
         //-- take all of the hrefs and combine into a
         //-- single href for the "Location" header
 
-        JSArray array = new JSArray();
-        res.getJson().put("data", array);
+        //JSArray array = new JSArray();
+        //res.getJson().put("data", array);
 
-        res.withStatus(Status.SC_201_CREATED);
         StringBuilder buff = new StringBuilder();
         for (Object key : resourceKeys) {
             String resourceKey = key + "";
             String href        = Chain.buildLink(collection, resourceKey, null);
-            array.add(new JSNode("href", href));
+            res.data().add(new JSNode("href", href));
 
             String nextId = href.substring(href.lastIndexOf("/") + 1);
             buff.append(",").append(nextId);
         }
 
         if (buff.length() > 0) {
+            res.withStatus(Status.SC_201_CREATED);
             String location = Chain.buildLink(collection, buff.substring(1, buff.length()), null);
             res.withHeader("Location", location);
-        }
 
+            if(isGetResponse()){
+                Response getResponse = req.getChain().getEngine().service("GET", location);
+                res.getJson().put("data", getResponse.getData());
+            }
+        }
+        else
+        {
+            res.withStatus(Status.SC_204_NO_CONTENT);
+        }
     }
 
     /**
@@ -606,6 +496,8 @@ public class DbPostAction extends Action<DbPostAction> {
         return returnList;
     }
 
+
+
     Term asTerm(Map row) {
         Term t = null;
         for (Object key : row.keySet()) {
@@ -641,13 +533,86 @@ public class DbPostAction extends Action<DbPostAction> {
         return this;
     }
 
-    public boolean isExpandResponse() {
-        return expandResponse;
+    public boolean isGetResponse() {
+        return getResponse;
     }
 
-    public DbPostAction withExpandResponse(boolean expandResponse) {
-        this.expandResponse = expandResponse;
+    public DbPostAction withGetResponse(boolean expandResponse) {
+        this.getResponse = expandResponse;
         return this;
+    }
+
+    /*
+     * Collapses nested objects so that relationships can be preserved but the fields
+     * of the nested child objects are not saved (except for FKs back to the parent
+     * object in the case of a ONE_TO_MANY relationship).
+     *
+     * This is intended to be used as a reciprocal to GetHandler "expands" when
+     * a client does not want to scrub their json model before posting changes to
+     * the parent document back to the parent collection.
+     */
+    public static void collapse(JSNode parent, boolean collapseAll, Set collapses, String path) {
+        for (String key : parent.keySet()) {
+            Object value = parent.get(key);
+
+            if (collapseAll || collapses.contains(nextPath(path, key))) {
+                if (value instanceof JSArray) {
+                    JSArray children = (JSArray) value;
+                    if (children.length() == 0)
+                        parent.remove(key);
+
+                    for (int i = 0; i < children.length(); i++) {
+                        if (children.get(i) == null) {
+                            children.remove(i);
+                            i--;
+                            continue;
+                        }
+
+                        if (children.get(i) instanceof JSArray || !(children.get(i) instanceof JSNode)) {
+                            children.remove(i);
+                            i--;
+                            continue;
+                        }
+
+                        JSNode child = children.getNode(i);
+                        for (String key2 : child.keySet()) {
+                            if (!key2.equalsIgnoreCase("href")) {
+                                child.remove(key2);
+                            }
+                        }
+
+                        if (child.keySet().size() == 0) {
+
+                            children.remove(i);
+                            i--;
+                            continue;
+                        }
+                    }
+                    if (children.length() == 0)
+                        parent.remove(key);
+
+                } else if (value instanceof JSNode) {
+                    JSNode child = (JSNode) value;
+                    for (String key2 : child.keySet()) {
+                        if (!key2.equalsIgnoreCase("href")) {
+                            child.remove(key2);
+                        }
+                    }
+                    if (child.keySet().size() == 0)
+                        parent.remove(key);
+                }
+            } else if (value instanceof JSArray) {
+                JSArray children = (JSArray) value;
+                for (int i = 0; i < children.length(); i++) {
+                    if (children.get(i) instanceof JSNode && !(children.get(i) instanceof JSArray)) {
+                        collapse(children.getNode(i), collapseAll, collapses, nextPath(path, key));
+                    }
+                }
+            } else if (value instanceof JSNode) {
+                collapse((JSNode) value, collapseAll, collapses, nextPath(path, key));
+            }
+
+        }
     }
 
 }

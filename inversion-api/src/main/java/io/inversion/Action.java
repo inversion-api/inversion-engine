@@ -43,13 +43,17 @@ package io.inversion;
  * You can override <code>run</code> to process all Requests this Action is selected for, or you can override any of the HTTP method specific doGet/Post/Put/Patch/Delete() handlers
  * if you want to segregate your business logic by HTTP method.
  */
-public abstract class Action<A extends Action> extends Rule<A> {
+public class Action<A extends Action> extends Rule<A> {
     public Action() {
 
     }
 
-    public Action(String methods, String... includePaths) {
-        withIncludeOn(methods, includePaths);
+    /**
+     * @param methods a comma separated list of http methods to match
+     * @param paths a comma separated list of url paths to match
+     */
+    public Action(String methods, String paths) {
+        withIncludeOn(methods, paths);
     }
 
     /**

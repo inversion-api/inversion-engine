@@ -50,31 +50,31 @@ import java.util.stream.Collectors;
  */
 public abstract class Db<T extends Db> {
 
-    protected final Logger                log            = LoggerFactory.getLogger(getClass());
+    /**
+     * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves
+     */
+    protected static final Set<String>           reservedParams = Collections.unmodifiableSet(new TreeSet<>(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands")));
+    protected final        Logger                log            = LoggerFactory.getLogger(getClass());
     /**
      * The Collections that are the REST interface to the backend tables (or buckets, folders, containers etc.) this Db exposes through an Api.
      */
-    protected final ArrayList<Collection> collections    = new ArrayList<>();
+    protected final        ArrayList<Collection> collections    = new ArrayList<>();
     /**
      * A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflicitive Collection creation.
      */
-    protected final Map<String, String>   includeTables  = new HashMap<>();
+    protected final        Map<String, String>   includeTables  = new HashMap<>();
     /**
      * OPTIONAL column names that should be included in RQL queries, upserts and patches.
      *
      * @see #filterOutJsonProperty(Collection, String)
      */
-    protected final Set<String>           includeColumns = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    protected final        Set<String>           includeColumns = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
     /**
      * OPTIONAL column names that should be excluded from RQL queries, upserts and patches.
      *
      * @see #filterOutJsonProperty(Collection, String)
      */
-    protected final Set<String>           excludeColumns = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-    /**
-     * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves
-     */
-    protected final Set<String>           reservedParams = new TreeSet<>(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands"));
+    protected final        Set<String>           excludeColumns = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
     final transient Set<Api> runningApis  = new HashSet<>();
     /**
      * Indicates that this Db should reflectively create and configure Collections to represent its underlying tables.
@@ -82,25 +82,25 @@ public abstract class Db<T extends Db> {
      * This would be false when an Api designer wants to very specifically configure an Api probably when the underlying db does not support the type of
      * reflection required.  For example, you may want to put specific Property and Relationship structure on top of an unstructured JSON document store.
      */
-    protected       boolean               bootstrap      = true;
+    protected       boolean  bootstrap    = true;
     /**
      * The name of his Db used for "name.property" style autowiring.
      */
-    protected       String                name           = null;
+    protected       String   name         = null;
     /**
      * A property that can be used to disambiguate different backends supported by a single subclass.
      * <p>
      * For example type might be "mysql" for a JdbcDb.
      */
-    protected       String                type           = null;
+    protected       String   type         = null;
     /**
      * Used to differentiate which Collection is being referred by a Request when an Api supports Collections with the same name from different Dbs.
      */
-    protected       Path                  endpointPath   = null;
+    protected       Path     endpointPath = null;
     /**
      * When set to true the Db will do everything it can to "work offline" logging commands it would have run but not actually running them.
      */
-    protected boolean dryRun = false;
+    protected       boolean  dryRun       = false;
     transient       boolean  firstStartup = true;
     transient       boolean  shutdown     = false;
 
@@ -345,8 +345,7 @@ public abstract class Db<T extends Db> {
                             //-- empty props for fields that were not
                             //-- returned from the db
                             Object val = row.remove(colName);
-                            if (!node.containsKey(attrName))
-                            {
+                            if (!node.containsKey(attrName)) {
                                 val = castDbOutput(attr, val);
                                 node.put(attrName, val);
                             }
@@ -961,13 +960,13 @@ public abstract class Db<T extends Db> {
 
     /**
      * Casts value as Property.type
+     *
      * @param property the property the value is assigned to
-     * @param value the value pulled from the DB
+     * @param value    the value pulled from the DB
      * @return <code>value</code> cast to <code>Property.type</code>
      * @see Utils#castDbOutput(String, Object)
      */
-    public Object castDbOutput(Property property, Object value)
-    {
+    public Object castDbOutput(Property property, Object value) {
         return Utils.castDbOutput(property != null ? property.getType() : null, value);
     }
 

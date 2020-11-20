@@ -2,7 +2,7 @@ package io.inversion.jdbc;
 
 import io.inversion.Api;
 import io.inversion.action.db.DbAction;
-import io.inversion.spring.InversionMain;
+import io.inversion.spring.main.InversionMain;
 import io.inversion.utils.Config;
 import io.inversion.utils.Utils;
 

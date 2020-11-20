@@ -192,7 +192,7 @@ public class EngineTest {
         assertEquals(new Path("api1"), req.getApiPath());
 
         api1.clearIncludeRuleMatchers();
-        api1.withIncludeOn(null, new Path("api1/v1/*"));
+        api1.withIncludeOn(null, "api1/v1/*");
 
         res = e.get("http://localhost:8080/some/servlet/path/api1/ep1");
         assertEquals(400, res.getStatusCode());
@@ -235,7 +235,7 @@ public class EngineTest {
                 .withAction(new MockAction("mock1"))//
                 .withEndpoint(new Endpoint("GET", "*").withName("ep1").withExcludeOn(null, "subpath/*"))//
                 .withEndpoint(new Endpoint("GET", "subpath/*").withName("ep2"))//
-                .withCollection(new Collection("any").withIncludeOn(null, new Path("{_collection}/[:_resource]/[:_relationship]/*")));
+                .withCollection(new Collection("any").withIncludeOn(null, "{_collection}/[:_resource]/[:_relationship]/*"));
 
         assertEndpointMatch("GET", "http://localhost/test/colKey/entKey/relKey", 200, "ep1", "", "colKey", "entKey", "relKey", api);
         assertEndpointMatch("GET", "http://localhost/test/subpath/colKey/entKey/relKey", 200, "ep2", "subpath", "colKey", "entKey", "relKey", api);
@@ -244,7 +244,7 @@ public class EngineTest {
                 .withAction(new MockAction("mock1"))//
                 .withEndpoint(new Endpoint("GET", "/[{collection:collection1|collection2}]/*").withName("ep1"))//
                 .withEndpoint(new Endpoint("GET", "subpath3/*").withName("ep2"))//
-                .withCollection(new Collection("any").withIncludeOn(null, new Path("{_collection}/[:_resource]/[:_relationship]/*")));
+                .withCollection(new Collection("any").withIncludeOn(null, "{_collection}/[:_resource]/[:_relationship]/*"));
 
         assertEndpointMatch("GET", "http://localhost/test/collection1/entKey/relKey", 200, "ep1", "", "collection1", "entKey", "relKey", api);
         assertEndpointMatch("GET", "http://localhost/test/collection2/entKey/relKey", 200, "ep1", "", "collection2", "entKey", "relKey", api);
@@ -264,25 +264,25 @@ public class EngineTest {
                 .withAction(new MockAction("mock1"))//
                 .withEndpoint(new Endpoint("GET", "ep1/*").withName("ep1"))//
                 .withEndpoint(new Endpoint("GET", "ep2/").withName("ep2"))//
-                .withEndpoint(new Endpoint().withName("ep3").withIncludeOn("GET", "bookstore/[books]/*", "bookstore/{_collection:categories|author}"))//
+                .withEndpoint(new Endpoint().withName("ep3").withIncludeOn("GET", "bookstore/[books]/*,bookstore/{_collection:categories|author}"))//
                 .withEndpoint(new Endpoint().withName("ep4").withIncludeOn("GET" //
                         , "other/data/[table1]"//
-                        , "other/data/[table2]/*"//
-                        , "other/data/[other]/data/*"//
-                        , "other/data/[data]/*"))//
+                        + ",other/data/[table2]/*"//
+                        + ",other/data/[other]/data/*"//
+                        + ",other/data/[data]/*"))//
                 .withEndpoint(new Endpoint("GET", "cardealer/[{type:ford|gm}]/*").withName("ep5"))//
                 .withEndpoint(new Endpoint().withName("ep6")//
                         .withIncludeOn("GET", "petstore/*")//
-                        .withExcludeOn(null, "petstore/rat", "petstore/snakes/bad", "petstore/cats/*"))//
+                        .withExcludeOn(null, "petstore/rat,petstore/snakes/bad,petstore/cats/*"))//
                 .withEndpoint(new Endpoint().withName("ep7")//
                         .withIncludeOn("GET", //
-                                "gamestop/[{collection:nintendo}]/", //
-                                "gamestop/[{collection:xbox}]/*"))//
+                                "gamestop/[{collection:nintendo}]/"//
+                                + ",gamestop/[{collection:xbox}]/*"))//
                 .withEndpoint(new Endpoint("GET", "carwash/{_collection:regular|delux}/*").withName("ep8"))//
-                .withCollection(new Collection("any").withIncludeOn(null, new Path("{_collection}/[:_resource]/[:_relationship]/*")));
+                .withCollection(new Collection("any").withIncludeOn(null, "{_collection}/[:_resource]/[:_relationship]/*"));
 
         Api api2 = new Api("other").withEndpoint("*", "otherEp");
-        api2.withCollection(new Collection("any").withIncludeOn(null, new Path("{_collection}/[:_resource]/[:_relationship]/*")));
+        api2.withCollection(new Collection("any").withIncludeOn(null, "{_collection}/[:_resource]/[:_relationship]/*"));
 
         assertEndpointMatch("GET", "http://localhost/test/ep1", 200, api1);
         assertEndpointMatch("GET", "/test/ep1", 200, api1);
@@ -367,6 +367,7 @@ public class EngineTest {
                         .withDb(new MockDb()));
 
         resp = engine.get("users");
+        resp.dump();
         assertEquals("tester1", resp.find("data.0.firstName"));
 
         engine = new Engine()//
