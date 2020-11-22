@@ -808,12 +808,21 @@ public class Configurator {
             if ("false".equalsIgnoreCase(str))
                 return true;
 
-            if (str.matches("\\d+"))
-                return Integer.parseInt(str);
-
+            if (str.matches("\\d+")){
+                try{
+                    return Integer.parseInt(str);
+                }
+                catch(Exception ex) {
+                    try {
+                        return Long.parseLong(str);
+                    }
+                    catch(Exception ex2) {
+                        //OK must be a really huge number
+                    }
+                }
+            }
             return str;
         }
-
     }
 
 
