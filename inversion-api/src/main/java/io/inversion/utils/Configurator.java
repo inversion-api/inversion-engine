@@ -99,7 +99,7 @@ public class Configurator {
      * <p>
      * Put values here in lower case.
      */
-    public static final String[] MASKED_FIELDS = new String[]{"pass", "password", "credentials", "secret", "secretkey"};
+    public static final Object[] MASKED_FIELDS = new Object[]{"pass", "password", "credentials", "secret", "secretkey"};
 
     public static final String MASK = "**************";
 
@@ -698,8 +698,16 @@ public class Configurator {
                             if (field != null) {
                                 applied.put(key, valueStr);
                                 Class type = field.getType();
-                                if (type.isAssignableFrom(value.getClass())) {
-                                    field.set(bean, value);
+                                if (value == null || type.isAssignableFrom(value.getClass())) {
+                                    if(value == null){
+                                        if(valueStr == null || valueStr.trim().equals("") || valueStr.trim().toLowerCase().equals("null"))
+                                            field.set(bean, null);
+                                        else
+                                            log.warn("Unable to determine value for property '{}={}'", prop, valueStr);
+                                    } else {
+                                        field.set(bean, value);
+                                    }
+
                                 } else if (java.util.Collection.class.isAssignableFrom(type)) {
                                     java.util.Collection list = (java.util.Collection) cast(key, valueStr, type, field, beans);
                                     ((java.util.Collection) field.get(bean)).addAll(list);
