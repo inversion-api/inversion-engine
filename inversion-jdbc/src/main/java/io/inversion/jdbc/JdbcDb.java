@@ -252,7 +252,7 @@ public class JdbcDb extends Db<JdbcDb> {
             return type;
 
         String url = getUrl();
-        url = url != null ? url : getUrl();
+        url = url != null ? url : getDriver();
 
         if (url != null) {
             if (url.contains("mysql"))
@@ -271,7 +271,14 @@ public class JdbcDb extends Db<JdbcDb> {
                 return "h2";
         }
 
-        return null;
+
+        log.warn("Unable to determine db type. type='{}', driver='{}', url='{}'", this.type, this.driver, this.url);
+
+        if(Chain.peek() != null) {
+            Chain.peek().getResponse().debug("Unable to determine db type. type='{}', driver='{}', url='{}'", this.type, this.driver, this.url);
+        }
+        
+        return "UNKNOWN";
     }
 
     @Override
