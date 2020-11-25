@@ -311,7 +311,7 @@ public class Utils {
      *
      * @param format a string containing "{}" arg placeholders of formatted per java.util.Formatter
      * @param args objects that will be replaced into their <code>format</code> placeholders.
-     * @return
+     * @return the formatted string
      */
     public static String format(String format, Object... args) {
 

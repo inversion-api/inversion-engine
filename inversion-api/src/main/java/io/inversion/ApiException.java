@@ -68,7 +68,7 @@ public class ApiException extends RuntimeException implements Status {
         String msg = httpStatus != null ? httpStatus : "";
 
         if(messageFormat != null || (args != null  && args.length > 0))
-            msg += " " + Utils.format(messageFormat, args);
+            msg += " - " + Utils.format(messageFormat, args);
 
         if (cause != null) {
             String causeStr = Utils.getShortCause(cause);
