@@ -14,8 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.spring.support;
+package io.inversion.spring.config;
 
+import io.inversion.Api;
 import io.inversion.Engine;
 import io.inversion.utils.Config;
 import io.inversion.utils.Utils;
@@ -25,6 +26,7 @@ import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.EnvironmentAware;
@@ -53,12 +55,27 @@ import static org.springframework.beans.factory.config.AutowireCapableBeanFactor
 public class InversionRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware, BeanFactoryAware {
     Environment environment = null;
     BeanFactory beanFactory = null;
+    public static Api[] apis = null;
 
     public InversionRegistrar()
     {
         System.out.println("InversionRegistrar()<>");
     }
 
+
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+        this.beanFactory = beanFactory;
+
+        if(apis != null && apis.length > 0) {
+            ConfigurableBeanFactory config = (ConfigurableBeanFactory)beanFactory;
+            for (Api api : apis) {
+                String name = api.getName();
+                config.registerSingleton(name, api);
+            }
+        };
+
+    }
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
@@ -123,8 +140,4 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
         }
     }
 
-    @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-        this.beanFactory = beanFactory;
-    }
 }

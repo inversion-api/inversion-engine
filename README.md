@@ -196,14 +196,14 @@ from Jitpack, it is not recommended.  Please consider only use Jitpack for pulli
 You can build an API that connects to your own DB back end with just a few lines of Java code.
 
 ```java
-InversionApp.run(new Api()
+InversionMain.run(new Api()
             .withName("demo")
-            .withDb(new SqlDb("dbNickname", 
+            .withDb(new JdbcDb("dbNickname", 
                               "${YOUR_JDBC_DRIVER}", 
                               "${YOUR_JDBC_URL}", 
                               "${YOUR_JDBC_USERNAME}", 
                               "${YOUR_JDBC_PASSWORD"))
-            .withEndpoint("GET,PUT,POST,DELETE", "/*", new RestAction()));
+            .withEndpoint("GET,PUT,POST,DELETE", "/*", new DbAction()));
 ```
 
 ### Configuration Instead of Code
@@ -214,20 +214,20 @@ The properties file below will create an identical API to the Java coded example
 Place the example below into a file "./inversion.properties". 
 
 ```properties
-demo.class=io.inversion.model.Api
+demo.class=io.inversion.Api
 
-db.class=io.inversion.action.sql.SqlDb
+db.class=io.inversion.jdbc.JdbcDb
 db.driver=${YOUR_JDBC_DRIVER}
 db.url=${YOUR_JDBC_URL}
 db.user=${YOUR_JDBC_USERNAME}
 db.pass=${YOUR_JDBC_PASSWORD}
 
-ep.class=io.inversion.model.Endpoint
+ep.class=io.inversion.Endpoint
 ep.methods=GET,PUT,POST,DELETE
 ep.path=/*
 ep.actions=rest
 
-rest.class=io.inversion.action.rest.RestAction
+rest.class=io.inversion.action.db.DbAction
 ```
 
 Then launch Inversion and it will wire up your API from the configuration.  If 

@@ -133,45 +133,75 @@ import java.util.zip.GZIPOutputStream;
 public class RestClient {
 
     static final    Log                                    log                   = LogFactory.getLog(RestClient.class);
+
+    /**
+     * The RestClient name that will be for property decoding.
+     * @see Configurator
+     */
+    protected       String      name          = null;
+
     /**
      * Always forward these headers.
      *
      * @see #shouldForwardHeader(String)
+     * @see <a href="https://en.wikipedia.org/wiki/List_of_HTTP_header_fields">HTTP Header Fields</a>
+     * @see <a href="https://w3c.github.io/trace-context">W3C Trace Context</a>
+     * @see <a href="https://docs.amazonaws.cn/en_us/elasticloadbalancing/latest/application/load-balancer-request-tracing.html">Aws Request Tracing</a>
+     * @see <a href="https://docs.microsoft.com/en-us/azure/azure-monitor/app/correlation">Azure Request Correlation</a>
+     * @see <a href="https://github.com/dotnet/runtime/blob/master/src/libraries/System.Diagnostics.DiagnosticSource/src/HttpCorrelationProtocol.md">MS Http Corolation Protocol - Deprecated</a>
      */
-    protected final Set                                    includeForwardHeaders = new HashSet(Arrays.asList("authorization", "cookie", "x-forwarded-host", " x-forwarded-proto"));
+    protected final Set                                    includeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)//
+            , "authorization", "cookie" //-- can't login to downstream services if you don't forward the authorization
+            , "x-forwarded-for", "x-forwarded-host", " x-forwarded-proto" //-- these are generic for servers hosted behind a reverse proxy/load balancer etc.
+            , "x-request-id", "x-correlation-id" //-- common but not standard
+            , "traceparent" //https://w3c.github.io/trace-context/
+            , "request-id" //deprecated but from correlation HTTP protocol, also called Request-Id standard: https://github.com/dotnet/runtime/blob/master/src/libraries/System.Diagnostics.DiagnosticSource/src/HttpCorrelationProtocol.md
+            , "x-ms-request-id", "x-ms-request-root-id", "request-context"//-- these are usefull to azure app insights
+            , "X-Amzn-Trace-Id" //-- for aws tracing @see https://docs.amazonaws.cn/en_us/elasticloadbalancing/latest/application/load-balancer-request-tracing.html
+    );
+
     /**
      * Never forward these headers.
      *
      * @see #shouldForwardHeader(String)
      */
-    protected final Set                                    excludeForwardHeaders = new HashSet(Arrays.asList("content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host"));
+    protected final Set                                    excludeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER) //
+             ,"content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host");
+
+    /**
+     * Indicates the headers from the root inbound Request being handled on this Chain should be included on this request minus any <code>excludeForwardHeaders</code>.
+     * <p>
+     * Default value is true.
+     */
+    protected       boolean                                forwardHeaders        = true;
+
     /**
      * Headers that are always sent regardless of <code>forwardHeaders</code>, <code>includeForwardHeaders</code> and <code>excludeForwardHeaders</code> state.
      * <p>
      * These headers will overwrite any caller supplied or forwarded header with the same key, not append to the value list.
+     * <p>
+     * This list is initially empty.
      */
     protected final ArrayListValuedHashMap<String, String> forcedHeaders         = new ArrayListValuedHashMap();
+
     /**
      * Always forward these params.
      *
      * @see #shouldForwardParam(String)
      */
-    protected final Set<String>                            whitelistParams       = new HashSet();
+    protected final Set<String> includeParams = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     /**
      * Never forward these params.
      *
      * @see #shouldForwardParam(String)
      */
-    protected final Set<String>                            blacklistParams       = new HashSet();
-    protected       String                                 name                  = null;
+    protected final Set<String> excludeParams = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+
     /**
      * Optional base url that will be prepended to the url arg of any calls assuming that the url arg supplied is a relative path and not an absolute url.
      */
     protected       String                                 url                   = null;
-    /**
-     * Indicates the headers from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted headers.
-     */
-    protected       boolean                                forwardHeaders        = false;
+
     /**
      * Indicates that a request body should be gzipped and the content-encoding header should be sent with value "gzip".
      * <p>
@@ -978,9 +1008,14 @@ public class RestClient {
     }
 
     protected boolean shouldForwardHeader(String headerKey) {
+        if(headerKey == null)
+            return false;
+
+        headerKey = headerKey.trim();
+
         return forwardHeaders //
-                && (includeForwardHeaders.size() == 0 || includeForwardHeaders.contains(headerKey.toLowerCase())) //
-                && (!excludeForwardHeaders.contains(headerKey.toLowerCase()));
+                && (includeForwardHeaders.size() == 0 || includeForwardHeaders.contains(headerKey)) //
+                && (!excludeForwardHeaders.contains(headerKey));
     }
 
     public RestClient withForwardHeaders(boolean forwardHeaders) {
@@ -994,7 +1029,7 @@ public class RestClient {
 
     public RestClient withIncludeForwardHeaders(String... headerKeys) {
         for (int i = 0; headerKeys != null && i < headerKeys.length; i++)
-            includeForwardHeaders.add(headerKeys[i].toLowerCase());
+            includeForwardHeaders.add(headerKeys[i]);
         return this;
     }
 
@@ -1010,7 +1045,7 @@ public class RestClient {
 
     public RestClient withExcludeForwardHeaders(String... headerKeys) {
         for (int i = 0; headerKeys != null && i < headerKeys.length; i++)
-            excludeForwardHeaders.add(headerKeys[i].toLowerCase());
+            excludeForwardHeaders.add(headerKeys[i]);
         return this;
     }
 
@@ -1026,8 +1061,8 @@ public class RestClient {
 
     protected boolean shouldForwardParam(String param) {
         return forwardParams //
-                && (whitelistParams.size() == 0 || whitelistParams.contains(param.toLowerCase())) //
-                && (!blacklistParams.contains(param.toLowerCase()));
+                && (includeParams.size() == 0 || includeParams.contains(param)) //
+                && (!excludeParams.contains(param));
     }
 
     public RestClient withForwardParams(boolean forwardParams) {
@@ -1035,19 +1070,35 @@ public class RestClient {
         return this;
     }
 
-    public Set getWhitelistParams() {
-        return new HashSet(whitelistParams);
+    public Set getIncludeParams() {
+        return new HashSet(includeParams);
     }
 
-    public RestClient withWhitelistedParams(String... paramNames) {
+    public RestClient withIncludeParams(String... paramNames) {
         for (int i = 0; paramNames != null && i < paramNames.length; i++)
-            whitelistParams.add(paramNames[i].toLowerCase());
+            includeParams.add(paramNames[i]);
         return this;
     }
 
-    public RestClient removeWhitelistParam(String param) {
+    public RestClient removeIncludeParam(String param) {
         if (param != null)
-            whitelistParams.remove(param);
+            includeParams.remove(param);
+        return this;
+    }
+
+    public Set getExcludeParams() {
+        return new HashSet(excludeParams);
+    }
+
+    public RestClient withExcludeParams(String... paramNames) {
+        for (int i = 0; paramNames != null && i < paramNames.length; i++)
+            excludeParams.add(paramNames[i]);
+        return this;
+    }
+
+    public RestClient removeExcludeParam(String param) {
+        if (param != null)
+            excludeParams.remove(param);
         return this;
     }
 

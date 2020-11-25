@@ -88,7 +88,7 @@ public class Response {
             Object msg = msgs[i];
 
             if (msg == null)
-                return;
+                continue;
 
             if (msg instanceof byte[])
                 msg = new String((byte[]) msg);
@@ -151,13 +151,13 @@ public class Response {
         return this;
     }
 
-    public Response debug(Object... msgs) {
-        write(debug, msgs);
+    public Response debug(String format, Object... args) {
+        write(debug, Utils.format(format, args));
         return this;
     }
 
     public Response out(Object... msgs) {
-        debug(msgs);
+        debug(Utils.format(null, msgs));
         write(out, msgs);
         return this;
     }

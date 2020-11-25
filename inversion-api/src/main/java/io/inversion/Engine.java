@@ -713,7 +713,7 @@ public class Engine extends Rule<Engine> {
         if (!"OPTIONS".equals(method)) {
             if (debug) {
                 res.debug("\r\n<< response -------------\r\n");
-                res.debug(res.getStatusCode());
+                res.debug(res.getStatusCode() + "");
             }
 
             if (!Utils.empty(res.getRedirect())) {

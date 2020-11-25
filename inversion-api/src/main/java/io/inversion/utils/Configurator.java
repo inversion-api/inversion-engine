@@ -117,12 +117,13 @@ public class Configurator {
      */
     public synchronized void configure(Engine engine, Configuration configuration) {
         try {
-            Properties       props = new Properties();
+            Map<String, String>       configProps = new HashMap();
             Iterator<String> keys  = configuration.getKeys();
             while (keys.hasNext()) {
                 String key = keys.next();
-                props.put(key, configuration.getString(key));
+                configProps.put(key, configuration.getString(key));
             }
+            dump("all config properties", configProps);
 
 
             // decode everything into a map
@@ -134,17 +135,22 @@ public class Configurator {
 
             Encoder primaryEncoder = new Encoder();
             primaryEncoder.encode(engine);
-            dump(primaryEncoder.props);
+            dump("properties found by encoding initial model", primaryEncoder.props);
 
+            //-- reverse the encoder bean-to-name map to be used for decoding
             Map<String, Object> beans = new HashMap();
             for (Object bean : primaryEncoder.names.keySet())
                 beans.put(primaryEncoder.names.get(bean), bean);
 
+            //-- wires in all config properties to the existing model
+            //-- including instantiating any beans that were not part of the initial model
             Decoder primaryDecoder = new Decoder();
             primaryDecoder.beans.putAll(beans);
-            primaryDecoder.decode(props);
+            primaryDecoder.decode(configProps);
 
-            //-- these a shortcut bootstrapping options for
+            dump("properties applied in primary decoding", primaryDecoder.applied);
+
+            //-- this is a shortcut bootstrapping options for
             //-- apis configured primarily through configuration
             if (primaryDecoder.findBeans(Api.class).size() == 0)
                 primaryDecoder.beans.put("api", new Api());
@@ -187,9 +193,9 @@ public class Configurator {
             Encoder secondaryEncoder = new Encoder();
             secondaryEncoder.encode(engine);
 
-            dump(secondaryEncoder.props);
+            dump("re-encoded properties after db startup", secondaryEncoder.props);
 
-            //-- reverse the bean to key map
+            //-- reverse the encoder bean-to-name map to be used for decoding
             beans = new HashMap();
             for (Object bean : secondaryEncoder.names.keySet())
                 beans.put(secondaryEncoder.names.get(bean), bean);
@@ -197,26 +203,28 @@ public class Configurator {
             //-- remove all the props that were set in the
             //-- primary decoding so you don't apply them twice
             for (String key : primaryDecoder.applied.keySet())
-                props.remove(key);
+                configProps.remove(key);
 
-            Decoder seconderyDecoder = new Decoder();
-            seconderyDecoder.beans.putAll(beans);
-            seconderyDecoder.decode(props);
+            Decoder secondaryDecoder = new Decoder();
+            secondaryDecoder.beans.putAll(beans);
+            secondaryDecoder.decode(configProps);
 
-            for (Rule rule : seconderyDecoder.getBeans(Rule.class)) {
+            for (Rule rule : secondaryDecoder.getBeans(Rule.class)) {
                 rule.checkLazyConfig();
             }
 
-            log.info("-- applied configuration properties ---------------------------");
-            Map<String, String> applied = new HashMap(primaryDecoder.applied);
-            applied.putAll(seconderyDecoder.applied);
+            dump("properties applied on second decoding after db startup", secondaryDecoder.applied);
 
-            for (String key : Decoder.sort(applied.keySet())) {
-                String value = applied.get(key);
-
-                log.info("   > " + maskOutput(key, value));
-            }
-            log.info("-- end applied configuration properties -----------------------");
+//            log.info("-- applied configuration properties ---------------------------");
+//            Map<String, String> applied = new HashMap(primaryDecoder.applied);
+//            applied.putAll(seconderyDecoder.applied);
+//
+//            for (String key : Decoder.sort(applied.keySet())) {
+//                String value = applied.get(key);
+//
+//                log.info("   > " + maskOutput(key, value));
+//            }
+//            log.info("-- end applied configuration properties -----------------------");
 
 
         } catch (Exception e) {
@@ -250,7 +258,7 @@ public class Configurator {
             STRINGIFIED_TYPES.add(Path.class);
         }
 
-        Properties                  props    = new Properties();
+        Map<String, String>                  props    = new HashMap();
         Map<Object, String>         names    = new HashMap<>();
 
         Set<String>                 encoded  = new HashSet();
@@ -259,7 +267,7 @@ public class Configurator {
             return encode0(object, props, names, defaults, encoded);
         }
 
-        static String encode0(Object object, Properties props, Map<Object, String> names, MultiKeyMap defaults, Set encoded) throws Exception {
+        static String encode0(Object object, Map<String, String>  props, Map<Object, String> names, MultiKeyMap defaults, Set encoded) throws Exception {
             try {
 
                 if (object == null)
@@ -519,9 +527,8 @@ public class Configurator {
 
     static class Decoder {
 
-        final Properties      props    = new Properties();
-        final TreeSet<String> propKeys = new TreeSet<>();
-
+        final Map<String, String> props   = new HashMap();
+        final TreeSet<String>  propKeys   = new TreeSet<>();
         final Map<String, Object> beans   = new HashMap<>();
         final Map<String, String> applied = new HashMap();
 
@@ -546,7 +553,7 @@ public class Configurator {
             return sorted;
         }
 
-        public void add(Properties props) {
+        public void add(Map props) {
             this.props.putAll(props);
             this.propKeys.addAll((Set) props.keySet());
         }
@@ -566,7 +573,7 @@ public class Configurator {
             propKeys.add(key);
         }
 
-        public void decode(Properties props) throws Exception {
+        public void decode(Map<String, String> props) throws Exception {
             add(props);
             decode();
         }
@@ -584,23 +591,6 @@ public class Configurator {
                         keys.add(key);
                 }
             }
-
-            for (Object p : System.getProperties().keySet()) {
-                String key = (String) p;
-                if (key.startsWith(beanPrefix) && !(key.endsWith(".class") || key.endsWith(".className"))) {
-                    if (!keys.contains(beanName))
-                        keys.add(key);
-                }
-            }
-
-            for (Object p : System.getenv().keySet()) {
-                String key = (String) p;
-                if (key.startsWith(beanPrefix) && !(key.endsWith(".class") || key.endsWith(".className"))) {
-                    if (!keys.contains(beanName))
-                        keys.add(key);
-                }
-            }
-
             return new ArrayList(keys);
         }
 
@@ -645,7 +635,7 @@ public class Configurator {
                     loaded.put(name, new HashMap<>());
                 }
                 if (key.lastIndexOf(".") < 0) {
-                    beans.put(key, cast0(props.getProperty(key)));
+                    beans.put(key, cast0(props.get(key)));
                 }
             }
 
@@ -671,7 +661,7 @@ public class Configurator {
                         //make sure this only has a single "."
                         if ((key.startsWith(beanName + ".") && key.lastIndexOf(".") == beanName.length())) {
                             String prop     = key.substring(key.lastIndexOf(".") + 1);
-                            String valueStr = props.getProperty(key);
+                            String valueStr = props.get(key);
 
                             if (valueStr != null)
                                 valueStr = valueStr.trim();
@@ -767,11 +757,6 @@ public class Configurator {
                         }
                     }
                 }
-            }
-
-            for (String name : loaded.keySet()) {
-                Object bean       = beans.get(name);
-                Map    loadedPros = loaded.get(name);
             }
         }
 
@@ -928,35 +913,25 @@ public class Configurator {
         return subtype;
     }
 
-    static void dump(Properties autoProps) {
+    static void dump(String title, Map<String, String>  properties) {
 
-        Properties sorted = new Properties() {
-            public Enumeration keys() {
-                Vector v = new Vector(Decoder.sort(keySet()));
-                return v.elements();
-            }
-        };
+        List<String> keys = Decoder.sort(properties.keySet());//new ArrayList(autoProps.keySet());
+        //Collections.sort(keys);
 
-        sorted.putAll(autoProps);
-        autoProps = sorted;
-
-        List<String> keys = Decoder.sort(autoProps.keySet());//new ArrayList(autoProps.keySet());
-        Collections.sort(keys);
-
-        log.debug("-- configuration ----------------------------------------------");
+        log.debug("-- START: " + title + " ----------------------------------------------");
         for (String key : keys) {
 
             if(key.startsWith("_anonymous_"))
                 continue;
 
-            String value = autoProps.getProperty(key);
+            String value = properties.get(key);
 
             if(value != null && value.startsWith("_anonymous_"))
                 continue;
 
             log.debug("   > " + maskOutput(key, value));
         }
-        log.debug("-- end configuration ------------------------------------------");
+        log.debug("-- END: " + title + " ----------------------------------------------");
 
     }
 

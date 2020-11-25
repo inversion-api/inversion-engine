@@ -38,6 +38,10 @@ public class MockAction extends Action<MockAction> {
 
     }
 
+    public MockAction(JSNode json) {
+        withJson(json);
+    }
+
     public MockAction(String status, JSNode json) {
         withStatus(status);
         withJson(json);

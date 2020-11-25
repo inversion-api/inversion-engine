@@ -22,6 +22,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.io.*;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -109,19 +110,21 @@ public class Utils {
         return null;
     }
 
+
     /**
-     * Fluent utility method for adding items to a list
+     * Fluent override of Collections.addAll()
      *
-     * @param list  the list to add items to
+     * @param collection  the collection to add items to
      * @param items the items to add
-     * @param <T>   a subclass of List
-     * @return the list passed in
+     * @param <T>   a subclass of Collection
+     * @return the collection passed in
+     * @see Collections#addAll(Collection, Object[])
      */
     @SuppressWarnings("unchecked")
-    public static <T extends List> T add(T list, Object... items) {
+    public static <T extends Collection> T add(T collection, Object... items) {
         if (items != null)
-            Collections.addAll(list, items);
-        return list;
+            Collections.addAll(collection, items);
+        return collection;
     }
 
     /**
@@ -290,6 +293,129 @@ public class Utils {
 
         return string;
     }
+
+    /**
+     * A heroically forgiving message string formatter.
+     * <p>
+     * This method attempts to safely toString all of the args and replaces
+     * any "{}" characters with "%s" before formatting via String.format(String, Object[]).
+     * <p>
+     * Any Throwables in the args list will have their short cause string appended to the end
+     * of the formatted message.
+     * <p>
+     * If the format is invalid or contains too few or too many args, the method will
+     * make sure that all arg toStrings are in the output.
+     * <p>
+     * The goal here is to make sure that no matter what happens, you will get something
+     * useful out of this message if not exactly to the format spec.
+     *
+     * @param format a string containing "{}" arg placeholders of formatted per java.util.Formatter
+     * @param args objects that will be replaced into their <code>format</code> placeholders.
+     * @return the formatted string
+     */
+    public static String format(String format, Object... args) {
+
+        if(format == null)
+            format = "";
+
+        if(args != null && args.length == 1 && args[0].getClass().isArray())
+        {
+            Object arg0 = args[0];
+            int size = Array.getLength(arg0);
+            args = new Object[size];
+            for(int i=0; i<size; i++) {
+                try {
+                    args[i] = Array.get(arg0, i);
+                }
+                catch(Exception ex) {
+                    args[i] = ex.getMessage();
+                }
+            }
+        }
+
+        if(args == null || args.length < 1)
+            return format;
+
+        format = format.trim();
+        if(format.isEmpty())
+        {
+            for(int i=0; i<args.length; i++) {
+                format += "{}";
+                if(i<args.length-1)
+                    format += ", ";
+            }
+        }
+
+        List<String> errors = new ArrayList();
+
+        try {
+
+            for(int i=0; i<args.length; i++) {
+                try{
+                    if(args[i] == null) {
+                        args[i] = "null";
+                    }
+                    else if (args[i] instanceof Throwable) {
+                        String cause = Utils.getShortCause((Throwable)args[i]);
+                        if(cause == null)
+                            cause = "UNKNOWN NULL CAUSE";
+
+                        String message = cause;
+                        if(cause.indexOf("\n") > 1){
+                            message = cause.substring(0, cause.indexOf("\n")).trim();
+                        }
+                        errors.add(cause);
+                        args[i] = message;
+                    }
+                    else if (args[i] instanceof byte[]) {
+                        args[i] = new String((byte[]) args[i]);
+                    }
+                    else if (args[i].getClass().isArray()) {
+                        args[i] = "[" + format(null, args[i]) + "]";
+                    }
+                    else{
+                        //the objects to string could throw an error
+                        args[i] = args[i] + "";
+                    }
+                }
+                catch(Exception ex) {
+                    args[i] = "ERROR: " + ex.getMessage();
+                }
+            }
+
+            //-- most logging frameworks are using "{}" to indicate
+            //-- var placeholders these days
+            format = format.replace("{}", "%s");
+            format = String.format(format, args);
+
+            //the user could have supplied more args than there were {} so be friendly and add them to the output
+            for(int i=0; i<args.length; i++)
+            {
+                String arg = (String) args[i];
+                if(format.indexOf(arg) < 0)
+                    format += ", " + arg;
+            }
+        }
+        catch(Exception ex)
+        {
+            //probably a format error or incorrect number of args...attempt to do something useful anyway and not error
+            for(int i=0; args != null && i<args.length; i++)
+            {
+                try{
+                    format += ", {" + args[i] + "}";
+                }
+                catch(Exception ex2){
+                    format += ", {" + ex2.getMessage() + "}";
+                }
+            }
+        }
+        for(String error : errors)
+            format += "\r\n" + error;
+
+        return format;
+    }
+
+
 
     public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap<String, String> multiMap, String... kvPairs) {
         if (kvPairs != null && kvPairs.length % 2 > 0)

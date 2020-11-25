@@ -52,11 +52,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     /**
-     * Supports error message construction including variable replacement supporting
-     * logging framework "{}" placesholders OR java.util.Formatter style placeholders.
-     * <p> Any "{}" substrings in <code>messageFormat</code> are replaced with "{}"
-     * before <code>messageFormat</code> and <code>args</code> are passed to a
-     * java.util.Formatter.
+     * Constructs a useful error message.
      * <p>
      * All arguments are optional but if everything is null you will get an empty string.
      *
@@ -65,23 +61,14 @@ public class ApiException extends RuntimeException implements Status {
      * @param messageFormat the caller supplied error message with variable placeholders
      * @param args          variables to insert into <code>messageFormat</code>
      * @return a hopefully user friendly error message
+     * 
+     * @see Utils#format(String, Object...)
      */
     public static String getMessage(String httpStatus, Throwable cause, String messageFormat, Object... args) {
         String msg = httpStatus != null ? httpStatus : "";
-        if (messageFormat != null) {
-            if (args != null && args.length > 0) {
-                //-- most logging frameworks are using "{}" to indicate
-                //-- var placeholders these days
-                messageFormat = messageFormat.replace("{}", "%s");
 
-                StringWriter sw  = new StringWriter();
-                Formatter    fmt = new Formatter(sw);
-                fmt.format(Locale.getDefault(), messageFormat, args);
-                fmt.close();
-                messageFormat = sw.toString();
-            }
-            msg += msg.length() > 0 ? " - " + messageFormat : messageFormat;
-        }
+        if(messageFormat != null || (args != null  && args.length > 0))
+            msg += " - " + Utils.format(messageFormat, args);
 
         if (cause != null) {
             String causeStr = Utils.getShortCause(cause);
