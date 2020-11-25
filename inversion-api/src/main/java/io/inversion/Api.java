@@ -28,6 +28,11 @@ import java.util.List;
 public class Api extends Rule<Api> {
 
     /**
+     * An optional api version identifier
+     */
+    protected String version = null;
+
+    /**
      * The underlying data sources for the Api.
      */
     protected final           List<Db>          dbs         = new ArrayList<>();
@@ -330,6 +335,17 @@ public class Api extends Rule<Api> {
         this.url = url;
         return this;
     }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public Api withVersion(String version){
+        this.version = version;
+        return this;
+    }
+
+
 
     public Api withApiListener(ApiListener listener) {
         if (!listeners.contains(listener))
