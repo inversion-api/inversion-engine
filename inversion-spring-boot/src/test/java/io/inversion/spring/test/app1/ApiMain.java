@@ -16,7 +16,7 @@
  */
 package io.inversion.spring.test.app1;
 
-import io.inversion.spring.support.EnableInversion;
+import io.inversion.spring.config.EnableInversion;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;

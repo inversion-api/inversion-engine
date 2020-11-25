@@ -1,7 +1,7 @@
 package io.inversion.spring;
 
 import io.inversion.Engine;
-import io.inversion.spring.support.InversionServletConfig;
+import io.inversion.spring.config.InversionServletConfig;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

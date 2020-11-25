@@ -17,7 +17,8 @@
 package io.inversion.spring.main;
 
 import io.inversion.Api;
-import io.inversion.spring.support.EnableInversion;
+import io.inversion.spring.config.EnableInversion;
+import io.inversion.spring.config.InversionRegistrar;
 import io.inversion.utils.Utils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -29,7 +30,7 @@ import org.springframework.context.ApplicationContext;
  * <p>
  * This is a super simple way to launch an Api with an embedded Tomcat but if you are a
  * regular Spring Boot users and would like to wire your Api up an a more "spring-ish"
- * way, please check out <code>io.inversion.service.spring.config.EnableInversion</code>
+ * way, please check out <code>io.inversion.spring.config.EnableInversion</code>
  */
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @EnableInversion
@@ -57,20 +58,7 @@ public class InversionMain {
             if (context != null)
                 exit();
 
-            //SpringApplication app = new SpringApplication(InversionMain.class);
-//
-//            if(apis != null && apis.length > 0) {
-//                app.addInitializers(new ApplicationContextInitializer<ConfigurableApplicationContext>() {
-//                    @Override
-//                    public void initialize(ConfigurableApplicationContext ctx) {
-//                        for (Api api : apis) {
-//                            ((GenericApplicationContext)ctx).registerBean(Api.class, api);
-//                        }
-//                    }
-//                });
-//            };
-
-            //context = app.run(args);
+            InversionRegistrar.apis = apis;
             context = SpringApplication.run(InversionMain.class, args);
         } catch (Throwable e) {
             e = Utils.getCause(e);
