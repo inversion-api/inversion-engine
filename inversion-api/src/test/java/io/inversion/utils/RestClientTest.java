@@ -105,7 +105,7 @@ public class RestClientTest {
             }
         }.withUrl("http://somehost")//
                 .withForwardedParams(true)//
-                .withWhitelistedParams("param0", "param1", "param2", "param3", "param4");
+                .withIncludeParams("param0", "param1", "param2", "param3", "param4");
 
         Engine  engine         = new Engine();
         Request inboundRequest = new Request("GET", "http://localhost:8080/path?param1=param1val&param2=param2Val");

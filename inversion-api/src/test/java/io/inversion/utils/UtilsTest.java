@@ -23,6 +23,38 @@ import static org.junit.jupiter.api.Assertions.*;
 public class UtilsTest {
 
     @Test
+    public void testFormat()
+    {
+        String str = null;
+        str = Utils.format("format {}, {}", 1, 2, 3, 4);
+        System.out.println(str);
+        assertEquals("format 1, 2, 3, 4", str);
+
+        str = Utils.format("format {}, {}, {}", 1, "abc");
+        System.out.println(str);
+        assertEquals("format %s, %s, %s, {1}, {abc}", str);
+
+        str = Utils.format(null, "asdf", 1, "z");
+        System.out.println(str);
+        assertEquals("asdf, 1, z", str);
+
+
+        str = Utils.format("'{}'", "asdf", 1, null, "hello".getBytes(), new boolean[]{true, false, true});
+        System.out.println(str);
+        assertEquals("'asdf', 1, null, hello, [true, false, true]", str);
+
+
+        str = Utils.format(null, "asdf");
+        System.out.println(str);
+        assertEquals("asdf", str);
+
+        str = Utils.format(null, 12345);
+        System.out.println(str);
+        assertEquals("12345", str);
+    }
+
+
+    @Test
     public void testToDollarAmount1() {
         // test round down
         printAssertEquals("45.00", 45.000001);
