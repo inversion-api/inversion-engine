@@ -17,9 +17,7 @@
 
 package io.inversion.utils;
 
-import io.inversion.Chain;
-import io.inversion.Request;
-import io.inversion.Response;
+import io.inversion.*;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -49,9 +47,8 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -132,14 +129,7 @@ import java.util.zip.GZIPOutputStream;
  */
 public class RestClient {
 
-    static final    Log                                    log                   = LogFactory.getLog(RestClient.class);
-
-    /**
-     * The RestClient name that will be for property decoding.
-     * @see Configurator
-     */
-    protected       String      name          = null;
-
+    static final Log log = LogFactory.getLog(RestClient.class);
     /**
      * Always forward these headers.
      *
@@ -150,31 +140,22 @@ public class RestClient {
      * @see <a href="https://docs.microsoft.com/en-us/azure/azure-monitor/app/correlation">Azure Request Correlation</a>
      * @see <a href="https://github.com/dotnet/runtime/blob/master/src/libraries/System.Diagnostics.DiagnosticSource/src/HttpCorrelationProtocol.md">MS Http Corolation Protocol - Deprecated</a>
      */
-    protected final Set                                    includeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)//
+    protected final Set includeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)//
             , "authorization", "cookie" //-- can't login to downstream services if you don't forward the authorization
             , "x-forwarded-for", "x-forwarded-host", " x-forwarded-proto" //-- these are generic for servers hosted behind a reverse proxy/load balancer etc.
             , "x-request-id", "x-correlation-id" //-- common but not standard
             , "traceparent" //https://w3c.github.io/trace-context/
-            , "request-id" //deprecated but from correlation HTTP protocol, also called Request-Id standard: https://github.com/dotnet/runtime/blob/master/src/libraries/System.Diagnostics.DiagnosticSource/src/HttpCorrelationProtocol.md
+            , "request-id", "trace-id"  //deprecated but from correlation HTTP protocol, also called Request-Id standard: https://github.com/dotnet/runtime/blob/master/src/libraries/System.Diagnostics.DiagnosticSource/src/HttpCorrelationProtocol.md
             , "x-ms-request-id", "x-ms-request-root-id", "request-context"//-- these are usefull to azure app insights
             , "X-Amzn-Trace-Id" //-- for aws tracing @see https://docs.amazonaws.cn/en_us/elasticloadbalancing/latest/application/load-balancer-request-tracing.html
     );
-
     /**
      * Never forward these headers.
      *
      * @see #shouldForwardHeader(String)
      */
-    protected final Set                                    excludeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER) //
-             ,"content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host");
-
-    /**
-     * Indicates the headers from the root inbound Request being handled on this Chain should be included on this request minus any <code>excludeForwardHeaders</code>.
-     * <p>
-     * Default value is true.
-     */
-    protected       boolean                                forwardHeaders        = true;
-
+    protected final Set excludeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER) //
+            , "content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host");
     /**
      * Headers that are always sent regardless of <code>forwardHeaders</code>, <code>includeForwardHeaders</code> and <code>excludeForwardHeaders</code> state.
      * <p>
@@ -182,54 +163,63 @@ public class RestClient {
      * <p>
      * This list is initially empty.
      */
-    protected final ArrayListValuedHashMap<String, String> forcedHeaders         = new ArrayListValuedHashMap();
-
+    protected final ArrayListValuedHashMap<String, String> forcedHeaders = new ArrayListValuedHashMap();
     /**
      * Always forward these params.
      *
      * @see #shouldForwardParam(String)
      */
-    protected final Set<String> includeParams = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    protected final Set<String>     includeParams = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
     /**
      * Never forward these params.
      *
      * @see #shouldForwardParam(String)
      */
-    protected final Set<String> excludeParams = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-
+    protected final Set<String>     excludeParams = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    protected final List<RequestListener> requestListeners = new ArrayList<>();
+    protected final List<Consumer<Response>> responseListeners = new ArrayList<>();
+    /**
+     * The RestClient name that will be for property decoding.
+     *
+     * @see Configurator
+     */
+    protected String name = null;
+    /**
+     * Indicates the headers from the root inbound Request being handled on this Chain should be included on this request minus any <code>excludeForwardHeaders</code>.
+     * <p>
+     * Default value is true.
+     */
+    protected boolean forwardHeaders = true;
     /**
      * Optional base url that will be prepended to the url arg of any calls assuming that the url arg supplied is a relative path and not an absolute url.
      */
-    protected       String                                 url                   = null;
-
+    protected String url = null;
     /**
      * Indicates that a request body should be gzipped and the content-encoding header should be sent with value "gzip".
      * <p>
      * Default value is true.
      */
-    protected       boolean                                useCompression        = true;
+    protected boolean  useCompression     = true;
     /**
      * If <code>useCompression</code> is true, anything over this size in bytes will be compressed.
      * <p>
      * Default value is 1024.
      */
-    protected       int                                    compressionMinSize    = 1024;
+    protected int      compressionMinSize = 1024;
     /**
      * Indicates the params from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted params.
      */
-    protected       boolean                                forwardParams         = false;
+    protected boolean  forwardParams      = false;
     /**
      * The thread pool executor used to make asynchronous requests
      */
-    protected       Executor                               executor              = null;
-
+    protected Executor executor           = null;
     /**
      * The default maximum number of times to retry a request
      * <p>
      * The default value is zero meaning by default, failed requests will not be retried
      */
     protected int retryMax = 0;
-
     /**
      * The length of time before the first retry.
      * <p>
@@ -238,39 +228,44 @@ public class RestClient {
      * @see #computeTimeout(Request, Response)
      */
     protected int retryTimeoutMin = 10;
-
     /**
      * The maximum amount of time to wait before a single retry.
      *
      * @see #computeTimeout(Request, Response)
      */
     protected int retryTimeoutMax = 1000;
-
     /**
      * Parameter for default HttpClient configuration
      *
      * @see org.apache.http.client.config.RequestConfig.Builder#setSocketTimeout(int)
      */
     protected int socketTimeout = 30000;
-
     /**
      * Parameter for default HttpClient configuration
      *
      * @see org.apache.http.client.config.RequestConfig.Builder#setConnectTimeout(int)
      */
     protected int connectTimeout = 30000;
-
     /**
      * Parameter for default HttpClient configuration
      *
      * @see org.apache.http.client.config.RequestConfig.Builder#setConnectionRequestTimeout(int)
      */
     protected int requestTimeout = 30000;
-
     /**
      * The underlying HttpClient use for all network comms.
      */
     protected HttpClient httpClient = null;
+
+    /**
+     * The number of background executor threads.
+     * <p>
+     * A value &lt; 1 will cause all tasks to execute synchronously on the calling thread meaning
+     * the FutureResponse will always be complete upon return.
+     * <p>
+     * The default value is 5.
+     */
+    protected int threadsMax = 5;
 
     /**
      * The timer used it trigger retries.
@@ -401,9 +396,8 @@ public class RestClient {
             params = newParams;
         }
 
-        Request        request = buildRequest(method, url, params, (body != null ? body.toString() : null), headers, retryMax);
-        FutureResponse future  = buildFuture(request);
-
+        Request request = buildRequest(method, url, params, (body != null ? body.toString() : null), headers, retryMax);
+        FutureResponse future = buildFuture(request);
         submit(future);
 
         return future;
@@ -462,19 +456,14 @@ public class RestClient {
         final FutureResponse future = new FutureResponse(request) {
 
             public void run() {
-                Response response = null;
-                try {
-                    response = doRequest(request);
-                } finally {
-                    if (shouldRetry(request, response)) {
-                        request.incrementRetryCount();
-
-                        long timeout = computeTimeout(request, response);
-
-                        submitLater(this, timeout);
-                    } else {
-                        setResponse(response);
-                    }
+                Response response = doRequest(request);
+                if (shouldRetry(request, response)) {
+                    request.incrementRetryCount();
+                    long timeout = computeTimeout(request, response);
+                    submitLater(this, timeout);
+                } else {
+                    response.withEndAt(System.currentTimeMillis());
+                    setResponse(response);
                 }
             }
         };
@@ -527,25 +516,27 @@ public class RestClient {
      * @return a Response containing the server response data or error data.  Will not be null.
      */
     protected Response doRequest(Request request) {
-        String   url      = request.getUrl().toString();
-        Response response = new Response(url);
-
-        try {
-            return doRequest0(request);
-        } catch (Exception ex) {
-            response.withError(ex);
-        }
-
-        return response;
+        return doRequest0(request);
     }
 
-    Response doRequest0(Request request) throws Exception {
+    Response doRequest0(Request request) {
         String          m        = request.getMethod();
         HttpRequestBase req      = null;
         File            tempFile = null;
 
         String   url      = request.getUrl().toString();
         Response response = new Response(url);
+        response.withRequest(request);
+
+        for(RequestListener l : requestListeners){
+            Response replacementResponse = l.onRequest(request);
+            if(replacementResponse != null) {
+                if(replacementResponse.getUrl() == null)
+                    replacementResponse.withUrl(url);
+                if(replacementResponse.getRequest() == null)
+                    replacementResponse.withRequest(request);
+            }
+        }
 
         try {
             HttpClient   h = getHttpClient();
@@ -670,6 +661,9 @@ public class RestClient {
                     throw new Exception("Downloaded file is larger than the server says it should be, aborting this request");
                 }
             }
+        } catch (Exception ex) {
+            response.withError(ex);
+            response.withStatus(Status.SC_500_INTERNAL_SERVER_ERROR);
         } finally {
             if (req != null) {
                 try {
@@ -682,6 +676,22 @@ public class RestClient {
 
         return response;
     }
+
+    public RestClient onRequest(RequestListener requestListener) {
+        this.requestListeners.add(requestListener);
+        return this;
+    }
+
+    public RestClient onResponse(Consumer<Response> responseListener) {
+        this.responseListeners.add(responseListener);
+        return this;
+    }
+
+    public static interface RequestListener{
+        Response onRequest(Request request);
+    }
+
+
 
     /**
      * Computes an incremental retry backoff time between retryTimeoutMin and retryTimeoutMax.
@@ -714,7 +724,8 @@ public class RestClient {
      * @see #isNetworkException(Throwable)
      */
     protected boolean shouldRetry(Request request, Response response) {
-        return !response.isSuccess() //
+        return response != null && //
+                !response.isSuccess() //
                 && request.getRetryCount() < request.getRetryMax() //
                 && isNetworkException(response.getError());
     }
@@ -809,13 +820,16 @@ public class RestClient {
      * The host / base of the url can come from:
      * <ol>
      *   <li><code>callerSuppliedFullUrlOrRelativePath</code> if it starts with 'http://' or 'https://'
-     *   <li>a <code>${this.name}.url</code> env var or system property
+     *   <li>a <code>${this.name}.url</code> Config property
      *   <li><code>this.url</code>
      * </ol>
      * <p>
-     * After the url is found/concatenated, any "${paramName}" tokens found in the string are replaced with any URL variables
+     * After the url is found/concatenated, any ":paramName" tokens found in the string are replaced with any URL variables
      * form the current Inversion request via <code>Chain.top().getRequest().getParam(paramName)</code>.
-     * This allows outbound urls to be dynamically constructed based on the inbound url should that use case arise.
+     * This allows outbound urls to be dynamically constructed based on the inbound url should that use case arise.  This
+     * function is a counterpart to Path matching and even allows for optional components.
+     * <p>
+     * For example: this.url = "http://localhost:8080/api/:_collection/[:_resource]/[:_relationship]
      *
      * @param callerSuppliedFullUrlOrRelativePath string url path
      * @return the url to call
@@ -828,7 +842,10 @@ public class RestClient {
         } else {
             url = url != null ? url : "";
 
-            String prefix = Config.getString(getName() + ".url", this.url);
+            //-- generally "Config.getString(getName() + ".url")" should be redundant because the prop should
+            //-- have been set during wiring by the Configurator. This is here so RestClient can be used outside
+            //-- of a running Engine...like in test and such...or just generally as a utility.
+            String prefix = this.url != null ? this.url : Config.getString(getName() + ".url");
             if (!Utils.empty(prefix)) {
                 if (url.length() > 0 && !url.startsWith("/") && !prefix.endsWith("/"))
                     url = prefix + "/" + url;
@@ -837,26 +854,25 @@ public class RestClient {
             }
         }
 
-        if (Chain.peek() != null && url.indexOf('$') > 0) {
-            Request request = Chain.top().getRequest();
+        if (url == null)
+            throw ApiException.new500InternalServerError("Unable to determine url for RestClient.buildUrl().  Either pass the desired url in on your call or set configuration property {}.url=${url}.", getName());
 
-            StringBuffer buff = new StringBuffer();
-            Pattern      p    = Pattern.compile("\\$\\{([^\\}]*)\\}");
-            Matcher      m    = p.matcher(url);
-            while (m.find()) {
-                String key   = m.group(1);
-                String param = request.getUrl().getParam(key);
-                if (param == null)//replacement value was not there
-                    param = "${" + key + "}";
-
-                String value = Matcher.quoteReplacement(param);
-                m.appendReplacement(buff, value);
-            }
-            m.appendTail(buff);
-            return buff.toString();
+        String protocol = "";
+        if ((url.startsWith("http://") || url.startsWith("https://"))) {
+            protocol = url.substring(0, url.indexOf(":"));
+            url = url.substring(url.indexOf(":") + 1);
         }
 
-        return url;
+
+        if (Chain.peek() != null && url.indexOf(':') > 0) {
+            Request request = Chain.top().getRequest();
+            url = request.buildPath(url);
+        }
+
+        if (url.endsWith("/"))
+            url = url.substring(0, url.length() - 1);
+
+        return protocol + ":" + url;
     }
 
     public RestClient withUrl(String url) {
@@ -996,11 +1012,12 @@ public class RestClient {
      * Build an executor if one was not wired in.
      * <p>
      * You can dependency inject your Executor or override this method to provide advanced customizations.
-     *
+     * <p>
+     * As a convenience RestClient.threadsMax is configured on the default executor.
      * @return a default new Executor.
      */
     protected Executor buildExecutor() {
-        return new Executor();
+        return new Executor().withThreadsMax(threadsMax);
     }
 
     public boolean isForwardHeaders() {
@@ -1008,7 +1025,7 @@ public class RestClient {
     }
 
     protected boolean shouldForwardHeader(String headerKey) {
-        if(headerKey == null)
+        if (headerKey == null)
             return false;
 
         headerKey = headerKey.trim();
@@ -1061,6 +1078,9 @@ public class RestClient {
 
     protected boolean shouldForwardParam(String param) {
         return forwardParams //
+                && !param.startsWith("_")//
+                && !param.equalsIgnoreCase("explain")//
+                && !param.equalsIgnoreCase("debug")//
                 && (includeParams.size() == 0 || includeParams.contains(param)) //
                 && (!excludeParams.contains(param));
     }
@@ -1120,6 +1140,17 @@ public class RestClient {
         return this;
     }
 
+    public int getThreadsMax() {
+        return threadsMax;
+    }
+
+    public RestClient withThreadsMax(int threadsMax) {
+        this.threadsMax = threadsMax;
+        if(executor != null)
+            executor.withThreadsMax(threadsMax);
+        return this;
+    }
+
     static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase {
 
         static final String methodName = "DELETE";
@@ -1133,269 +1164,6 @@ public class RestClient {
         public String getMethod() {
             return methodName;
         }
-    }
-
-    /**
-     * A RunnableFuture that blocks on get() until the execution of the Request has returned the Response.
-     * <p>
-     * Here are some example uses:
-     * <pre>
-     *
-     *     client.get("/some/relative/path")
-     *          .onSuccess(response -@gt; System.out.println("Success:" + res.toString()))
-     *          .onFailure(response -@gt; System.out.println("Failure:" + res.toString()))
-     *          .onResponse(response -@gt; System.out.println("I get called on success or failure: " + res.getStatus()));
-     *
-     *
-     *      //-- instead of using the success/failure callbacks as above
-     *      //-- you can wait for the async process to complete by calling 'get()'
-     *
-     *      FutureResponse future = client.post("/some/relative/path", new JSNode("hello", "world"));
-     *
-     *      //-- request is asynchronously executing now
-     *
-     *      //-- the call to get() blocks indefinitely until the async execution completes
-     *      //-- the fact that this method is called 'get()' is not related to HTTP get.
-     *
-     *      Response response = future.get();
-     *
-     *
-     *      //-- if you want to guarantee that your thread will not be indefinitely blocked
-     *      //-- you can use get(long timeout, TimeUnit units) to wait no more than the specified time
-     *
-     *      future = client.get("/some/other/path");
-     *      response = future.get(100, TimeUnit.MILLISECONDS);
-     *
-     *      if(response == null)
-     *      {
-     *           System.out.println("the http request still has not completed");
-     *      }
-     *
-     *
-     * </pre>
-     */
-    public static abstract class FutureResponse implements RunnableFuture<Response> {
-
-        final List<Consumer<Response>> successListeners  = new ArrayList<>();
-        final List<Consumer<Response>> failureListeners  = new ArrayList<>();
-        final List<Consumer<Response>> responseListeners = new ArrayList<>();
-        final Request                  request;
-        Response response = null;
-
-        FutureResponse(Request request) {
-            this.request = request;
-        }
-
-        /**
-         * Registers a success callback.
-         * <p>
-         * If the isDone() is already true the handler will be called synchronously right away.
-         *
-         * @param handler the listener to notify on success
-         * @return this
-         */
-        public FutureResponse onSuccess(Consumer<Response> handler) {
-            boolean done;
-            synchronized (this) {
-                done = isDone();
-                if (!done) {
-                    successListeners.add(handler);
-                }
-            }
-
-            if (done && isSuccess()) {
-                try {
-                    handler.accept(response);
-                } catch (Throwable ex) {
-                    log.error("Error handling onSuccess", ex);
-                }
-            }
-
-            return this;
-        }
-
-        /**
-         * Registers a failure callback.
-         * <p>
-         * If the isDone() is already true the handler will be called synchronously right away.
-         *
-         * @param handler the listener to notify on failure
-         * @return this
-         */
-        public FutureResponse onFailure(Consumer<Response> handler) {
-            boolean done;
-            synchronized (this) {
-                done = isDone();
-                if (!done) {
-                    failureListeners.add(handler);
-                }
-            }
-
-            if (done && !isSuccess()) {
-                try {
-                    handler.accept(response);
-                } catch (Throwable ex) {
-                    log.error("Error handling onFailure", ex);
-                }
-            }
-
-            return this;
-        }
-
-        /**
-         * Registers a listener to be notified regardless of success or failure status.
-         * <p>
-         * If the isDone() is already true the handler will be called synchronously right away.
-         *
-         * @param handler the listener to notify when the Response has arrived
-         * @return this
-         */
-        public FutureResponse onResponse(Consumer<Response> handler) {
-            boolean done;
-            synchronized (this) {
-                done = isDone();
-                if (!done) {
-                    responseListeners.add(handler);
-                }
-            }
-
-            if (done) {
-                try {
-                    handler.accept(response);
-                } catch (Throwable ex) {
-                    log.error("Error handling onResponse", ex);
-                }
-            }
-
-            return this;
-        }
-
-        void setResponse(Response response) {
-            synchronized (this) {
-                this.response = response;
-
-                if (isSuccess()) {
-                    for (Consumer<Response> h : successListeners) {
-                        try {
-                            h.accept(response);
-                        } catch (Throwable ex) {
-                            log.error("Error handling success callbacks in setResponse", ex);
-                        }
-                    }
-                } else {
-                    for (Consumer<Response> h : failureListeners) {
-                        try {
-                            h.accept(response);
-                        } catch (Throwable ex) {
-                            log.error("Error handling failure callbacks in setResponse", ex);
-                        }
-                    }
-                }
-
-                for (Consumer<Response> h : responseListeners) {
-                    try {
-                        h.accept(response);
-                    } catch (Throwable ex) {
-                        log.error("Error handling callbacks in setResponse", ex);
-                    }
-                }
-
-                notifyAll();
-            }
-        }
-
-        /**
-         * Blocks indefinitely until <code>response</code> is not null.
-         *
-         * @return the response
-         */
-        @Override
-        public Response get() {
-            while (response == null) {
-                synchronized (this) {
-                    if (response == null) {
-                        try {
-                            wait();
-                        } catch (InterruptedException ex) {
-                            //ignore
-                        }
-                    }
-                }
-            }
-
-            return response;
-        }
-
-        /**
-         * Blocks until the arrival of the response just like get() but will return null after
-         * the specified timeout if the response has not arrived.
-         *
-         * @return the response or null if the call has not asynchronously completed
-         */
-        @Override
-        public Response get(long timeout, TimeUnit unit) throws TimeoutException {
-            long start = System.currentTimeMillis();
-            while (response == null) {
-                synchronized (this) {
-                    if (response == null) {
-                        try {
-                            timeout = TimeUnit.MILLISECONDS.convert(timeout, unit);
-                            timeout -= System.currentTimeMillis() - start;
-
-                            if (timeout < 1)
-                                break;
-
-                            wait(timeout);
-                        } catch (InterruptedException e) {
-                            //ignore
-                        }
-                    }
-                }
-            }
-
-            return response;
-        }
-
-        /**
-         * @return true if the response is not null and response.isSuccess()
-         */
-        public boolean isSuccess() {
-            return response != null && response.isSuccess();
-        }
-
-        /**
-         * @return the Request being run.
-         */
-        public Request getRequest() {
-            return request;
-        }
-
-        /**
-         * @return false
-         */
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        /**
-         * This does nothing.
-         *
-         * @return false
-         */
-        @Override
-        public boolean cancel(boolean arg0) {
-            return false;
-        }
-
-        /**
-         * @return true when response is not null.
-         */
-        @Override
-        public boolean isDone() {
-            return response != null;
-        }
-
     }
 
     /**
@@ -1424,7 +1192,7 @@ public class RestClient {
          * <p>
          * If this number is less than 1, then tasks will be executed synchronously in the calling thread, not asynchronously.
          */
-        protected int                        threadsMax   = 50;
+        protected int                        threadsMax   = 5;
         protected int                        queueMax     = 500;
 
         public Executor() {
@@ -1605,6 +1373,274 @@ public class RestClient {
             this.queueMax = queueMax;
             return this;
         }
+    }
+
+    /**
+     * A RunnableFuture that blocks on get() until the execution of the Request has returned the Response.
+     * <p>
+     * Here are some example uses:
+     * <pre>
+     *
+     *     client.get("/some/relative/path")
+     *          .onSuccess(response -@gt; System.out.println("Success:" + res.toString()))
+     *          .onFailure(response -@gt; System.out.println("Failure:" + res.toString()))
+     *          .onResponse(response -@gt; System.out.println("I get called on success or failure: " + res.getStatus()));
+     *
+     *
+     *      //-- instead of using the success/failure callbacks as above
+     *      //-- you can wait for the async process to complete by calling 'get()'
+     *
+     *      FutureResponse future = client.post("/some/relative/path", new JSNode("hello", "world"));
+     *
+     *      //-- request is asynchronously executing now
+     *
+     *      //-- the call to get() blocks indefinitely until the async execution completes
+     *      //-- the fact that this method is called 'get()' is not related to HTTP get.
+     *
+     *      Response response = future.get();
+     *
+     *
+     *      //-- if you want to guarantee that your thread will not be indefinitely blocked
+     *      //-- you can use get(long timeout, TimeUnit units) to wait no more than the specified time
+     *
+     *      future = client.get("/some/other/path");
+     *      response = future.get(100, TimeUnit.MILLISECONDS);
+     *
+     *      if(response == null)
+     *      {
+     *           System.out.println("the http request still has not completed");
+     *      }
+     *
+     *
+     * </pre>
+     */
+    public abstract class FutureResponse implements RunnableFuture<Response> {
+
+        final List<Consumer<Response>> successListeners  = new ArrayList<>();
+        final List<Consumer<Response>> failureListeners  = new ArrayList<>();
+        final List<Consumer<Response>> responseListeners = new ArrayList<>();
+        final Request                  request;
+        Response response = null;
+
+        FutureResponse(Request request) {
+            this.request = request;
+        }
+
+        /**
+         * Registers a success callback.
+         * <p>
+         * If the isDone() is already true the handler will be called synchronously right away.
+         *
+         * @param handler the listener to notify on success
+         * @return this
+         */
+        public FutureResponse onSuccess(Consumer<Response> handler) {
+            boolean done;
+            synchronized (this) {
+                done = isDone();
+                if (!done) {
+                    successListeners.add(handler);
+                }
+            }
+
+            if (done && isSuccess()) {
+                try {
+                    handler.accept(response);
+                } catch (Throwable ex) {
+                    log.error("Error handling onSuccess", ex);
+                }
+            }
+
+            return this;
+        }
+
+        /**
+         * Registers a failure callback.
+         * <p>
+         * If the isDone() is already true the handler will be called synchronously right away.
+         *
+         * @param handler the listener to notify on failure
+         * @return this
+         */
+        public FutureResponse onFailure(Consumer<Response> handler) {
+            boolean done;
+            synchronized (this) {
+                done = isDone();
+                if (!done) {
+                    failureListeners.add(handler);
+                }
+            }
+
+            if (done && !isSuccess()) {
+                try {
+                    handler.accept(response);
+                } catch (Throwable ex) {
+                    log.error("Error handling onFailure", ex);
+                }
+            }
+
+            return this;
+        }
+
+        /**
+         * Registers a listener to be notified regardless of success or failure status.
+         * <p>
+         * If the isDone() is already true the handler will be called synchronously right away.
+         *
+         * @param handler the listener to notify when the Response has arrived
+         * @return this
+         */
+        public FutureResponse onResponse(Consumer<Response> handler) {
+            boolean done;
+            synchronized (this) {
+                done = isDone();
+                if (!done) {
+                    responseListeners.add(handler);
+                }
+            }
+
+            if (done) {
+                try {
+                    handler.accept(response);
+                } catch (Throwable ex) {
+                    log.error("Error handling onResponse", ex);
+                }
+            }
+
+            return this;
+        }
+
+        void setResponse(Response response) {
+            synchronized (this) {
+                this.response = response;
+
+                //notify all of the RestClient global listeners first.
+                for (Consumer<Response> h : RestClient.this.responseListeners) {
+                    h.accept(response);
+                }
+
+                if (isSuccess()) {
+                    for (Consumer<Response> h : successListeners) {
+                        try {
+                            h.accept(response);
+                        } catch (Throwable ex) {
+                            log.error("Error handling success callbacks in setResponse", ex);
+                        }
+                    }
+                } else {
+                    for (Consumer<Response> h : failureListeners) {
+                        try {
+                            h.accept(response);
+                        } catch (Throwable ex) {
+                            log.error("Error handling failure callbacks in setResponse", ex);
+                        }
+                    }
+                }
+
+                for (Consumer<Response> h : responseListeners) {
+                    try {
+                        h.accept(response);
+                    } catch (Throwable ex) {
+                        log.error("Error handling callbacks in setResponse", ex);
+                    }
+                }
+
+                notifyAll();
+            }
+        }
+
+        /**
+         * Blocks indefinitely until <code>response</code> is not null.
+         *
+         * @return the response
+         */
+        @Override
+        public Response get() {
+            while (response == null) {
+                synchronized (this) {
+                    if (response == null) {
+                        try {
+                            wait();
+                        } catch (InterruptedException ex) {
+                            //ignore
+                        }
+                    }
+                }
+            }
+
+            return response;
+        }
+
+        /**
+         * Blocks until the arrival of the response just like get() but will return null after
+         * the specified timeout if the response has not arrived.
+         *
+         * @return the response or null if the call has not asynchronously completed
+         */
+        @Override
+        public Response get(long timeout, TimeUnit unit) throws TimeoutException {
+            long start = System.currentTimeMillis();
+            while (response == null) {
+                synchronized (this) {
+                    if (response == null) {
+                        try {
+                            timeout = TimeUnit.MILLISECONDS.convert(timeout, unit);
+                            timeout -= System.currentTimeMillis() - start;
+
+                            if (timeout < 1)
+                                break;
+
+                            wait(timeout);
+                        } catch (InterruptedException e) {
+                            //ignore
+                        }
+                    }
+                }
+            }
+
+            return response;
+        }
+
+        /**
+         * @return true if the response is not null and response.isSuccess()
+         */
+        public boolean isSuccess() {
+            return response != null && response.isSuccess();
+        }
+
+        /**
+         * @return the Request being run.
+         */
+        public Request getRequest() {
+            return request;
+        }
+
+        /**
+         * @return false
+         */
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        /**
+         * This does nothing.
+         *
+         * @return false
+         */
+        @Override
+        public boolean cancel(boolean arg0) {
+            return false;
+        }
+
+        /**
+         * @return true when response is not null.
+         */
+        @Override
+        public boolean isDone() {
+            return response != null;
+        }
+
     }
 
 }

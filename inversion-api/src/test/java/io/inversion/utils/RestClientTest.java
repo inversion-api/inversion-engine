@@ -1,9 +1,6 @@
 package io.inversion.utils;
 
-import io.inversion.Chain;
-import io.inversion.Engine;
-import io.inversion.Request;
-import io.inversion.Response;
+import io.inversion.*;
 import io.inversion.utils.RestClient.FutureResponse;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.Test;
@@ -13,21 +10,58 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RestClientTest {
+
+    @Test
+    public void testFluency()
+    {
+        RestClient client = new RestClient() {
+            protected Response doRequest(Request request) {
+                String url = request.getUrl().toString();
+                Response response = new Response().withUrl(url);
+                if(url.contains("error"))
+                    response.withStatus(Status.SC_500_INTERNAL_SERVER_ERROR);
+                return response;
+            }
+        };
+
+        client.onRequest(request -> {System.out.println("client.onRequest"); return null;});
+        client.onRequest(response -> {System.out.println("client.onResponse"); return null;});
+
+        client.get("/something/error")//
+                .onSuccess(response -> System.out.println("response.onSuccess1"))
+                .onFailure(response -> System.out.println("response.onFailure1"))
+                .onResponse(response -> System.out.println("response.onResponse1"));
+
+
+        client.get("/something/success")//
+                .onSuccess(response -> System.out.println("response.onSuccess2"))
+                .onFailure(response -> System.out.println("response.onFailure2"))
+                .onResponse(response -> System.out.println("response.onResponse2"));
+    }
+
+
     @Test
     public void buildUrl_variable_replaced() {
-        System.setProperty("theirService.url", "http://somehost/${tenant}/books/${something}/abcd");
 
-        Request    req    = new Request("GET", "http://myservice?tenant=12345");
-        RestClient client = new RestClient("theirService");
+        RestClient client = new RestClient().withUrl("http://somehost/:_collection/[:_resource]/[:_relationship]");
+
+//        try {
+//            Chain.push(null, new Request("GET", "http://myservice?tenant=12345&_collection=books"), null);
+//            String url = client.buildUrl(null);
+//            System.out.println(url);
+//            assertEquals("http://somehost/books", url);
+//        } finally {
+//            Chain.pop();
+//        }
 
         try {
-            Chain.push(null, req, null);
+            Chain.push(null, new Request("GET", "http://myservice?tenant=12345&_collection=books&_resource=12345"), null);
             String url = client.buildUrl(null);
-            assertEquals("http://somehost/12345/books/${something}/abcd", url);
+            System.out.println(url);
+            assertEquals("http://somehost/books/12345", url);
         } finally {
             Chain.pop();
         }
-
     }
 
     //   @Test

@@ -16,6 +16,10 @@
  */
 package io.inversion;
 
+import io.inversion.utils.Utils;
+
+import java.lang.reflect.Method;
+
 /**
  * Actions perform some work when matched to a Request and potentially contribute to the content of the Response.
  * <h3>The Action Sandwich</h3>
@@ -64,76 +68,98 @@ public class Action<A extends Action> extends Rule<A> {
      * @param res the Reponse being generated
      */
     public void run(Request req, Response res) throws ApiException {
-        if (req.isGet())
-            doGet(req, res);
-        else if (req.isPost())
-            doPost(req, res);
-        else if (req.isPut())
-            doPut(req, res);
-        else if (req.isPatch())
-            doPatch(req, res);
-        else if (req.isDebug())
-            doDelete(req, res);
+        run0(req, res);
+    }
+
+    protected void run0(Request req, Response res) throws ApiException {
+
+        String collectionKey = req.getCollectionKey();
+        String methodKey = req.getUrl().getParam("_method");
+
+        Method method = null;
+        if(methodKey != null)
+            method = Utils.getMethod(getClass(), methodKey);
+        if(method == null && collectionKey != null)
+            method = Utils.getMethod(getClass(), "do" + collectionKey + req.getMethod());
+        if(method == null)
+            Utils.getMethod(getClass(), "do" + collectionKey);
+        if(method == null)
+            Utils.getMethod(getClass(), "do" + req.getMethod());
+
+        if(method != null) {
+            try {
+                method.invoke(this, req, res);
+            }
+            catch(Throwable ex){
+                if(!(ex instanceof ApiException))
+                    ex = ex.getCause();
+
+                if(!(ex instanceof ApiException))
+                    ex = ApiException.new500InternalServerError(ex);
+
+                throw (ApiException)ex;
+            }
+        }
     }
 
     /**
      * Handle an HTTP GET.
      * <p>
-     * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.
+     * Override run() to handle all requests or override this method with your business logic specifically for a GET request
      *
      * @param req the request to run
      * @param res the response to populate
      */
     public void doGet(Request req, Response res) throws ApiException {
-        throw ApiException.new501NotImplemented("Either exclude GET requests for this Action in your Api configuration or override run() or doGet().");
+
     }
 
     /**
      * Handle an HTTP POST.
      * <p>
-     * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.
+     * Override run() to handle all requests or override this method with your business logic for a POST request
      *
      * @param req the request to run
      * @param res the response to populate
      */
 
     public void doPost(Request req, Response res) throws ApiException {
-        throw ApiException.new501NotImplemented("Either exclude POST requests for this Action in your Api configuration or override run() or doPost().");
+
     }
 
     /**
      * Handle an HTTP PUT.
      * <p>
-     * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.
+     * Override run() to handle all requests or override this method with your business logic for a PUT request
      *
      * @param req the request to run
      * @param res the response to populate
      */
     public void doPut(Request req, Response res) throws ApiException {
-        throw ApiException.new501NotImplemented("Either exclude PUT requests for this Action in your Api configuration or override run() or doPut().");
+
     }
 
     /**
      * Handle an HTTP PATCH.
      * <p>
-     * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.
+     * Override run() to handle all requests or override this method with your business logic for a PATCH request
      *
      * @param req the request to run
      * @param res the response to populate
      */
     public void doPatch(Request req, Response res) throws ApiException {
-        throw ApiException.new501NotImplemented("Either exclude PATCH requests for this Action in your Api configuration or override run() or doPatch().");
+
     }
 
     /**
      * Handle an HTTP DELETE.
      * <p>
-     * Override run() or override this method with your business logic, otherwise a 501 will be thrown if it is called.
+     * Override run() to handle all requests or override this method with your business logic for a DELETE request
      *
      * @param req the request to run
      * @param res the response to populate
      */
     public void doDelete(Request req, Response res) throws ApiException {
-        throw ApiException.new501NotImplemented("Either exclude DELETE requests for this Action in your Api configuration or override run() or doDelete().");
+
     }
 }

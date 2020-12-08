@@ -110,6 +110,7 @@ public class JSNode implements Map<String, Object> {
             JsonNode     rootNode = mapper.readValue(json, JsonNode.class);
 
             Object parsed = JSNode.mapNode(rootNode);
+
             return parsed;
         } catch (Exception ex) {
             String msg = "Error parsing JSON:" + ex.getMessage();
@@ -151,7 +152,7 @@ public class JSNode implements Map<String, Object> {
             if (pretty)
                 json.useDefaultPrettyPrinter();
 
-            JSNode.writeNode(node, json, new HashSet(), lowercasePropertyNames);
+            JSNode.writeNode(node, json, new HashMap<>(), lowercasePropertyNames, "#");
             json.flush();
             baos.flush();
 
@@ -203,23 +204,19 @@ public class JSNode implements Map<String, Object> {
         throw new RuntimeException("unparseable json:" + json);
     }
 
-    static void writeNode(JSNode node, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception {
+    static void writeNode(JSNode node, JsonGenerator json, HashMap<Object, String> visited, boolean lowercaseNames, String path) throws Exception {
         JSProperty href = node.getProperty("href");
 
-        if (visited.contains(node)) {
-            if (href != null) {
+        if (visited.containsKey(node)) {
                 json.writeStartObject();
-                json.writeStringField("@link", href.getValue() + "");
+                json.writeStringField("$ref", visited.get(node));
                 json.writeEndObject();
-            } else {
-                throw ApiException.new500InternalServerError("Your JSNode document contains the same object in multiple locations without a 'href' property.");
-            }
             return;
         }
-        visited.add(node);
+        visited.put(node, path);
 
         if (node instanceof JSArray) {
-            JSNode.writeArrayNode(((JSArray) node), json, visited, lowercaseNames);
+            JSNode.writeArrayNode(((JSArray) node), json, visited, lowercaseNames, path);
             return;
         }
 
@@ -233,14 +230,14 @@ public class JSNode implements Map<String, Object> {
             if (p == href)
                 continue;
 
-            String name  = p.getName();
+            String name  = lowercaseNames ? p.getName().toLowerCase() : p.getName();
             Object value = p.getValue();
 
             if (value == null) {
                 json.writeNullField(name);
             } else if (value instanceof JSNode) {
-                json.writeFieldName(lowercaseNames ? name.toLowerCase() : name);
-                writeNode((JSNode) value, json, visited, lowercaseNames);
+                json.writeFieldName(name);
+                writeNode((JSNode) value, json, visited, lowercaseNames, path + "/" + name);
             } else if (value instanceof String) {
                 if(value.equals("null"))
                     json.writeNullField(name);
@@ -275,13 +272,16 @@ public class JSNode implements Map<String, Object> {
         json.writeEndObject();
     }
 
-    static void writeArrayNode(JSArray array, JsonGenerator json, HashSet visited, boolean lowercaseNames) throws Exception {
+    static void writeArrayNode(JSArray array, JsonGenerator json, HashMap<Object, String> visited, boolean lowercaseNames, String path) throws Exception {
         json.writeStartArray();
-        for (Object value : array.asList()) {
+        List values = array.asList();
+
+        for (int i=0; i<values.size(); i++) {
+            Object value = values.get(i);
             if (value == null) {
                 json.writeNull();
             } else if (value instanceof JSNode) {
-                writeNode((JSNode) value, json, visited, lowercaseNames);
+                writeNode((JSNode) value, json, visited, lowercaseNames, path += "[" + i + "]");
             } else {
                 if (value instanceof String) {
                     if(value.equals("null"))
@@ -409,10 +409,10 @@ public class JSNode implements Map<String, Object> {
      *  <li>SUPPORTED $..[?(@.*.price@lt;10)]                    //find the parent of any node with a price property
      *  <li>SUPPORTED $..book[?(@.author = 'Herman Melville')]   //all books where 'Herman Melville' is the author
      *  <li>SUPPORTED $..*                                       //all members of JSON structure.
-     *  <li>TODO      $..book[(@.length-1)]                      //the last book in order
-     *  <li>TODO      $..book[-1:]                               //the last book in order
-     *  <li>TODO      $..book[0,1]                               //the first two books
-     *  <li>TODO      $..book[:2]                                //the first two books
+     *  <li>SUPPORTED      $..book[(@.length-1)]                 //the last book in order
+     *  <li>SUPPORTED      $..book[-1:]                          //the last book in order
+     *  <li>SUPPORTED      $..book[0,1]                          //the first two books
+     *  <li>SUPPORTED      $..book[:2]                           //the first two books
      *  <li>SUPPORTED $..book[?(@.isbn)]                         //find all books with an isbn property
      *  <li>SUPPORTED $..[?(@.isbn)]                             //find any node with an isbn property
      *  <li>SUPPORTED $..[?(@.*.isbn)]                           //find the parent of any node with an isbn property
@@ -598,6 +598,49 @@ public class JSNode implements Map<String, Object> {
                     }
                 }
             }
+            else
+            {
+                //-- $..book[(@.length-1)] -> @_length-1
+                //-- $..book[-1:] -> -1:
+                //-- $..book[0,1] -> 0,1
+                //-- $..book[:2] -> :2
+                if(isArray()) {
+
+                    int length = ((JSArray)this).length();
+
+                    List found = new ArrayList();
+                    if (expr.startsWith("(@_length-")) {
+                        int index = Integer.parseInt(expr.substring(expr.indexOf("-") + 1, expr.length()-1).trim());
+                        if (length - index > 0) {
+                            found.add(get(length - index));
+                        }
+                    } else if (expr.startsWith(":")) {
+                        int count = Integer.parseInt(expr.substring(1).trim());
+                        for (int i = 0; i < length && i < count; i++) {
+                            found.add(get(count));
+                        }
+                    } else if (expr.endsWith(":")) {
+                        int idx = Integer.parseInt(expr.substring(0, expr.length() - 1).trim()) * -1;
+                        if(idx <= length)
+                            found.add(get(length - idx));
+                    } else {
+                        int start = Integer.parseInt(expr.substring(0, expr.indexOf(":")).trim());
+                        int end   = Integer.parseInt(expr.substring(expr.indexOf(":") + 1).trim());
+                        for (int i = start; i <= end && i < length; i++){
+                            found.add(get(i));
+                        }
+                    }
+                    if(found.size() > 0) {
+                        if(path.size() > 1) {
+                            List<String> nextPath = path.subList(1, path.size());
+                        }
+                        else {
+                            collected.addAll(found);
+                        }
+                    }
+                }
+            }
+
         } else {
             Object found = null;
             try {
@@ -685,8 +728,8 @@ public class JSNode implements Map<String, Object> {
             path = patch.getString("from");
             if (path != null && !path.startsWith("/")) {
                 path = "/" + path.replace(".", "/");
+                patch.put("from", path);
             }
-            patch.put("from", path);
         }
 
         ObjectMapper mapper = new ObjectMapper();
@@ -780,6 +823,21 @@ public class JSNode implements Map<String, Object> {
      * Convenience overloading of {@link #get(Object)}
      *
      * @param name the case insensitive property name to retrieve.
+     * @return the value of property <code>name</code> stringified and parsed as long if it exists else -1
+     * @see #get(Object)
+     */
+    public long getLong(String name) {
+        Object found = get(name);
+        if (found != null)
+            return Utils.atol(found);
+
+        return -1;
+    }
+
+    /**
+     * Convenience overloading of {@link #get(Object)}
+     *
+     * @param name the case insensitive property name to retrieve.
      * @return the value of property <code>name</code> stringified and parsed as a double if it exists else -1
      * @see #get(Object)
      */
@@ -856,6 +914,22 @@ public class JSNode implements Map<String, Object> {
         Object found = find(pathExpression);
         if (found != null)
             return Utils.atoi(found);
+
+        return -1;
+    }
+
+
+    /**
+     * Convenience overloading of {@link #find(String)}
+     *
+     * @param pathExpression specifies the properties to find
+     * @return the first value found at <code>pathExpression</code> stringified and parsed as a long if exists else -1
+     * @see #find(String)
+     */
+    public long findLong(String pathExpression) {
+        Object found = find(pathExpression);
+        if (found != null)
+            return Utils.atol(found);
 
         return -1;
     }
@@ -1004,7 +1078,7 @@ public class JSNode implements Map<String, Object> {
      * @param names the keys to remove
      * @return the first non null value for <code>names</code>
      */
-    public Object remove(String... names) {
+    public Object removeAll(String... names){
         Object first = null;
 
         for (String name : names) {
@@ -1256,6 +1330,15 @@ public class JSNode implements Map<String, Object> {
         return asList().stream();
     }
 
+    /**
+     * @return a stream of findAll(**.*) plus "this"
+     */
+    public Stream streamAll() {
+        List all = findAll("**.*").asList();
+        all.add(this);
+        return all.stream();
+    }
+
     static class JSProperty {
         String name;
         Object value;
@@ -1425,7 +1508,6 @@ public class JSNode implements Map<String, Object> {
         void append(char c) {
             next.append(c);
         }
-
     }
-
 }
+

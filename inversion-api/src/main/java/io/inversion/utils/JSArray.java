@@ -308,6 +308,7 @@ public class JSArray extends JSNode implements Iterable {
     @Override
     public void clear() {
         objects.clear();
+        super.clear();
     }
 
     @Override

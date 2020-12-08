@@ -85,17 +85,6 @@ public class Engine extends Rule<Engine> {
                 withApi(api);
     }
 
-    public static void applyPathParams(Map<String, String> pathParams, Url url, JSNode json) {
-        pathParams.keySet().forEach(url::clearParams);
-        pathParams.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> url.withParam(e.getKey(), e.getValue()));
-
-        if (json != null) {
-            json.stream()
-                    .filter(node -> node instanceof JSNode && !(node instanceof JSArray))
-                    .forEach(node -> pathParams.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> ((JSNode) node).put(e.getKey(), e.getValue())));
-        }
-    }
-
     /**
      * Convenient pre-startup hook for subclasses guaranteed to only be called once.
      * <p>
@@ -423,7 +412,8 @@ public class Engine extends Rule<Engine> {
      */
     public Chain service(Request req, Response res) {
         Chain chain = null;
-
+        if(res.getRequest() == null)
+            res.withRequest(req);
         try {
             if (!started)
                 startup();
@@ -508,8 +498,9 @@ public class Engine extends Rule<Engine> {
                 Path apiPath = api.match(method, parts);
 
                 if (apiPath != null) {
+                    Path apiMatchPath = new Path(apiPath);
                     apiPath = apiPath.extract(pathParams, parts);
-                    req.withApi(api, apiPath);
+                    req.withApi(api, apiPath, apiMatchPath);
 
                     afterApiPath = new Path(parts);
 
@@ -522,8 +513,9 @@ public class Engine extends Rule<Engine> {
                         Path endpointPath = endpoint.match(req.getMethod(), parts);
 
                         if (endpointPath != null) {
+                            Path endpointMatchPath = new Path(endpointPath);
                             endpointPath = endpointPath.extract(pathParams, parts);
-                            req.withEndpoint(endpoint, endpointPath);
+                            req.withEndpoint(endpoint, endpointPath, endpointMatchPath);
 
                             afterEndpointPath = new Path(parts);
 
@@ -534,8 +526,9 @@ public class Engine extends Rule<Engine> {
 
                                 Path collectionPath = collection.match(method, parts);
                                 if (collectionPath != null) {
+                                    Path collectionMatchPath = new Path(collectionPath);
                                     collectionPath = collectionPath.extract(pathParams, parts, true);
-                                    req.withCollection(collection, collectionPath);
+                                    req.withCollection(collection, collectionPath, collectionMatchPath);
 
                                     if (db != null && db.getEndpointPath() != null)
                                         db.getEndpointPath().extract(pathParams, afterApiPath, true);
@@ -550,7 +543,7 @@ public class Engine extends Rule<Engine> {
                 }
             }
 
-            applyPathParams(pathParams, url, req.getJson());
+            chain.withPathParams(pathParams);
 
             //---------------------------------
 
@@ -678,6 +671,7 @@ public class Engine extends Rule<Engine> {
             }
 
             try {
+                System.out.println(res.getJson());
                 writeResponse(req, res);
             } catch (Throwable ex) {
                 log.error("Error writing response.", ex);

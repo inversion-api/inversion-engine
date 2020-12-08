@@ -32,7 +32,7 @@ public class JSNodeTest {
 
     @Test
     public void testJsonPath1() {
-        JSNode  doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+        final JSNode  doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
         JSArray found1;
         JSArray found2;
 
@@ -148,7 +148,37 @@ public class JSNodeTest {
         found1 = doc.findAll("$..[?(@.store.bicycle.price>10)]", -1);
         assertEquals(1, found1.size());
 
+        found1 = doc.findAll("$.store.book[(@.length-1)]");
+        assertEquals("J. R. R. Tolkien", found1.getNode(0).get("author"));
+
+        found1 = doc.findAll("$.store.book[-1:]");
+        assertEquals("J. R. R. Tolkien", found1.getNode(0).get("author"));
+
+        found1 = doc.findAll("$.store.book[-2:]");
+        assertEquals("Herman Melville", found1.getNode(0).get("author"));
+
+        found1 = doc.findAll("$.store.book[(@.length-2)]");
+        assertEquals("Herman Melville", found1.getNode(0).get("author"));
+
+        found1 = doc.findAll("$.store.book[:3]");
+        assertEquals(3, found1.length());
+
+        found1 = doc.findAll("$.store.book[1:3]");
+        assertEquals(3, found1.length());
+        assertEquals("Evelyn Waugh", found1.getNode(0).get("author"));
+        assertEquals("Herman Melville", found1.getNode(1).get("author"));
+        assertEquals("J. R. R. Tolkien", found1.getNode(2).get("author"));
+
+
+        //JSArray categories = doc.findAll("**.category");
+        found1 = doc.findAll("**.book[?(@.category)]");
+        //found1 = doc.findAll("$..[?(@.isbn)]");
+
+        System.out.println(found1);
+
     }
+
+
 
     @Test
     public void testWith() {
