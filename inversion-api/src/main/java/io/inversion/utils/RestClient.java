@@ -381,12 +381,45 @@ public class RestClient {
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
     public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, int retryMax, ArrayListValuedHashMap<String, String> headers) {
-        String url = buildUrl(fullUrlOrRelativePath);
+        Request request = buildRequest(method, fullUrlOrRelativePath, params, body, headers, retryMax);
+        return call(request);
+    }
 
+    /**
+     * Executes the request as provided without modification.
+     * <p>
+     * All of the other 'get/post/put/patch/delete/call' methods will construct a Request based on the configured
+     * properties of this RestClient and optionally the data in Request on the top of the Chain if operating inside an Engine.
+     * <p>
+     * Those methods ultimately delegate to this method and no further modification of the Request is made from here out.
+     *
+     * @param request
+     * @return
+     */
+    public FutureResponse call(Request request){
+        FutureResponse future = buildFuture(request);
+        submit(future);
+        return future;
+    }
+
+    /**
+     * Builds a request with the supplied information merged with the url, query param, and header options configured
+     * on this reset client and potentially pulled from the Chain request.
+     *
+     * @param method - the http method
+     * @param fullUrlOrRelativePath - a full url or a relative path that will be appended to this.url
+     * @param params - query params to pass
+     * @param body - the request body to pass
+     * @param headers - request headers to pass
+     * @param retryMax - the number of times to retry this call if it fails.
+     * @return the configure request
+     */
+    public Request buildRequest(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, ArrayListValuedHashMap<String, String> headers, int retryMax) {
+
+        String url = buildUrl(fullUrlOrRelativePath);
         String queryString = StringUtils.substringAfter(url, "?");
         if (!Utils.empty(queryString)) {
             url = Utils.substringBefore(url, "?");
-
             Map newParams = Utils.parseQueryString(queryString);
             if (params != null) {
                 //-- this makes sure any specifically provided name/value query string pairs
@@ -396,17 +429,7 @@ public class RestClient {
             params = newParams;
         }
 
-        Request request = buildRequest(method, url, params, (body != null ? body.toString() : null), headers, retryMax);
-        FutureResponse future = buildFuture(request);
-        submit(future);
-
-        return future;
-    }
-
-    Request buildRequest(String method, String url, Map<String, String> callParams, String body, ArrayListValuedHashMap<String, String> callHeaders, int retryMax) {
-        retryMax = retryMax > -1 ? retryMax : this.retryMax;
-
-        Request request = new Request(method, url, body, callParams, callHeaders, retryMax);
+        Request request = new Request(method, url, (body == null ? null : body.toString()), params, headers, retryMax > -1 ? retryMax : this.retryMax);
 
         if (forwardHeaders) {
             Chain chain = Chain.first();//gets the root chain
