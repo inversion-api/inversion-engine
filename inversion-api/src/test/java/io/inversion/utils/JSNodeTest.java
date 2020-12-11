@@ -395,4 +395,11 @@ public class JSNodeTest {
     //
     //   }
 
+    @Test
+    public void find_handles_infinate_loops(){
+        JSNode test = new JSNode();
+        test.put("test", test);
+        JSArray found = test.findAll("**.*");
+    }
+
 }
