@@ -16,8 +16,7 @@
  */
 package io.inversion;
 
-import io.inversion.utils.Path;
-import io.inversion.utils.Utils;
+import io.inversion.utils.*;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import java.util.*;
@@ -33,6 +32,8 @@ public class Chain {
     protected       boolean                            canceled   = false;
     protected       User                               user       = null;
     protected       Chain                              parent     = null;
+    protected       Map<String, String>                pathParams = new HashMap();
+    protected       Set<String>                        pathParamsToRemove = new HashSet();
 
     private Chain(Engine engine, Request req, Response res) {
         this.engine = engine;
@@ -386,9 +387,61 @@ public class Chain {
     }
 
     public void go() throws ApiException {
-        while (next()) {
-            //intentionally empty
+        boolean root = next == 0;
+        if(root && pathParams.size() > 0){
+            applyPathParams(pathParams, request.getUrl(), request.getJson());
         }
+
+        try {
+            while (next()) {
+                //-- intentionally empty
+            }
+        }
+        finally{
+            if(root) {
+                JSNode json = response.getJson();
+                filterPathParams(json);
+                }
+            }
+    }
+
+    /**
+     * Recursively removes any url path params that appear as properties in the json
+     * @param json the json node to clean
+     * @return this
+     */
+    public Chain filterPathParams(JSNode json){
+        if (json != null && pathParams.size() > 0) {
+            json.streamAll()
+                    .filter(node -> node instanceof JSNode && !(node instanceof JSArray))
+                    .forEach(node -> {
+                        pathParamsToRemove.forEach(key -> ((JSNode) node).remove(key));
+                    });
+        }
+        return this;
+    }
+
+
+    public Chain doNext(Action... newActions){
+        for(int i=0; newActions != null && i<newActions.length; i++){
+            Action action = newActions[i];
+            if(action == null)
+                continue;
+            ActionMatch am = new ActionMatch(new Path("*"), new Path("*"), action);
+            actions.add(next + i, am);
+        }
+        return this;
+    }
+
+    public Chain skipNext(){
+        next +=1;
+        return this;
+    }
+
+    public Action getNext() {
+        if(hasNext())
+            return actions.get(next).action;
+        return null;
     }
 
     public boolean next() throws ApiException {
@@ -399,12 +452,34 @@ public class Chain {
             Map<String, String> pathParams = new HashMap<>();
             actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
 
-            Engine.applyPathParams(pathParams, request.getUrl(), request.getJson());
+            applyPathParams(pathParams, request.getUrl(), request.getJson());
 
             actionMatch.action.run(request, response);
             return true;
         }
         return false;
+    }
+
+    public Chain withPathParams(Map<String, String> pathParams){
+        this.pathParams.putAll(pathParams);
+        return this;
+    }
+
+    public void applyPathParams(Map<String, String> pathParamsToAdd, Url url, JSNode json) {
+        pathParamsToAdd.keySet().forEach(url::clearParams);
+        pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> url.withParam(e.getKey(), e.getValue()));
+
+        if (json != null) {
+            json.stream()
+                    .filter(node -> node instanceof JSNode && !(node instanceof JSArray))
+                    .forEach(node -> pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null && !e.getKey().startsWith("_"))).forEach(e -> ((JSNode) node).put(e.getKey(), e.getValue())));
+        }
+
+        pathParamsToRemove.addAll(pathParamsToAdd.keySet());
+    }
+
+    public boolean hasNext() {
+        return !isCanceled() && next < actions.size();
     }
 
     public boolean isCanceled() {

@@ -71,8 +71,8 @@ public class KeyVaultDemoMain {
 
         //-- now we are going to cause the default configuration to be
         //-- loaded and then augment it with the key vault properties
-        String configPath    = Utils.findProperty("configPath");
-        String configProfile = Utils.findProperty("configProfile", "profile");
+        String configPath    = Utils.findSysEnvProp("configPath");
+        String configProfile = Utils.findSysEnvProp("configProfile", "profile");
 
         Config.loadConfiguration(configPath, configProfile);//this loads the default configuration
         CompositeConfiguration config = Config.getConfiguration();

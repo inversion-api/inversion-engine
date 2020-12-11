@@ -1411,17 +1411,17 @@ public class Utils {
         return params;
     }
 
-    public static String findProperty(String... names) {
+    public static String findSysEnvProp(String... names) {
         String value;
         for (String name : names) {
-            value = getProperty(name);
+            value = getSysEnvProp(name);
             if (value != null)
                 return value;
         }
         return null;
     }
 
-    public static String getProperty(String name) {
+    public static String getSysEnvProp(String name) {
         String value = System.getProperty(name);
 
         if (Utils.empty(value))
@@ -1448,6 +1448,7 @@ public class Utils {
                 }
             }
         }
+
         return value;
     }
 

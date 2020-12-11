@@ -104,7 +104,7 @@ public class TestOverloadedDynamicTables {
                             for (JSNode node : json.asNodeList()) {
                                 //-- not necessary for RDBMS stores but prevents
                                 //-- unintended props in document stores
-                                node.remove("collection", "resource", "relationship");
+                                node.removeAll("collection", "resource", "relationship");
 
                                 //-- forces correct case
                                 node.put("tenant", tenant);
