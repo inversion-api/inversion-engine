@@ -671,7 +671,6 @@ public class Engine extends Rule<Engine> {
             }
 
             try {
-                System.out.println(res.getJson());
                 writeResponse(req, res);
             } catch (Throwable ex) {
                 log.error("Error writing response.", ex);
