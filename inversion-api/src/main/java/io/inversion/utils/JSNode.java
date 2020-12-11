@@ -492,8 +492,6 @@ public class JSNode implements Map<String, Object> {
         if (qty > 1 && collected.size() >= qty)
             return collected;
 
-
-        System.out.println("PATH: " + path + collected.size());
         String nextSegment = path.get(0);
 
         if ("*".equals(nextSegment)) {
