@@ -23,12 +23,17 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Request {
 
     public static final String COLLECTION_KEY   = "_collection";
     public static final String RESOURCE_KEY     = "_resource";
     public static final String RELATIONSHIP_KEY = "_relationship";
+
+    protected long startAt = System.currentTimeMillis();
+    protected long endAt = -1;
 
     protected Chain chain = null;
 
@@ -40,15 +45,18 @@ public class Request {
     protected String method = null;
 
     protected Engine engine  = null;
-    protected Api    api     = null;
-    protected Path   apiPath = null;
-    protected String tenant  = null;
 
-    protected Path     endpointPath = null;
+    protected Api    api         = null;
+    protected Path   apiPath     = null;
+    protected Path   apiMatchPath = null;
+
     protected Endpoint endpoint     = null;
+    protected Path     endpointPath = null;
+    protected Path     endpointMatchPath = null;
 
     protected Collection collection     = null;
     protected Path       collectionPath = null;
+    protected Path       collectionMatchPath = null;
 
     protected String body = null;
     protected JSNode json = null;
@@ -144,6 +152,20 @@ public class Request {
         return this;
     }
 
+    public long getStartAt(){return startAt;}
+
+    public Request withStartAt(long startAt){
+        this.startAt = startAt;
+        return this;
+    }
+
+    public long getEndAt(){return endAt;}
+
+    public Request withEndAt(long endAt){
+        this.endAt = endAt;
+        return this;
+    }
+
     public Request withMethod(String method) {
         this.method = method;
         return this;
@@ -186,9 +208,10 @@ public class Request {
         return this;
     }
 
-    public Request withCollection(Collection collection, Path collectionPath) {
+    public Request withCollection(Collection collection, Path collectionPath, Path collectionMatchPath) {
         this.collection = collection;
         this.collectionPath = collectionPath;
+        this.collectionMatchPath = collectionMatchPath;
         return this;
     }
 
@@ -196,9 +219,10 @@ public class Request {
         return endpoint;
     }
 
-    public Request withEndpoint(Endpoint endpoint, Path endpointPath) {
+    public Request withEndpoint(Endpoint endpoint, Path endpointPath, Path endpointMatchPath) {
         this.endpoint = endpoint;
         this.endpointPath = endpointPath;
+        this.endpointMatchPath = endpointMatchPath;
         return this;
     }
 
@@ -410,9 +434,10 @@ public class Request {
         return url.getParam(RELATIONSHIP_KEY);
     }
 
-    public Request withApi(Api api, Path apiPath) {
+    public Request withApi(Api api, Path apiPath, Path apiMatchPath) {
         this.api = api;
         this.apiPath = apiPath;
+        this.apiMatchPath = apiMatchPath;
         return this;
     }
 
@@ -426,6 +451,22 @@ public class Request {
 
     public Path getEndpointPath() {
         return endpointPath;
+    }
+
+    public Path getApiMatchPath() {
+        return apiMatchPath;
+    }
+
+    public Path getEndpointMatchPath() {
+        return endpointMatchPath;
+    }
+
+    public Path getCollectionPath() {
+        return collectionPath;
+    }
+
+    public Path getCollectionMatchPath() {
+        return collectionMatchPath;
     }
 
     public String getRemoteAddr() {
@@ -503,6 +544,35 @@ public class Request {
 
     public List<Upload> getUploads() {
         return uploader.getUploads();
+    }
+
+    /**
+     * Replaces path parameters with their corresponding request params
+     */
+    public String buildPath(String path){
+        StringBuffer buff = new StringBuffer();
+        Pattern p        = Pattern.compile("(\\[?+)\\:([\\w\\-\\_]*)(\\]?+)");
+        Matcher m        = p.matcher(path);
+        boolean optional = false;
+        while (m.find()) {
+            String key   = m.group(2);
+            String param = getUrl().getParam(key);
+            if (param == null)//replacement value was not there
+            {
+                if("[".equals(m.group(1)) && "]".equals(m.group(3))) {
+                    optional = true;
+                    break;
+                }
+                param = ":" + key;
+            }
+
+            String value = Matcher.quoteReplacement(param);
+            m.appendReplacement(buff, value);
+        }
+        if(!optional)
+            m.appendTail(buff);
+
+        return buff.toString();
     }
 
     /**

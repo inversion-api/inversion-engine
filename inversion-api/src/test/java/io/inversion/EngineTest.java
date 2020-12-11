@@ -38,6 +38,14 @@ public class EngineTest {
 
             @Override
             protected void run(Chain chain, List<ActionMatch> actions) throws ApiException {
+
+                try{
+                    super.run(chain, actions);
+                }catch(Exception ex){
+                    ex.printStackTrace();
+                }
+
+
                 if (endpointName != null && !endpointName.equals(chain.getRequest().getEndpoint().getName()))
                     fail(chain, "endpoints don't match");
 

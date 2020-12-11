@@ -131,11 +131,11 @@ public class Config {
      * @param configPath    the path use to locate 'inversion.properties' files via <code>getResource</code>
      * @param configProfile the runtime profile used to load some inversion-${configProfile}-[0-100].properties files and not others.
      * @see #findUrl(String)
-     * @see Utils#findProperty(String...)
+     * @see Utils#findSysEnvProp(String...)
      */
     public static synchronized void loadConfiguration(String configPath, String configProfile) {
-        configPath = !Utils.empty(configPath) ? configPath : Utils.findProperty("inversion.configPath", "configPath");
-        configProfile = !Utils.empty(configProfile) ? configProfile : Utils.findProperty("inversion.configProfile", "inversion.profile", "spring.profiles.active", "configProfile", "profile");
+        configPath = !Utils.empty(configPath) ? configPath : Utils.findSysEnvProp("inversion.configPath", "configPath");
+        configProfile = !Utils.empty(configProfile) ? configProfile : Utils.findSysEnvProp("inversion.configProfile", "inversion.profile", "spring.profiles.active", "configProfile", "profile");
 
         Configurations         configs       = new Configurations();
         CompositeConfiguration configuration = new CompositeConfiguration();

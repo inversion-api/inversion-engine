@@ -30,6 +30,11 @@ import java.util.Date;
 import java.util.List;
 
 public class Response {
+
+    protected long startAt = System.currentTimeMillis();
+    protected long endAt = -1;
+
+    protected Request request = null;
     protected final ArrayListValuedHashMap<String, String> headers = new ArrayListValuedHashMap<>();
     protected final List<Change>  changes = new ArrayList<>();
     protected final StringBuilder debug   = new StringBuilder();
@@ -37,7 +42,6 @@ public class Response {
     protected Chain chain = null;
     protected int    statusCode  = 200;
     protected String statusMesg  = "OK";
-    protected String statusError = null;
     protected String redirect    = null;
     protected String        contentType = null;
     protected StringBuilder out         = new StringBuilder();
@@ -57,6 +61,20 @@ public class Response {
 
     public Response(String url) {
         withUrl(url);
+    }
+
+    public long getStartAt() { return startAt;}
+
+    public Response withStartAt(long startAt){
+        this.startAt = startAt;
+        return this;
+    }
+
+    public long getEndAt(){return endAt;}
+
+    public Response withEndAt(long endAt){
+        this.endAt = endAt;
+        return this;
     }
 
     public boolean hasStatus(int... statusCodes) {
@@ -194,10 +212,15 @@ public class Response {
         return headers;
     }
 
+    public void withHeaders(ArrayListValuedHashMap headers) {
+        this.headers.putAll(headers);
+    }
+
     public void withHeader(String key, String value) {
         if (!headers.containsMapping(key, value))
             headers.put(key, value);
     }
+
 
     /**
      * Sets the root output json document...you should use withData and withMeta
@@ -648,6 +671,16 @@ public class Response {
     public String getUrl() {
         return url;
     }
+
+    public Response withRequest(Request request){
+        this.request = request;
+        return this;
+    }
+
+    public Request getRequest(){
+        return request;
+    }
+
 
     //   public Response onSuccess(ResponseHandler handler)
     //   {

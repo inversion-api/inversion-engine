@@ -59,13 +59,26 @@ public class DbPostAction extends Action<DbPostAction> {
      * Unlike upsert for POST/PUT, this method is specifically NOT recursive for patching
      * nested documents. It will only patch the parent collection/table.
      * <p>
-     * TODO: add support for JSON patching...maybe
+     * TODO: add support for JSON Patch format...maybe
      *
      * @param req the request to run
      * @param res the response to populate
      */
     public void patch(Request req, Response res) throws ApiException {
         JSNode body = req.getJson();
+
+        if (body == null)
+            throw ApiException.new400BadRequest("You must pass a JSON body on a {}", req.getMethod());
+
+        //if the caller posted back an Inversion GET style envelope with meta/data sections, unwrap to get to the real body
+        if(body.find("meta") instanceof JSNode && body.find("data") instanceof  JSArray)
+            body = body.findNode("data");
+
+        //if a single cell array was passed in, unwrap to get to the real body
+        if(body instanceof JSArray && ((JSArray)body).length() == 1 && ((JSArray)body).get(0) instanceof JSNode)
+            body = ((JSArray)body).getNode(0);
+
+
         if (body.isArray()) {
             if (!Utils.empty(req.getResourceKey())) {
                 throw ApiException.new400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
@@ -96,6 +109,8 @@ public class DbPostAction extends Action<DbPostAction> {
         {
             res.withStatus(Status.SC_404_NOT_FOUND);
         }
+
+        //TODO: add res.withChanges()
     }
 
     public void upsert(Request req, Response res) throws ApiException {
@@ -109,31 +124,37 @@ public class DbPostAction extends Action<DbPostAction> {
         Collection   collection = req.getCollection();
         List<Change> changes    = new ArrayList<>();
         List         resourceKeys;
-        JSNode       obj        = req.getJson();
+        JSNode       body        = req.getJson();
 
-        if (obj == null)
-            throw ApiException.new400BadRequest("You must pass a JSON body to the RestPostHandler");
+        //if the caller posted back an Inversion GET style envelope with meta/data sections, unwrap to get to the real body
+        if(body.find("meta") instanceof JSNode && body.find("data") instanceof  JSArray)
+            body = body.findNode("data");
+
+        //if a single cell array was passed in, unwrap to get to the real body
+        if(body instanceof JSArray && ((JSArray)body).length() == 1 && ((JSArray)body).get(0) instanceof JSNode)
+            body = ((JSArray)body).getNode(0);
+
 
         boolean     collapseAll = "true".equalsIgnoreCase(req.getChain().getConfig("collapseAll", this.collapseAll + ""));
         Set<String> collapses   = req.getChain().mergeEndpointActionParamsConfig("collapses");
 
         if (collapseAll || collapses.size() > 0) {
-            obj = JSNode.parseJsonNode(obj.toString());
-            collapse(obj, collapseAll, collapses, "");
+            body = JSNode.parseJsonNode(body.toString());
+            collapse(body, collapseAll, collapses, "");
         }
 
-        if (obj instanceof JSArray) {
+        if (body instanceof JSArray) {
             if (!Utils.empty(req.getResourceKey())) {
                 throw ApiException.new400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
             }
-            resourceKeys = upsert(req, collection, (JSArray) obj);
+            resourceKeys = upsert(req, collection, (JSArray) body);
         } else {
-            String href = obj.getString("href");
+            String href = body.getString("href");
             if (req.isPut() && href != null && req.getResourceKey() != null && !req.getUrl().toString().startsWith(href)) {
                 throw ApiException.new400BadRequest("You are PUT-ing an resource with a different href property than the resource URL you are PUT-ing to.");
             }
 
-            resourceKeys = upsert(req, collection, new JSArray(obj));
+            resourceKeys = upsert(req, collection, new JSArray(body));
         }
 
         res.withChanges(changes);
