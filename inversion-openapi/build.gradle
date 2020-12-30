@@ -4,6 +4,8 @@ dependencies {
     api group: "io.swagger.core.v3", name: "swagger-models", version: "${swaggerModelsVersion}"
     api group: "io.swagger.core.v3", name: "swagger-core", version: "${swaggerCoreVersion}"
 
+    api group: "com.github.curious-odd-man", name: "rgxgen", version: "1.3"
+
     testImplementation project(':inversion-jdbc')
     testImplementation project(':inversion-jdbc').sourceSets.test.output
     testImplementation project(':inversion-spring-boot')

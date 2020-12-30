@@ -71,7 +71,7 @@ public class DbDeleteAction extends Action<DbDeleteAction> {
                 else
                     alreadyDeleted.add(href);
 
-                Row key = collection.decodeResourceKey((String) Utils.last(Utils.explode("/", href)));
+                Row key = collection.decodeJsonKey((String) Utils.last(Utils.explode("/", href)));
                 rows.add(key);
             }
             collection.getDb().delete(collection, rows);

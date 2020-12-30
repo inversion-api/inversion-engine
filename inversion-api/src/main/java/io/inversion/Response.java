@@ -272,14 +272,19 @@ public class Response {
 
     public JSArray getData() {
         JSNode json = getJson();
+        JSArray data = null;
         if (json != null) {
-            return json.getArray("data");
+            data = json.getArray("data");
         }
-        return null;
+        if(data == null)
+            data = json.getArray("_embedded");
+
+        return data;
     }
 
     public Response withData(JSArray data) {
-        getJson().put("data", data);
+        String key = getJson().hasProperty("_embedded") ? "_embedded" : "data";
+        getJson().put(key, data);
         return this;
     }
 
@@ -328,6 +333,10 @@ public class Response {
     public Response withPageCount(int pageCount) {
         withMeta("pageCount", pageCount);
         return this;
+    }
+
+    public int getPageNum(){
+        return findInt("meta.pageNum");
     }
 
     public int getPageSize() {
@@ -381,18 +390,6 @@ public class Response {
         this.json = null;
         this.text = text;
         return this;
-    }
-
-    public String getResourceKey() {
-        JSNode json = getJson();
-        if (json != null) {
-            String href = json.getString("href");
-            if (href != null) {
-                String[] parts = href.split("/");
-                return parts[parts.length - 1];
-            }
-        }
-        return null;
     }
 
     public String getRedirect() {
@@ -449,30 +446,6 @@ public class Response {
     public Throwable getError() {
         return error;
     }
-
-    //   public String getLog()
-    //   {
-    //      return log;
-    //   }
-
-    //   public LinkedHashMap<String, String> getHeaders()
-    //   {
-    //      return new LinkedHashMap(headers);
-    //   }
-
-    //   public String getHeader(String header)
-    //   {
-    //      String value = headers.get(header);
-    //      if (value == null)
-    //      {
-    //         for (String key : headers.keySet())
-    //         {
-    //            if (key.equalsIgnoreCase(header))
-    //               return headers.get(key);
-    //         }
-    //      }
-    //      return value;
-    //   }
 
     public InputStream getInputStream() throws IOException {
         if (file != null)
@@ -681,52 +654,6 @@ public class Response {
         return request;
     }
 
-
-    //   public Response onSuccess(ResponseHandler handler)
-    //   {
-    //      if (isSuccess())
-    //      {
-    //         try
-    //         {
-    //            handler.onResponse(this);
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //            logger.error("Error handling onSuccess", ex);
-    //         }
-    //      }
-    //      return this;
-    //   }
-    //
-    //   public Response onFailure(ResponseHandler handler)
-    //   {
-    //      if (!isSuccess())
-    //      {
-    //         try
-    //         {
-    //            handler.onResponse(this);
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //            logger.error("Error handling onFailure", ex);
-    //         }
-    //      }
-    //      return this;
-    //   }
-    //
-    //   public Response onResponse(ResponseHandler handler)
-    //   {
-    //      try
-    //      {
-    //         handler.onResponse(this);
-    //      }
-    //      catch (Exception ex)
-    //      {
-    //         logger.error("Error handling onResponse", ex);
-    //      }
-    //      return this;
-    //   }
-
     @Override
     public String toString() {
         return debug.toString();
@@ -861,5 +788,4 @@ public class Response {
         }
         return this;
     }
-
 }

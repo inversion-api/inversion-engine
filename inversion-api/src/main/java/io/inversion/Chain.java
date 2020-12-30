@@ -32,7 +32,6 @@ public class Chain {
     protected       boolean                            canceled   = false;
     protected       User                               user       = null;
     protected       Chain                              parent     = null;
-    protected       Map<String, String>                pathParams = new HashMap();
     protected       Set<String>                        pathParamsToRemove = new HashSet();
 
     private Chain(Engine engine, Request req, Response res) {
@@ -128,6 +127,30 @@ public class Chain {
 
         Chain root = stack.get(0);
         root.response.debug(prefix.toString(), msgs);
+    }
+
+    public static String buildLink(JSNode fromHere, Relationship toHere){
+        String link = null;
+        if (toHere.isManyToOne()) {
+            String fkval = null;
+            if (toHere.getRelated().getPrimaryIndex().size() != toHere.getFkIndex1().size() && toHere.getFkIndex1().size() == 1) {
+                //this value is already an encoded resourceKey
+                Object obj = fromHere.get(toHere.getFk1Col1().getJsonName());
+                if (obj != null)
+                    fkval = obj.toString();
+            } else {
+                fkval = toHere.getCollection().encodeJsonKey(fromHere, toHere.getFkIndex1());
+            }
+
+            if (fkval != null) {
+                link = Chain.buildLink(toHere.getRelated(), fkval, null);
+            }
+        } else {
+            //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
+            String resourceKey = toHere.getCollection().encodeJsonKey(fromHere);
+            link = Chain.buildLink(toHere.getCollection(), resourceKey, toHere.getName());
+        }
+        return link;
     }
 
     public static String buildLink(Collection collection) {
@@ -388,9 +411,6 @@ public class Chain {
 
     public void go() throws ApiException {
         boolean root = next == 0;
-        if(root && pathParams.size() > 0){
-            applyPathParams(pathParams, request.getUrl(), request.getJson());
-        }
 
         try {
             while (next()) {
@@ -411,7 +431,7 @@ public class Chain {
      * @return this
      */
     public Chain filterPathParams(JSNode json){
-        if (json != null && pathParams.size() > 0) {
+        if (json != null && request.pathParams.size() > 0) {
             json.streamAll()
                     .filter(node -> node instanceof JSNode && !(node instanceof JSArray))
                     .forEach(node -> {
@@ -460,12 +480,12 @@ public class Chain {
         return false;
     }
 
-    public Chain withPathParams(Map<String, String> pathParams){
-        this.pathParams.putAll(pathParams);
-        return this;
-    }
+//    public Chain withPathParams(Map<String, String> pathParams){
+//        this.pathParams.putAll(pathParams);
+//        return this;
+//    }
 
-    public void applyPathParams(Map<String, String> pathParamsToAdd, Url url, JSNode json) {
+    void applyPathParams(Map<String, String> pathParamsToAdd, Url url, JSNode json) {
         pathParamsToAdd.keySet().forEach(url::clearParams);
         pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> url.withParam(e.getKey(), e.getValue()));
 

@@ -60,12 +60,15 @@ public class Api extends Rule<Api> {
      * Listeners that receive callbacks on startup/shutdown/request/error.
      */
     protected final transient List<ApiListener> listeners   = new ArrayList<>();
+
     transient protected       String            hash        = null;
     protected                 boolean           debug       = false;
     protected                 String            url         = null;
     transient volatile        boolean           started     = false;
     transient volatile        boolean           starting    = false;
     transient                 long              loadTime    = 0;
+
+    protected String version = "1";
 
     public Api() {
     }
@@ -214,6 +217,15 @@ public class Api extends Rule<Api> {
         }
 
         return this;
+    }
+
+    public Api withVersion(String version){
+        this.version = version;
+        return this;
+    }
+
+    public String getVersion(){
+        return version;
     }
 
     public long getLoadTime() {

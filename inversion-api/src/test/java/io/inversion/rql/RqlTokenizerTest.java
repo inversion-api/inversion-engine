@@ -35,6 +35,8 @@ public class RqlTokenizerTest {
     public void test1() throws Throwable {
         List<List> tests = new ArrayList<>();
 
+        add(tests, "f(a, b),f(b,c)", "f(", "a", "b", ")", "f(", "b", "c", ")");
+
         add(tests, "this is a test", "this is a test");
         add(tests, "  this is a test    ", "this is a test");
         add(tests, " ' this is a test    '", "' this is a test    '");

@@ -24,6 +24,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PathTest {
+
+
+
     @Test
     public void extract_stopsOnWildcard() {
         Map params = new HashMap<>();

@@ -99,4 +99,12 @@ public class RqlParserTest {
         t = RqlParser.parse("w(name,'BANANA KG (RESEAU)')");
         assertEquals("BANANA KG (RESEAU)", t.getTerm(1).getToken());
     }
+
+    @Test void testMultipleCommaSeparateTerms(){
+
+        Term t = RqlParser.parse("fx(1,2),fx(3,4)");
+        System.out.println(t);
+
+    }
+
 }

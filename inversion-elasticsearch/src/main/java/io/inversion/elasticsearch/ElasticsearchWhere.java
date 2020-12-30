@@ -101,7 +101,7 @@ public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends Elastics
                     if (!child.isLeaf())
                         throw ApiException.new400BadRequest("Resource key value is not a leaf node: %s", child);
 
-                    Row  keyParts = getParent().getCollection().decodeResourceKey(index, child.getToken());
+                    Row  keyParts = getParent().getCollection().decodeDbKey(index, child.getToken());
                     Term and      = Term.term(or, "and");
                     for (String key : keyParts.keySet()) {
                         and.withTerm(Term.term(and, "eq", key, keyParts.get(key).toString()));

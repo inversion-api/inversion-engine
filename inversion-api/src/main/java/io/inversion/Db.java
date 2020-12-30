@@ -53,14 +53,14 @@ public abstract class Db<T extends Db> {
     /**
      * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves
      */
-    protected static final Set<String>           reservedParams = Collections.unmodifiableSet(new TreeSet<>(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", /*"includes",*/ "excludes", "expands")));
+    protected static final Set<String>           reservedParams = Collections.unmodifiableSet(new TreeSet<>(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", "excludes", "expands", "q")));
     protected final        Logger                log            = LoggerFactory.getLogger(getClass());
     /**
      * The Collections that are the REST interface to the backend tables (or buckets, folders, containers etc.) this Db exposes through an Api.
      */
     protected final        ArrayList<Collection> collections    = new ArrayList<>();
     /**
-     * A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflicitive Collection creation.
+     * A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflective Collection creation.
      */
     protected final        Map<String, String>   includeTables  = new HashMap<>();
     /**
@@ -216,9 +216,27 @@ public abstract class Db<T extends Db> {
 
         List<Term> terms = new ArrayList<>();
 
+        //-- any query terms passed in via the 'q' parameter will be added to the list first
+        for (String key : new ArrayList<String>(params.keySet())) {
+            if (key.equalsIgnoreCase("q")) {
+                String value = params.get(key);
+                if(!Utils.empty(value)){
+                    value = "and(" + value + ")";
+                }
+
+                Term term = RqlParser.parse(key, value);
+                for(Term child : term.getTerms())
+                    params.put(child.toString(), null);
+            }
+        }
+
         for (String key : params.keySet()) {
 
-            Term term = RqlParser.parse(key, params.get(key));
+            if (key.equalsIgnoreCase("q"))
+                continue;
+
+            String value = params.get(key);
+            Term term = RqlParser.parse(key, value);
 
             List<Term> illegalTerms = term.stream().filter(t -> t.isLeaf() && reservedParams.contains(t.getToken())).collect(Collectors.toList());
             if (illegalTerms.size() > 0) {
@@ -242,7 +260,7 @@ public abstract class Db<T extends Db> {
                 if (dottedInclude)
                     continue;
 
-                //-- if the users requets eq(includes, href...) you have to replace "href" with the primary index column names
+                //-- if the users requests eq(includes, href...) you have to replace "href" with the primary index column names
                 for (Term child : term.getTerms()) {
                     if (child.hasToken("href") && collection != null) {
                         Index pk = collection.getPrimaryIndex();
@@ -291,43 +309,47 @@ public abstract class Db<T extends Db> {
                     JSNode node = new JSNode();
                     results.setRow(i, node);
 
-                    //String resourceKey = req.getCollection().encodeResourceKey(row);
-                    String resourceKey = collection.encodeResourceKey(row);
+                    String resourceKey = collection.encodeDbKey(row);
+
+                    JSNode links = new JSNode();
 
                     if (!Utils.empty(resourceKey)) {
                         //------------------------------------------------
                         //next turn all relationships into links that will
                         //retrieve the related entities
-                        for (Relationship rel : collection.getRelationships()) {
-                            String link = null;
-                            if (rel.isManyToOne()) {
-                                String fkval = null;
-                                if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1) {
-                                    //this value is already an encoded resourceKey
-                                    Object obj = row.get(rel.getFk1Col1().getColumnName());
-                                    if (obj != null)
-                                        fkval = obj.toString();
-                                } else {
-                                    fkval = Collection.encodeResourceKey(row, rel.getFkIndex1());
-                                }
 
-                                if (fkval != null) {
-                                    link = Chain.buildLink(rel.getRelated(), fkval, null);
-                                }
-                            } else {
-                                //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
-                                link = Chain.buildLink(collection, resourceKey, rel.getName());
-                            }
-                            node.put(rel.getName(), link);
-                        }
+//                        for (Relationship rel : collection.getRelationships()) {
+//                            String link = null;
+//                            if (rel.isManyToOne()) {
+//                                String fkval = null;
+//                                if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1) {
+//                                    //this value is already an encoded resourceKey
+//                                    Object obj = row.get(rel.getFk1Col1().getColumnName());
+//                                    if (obj != null)
+//                                        fkval = obj.toString();
+//                                } else {
+//                                    fkval = Collection.encodeResourceKey(row, rel.getFkIndex1());
+//                                }
+//
+//                                if (fkval != null) {
+//                                    link = Chain.buildLink(rel.getRelated(), fkval, null);
+//                                }
+//                            } else {
+//                                //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
+//                                link = Chain.buildLink(collection, resourceKey, rel.getName());
+//                            }
+//                            node.put(rel.getName(), link);
+//                            links.put(rel.getName(), new JSNode("href", link));
+//                        }
 
                         //------------------------------------------------
                         // finally make sure the resource key is encoded as the href
-                        String href = node.getString("href");
-                        if (Utils.empty(href)) {
-                            href = Chain.buildLink(collection, resourceKey, null);
-                            node.putFirst("href", href);
-                        }
+//                        String href = node.getString("href");
+//                        if (Utils.empty(href)) {
+//                            href = Chain.buildLink(collection, resourceKey, null);
+//                            node.putFirst("href", href);
+//                            links.putFirst("self", new JSNode("href", href));
+//                        }
                     }
 
                     //------------------------------------------------
@@ -345,7 +367,8 @@ public abstract class Db<T extends Db> {
                             //-- empty props for fields that were not
                             //-- returned from the db
                             Object val = row.remove(colName);
-                            if (!node.containsKey(attrName)) {
+                            //if (!node.containsKey(attrName))
+                            {
                                 val = castDbOutput(attr, val);
                                 node.put(attrName, val);
                             }
@@ -355,13 +378,26 @@ public abstract class Db<T extends Db> {
                     //------------------------------------------------
                     // next, if the db returned extra columns that
                     // are not mapped to attributes, just straight copy them
-                    for (String key : row.keySet()) {
-                        if (!key.equalsIgnoreCase("href") && !node.containsKey(key)) {
-                            Object value = row.get(key);
-                            node.put(key, value);
+//                    for (String key : row.keySet()) {
+//                        if (!key.equalsIgnoreCase("href") && !node.containsKey(key)) {
+//                            Object value = row.get(key);
+//                            node.put(key, value);
+//                        }
+//                    }
+
+                    //------------------------------------------------
+                    // put any primary key fields at the top of the object
+                    Index idx = collection.getPrimaryIndex();
+                    if(idx != null){
+                        for(int j=idx.size()-1; j>=0; j--){
+                            Property prop = idx.getProperty(j);
+                            if(node.containsKey(prop.getJsonName()))
+                                node.putFirst(prop.getJsonName(), node.get(prop.getJsonName()));
                         }
                     }
 
+                    //if(links.size() > 0)
+                    //    node.putFirst("_links", links);
                 }
             }
 
@@ -394,7 +430,7 @@ public abstract class Db<T extends Db> {
 
             String href = node.get("href") != null ? node.get("href").toString() : null;
             if (href != null) {
-                Row decodedKey = collection.decodeResourceKey(href);
+                Row decodedKey = collection.decodeDbKey(href);
                 mapped.putAll(decodedKey);
             }
 
@@ -488,7 +524,7 @@ public abstract class Db<T extends Db> {
             node = ((JSNode) node).getString("href");
 
         if (node instanceof String)
-            return collection.decodeResourceKey((String) node);
+            return collection.decodeDbKey((String) node);
 
         return null;
     }
@@ -503,7 +539,7 @@ public abstract class Db<T extends Db> {
 
         if (srcCols.size() != destCols.size() && destCols.size() == 1) {
             //when the foreign key is only one column but the related primary key is multiple columns, encode the FK as an resourceKey.
-            String resourceKey = Collection.encodeResourceKey(srcRow, srcCols);
+            String resourceKey = Collection.encodeKey(srcRow, srcCols, false);
 
             for (String key : new ArrayList<>(srcRow.keySet()))
                 srcRow.remove(key);
@@ -575,7 +611,7 @@ public abstract class Db<T extends Db> {
                 if ("href".equalsIgnoreCase(jsonProp)) {
                     String resourceKey = Utils.substringAfter(value.toString(), "/");
                     resourceKeys.add(resourceKey);
-                    row.putAll(collection.decodeResourceKey(resourceKey));
+                    row.putAll(collection.decodeDbKey(resourceKey));
                 } else {
                     Property collProp = collection.getProperty(jsonProp);
                     if (collProp != null) {
@@ -587,7 +623,7 @@ public abstract class Db<T extends Db> {
                         if (rel != null) {
                             if (rel.isManyToOne()) {
                                 if (value != null) {
-                                    Map fk = rel.getRelated().decodeResourceKey(value.toString());
+                                    Map fk = rel.getRelated().decodeDbKey(value.toString());
                                     mapTo(fk, rel.getFkIndex1(), rel.getRelated().getPrimaryIndex());
                                     row.putAll(fk);
                                 } else {
@@ -636,7 +672,7 @@ public abstract class Db<T extends Db> {
     public abstract void delete(Collection collection, List<Map<String, Object>> indexValues) throws ApiException;
 
     /**
-     * Adds all non excluded Collections to the Api via Api.withCollection
+     * Does some final configuration adds all non excluded Collections to the Api via Api.withCollection
      *
      * @param api the Api to configure.
      */
@@ -644,6 +680,14 @@ public abstract class Db<T extends Db> {
 
         for (Collection coll : getCollections()) {
             if (!coll.isExclude()) {
+
+                //-- this is an API behavior that we want to be "automatic" that
+                //-- may not be part of the data declaration.
+                Index index = coll.getPrimaryIndex();
+                for(Property property : index.getProperties()){
+                    property.withNullable(false);
+                }
+
                 api.withCollection(coll);
             }
         }
@@ -684,7 +728,16 @@ public abstract class Db<T extends Db> {
             if (coll.getName().equals(coll.getTableName())) {
                 //collection has not already been specifically customized
                 String prettyName = beautifyCollectionName(coll.getTableName());
-                coll.withName(prettyName);
+
+                String pluralName = toPluralForm(prettyName);
+                String singularName = toSingularForm(prettyName);
+
+                if(pluralName.equals(singularName))//-- algo did not handle pluralization "correctly"
+                    pluralName += "s";
+
+                coll.withName(pluralName);
+                coll.withSingularDispalyName(capitalize(singularName));
+                coll.withPluralDisplayName(capitalize(pluralName));
             }
 
             for (Property prop : coll.getProperties()) {
@@ -694,8 +747,47 @@ public abstract class Db<T extends Db> {
                     prop.withJsonName(prettyName);
                 }
             }
+
+            //-- WB 20201229 - added so that the json name for a single field primary key is "id"
+            if(coll.getPropertyByJsonName("id") == null){
+                Index primaryIndex = coll.getPrimaryIndex();
+                if(primaryIndex != null) {
+                    if (primaryIndex.getProperties().size() == 1) {
+                        Property idx = primaryIndex.getProperty(0);
+                        idx.withJsonName("id");
+                    }
+                }
+            }
         }
     }
+
+    String toSingularForm(String str){
+        if(str.length() > 3 && str.toLowerCase().endsWith("ies")){
+            str = str.substring(0, str.length() -3);
+            if(Character.isLowerCase(str.charAt(str.length()-1)))
+                str += "y";
+            else
+                str += "Y";
+        }
+
+        if(str.toLowerCase().endsWith("s"))
+            str = str.substring(0, str.length() -1);
+
+        return str;
+    }
+
+    String toPluralForm(String str){
+        if(!(str.toLowerCase().endsWith("s")))
+            str = Pluralizer.plural(str);
+
+        return str;
+    }
+
+    protected String capitalize(String str){
+        str =Character.toUpperCase(str.charAt(0)) + (str.length() > 0 ? str.substring(1, str.length()) : "");
+        return str;
+    }
+
 
     /**
      * Creates ONE_TO_MANY, MANY_TO_ONE, and MANY_TO_MANY Relationships with attractive RESTish names
@@ -783,60 +875,11 @@ public abstract class Db<T extends Db> {
 
         String collectionName = beautifyName(tableName);
 
-        if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
-            collectionName = Pluralizer.plural(collectionName);
+        //if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
+        //    collectionName = Pluralizer.plural(collectionName);
 
         return collectionName;
     }
-
-    //   /**
-    //    * Attempts to construct a sensible json property name for a Relationship.
-    //    * <p>
-    //    * For example, a "ONE Author TO_MANY Books" relationship might show up as "books" on the Author collection and "Author" on the Books collection.
-    //    * <p>
-    //    * The algorithm attempts to pluralize the "MANY" side of the relationship.
-    //    * <p>
-    //    * The "ONE" side of a relationship uses the first foreign key column name minus an trailing case insensitive "ID", so in the above example,
-    //    * if there is a foreign key Book.authorId pointing to the Author table, the the name would be "author".  If the foreign key column name
-    //    * was Book.primaryAuthorKey, the relationship would be named "primaryAuthorKey".
-    //    *
-    //    * @param resource
-    //    * @param rel
-    //    * @return the json property name for this Relationship.
-    //    */
-    //   protected String makeRelationshipName(Collection resource, Relationship rel)
-    //   {
-    //      String name = null;
-    //      String type = rel.getType();
-    //      boolean pluralize = false;
-    //      if (type.equals(Relationship.REL_MANY_TO_ONE))
-    //      {
-    //         name = rel.getFk1Col1().getJsonName();
-    //         if (name.toLowerCase().endsWith("id") && name.length() > 2)
-    //         {
-    //            name = name.substring(0, name.length() - 2);
-    //         }
-    //      }
-    //      else if (type.equals(Relationship.REL_ONE_TO_MANY))
-    //      {
-    //         name = rel.getRelated().getName();
-    //         pluralize = true;
-    //      }
-    //      else if (type.equals(Relationship.REL_MANY_TO_MANY))
-    //      {
-    //         name = rel.getFk2Col1().getPk().getCollection().getName();
-    //         pluralize = true;
-    //      }
-    //
-    //      name = beautifyName(name);
-    //
-    //      if (pluralize)
-    //      {
-    //         name = Pluralizer.plural(name);
-    //      }
-    //
-    //      return name;
-    //   }
 
     /**
      * Try to make an attractive camelCase valid javascript variable name.
@@ -880,7 +923,13 @@ public abstract class Db<T extends Db> {
 
             buff.append(next);
         }
-        return buff.toString();
+
+        //-- special case for names like 'orderID'
+        name = buff.toString();
+        if(name.length() > 2 && name.endsWith("ID") && Character.isLowerCase(name.charAt(name.length()-3)))
+            name = name.substring(0, name.length() -3) + "Id";
+
+        return name;
     }
 
     /**
@@ -1114,6 +1163,8 @@ public abstract class Db<T extends Db> {
      * @param includeTables underlying data source tables that should be included as REST collections
      * @return this
      * @see #beautifyCollectionName(String)
+     *
+     * TODO: this should lazy init off a string config property
      */
     public T withIncludeTables(String includeTables) {
         for (String pair : Utils.explode(",", includeTables)) {

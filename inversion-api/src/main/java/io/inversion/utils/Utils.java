@@ -1116,10 +1116,16 @@ public class Utils {
      * @return the first method with name
      */
     public static Method getMethod(Class clazz, String name) {
+        //System.out.println("looking for " + name + " ---------------------------------");
         while (clazz != null && !Object.class.equals(clazz)) {
             for (Method m : clazz.getMethods()) {
-                if (m.getName().equalsIgnoreCase(name))
+                if (m.getName().equalsIgnoreCase(name)){
+                    //System.out.println("FOUND: " + m.getName());
                     return m;
+                }
+                else {
+                    //System.out.println(name + " != " + m.getName());
+                }
             }
             clazz = clazz.getSuperclass();
         }
@@ -1299,6 +1305,20 @@ public class Utils {
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
+    }
+
+    /**
+     * Checks <code>string</code> for wildcard control characters.
+     * @param string
+     * @return true when <code>string</code> contains a regex control character
+     */
+    public static boolean isRegex(String string){
+        String controlChars = "<([{\\^-=$!|]})?*+.>";
+        for(int i=0; i<controlChars.length(); i++){
+            if(string.indexOf(controlChars.charAt(i)) > 0)
+                return true;
+        }
+        return false;
     }
 
     /**

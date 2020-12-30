@@ -28,6 +28,14 @@ public class Property implements Serializable {
     protected String  columnName = null;
     protected String  type       = "string";
     protected boolean nullable   = false;
+    protected boolean readOnly = false;
+    protected boolean required = false;
+    protected String jsonType = null;
+    protected String regex = null;
+
+    public void setCollection(Collection collection) {
+        this.collection = collection;
+    }
 
     protected String hint = null;
 
@@ -209,6 +217,92 @@ public class Property implements Serializable {
     public Property withExclude(boolean exclude) {
         this.exclude = exclude;
         return this;
+    }
+
+    public boolean isReadOnly(){
+        return readOnly;
+    }
+
+    public Property withReadOnly(boolean readOnly){
+        this.readOnly = readOnly;
+        return this;
+    }
+
+    public boolean isRequired(){
+        return required;
+    }
+
+    public Property withRequired(boolean required){
+        this.required = required;
+        return this;
+    }
+
+    public Property withRegex(String regex){
+        this.regex = regex;
+        return this;
+    }
+
+    public String getRegex(){
+
+        if(regex != null)
+            return regex;
+
+        String type = getJsonType();
+        if("number".equalsIgnoreCase(type))
+            return "[+-]?([0-9]*[.])?[0-9]+";
+
+        return null;
+    }
+
+    public Property withJsonType(String jsonType){
+        this.jsonType = jsonType;
+        return this;
+    }
+
+    public String getJsonType() {
+
+        if(jsonType != null)
+            return jsonType;
+
+        if(type == null)
+            return "string";
+
+        switch (type.toLowerCase()) {
+//            case "char":
+//            case "nchar":
+//            case "clob":
+//            case "s":
+//            case "string":
+//            case "varchar":
+//            case "nvarchar":
+//            case "longvarchar":
+//            case "longnvarchar":
+//            case "json":
+//            case "datalink":
+//            case "date":
+//            case "datetime":
+//            case "timestamp":
+//                return "string";
+            case "n":
+            case "number":
+            case "numeric":
+            case "decimal":
+            case "tinyint":
+            case "smallint":
+            case "integer":
+            case "bigint":
+            case "float":
+            case "real":
+            case "double":
+                return "number";
+            case "bool":
+            case "boolean":
+            case "bit":
+                return "boolean";
+
+            default:
+                return "string";
+        }
     }
 
 }

@@ -92,8 +92,7 @@ public class Path {
      * @param path the Path to be cloned
      */
     public Path(Path path) {
-        parts.addAll(path.parts);
-        lc.addAll(path.lc);
+        copy(path);
     }
 
     /**
@@ -120,6 +119,14 @@ public class Path {
      */
     public Path(List<String> parts) {
         this(parts.toArray(new String[0]));
+    }
+
+    public Path copy(Path path){
+        parts.clear();
+        lc.clear();
+        parts.addAll(path.parts);
+        lc.addAll(path.lc);
+        return this;
     }
 
     /**
@@ -184,6 +191,11 @@ public class Path {
         }
     }
 
+    public void set(int index, String part){
+        parts.set(index, part);
+        lc.set(index, part.toLowerCase());
+    }
+
     /**
      * Simple way to remove the path part at <code>index</code> without having to check for <code>size() @lt; index</code> first.
      *
@@ -229,6 +241,10 @@ public class Path {
      */
     public String toString() {
         return Utils.implode("/", parts);
+    }
+
+    public int hashCode(){
+        return toString().hashCode();
     }
 
     /**
@@ -560,5 +576,21 @@ public class Path {
         }
 
         return matchedPath;
+    }
+
+    public boolean hasAllVars(String... vars) {
+        for (int i = 0; i < vars.length; i++) {
+            boolean has = false;
+            for (int j = 0; j < size(); j++) {
+                if (vars[i].toString().equalsIgnoreCase(getVarName(j))) {
+                    has = true;
+                    break;
+                }
+            }
+            if (!has) {
+                return false;
+            }
+        }
+        return true;
     }
 }

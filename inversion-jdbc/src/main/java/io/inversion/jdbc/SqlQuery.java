@@ -186,14 +186,20 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     protected String printInitialSelect(Parts parts) {
         String initialSelect = (String) find("_query", 0);
 
-        if (initialSelect == null) {
+        if (Utils.empty(initialSelect)) {
             String  expression = getFrom().getSubquery();
+
             String  alias      = quoteCol(getFrom().getAlias());
             boolean distinct   = getSelect().isDistinct();
 
             if (expression != null) {
                 initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM (" + expression + ")";
             } else {
+
+                String table = getFrom().getTable();
+                if(Utils.empty(table))
+                    throw ApiException.new400BadRequest("Your requested url '{}' could not be mapped to a table to query.", Chain.peek().getRequest().getUrl());
+
                 expression = quoteCol(getFrom().getTable());
                 initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM " + expression;
             }

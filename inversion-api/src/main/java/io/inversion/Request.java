@@ -21,8 +21,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,6 +45,9 @@ public class Request {
 
     protected Engine engine  = null;
 
+    protected Path     containerPath = null;
+    protected Path     containerMatchPath = null;
+
     protected Api    api         = null;
     protected Path   apiPath     = null;
     protected Path   apiMatchPath = null;
@@ -58,6 +60,9 @@ public class Request {
     protected Path       collectionPath = null;
     protected Path       collectionMatchPath = null;
 
+    protected List<Chain.ActionMatch> actionMatches = new ArrayList();
+
+    protected Map<String, String> pathParams = new HashMap<>();
     protected String body = null;
     protected JSNode json = null;
 
@@ -203,6 +208,12 @@ public class Request {
         return false;
     }
 
+    public Request withContainerPath(Path containerPath, Path containerPathMatch){
+        this.containerPath = containerPath;
+        this.containerMatchPath = containerPathMatch;
+        return this;
+    }
+
     public Request withCollection(Collection collection) {
         this.collection = collection;
         return this;
@@ -224,6 +235,28 @@ public class Request {
         this.endpointPath = endpointPath;
         this.endpointMatchPath = endpointMatchPath;
         return this;
+    }
+
+    public Request withActionMatches(List<Chain.ActionMatch> actionMatches){
+        this.actionMatches.addAll(actionMatches);
+        return this;
+    }
+
+    public List<Chain.ActionMatch> getActionMatches(){
+        return actionMatches;
+    }
+
+    public Request withPathParams(Map<String, String> pathParams){
+        this.pathParams.putAll(pathParams);
+
+        pathParams.keySet().forEach(url::clearParams);
+        pathParams.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> url.withParam(e.getKey(), e.getValue()));
+
+        return this;
+    }
+
+    public Map<String, String> getPathParams(){
+        return this.pathParams;
     }
 
     public boolean isDebug() {
@@ -432,6 +465,12 @@ public class Request {
 
     public String getRelationshipKey() {
         return url.getParam(RELATIONSHIP_KEY);
+    }
+
+    public Relationship getRelationship(){
+        if(collection != null && getRelationshipKey() != null)
+            return collection.getRelationship(getRelationshipKey());
+        return null;
     }
 
     public Request withApi(Api api, Path apiPath, Path apiMatchPath) {

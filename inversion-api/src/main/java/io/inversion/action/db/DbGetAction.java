@@ -61,10 +61,16 @@ public class DbGetAction extends Action<DbGetAction> {
         if (obj == null)
             return null;
 
-        if (obj instanceof JSNode)
-            obj = ((JSNode) obj).get("href");
+        Object href = obj;
 
-        String str = (String) obj;
+        if (obj instanceof JSNode){
+            href = ((JSNode) obj).get("href");
+            if(href == null){
+                href = ((JSNode)obj).find("_links.self.href");
+            }
+        }
+
+        String str = (String) href;
         int    idx = str.lastIndexOf('/');
         if (idx > 0)
             str = str.substring(idx + 1);
@@ -176,7 +182,7 @@ public class DbGetAction extends Action<DbGetAction> {
             if (rel == null)
                 throw ApiException.new404NotFound("'{}' is not a valid relationship", req.getRelationshipKey());
 
-            StringBuilder newHref;
+            StringBuilder newHref = null;
 
             if (rel.isOneToMany()) {
                 //-- CONVERTS: http://localhost/northwind/sql/orders/10395/orderdetails
@@ -188,7 +194,7 @@ public class DbGetAction extends Action<DbGetAction> {
                 //TODO: need a compound key test case here
                 Collection relatedCollection = rel.getRelated();
                 newHref = new StringBuilder(Chain.buildLink(relatedCollection, null, null) + "?");
-                Row resourceKeyRow = collection.decodeResourceKey(req.getResourceKey());
+                Row resourceKeyRow = collection.decodeJsonKey(req.getResourceKey());
 
                 if (rel.getFkIndex1().size() != collection.getPrimaryIndex().size() //
                         && rel.getFkIndex1().size() == 1)//assume the single fk prop is an encoded resourceKey
@@ -202,7 +208,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
                     for (int i = 0; i < fkIdx.size(); i++) {
                         Property fk     = fkIdx.getProperty(i);
-                        String   pkName = pkIdx.getPropertyName(i);
+                        String pkName = pkIdx.getPropertyName(i);
                         Object   pkVal  = resourceKeyRow.get(pkName);
 
                         if (pkVal == null)
@@ -233,7 +239,37 @@ public class DbGetAction extends Action<DbGetAction> {
             } else {
                 //-- The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
                 //-- The system would have written out : http://localhost/northwind/source/orders/YYYYY
-                throw new UnsupportedOperationException("FIX ME IF FOUND...implementation logic error.");
+                //throw new UnsupportedOperationException("FIX ME IF FOUND...implementation logic error.");
+
+                String url = req.getUrl().getOriginal();
+                //String query = Utils.substringAfter(url, "?");
+
+                url = Utils.substringBefore(url, "?");
+                if(url.endsWith("/"))
+                    url = url.substring(0, url.length()-1);
+
+                url = url.substring(0, url.lastIndexOf("/"));
+
+                Response tempRes = res.getEngine().get(url).assertOk();
+                JSNode data = tempRes.getData();
+                if(data instanceof JSArray)
+                    data = (JSNode)((JSArray)data).get(0);
+
+                String link = Chain.buildLink(data, rel);
+                newHref = new StringBuilder(link);
+
+//                String fk = data.findString(rel.getName());
+//                if(fk == null)
+//                    fk = data.findString("_links." + rel.getName() + ".href");
+//
+//                if(fk != null && fk.startsWith("http")){
+//                    newHref = new StringBuilder(fk);
+//                }
+
+                if(newHref == null)
+                    throw ApiException.new500InternalServerError("Unable to locate foreign key value for relationship '{}'", rel.getName());
+
+
             }
 
             String query = req.getUrl().getQueryString();
@@ -600,8 +636,8 @@ public class DbGetAction extends Action<DbGetAction> {
                 idxToRetrieveVals.add(propVal);
             }
 
-            String parentEk  = Collection.encodeResourceKey(idxToMatchVals);
-            String relatedEk = Collection.encodeResourceKey(idxToRetrieveVals);
+            String parentEk  = Collection.encodeKey(idxToMatchVals);
+            String relatedEk = Collection.encodeKey(idxToRetrieveVals);
 
             related.add(new DefaultKeyValue<>(parentEk, relatedEk));
         }

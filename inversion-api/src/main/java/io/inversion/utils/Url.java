@@ -16,6 +16,9 @@
  */
 package io.inversion.utils;
 
+import io.inversion.Api;
+import io.inversion.ApiException;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -78,7 +81,7 @@ public class Url {
 
         url = url.replace("&amp;", "&");
         if (!(url.startsWith("http://") || url.startsWith("https://")))
-            url = "http://localhost" + (!url.startsWith("/") ? "/" : "") + url;
+            url = "http://127.0.0.1" + (!url.startsWith("/") ? "/" : "") + url;
 
         original = url;
 
@@ -91,9 +94,6 @@ public class Url {
                 withQueryString(query);
             }
 
-            //replace slashes after stripping off query to leave query as it was found
-            url = url.replace('\\', '/');
-
             int potocolEnd = url.indexOf("://");
             if (potocolEnd < 0) {
                 path = url;
@@ -104,8 +104,8 @@ public class Url {
                 int hostStart = url.indexOf('/') + 2;
                 int hostEnd   = url.indexOf(':', hostStart);
 
-                //--this is probably ah file url like file://c:/
-                //--so don't cound this colon
+                //--this is probably a file url like file://c:/
+                //--so don't count this colon
                 //if(hostEnd - hostStart <= 1)
                 //   hostEnd = url.indexOf(':', hostEnd + 1);
                 if (hostEnd < 0 || hostEnd > url.indexOf('/', hostStart)) {
@@ -140,12 +140,16 @@ public class Url {
                 path = '/' + url;
             }
 
+            if(path.contains("//") || url.contains("./") || url.contains(".."))
+                throw ApiException.new400BadRequest("Your requested URL '{}' is malformed.", url);
+
             if (!Utils.empty(path))
                 this.path = new Path(path);
 
         } catch (Exception ex) {
-            System.err.println("Error parsing url \"" + url + "\"");
-            ex.printStackTrace();
+            if(!(ex instanceof ApiException))
+                ex = ApiException.new500InternalServerError(ex);
+            throw (ApiException)ex;
         }
     }
 

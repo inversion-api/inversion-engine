@@ -93,7 +93,7 @@ public class CosmosDb extends Db<CosmosDb> {
                 if (term.hasToken("_key")) {
                     String indexName = term.getToken(0);
                     Index idx = collection.getIndex(indexName);
-                    Rows.Row key = collection.decodeResourceKey(idx, term.getToken(1));
+                    Rows.Row key = collection.decodeDbKey(idx, term.getToken(1));
 //                    Rows.Row key = collection.decodeResourceKey(term.getToken(0));
                     for (Property prop : partitionIdx.getProperties()) {
                         String colName = prop.getColumnName();
@@ -110,7 +110,7 @@ public class CosmosDb extends Db<CosmosDb> {
                 //-- remove any explicit partitionKey query params supplied by the users
                 columnMappedTerms.removeIf(term -> term.hasToken("eq") && partitionIdx.getName().equals(term.getToken(0)));
 
-                String partitionKey = io.inversion.Collection.encodeResourceKey(values, partitionIdx);
+                String partitionKey = io.inversion.Collection.encodeKey(values, partitionIdx, false);
                 columnMappedTerms.add(Term.term(null, "eq", partitionIdx.getName(), partitionKey));
             }
         }
@@ -133,7 +133,7 @@ public class CosmosDb extends Db<CosmosDb> {
         //-- makes sure the partition key is set correctly on the document if there is one.
         Index partitionIdx = collection.getIndexByType(INDEX_TYPE_PARTITION_KEY);
         if (partitionIdx != null) {
-            String partitionKey = io.inversion.Collection.encodeResourceKey(row, partitionIdx);
+            String partitionKey = io.inversion.Collection.encodeKey(row, partitionIdx, false);
             if (partitionKey == null)
                 throw ApiException.new400BadRequest("Unable to determine the CosmosDb partition key from the supplied fields");
 
@@ -149,7 +149,7 @@ public class CosmosDb extends Db<CosmosDb> {
             JSNode doc = new JSNode(row);
             String id  = doc.getString("id");
             if (id == null) {
-                id = collection.encodeResourceKey(row);
+                id = collection.encodeDbKey(row);
                 if (id == null)
                     throw ApiException.new400BadRequest("Your record does not contain the required key fields.");
                 doc.putFirst("id", id);
@@ -211,7 +211,7 @@ public class CosmosDb extends Db<CosmosDb> {
 
         normalizePartitionKey(collection, indexValues);
 
-        Object id                = collection.encodeResourceKey(indexValues);
+        Object id                = collection.encodeDbKey(indexValues);
         Object partitionKeyValue = indexValues.get(collection.getIndex(CosmosDb.INDEX_TYPE_PARTITION_KEY).getProperty(0).getColumnName());
         String documentUri       = "/dbs/" + db + "/colls/" + collection.getTableName() + "/docs/" + id;
 

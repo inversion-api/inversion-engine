@@ -17,6 +17,7 @@
 package io.inversion;
 
 import io.inversion.Request.Upload;
+import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 
 import javax.servlet.ServletConfig;
@@ -26,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
@@ -109,12 +111,13 @@ public class EngineServlet extends HttpServlet {
                 headers.put(key, val);
             }
 
-            Map                 params       = new HashMap<>();
+            Map<String, String>                 params       = new HashMap<>();
             Enumeration<String> paramsEnumer = httpReq.getParameterNames();
             while (paramsEnumer.hasMoreElements()) {
                 String key = paramsEnumer.nextElement();
-                String val = httpReq.getParameter(key);
-                params.put(key, val);
+                String[] values = httpReq.getParameterValues(key);
+                String value = values == null ? null : (values.length == 1 ? values[0] : Utils.implode(",", values));
+                params.put(key, value);
             }
 
             String body = readBody(httpReq);
@@ -161,8 +164,17 @@ public class EngineServlet extends HttpServlet {
             engine.service(req, res);
             writeResponse(req, res, httpResp);
         } catch (Exception ex) {
-            ex.printStackTrace();
+
             httpResp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+
+            String message  = ex.getMessage();
+            JSNode response = new JSNode("message", message);
+            response.put("error", Utils.getShortCause(ex));
+
+            OutputStream out = httpResp.getOutputStream();
+            out.write(response.toString().getBytes(StandardCharsets.UTF_8));
+            out.flush();
+            out.close();
         }
     }
 

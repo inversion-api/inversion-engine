@@ -343,7 +343,7 @@ public class DbPostAction extends Action<DbPostAction> {
 
                         if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1) {
                             //-- the fk is an resourceKey not a one-to-one column mapping to the primary composite key
-                            updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeResourceKey(foreignResourceKey));
+                            updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeDbKey(foreignResourceKey));
                         } else {
                             Map foreignKey = collection.getDb().mapTo(foreignResourceKey, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
                             updatedRow.putAll(foreignKey);
@@ -381,7 +381,7 @@ public class DbPostAction extends Action<DbPostAction> {
                 if (href == null)
                     throw ApiException.new500InternalServerError("The child href should not be null at this point, this looks like an algorithm error.");
 
-                Row                 parentPk  = collection.decodeResourceKey(href);
+                Row                 parentPk  = collection.decodeJsonKey(href);
                 Map<String, Object> parentKey = collection.getDb().mapTo(parentPk, collection.getPrimaryIndex(), rel.getFkIndex1());
 
                 keepRels.put(rel, parentKey, new ArrayList());//there may not be any child nodes...this has to be added here so it will be in the loop later
@@ -394,7 +394,7 @@ public class DbPostAction extends Action<DbPostAction> {
 
                     if (!Utils.empty(childHref)) {
                         String childEk = (String) Utils.last(Utils.explode("/", childHref.toString()));
-                        Row    childPk = rel.getRelated().decodeResourceKey(childEk);
+                        Row    childPk = rel.getRelated().decodeJsonKey(childEk);
 
                         if (rel.isOneToMany()) {
                             keepRels.get(rel, parentKey).add(childPk);

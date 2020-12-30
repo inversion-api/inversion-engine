@@ -90,7 +90,7 @@ public class TestOverloadedDynamicTables {
                             if (resourceKey != null) {
                                 //-- handles /addresses/$resourceKey1,$resourceKey2,$resourceKey3
                                 List<String> resourceKeys = Utils.explode(",", resourceKey);
-                                Row          row          = req.getCollection().decodeResourceKey(resourceKeys.get(0));
+                                Row          row          = req.getCollection().decodeDbKey(resourceKeys.get(0));
                                 partitionKey = row.get(partitionProp);
                             }
 
@@ -130,7 +130,7 @@ public class TestOverloadedDynamicTables {
                                             String customerKey = (String) customerNode;
                                             customerKey = customerKey.substring(customerKey.lastIndexOf("/") + 1);
 
-                                            Row row = req.getApi().getCollection("customers").decodeResourceKey(customerKey);
+                                            Row row = req.getApi().getCollection("customers").decodeDbKey(customerKey);
                                             customerId = row.get("id");
                                         }
 

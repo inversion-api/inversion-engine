@@ -298,7 +298,7 @@ public class JdbcDb extends Db<JdbcDb> {
             }
 
             List<Row> upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
-            return upserted.stream().map(table::encodeResourceKey).collect(Collectors.toList());
+            return upserted.stream().map(table::encodeDbKey).collect(Collectors.toList());
         } catch (Exception ex) {
             throw ApiException.new500InternalServerError(ex);
         }
@@ -582,8 +582,13 @@ public class JdbcDb extends Db<JdbcDb> {
                         String colType = types.get(type);
 
                         boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
+                        boolean autoincrement = Utils.in((colsRs.getObject("IS_AUTOINCREMENT") + "").toLowerCase(), "yes", "true", "1");
 
                         Property column = new Property(colName, colType, nullable);
+
+                        if(autoincrement)
+                            column.withReadOnly(true);
+
                         table.withProperties(column);
                     }
                     colsRs.close();

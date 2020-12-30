@@ -478,76 +478,10 @@ public class Engine extends Rule<Engine> {
                 }
             }
 
-            String method = req.getMethod();
+            matchRequest(req);
 
-            Path                parts      = new Path(url.getPath());
-            Map<String, String> pathParams = new HashMap<>();
 
-            Path containerPath = match(method, parts);
-
-            if (containerPath == null)
-                throw ApiException.new400BadRequest("Somehow a request was routed to your Engine with an unsupported containerPath. This is a configuration error.");
-
-            if (containerPath != null)
-                containerPath.extract(pathParams, parts);
-
-            Path afterApiPath      = null;
-            Path afterEndpointPath = null;
-
-            for (Api api : apis) {
-                Path apiPath = api.match(method, parts);
-
-                if (apiPath != null) {
-                    Path apiMatchPath = new Path(apiPath);
-                    apiPath = apiPath.extract(pathParams, parts);
-                    req.withApi(api, apiPath, apiMatchPath);
-
-                    afterApiPath = new Path(parts);
-
-                    for (Endpoint endpoint : api.getEndpoints()) {
-                        //-- endpoints marked as internal can not be directly called by external
-                        //-- clients, they can only be called by a recursive call to Engine.service
-                        if (Chain.getDepth() < 2 && endpoint.isInternal())
-                            continue;
-
-                        Path endpointPath = endpoint.match(req.getMethod(), parts);
-
-                        if (endpointPath != null) {
-                            Path endpointMatchPath = new Path(endpointPath);
-                            endpointPath = endpointPath.extract(pathParams, parts);
-                            req.withEndpoint(endpoint, endpointPath, endpointMatchPath);
-
-                            afterEndpointPath = new Path(parts);
-
-                            for (Collection collection : api.getCollections()) {
-                                Db db = collection.getDb();
-                                if (db != null && db.getEndpointPath() != null && !db.getEndpointPath().matches(endpointPath))
-                                    continue;
-
-                                Path collectionPath = collection.match(method, parts);
-                                if (collectionPath != null) {
-                                    Path collectionMatchPath = new Path(collectionPath);
-                                    collectionPath = collectionPath.extract(pathParams, parts, true);
-                                    req.withCollection(collection, collectionPath, collectionMatchPath);
-
-                                    if (db != null && db.getEndpointPath() != null)
-                                        db.getEndpointPath().extract(pathParams, afterApiPath, true);
-
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            chain.withPathParams(pathParams);
-
-            //---------------------------------
-
-            if (req.getEndpoint() == null || req.isDebug()) {
+            if (req.isDebug()) {
                 res.debug("");
                 res.debug("");
                 res.debug(">> request --------------");
@@ -558,6 +492,9 @@ public class Engine extends Rule<Engine> {
                     res.debug(key + " " + Utils.implode(",", headers.get(key)));
                 }
                 res.debug("");
+
+                Chain.debug("Endpoint: " + req.getEndpoint());
+                Chain.debug("Actions: " + req.getActionMatches());
             }
 
             if (req.getApi() == null) {
@@ -574,37 +511,9 @@ public class Engine extends Rule<Engine> {
                 throw ApiException.new404NotFound("No Endpoint found matching '{}:{}' Valid endpoints are: {}", req.getMethod(), url, buff.toString());
             }
 
-            //this will get all actions specifically configured on the endpoint
-            List<ActionMatch> actions = new ArrayList<>();
-
-            for (Action action : req.getEndpoint().getActions()) {
-                Path actionPath = action.match(method, afterEndpointPath);
-                if (actionPath != null) {
-                    actions.add(new ActionMatch(actionPath, new Path(afterEndpointPath), action));
-                }
-            }
-
-            //this matches for actions that can run across multiple endpoints.
-            //this might be something like an authorization or logging action
-            //that acts like a filter
-            for (Action action : req.getApi().getActions()) {
-                Path actionPath = action.match(method, afterApiPath);
-                if (actionPath != null) {
-                    actions.add(new ActionMatch(actionPath, new Path(afterApiPath), action));
-                }
-            }
-
+            List<ActionMatch> actions = req.getActionMatches();
             if (actions.size() == 0)
                 throw ApiException.new404NotFound("No Actions are configured to handle your request.  Check your server configuration.");
-
-            Collections.sort(actions);
-
-            //-- appends info to chain.debug that can be used for debugging an d
-            //-- for test cases to validate what actually ran
-            if (req.isDebug()) {
-                Chain.debug("Endpoint: " + req.getEndpoint());
-                Chain.debug("Actions: " + actions);
-            }
 
             run(chain, actions);
 
@@ -683,6 +592,103 @@ public class Engine extends Rule<Engine> {
         }
 
         return chain;
+    }
+
+    public void matchRequest(Request req){
+        String method = req.getMethod();
+
+        Path                parts      = new Path(req.getUrl().getPath());
+        Map<String, String> pathParams = new HashMap<>();
+
+        Path containerPath = match(method, parts);
+
+        if (containerPath == null)
+            throw ApiException.new400BadRequest("Somehow a request was routed to your Engine with an unsupported containerPath. This is a configuration error.");
+
+        if (containerPath != null)
+            containerPath.extract(pathParams, parts);
+
+        Path afterApiPath      = null;
+        Path afterEndpointPath = null;
+
+        for (Api api : apis) {
+            Path apiPath = api.match(method, parts);
+
+            if (apiPath != null) {
+                Path apiMatchPath = new Path(apiPath);
+                apiPath = apiPath.extract(pathParams, parts);
+                req.withApi(api, apiPath, apiMatchPath);
+
+                afterApiPath = new Path(parts);
+
+                for (Endpoint endpoint : api.getEndpoints()) {
+                    //-- endpoints marked as internal can not be directly called by external
+                    //-- clients, they can only be called by a recursive call to Engine.service
+                    if (Chain.getDepth() < 2 && endpoint.isInternal())
+                        continue;
+
+                    Path endpointPath = endpoint.match(req.getMethod(), parts);
+
+                    if (endpointPath != null) {
+                        Path endpointMatchPath = new Path(endpointPath);
+                        endpointPath = endpointPath.extract(pathParams, parts);
+                        req.withEndpoint(endpoint, endpointPath, endpointMatchPath);
+
+                        afterEndpointPath = new Path(parts);
+
+                        for (Collection collection : api.getCollections()) {
+                            Db db = collection.getDb();
+                            if (db != null && db.getEndpointPath() != null && !db.getEndpointPath().matches(endpointPath))
+                                continue;
+
+                            Path collectionPath = collection.match(method, parts);
+                            if (collectionPath != null) {
+                                Path collectionMatchPath = new Path(collectionPath);
+                                collectionPath = collectionPath.extract(pathParams, parts, true);
+                                req.withCollection(collection, collectionPath, collectionMatchPath);
+
+                                if (db != null && db.getEndpointPath() != null)
+                                    db.getEndpointPath().extract(pathParams, afterApiPath, true);
+
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        req.withPathParams(pathParams);
+
+        //---------------------------------
+
+        if(req.getEndpoint() != null) {
+
+            //this will get all actions specifically configured on the endpoint
+            List<ActionMatch> actions = new ArrayList<>();
+
+            for (Action action : req.getEndpoint().getActions()) {
+                Path actionPath = action.match(method, afterEndpointPath);
+                if (actionPath != null) {
+                    actions.add(new ActionMatch(actionPath, new Path(afterEndpointPath), action));
+                }
+            }
+
+            //this matches for actions that can run across multiple endpoints.
+            //this might be something like an authorization or logging action
+            //that acts like a filter
+            for (Action action : req.getApi().getActions()) {
+                Path actionPath = action.match(method, afterApiPath);
+                if (actionPath != null) {
+                    actions.add(new ActionMatch(actionPath, new Path(afterApiPath), action));
+                }
+            }
+
+            Collections.sort(actions);
+            req.withActionMatches(actions);
+        }
     }
 
     /**
