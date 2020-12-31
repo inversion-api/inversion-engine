@@ -41,12 +41,9 @@ public class OpenAPIAction<A extends OpenAPIAction> extends Action<A> {
     protected OpenAPIWriterFactory factory = new OpenAPIWriterFactory(){};
 
     public void doGet(Request req, Response res) throws ApiException {
-//        OpenAPI openApi = generateOpenApi(req);
-//        JSNode json = writeOpenAPI(openApi);
-//        res.withJson(json);
-
         OpenAPI openApi = generateOpenApi(req);
-        res.withText(Json.pretty(openApi));
+        JSNode json = writeOpenAPI(openApi);
+        res.withJson(json);
     }
 
     public JSNode writeOpenAPI(OpenAPI openApi){
