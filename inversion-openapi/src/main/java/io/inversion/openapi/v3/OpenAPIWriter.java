@@ -77,6 +77,7 @@ public class OpenAPIWriter {
 
         openApi.setComponents(new Components());//-- prevents NPE
 
+        documentErrorSchema(openApi);
         documentCollectionLinksSchema(openApi);
 
         for (Collection coll : req.getApi().getCollections()) {
@@ -85,6 +86,15 @@ public class OpenAPIWriter {
             documentResourceSchemas(openApi, coll);
             documentCollectionSchemas(openApi, coll);
         }
+    }
+
+    protected void documentErrorSchema(OpenAPI openApi){
+        Schema schema = new Schema();
+        openApi.getComponents().addSchemas("error", schema);
+
+        schema.addProperties("status", newTypeSchema("string"));
+        schema.addProperties("message", newTypeSchema("string"));
+        schema.addProperties("error", newTypeSchema("string"));
     }
 
     protected void documentCollectionLinksSchema(OpenAPI openApi) {
@@ -368,6 +378,8 @@ public class OpenAPIWriter {
         String description = "Deletes an existing " + coll.getSingularDisplayName() + " resource.";
 
         Operation op = buildOperation(opToDoc, description, "204", null);
+        withResponse(op,opToDoc, "404");
+
         openApi.getPaths().get(opToDoc.operationPath).setDelete(op);
     }
 
@@ -418,6 +430,11 @@ public class OpenAPIWriter {
                     description = "Internal Server Error";
                     break;
             }
+        }
+
+        if(schemaName == null){
+            if(status != null && "399".compareTo(status) < 0)
+                schemaName = "error";
         }
 
         if(op.getResponses() == null)

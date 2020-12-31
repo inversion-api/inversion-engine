@@ -310,7 +310,7 @@ public class DbGetAction extends Action<DbGetAction> {
         Results results = select(req, req.getCollection(), req.getApi());
 
         if (results.size() == 0 && req.getResourceKey() != null && req.getCollectionKey() != null) {
-            res.withStatus(Status.SC_404_NOT_FOUND);
+            throw ApiException.new404NotFound("The requested resource '{}' was not found.", req.getResourceKey());
         } else {
             //-- copy data into the response
             res.withRecords(results.getRows());

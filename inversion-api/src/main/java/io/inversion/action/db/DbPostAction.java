@@ -107,7 +107,7 @@ public class DbPostAction extends Action<DbPostAction> {
         }
         else
         {
-            res.withStatus(Status.SC_404_NOT_FOUND);
+            throw ApiException.new404NotFound("The requested resource could not be found.");
         }
 
         //TODO: add res.withChanges()

@@ -43,7 +43,7 @@ public class DbDeleteAction extends Action<DbDeleteAction> {
         int deleted = delete(req.getEngine(), req.getCollection(), req.getUrl().toString());
 
         if (deleted < 1)
-            res.withStatus(Status.SC_404_NOT_FOUND);
+            throw ApiException.new404NotFound("The requested resource '{}' could not be found.", resourceKey);
         else
             res.withStatus(Status.SC_204_NO_CONTENT);
     }

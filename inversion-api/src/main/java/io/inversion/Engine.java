@@ -449,8 +449,8 @@ public class Engine extends Rule<Engine> {
             Url url = req.getUrl();
 
             if (url.toString().contains("/favicon.ico")) {
-                res.withStatus(Status.SC_404_NOT_FOUND);
-                return chain;
+                //-- browsers being a pain in the rear
+                throw ApiException.new404NotFound("The requested resource 'favicon.ico' could not be found.", req.getUrl().getOriginal());
             }
 
             String xfp = req.getHeader("X-Forwarded-Proto");
@@ -533,7 +533,6 @@ public class Engine extends Rule<Engine> {
         } catch (Throwable ex) {
 
             JSNode json = buildErrorJson(ex);
-
             res.withStatus(json.getString("status"));
             res.withError(ex);
             res.withJson(json);
