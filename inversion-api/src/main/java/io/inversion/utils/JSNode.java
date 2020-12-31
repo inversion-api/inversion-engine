@@ -205,15 +205,15 @@ public class JSNode implements Map<String, Object> {
     }
 
     static void writeNode(JSNode node, JsonGenerator json, HashMap<Object, String> visited, boolean lowercaseNames, String path) throws Exception {
-        JSProperty href = node.getProperty("href");
 
         if (visited.containsKey(node)) {
                 json.writeStartObject();
                 json.writeStringField("$ref", visited.get(node));
                 json.writeEndObject();
 
-                if(href != null)
-                    json.writeStringField("@link", href.getValue() + "");
+                Object href = node.get("href");
+                if(href instanceof String)
+                    json.writeStringField("@link", href + "");
             return;
         }
         visited.put(node, path);
@@ -225,14 +225,8 @@ public class JSNode implements Map<String, Object> {
 
         json.writeStartObject();
 
-        if (href != null)
-            json.writeStringField("href", href.getValue() + "");
-
         for (String key : node.keySet()) {
             JSProperty p = node.getProperty(key);
-            if (p == href)
-                continue;
-
             String name  = lowercaseNames ? p.getName().toLowerCase() : p.getName();
             Object value = p.getValue();
 
