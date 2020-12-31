@@ -31,7 +31,7 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P> {
 
     public Page(P query) {
         super(query);
-        withFunctions("offset", "limit", "page", "pageNum", "pageSize", "after");
+        withFunctions("page", "pageNum", "size", "pageSize", "after", "offset", "limit");
     }
 
     public int getOffset() {
@@ -64,10 +64,17 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P> {
     }
 
     public int getLimit() {
-        int limit = findInt("limit", 0, -1);
+
+        int limit = -1;
+
+        if (limit < 0)
+            limit = findInt("limit", 0, -1);
 
         if (limit < 0)
             limit = findInt("offset", 1, -1);
+
+        if (limit < 0)
+            limit = findInt("size", 0, -1);
 
         if (limit < 0)
             limit = findInt("pageSize", 0, -1);

@@ -531,35 +531,12 @@ public class Engine extends Rule<Engine> {
 
             return chain;
         } catch (Throwable ex) {
-            String status = Status.SC_500_INTERNAL_SERVER_ERROR;
 
-            if (ex instanceof ApiException) {
-                if (req != null && req.isDebug() && ((ApiException) ex).getStatus().startsWith("5")) {
-                    log.error("Error in Engine", ex);
-                }
+            JSNode json = buildErrorJson(ex);
 
-                status = ((ApiException) ex).getStatus();
-                //            if (Status.SC_404_NOT_FOUND.equals(status))
-                //            {
-                //               //an endpoint could have match the url "such as GET * but then not
-                //               //known what to do with the URL because the collection was not pluralized
-                //               if (redirectPlural(req, res))
-                //                  return chain;
-                //            }
-            } else {
-                ex = Utils.getCause(ex);
-                if (Chain.getDepth() == 1)
-                    log.error("Non ApiException was caught in Engine.", ex);
-            }
-
-            res.withStatus(status);
-            String message  = ex.getMessage();
-            JSNode response = new JSNode("message", message);
-            if (Status.SC_500_INTERNAL_SERVER_ERROR.equals(status))
-                response.put("error", Utils.getShortCause(ex));
-
+            res.withStatus(json.getString("status"));
             res.withError(ex);
-            res.withJson(response);
+            res.withJson(json);
 
             for (ApiListener listener : getApiListeners(req)) {
                 try {
@@ -592,6 +569,36 @@ public class Engine extends Rule<Engine> {
         }
 
         return chain;
+    }
+
+    public static JSNode buildErrorJson(Throwable ex){
+        String status = "500";
+        String message = "Internal Server Error";
+        String error = null;
+        if (ex instanceof ApiException) {
+            ApiException apiEx = ((ApiException) ex);
+            status = apiEx.getStatus();
+            message = status.substring(4, status.length());
+            status = status.substring(0, 3);
+
+            if("500".equals(status)){
+                error = ex.getMessage() + "\r\n" + Utils.getShortCause(ex);
+            }else{
+                error = apiEx.getMessage();
+                if(error != null && error.indexOf(" - ") < 20)
+                    error = error.substring(error.indexOf(" - ") + 3);
+            }
+        }
+
+        if(error == null && "500".equalsIgnoreCase(status)){
+            error = Utils.getShortCause(ex);
+        }
+
+        JSNode json = new JSNode("status", status, "message", message);
+        if(error != null)
+            json.put("error", error);
+
+        return json;
     }
 
     public void matchRequest(Request req){

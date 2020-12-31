@@ -742,20 +742,9 @@ public abstract class Db<T extends Db> {
 
             for (Property prop : coll.getProperties()) {
                 if (prop.getColumnName().equals(prop.getJsonName())) {
-                    //json name has not already been specifically customized
+                    //-- json name has not already been specifically customized
                     String prettyName = beautifyName(prop.getColumnName());
                     prop.withJsonName(prettyName);
-                }
-            }
-
-            //-- WB 20201229 - added so that the json name for a single field primary key is "id"
-            if(coll.getPropertyByJsonName("id") == null){
-                Index primaryIndex = coll.getPrimaryIndex();
-                if(primaryIndex != null) {
-                    if (primaryIndex.getProperties().size() == 1) {
-                        Property idx = primaryIndex.getProperty(0);
-                        idx.withJsonName("id");
-                    }
                 }
             }
         }
@@ -927,7 +916,7 @@ public abstract class Db<T extends Db> {
         //-- special case for names like 'orderID'
         name = buff.toString();
         if(name.length() > 2 && name.endsWith("ID") && Character.isLowerCase(name.charAt(name.length()-3)))
-            name = name.substring(0, name.length() -3) + "Id";
+            name = name.substring(0, name.length() -2) + "Id";
 
         return name;
     }

@@ -160,19 +160,12 @@ public class EngineServlet extends HttpServlet {
             });
 
             res = new Response();
-
             engine.service(req, res);
             writeResponse(req, res, httpResp);
-        } catch (Exception ex) {
-
-            httpResp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-
-            String message  = ex.getMessage();
-            JSNode response = new JSNode("message", message);
-            response.put("error", Utils.getShortCause(ex));
-
+        } catch (Throwable ex) {
+            JSNode json = Engine.buildErrorJson(ex);
             OutputStream out = httpResp.getOutputStream();
-            out.write(response.toString().getBytes(StandardCharsets.UTF_8));
+            out.write(json.toString().getBytes(StandardCharsets.UTF_8));
             out.flush();
             out.close();
         }

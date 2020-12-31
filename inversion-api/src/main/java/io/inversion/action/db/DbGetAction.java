@@ -57,25 +57,39 @@ public class DbGetAction extends Action<DbGetAction> {
         return exclude;
     }
 
-    protected static String getResourceKey(Object obj) {
-        if (obj == null)
-            return null;
 
-        Object href = obj;
+    protected static String getForeignKey(Relationship rel, JSNode node) {
 
-        if (obj instanceof JSNode){
-            href = ((JSNode) obj).get("href");
-            if(href == null){
-                href = ((JSNode)obj).find("_links.self.href");
-            }
-        }
+        String key = rel.getCollection().encodeJsonKey(node, rel.getFkIndex1());
 
-        String str = (String) href;
-        int    idx = str.lastIndexOf('/');
-        if (idx > 0)
-            str = str.substring(idx + 1);
-        return str;
+//        if(key == null)
+//            throw ApiException.new500InternalServerError("The foreign key '{}' could not be constructed from the data provided.", rel);
+//        if(key != null)
+//            return key;
+//
+//        if(key == null)
+//            key = node.getString(rel.getName());
+//
+//        if(key == null)
+//            key = node.findString("_links." + rel.getName() + ".href");
+//
+//        if(key != null && key.indexOf("/") > 0){
+//            if(key.endsWith("/"))
+//                key = key.substring(0, key.length() -1);
+//
+//            key = Utils.substringAfter(key, "/");
+//        }
 
+        return key;
+    }
+
+
+    protected static String getResourceKey(Collection collection, JSNode node) {
+        String key = collection.encodeJsonKey(node);
+        if(key == null)
+            throw ApiException.new500InternalServerError("The primary key '{}' could not be constructed from the data provided.", collection.getPrimaryIndex());
+
+        return key;
     }
 
     public static String stripTerms(String url, String... tokens) {
@@ -476,7 +490,7 @@ public class DbGetAction extends Action<DbGetAction> {
                     pkCache = new MultiKeyMap();
 
                     for (JSNode node : parentObjs) {
-                        pkCache.put(collection, getResourceKey(node), node);
+                        pkCache.put(collection, getResourceKey(collection, node), node);
                     }
                 }
 
@@ -506,20 +520,15 @@ public class DbGetAction extends Action<DbGetAction> {
 
                     relatedEks = new ArrayList<>();
                     for (JSNode parentObj : parentObjs) {
-                        String parentEk = getResourceKey(parentObj);
-                        String childEk  = parentObj.getString(rel.getName());
+                        String parentEk = getResourceKey(collection, parentObj);
+                        String childEk  = getForeignKey(rel, parentObj);
                         if (childEk != null) {
-                            childEk = getResourceKey(childEk);
                             relatedEks.add(new DefaultKeyValue(parentEk, childEk));
                         }
                     }
                 } else if (rel.isOneToMany()) {
-                    //               idxToMatch = rel.getFkIndex1();
-                    //               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Resource().getKey().getColumn();
-
                     idxToMatch = rel.getFkIndex1();
                     idxToRetrieve = rel.getRelated().getPrimaryIndex();
-
                 } else if (rel.isManyToMany()) {
                     idxToMatch = rel.getFkIndex1();
                     idxToRetrieve = rel.getFkIndex2();
@@ -528,10 +537,10 @@ public class DbGetAction extends Action<DbGetAction> {
                 if (relatedEks == null) {
                     List toMatchEks = new ArrayList<>();
                     for (JSNode parentObj : parentObjs) {
-                        String parentEk = getResourceKey(parentObj);
+                        String parentEk = getResourceKey(collection, parentObj);
                         if (!toMatchEks.contains(parentEk)) {
                             if (parentObj.get(rel.getName()) instanceof JSArray)
-                                throw ApiException.new500InternalServerError("Algorithm implementation error...this relationship seems to have already been expanded.");
+                                throw ApiException.new500InternalServerError("This relationship seems to have already been expanded.");//-- this is an implementation logic error. If it ever happens...FIX IT.
 
                             toMatchEks.add(parentEk);
 
@@ -689,9 +698,9 @@ public class DbGetAction extends Action<DbGetAction> {
             List<JSNode> nodes = (List<JSNode>) res.getData().asList();
 
             for (JSNode node : nodes) {
-                Object resourceKey = getResourceKey(node);
+                Object resourceKey = getResourceKey(collection, node);
                 if (pkCache.containsKey(collection, resourceKey)) {
-                    throw ApiException.new500InternalServerError("FIX ME IF FOUND.  Algorithm Implementation Error");
+                    throw ApiException.new500InternalServerError("The requested resource has already been retrieved.");//-- logic error...fix me if found.
                 }
 
                 pkCache.put(collection, resourceKey, node);

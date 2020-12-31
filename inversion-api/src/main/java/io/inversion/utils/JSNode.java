@@ -209,12 +209,11 @@ public class JSNode implements Map<String, Object> {
 
         if (visited.containsKey(node)) {
                 json.writeStartObject();
+                json.writeStringField("$ref", visited.get(node));
+                json.writeEndObject();
+
                 if(href != null)
                     json.writeStringField("@link", href.getValue() + "");
-                //TODO put me back
-                //json.writeStringField("$ref", visited.get(node));
-                json.writeStringField("TODO: FIXME:$ref", visited.get(node));
-                json.writeEndObject();
             return;
         }
         visited.put(node, path);
