@@ -36,7 +36,7 @@ public class OpenApiActionTest {
                         "sa", //
                         "", //
                         JdbcDb.class.getResource("northwind-h2.ddl").toString()))
-                .withEndpoint(new Endpoint("*", "openapi.json", new OpenApiAction()))
+                .withEndpoint(new Endpoint("*", "openapi.json", new OpenAPIAction()))
                 .withEndpoint(new Endpoint("*", "rapidoc.html", new FileAction()))
                 .withEndpoint(new Endpoint("*", "v1/:tenant/*", new HALAction(), new DbAction()))
         ;

@@ -1,139 +1,192 @@
 ## Pagination
 
-| Parameter     | Description                                                                                  |
- | ------------ | -------------------------------------------------------------------------------------------- |
-| page=N        | Translates into an offset clause using pagesize (or the default page size) as the multiplier. |
-| pagenum=N     | An overloaded synonym for "page", the two are equivelant.                                    |
-| pagesize=N    | The number of results to return.                                                              |
-| offset=N      | Directly translates into a sql offset clause, overrides any page/pagenum params supplied.     |
-| limit=N       | Directly translates into a SQL limit clause, overrides any pagesize params supplied.          |
 
-## Sorting and Ordering
+| Parameter     | Description                                                                                  
+| ------------- | -------------------------------------------------------------------------------------------- 
+| page=N        | Translates into an offset clause using the 'size' parameter (or 100 as the default) as the multiplier.
+| size=N        | The number of results to return.                                                             
 
-| Parameter                   | Description                                                                         |
- | -------------------------- | ----------------------------------------------------------------------------------- |
-| sort=col1,+col2,-col3,colN  | Use of the + operator is the implied default.  Prefixing with "-" sorts descending. |
-| order                       | An overloaded synonym for "sort", the two are equivalent.                           |
+## Sorting
 
+Results can be sorted by one or more parameters each in ascending or descending order.
+If no 'sort' is included, results will be sorted by the underlying data source's primary index.
+
+| Parameter                          | Description                                                                         
+| ---------------------------------- | ----------------------------------------------------------------------------------- 
+| sort=[-]property[,[-]property...]  | sort=city,state,-accountBalance 
 
 
 ## Querying
 
 This API supports Resource Query Language (RQL) which allows you to retrieve the specific data you are looking for. 
 
-Endpoints that support the 'q' query parameter can be queried via RQL.  For example '/users?eq(firstName, John)' would
-find all user resources with the first name 'John'.
+Endpoints that support the 'q' query parameter can be queried via RQL.  For example **/users?q=eq(firstName, John)** would
+find all user named name 'John'.
 
 Multiple query conditions can be passed as multiple 'q' parameters or as a comma separated list to a single 'q' parameter.
-For example '/user?eq(firstName, John),gt(age,35)' would find all 'Johns' over 35 years old.
+For example **/user?q=eq(firstName, John),or(gt(age, 20), le(age,75))** would find all users named 'John' between the ages of 
+21 and 75.
+
+As seen above, instead of writing "traditional" query string parameters in "?param1=value1&param2=value2" format, all query parameters
+are expressed in a "functional" notation simplified as **function(property OR value OR another function,...)**.
+
+Here are some additional examples:
+* q=eq(color, red)
+* q=eq(make, 'Ford'),eq(model, 'F-150'),in(color, 'Red', 'White', 'Black')
+* q=or(and(gt(miles, 100000), lt(price, 7500)),and(gt(miles, 50000), lt(price, 15000)))
+
+### RQL BNF Grammar
+
+Hopefully the RQL examples above and extensive examples throughout this document are enough to get you comfortable 
+writing power queries.  For those that would like a more detailed definition of the syntax, below is a simplified
+BNF grammar for the construction of an RQL 'q' query parameter value.
+
+   
+    <term>         ::=  <token> | <function>(<list>)
+    <list>         ::=  <term>  | <term>,<list>
+    <token>        ::=  <property> | <value> | <singleTicked> | <doubleQuoted>
+    <function>     ::=  eq | gt | lt ...etc.  See below for the full list.
+    <property>     ::=  The name of a property defined on your collection.  
+                        This value should not be quoted in single ticks or double quotes.   
+    <value>        ::=  Any string without single ticks('), double quotes(") or commas(,). 
+                        All backslashes(\) must be escaped by a backslash.
+    <singleTicked> ::=  A single tick(') quoted string. 
+                        Any singe ticks or backslashes(\) in the value are escaped by a backslash. 
+    <doubleQuoted> ::=  A double quote(") quoted string.
+                        Any double quotes(") or backslashes(\) in the value are escaped by a backslash.
+
+### Single Ticks, Double Quotes, Commas, and Backslashes
+
+RQL uses the backslash (\) character to escape other characters. If you pass a value to an RQL function and the value
+contains backslashes, you need to escape the backslash by preceding it with another backslash.
+
+Values passed to a function, such as 'F-150' above, may also be optionally quoted in either single ticks(') or double quotes(").
+You only need to quote a value if it might itself contain single ticks, double quotes, or commas.  If you quote with
+a single tick, you need to escape any single tick occurrences in the value with a backslash, but you do not have to escape any double quotes.
+The same goes for double quoted strings, where you escape double quotes in the value, but you do not have to escape single quotes.  
+Just as in an unquoted value, you must escape backslash characters in a quoted value. 
+
+### Wildcards Matching
+
+You can embed an asterisk (*) in a value to indicate a wildcard search when using the eq(), aka 'Equals', function.
+
+Using an astrisk is equivalent to transparently using the LIKE operator, instead of an '=' based equality check, in an SQL database and
+using percent (%) as the wildcard character. The percent character is a special character in query strings, so we use the asterisk instead.  
+
+There are numerous examples of asterisk wildcard usage below in the 'Filter Functions' section below.
+
+
+## Filter Functions
+
+| Function           |  Name        | Examples                                                                                          
+| ------------------ | ------------ | --------------------------------------------------------------------------------------------- 
+| eq(term,term)      | Equals       | eq(property, value)<br />eq(property, value with spaces)<br />eq(property, 'single, t"ick\'s')<br />eq(property, "dou,bl'e qu\"otes")<br />eq(property, v*lue)<br />eq(property, \*alue)<br />eq(property, valu\*)<br />eq(property, "va, '\"l\*e")        
+| gt(term,term)      | Greater Than | gt(price, 200)       
+| lt(term,term)      | Less Than    | lt(price, 2.99)
+| ge(term,term)      | Greater Than or Equal To | ge(age, 21)                                                                             
+| le(term,term)      | Less Than or Equal To    | le(year, 2020)                                                                                
+| ne(term,term)      | Not Equal To | ne(status, closed)                                                                                            
+| w(term,term)       | With         | w(songTitle, love) - same as: eq(songTitle, \*love\*)                              
+| sw(term,term)      | Starts With  | sw(songTitle, love) - same as: eq(songTitle, love\*)                   
+| ew(term,term)      | Ends With    | ew(songTitle, love) - same as: eq(songTitle, \*love)
+| in(term,term...)   | In a Set     | in(orderNumber, 1234, 5678, 9101112)                                                     
+| out(term,term...)  | Out of a Set | out(color, brown, red, green)                                                 
+| emp(term)          | Empty        | Checks that a value is either NULL or the empty string.  <br>emp(phoneNumber)               
+| nemp(term)         | Not Empty    | nemp(closingDate)
+| n(term)            | Is NULL      | Checks that a value is equal to NULL.<br>n(endDate)                                  
+| nn(term)           | Not NULL     | Checks that a value is NOT equal to NULL.<br>nn(contractPrice)                           
+| and(term,term...)  | And          | and(eq(city,Atlanta),eq(zipCode,30030))                      
+| or(term,term...)   | Or           | or(eq(city,Atlanta),in(zipCode,30601,30603,30612))                              
+| not(term)          | Not          | not(in(zipCode,30601,30603,30612))<br>not(contractClosed)<br>not(eq(color, red))
 
 
 
-### General
 
-* Many functions can be written in one of several equivelant forms:
-* name=value - the traditional query string format
-* function(column, value OR expression) - eq(col,value), lt(column,value), and(eq(col,value), lt(column,value)), in(col, val1, val2, val3, val4)
-* name=eq=value, column=lt=value, col=in=val1,val2,val3
-* Quotes & Escaping Quotes - ' or " can be used to quote values.  Use a \ to escape any inner occurrences of the outer quote.  If you quote with single quotes you don't have to escape inner double quotes and vice versa
-* Wildcards - the '*' character is treated as the universal wildcard for all supported back ends.  
-  For example, for SQL back ends '*' would be substituted with "%" and instead of using '=' operator the system would substitute 'LIKE'.  You use the normal '=' or 'eq' operator but the system uses LIKE and % under the covers.
+## Aggregation Functions
 
-  
+In addition to filtering functions, RQL includes a number of aggregation functions that are useful for summarizing
+and reporting on data.  Aggregation functions that accept a 'term' argument can take a property name,
+a value, or another aggregate or filter function. 
 
-### Query Functions
-
-| RQL Function                     |      Database      |      Elastic       |       Dynamo       | Description                                                                                          |
- | -------------------------------- | :----------------: | :----------------: | :----------------: | ---------------------------------------------------------------------------------------------------- |
-| column=value                     | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | translates as expected into a sql column equality check "column = value"                             |
-| column='singleTicks'             | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | 'values can have spaces with encapsulated in quotes'                                                 |
-| column="doubleQuotes"            | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | "double or single quotes work"                                                                       |
-| column=" ' "                     | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | "the first quote type wins so a single quote like ' inside of double quotes is considered a literal" |
-| column=" \" "                    | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | "you can also \" escape quotes with a backslash"                                                     |
-| column=wild*card                 | :heavy_check_mark: |  :grey_question:   |  :grey_question:   | something*blah - translates into "column LIKE 'something%blah'"                                      |
-| eq(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | alternate form of column=value                                                                       |
-| gt(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | greater than query filter eg: "column < value"                                                       |
-| ge(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | greater than or equal to                                                                             |
-| lt(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | less than filter                                                                                     |
-| le(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | less than or equal to                                                                                |
-| ne(column,value)                 | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | not equal                                                                                            |
-| in(column,val1,[val2...valN])    | :heavy_check_mark: | :heavy_check_mark: |                    | translates into "where column in (val1,....valN)"                                                    |
-| out(column,val1,[val2...valN])   | :heavy_check_mark: | :heavy_check_mark: |                    | translates into "where column NOT in (val1,....valN)"                                                |
-| and(clause1,clause2,[...clauseN) | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | ANDs multiple clauses.  Example: and(eq(city,Atlanta),gt(zipCode,30030))                             |
-| or(clause1,clause2,[...clauseN)  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | ORs multiple clauses.  Example: or(eq(city,Atlanta),gt(zipCode,30030))                               |
-| emp(column)                      |  :grey_question:   | :heavy_check_mark: |                    | retrieves empty rows for a column value. null or empty string values will be retrieved               |
-| nemp(column)                     |  :grey_question:   | :heavy_check_mark: |                    | retrieves all rows that do not contain an empty string or null value for a specified column          |
-| n(column)                        |  :grey_question:   | :heavy_check_mark: | :heavy_check_mark: | retrieves all rows that contain a null value for a specified column                                  |
-| nn(column)                       |  :grey_question:   | :heavy_check_mark: | :heavy_check_mark: | retrieves all rows that do not contain a null value for a specified column                           |
-| w(column,[value])                |                    | :heavy_check_mark: | :heavy_check_mark: | retrieves all rows 'with' that wildcarded value in the specified column                              |
-| ew(column,[value])               |                    | :heavy_check_mark: |                    | retrieves all rows that 'end with' that wildcarded value in the specified column                     |
-| sw(column,[value])               |                    | :heavy_check_mark: | :heavy_check_mark: | retrieves all rows that 'start with' that wildcarded value in the specified column                   |
+NOTE: Use of aggregate functions can change the 'shape' of the response JSON document beyond what is definable via
+OpenApi 3.0 to the point where it may not be compatible with all client SDKs generated off of the OpenApi definition
+of this API.  If you are using a simple HTTP client, such as in JavaScript in a web browser, curl, Postman etc. you will not have an issue.
+You can also test response for all endpoints and parameter/function combinations in this console. 
 
 
+| Function                              |  Name        | Examples
+| ------------------------------------- | ------------ | --------------------------------------------------------------------------------------------- 
+| group(property...)                    | Group        | Adds properties to a GROUP BY clause.<br /> group(firstName, zipCode)                                           
+| count(term, [as(name)])               | Count        | Counts the given term and optionally names the resulting JSON property. <br />count(closingDate, 'Closed Contracts')
+| sum(term, [as(name)])                 | Sum          | Sums the given term and optionally names the resulting JSON property as name. <br />sum(pay, totalPay)<br>sum(if(and(eq(type,'car'),eq(color, 'red'))), 1, 0), 'Number of Red Cars')   
+| min(term, [as(name)])                 | Min          | Finds the minimum value of the property (per the grouping) and optionally names the resulting JSON property. <br />q=min(temperature, 'Coldest Day of 2020'),eq(year, 2020)    
+| max(term, [as(name)])                 | Max          | Finds the maximum value of the property (per the grouping) and optionally names the resulting JSON property  <br />max(  
+| countascol(property, value...)        | Count As Col | Roughly translates to "sum(if(eq(property, value), 1, 0)) as 'value'". <br />countascol(color, 'Red', 'Green', 'Blue')     
+| distinct([property...])               | Distinct     | Filters out duplicates based on the given properties.<br />includes=firstName,lastName&q=eq(state, 'CA'),distinct                         
+| if(term, termWhenTrue, termWhenFalse) | If           | sum(if(lt(price,0),0,price)) 
+| as([term, name]...)                   | As           | Changes the name of the term result in the return JSON, works just like SQL 'as' operator. |
 
 
+## Property Inclusion / Exclusion
 
-### Property Inclusion / Exclusion
+Often you may want to retrieve a subset of properties from a query.  As a made up example, when querying a 'user' collection you 
+may only want to retrieve the user's userId, firstName, and lastName out of hundreds of user properties.
 
-| RQL Function            |      Database      | Elastic | Dynamo | Description                                                                                            |
- | ----------------------- | :----------------: | :-----: | :----: | ------------------------------------------------------------------------------------------------------ |
-| includes=col1,col2,colN | :heavy_check_mark: |         |        | restricts the properties returned in the document to the ones specified.  All others will be excluded. |
-| includes(col1...colN)   | :heavy_check_mark: |         |        | same as above                                                                                          |
-| excludes=col1,col2,colN | :heavy_check_mark: |         |        | specifically excludes the supplied props.  All others will be included.                                |
-| excludes(col1...colN)   | :heavy_check_mark: |         |        | same as above                                                                                          |
+In this scenario, you can use the 'includes' query parameter to list the specific properties that should be returned.
+Conversely, you can use the 'excludes' parameter identify specific properties you don't want returned.
+If a property is listed in both an 'includes' and 'excludes' parameter, it will be excluded.
 
+If you use the 'expands' parameter (see below) to 'pre fetch' related resource into a single request, you can use 
+dot notation to specify nested JSON properties.'
 
-
-
-### Aggregations
-
-| RQL Function                                        |      Database      | Elastic | Dynamo | Description                                                              |
- | --------------------------------------------------- | :----------------: | :-----: | :----: | ------------------------------------------------------------------------ |
-| group(col1, [...colN])                              | :heavy_check_mark: |         |        | adds cols to a GROUP BY clause                                           |
-| sum(col, [renamedAs])                               | :heavy_check_mark: |         |        | sums the given column and optionally names the resulting JSON property   |
-| count(col, [renamedAs])                             | :heavy_check_mark: |         |        | counts the given column and optionally names the resulting JSON property |
-| min(col, [renamedAs])                               | :heavy_check_mark: |         |        | sums the given column and optionally names the resulting JSON property   |
-| max(col, [renamedAs])                               | :heavy_check_mark: |         |        | sums the given column and optionally names the resulting JSON property   |
-| sum(col, [renamedAs])                               | :heavy_check_mark: |         |        | sums the given column and optionally names the resulting JSON property   |
-| countascol(col, value, [...valueN])                 | :heavy_check_mark: |         |        | Roughly translates to "select sum(if(eq(col, value), 1, 0)) as value     |
-| distinct                                            | :heavy_check_mark: |         |        | filters out duplicate rows                                               |
-| distinct(column)                                    | :heavy_check_mark: |         |        | filters out duplicates based on the given column                         |
-| if(column OR expression, valwhentrue, valwhenfalse) | :heavy_check_mark: |         |        |
+You use the 'includes' and 'excludes' parameter as a standard query parameter OR as an RQL function.
 
 
-
-* To Document
-    * function(sqlfunction, col, value, [...valueN]) - tries to apply the requested aggregate function
-    * rowcount
-
-
-### Nested Document Expansion
-
-| RQL Function                                                   |      Database      | Elastic | Dynamo | Description                                                                                                                                     |
- | -------------------------------------------------------------- | :----------------: | :-----: | :----: | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| expands=collection.property[...property][,table2.property2...] | :heavy_check_mark: |         |        | if "property" is a foreign key, referenced resource will be included as a nested document in the returned JSON instead of an HREF reference value |
+| Parameter                        | Description                                                                                  
+| -------------------------------- | -------------------------------------------------------------------------------------------- 
+| includes=property[,property...]  | Limits the result to the properties listed.<br />includes=userId,firstName,lastName,address.zipCode&expands=address 
+| includes(property[,property...]) | Same as above in RQL syntax to be included in the 'q' parameter.
+| excludes=property[,property...]  | Specifically removes listed properties from the result.
+| excludes(property[,property...]) | Same as above in RQL syntax to be included in the 'q' parameter.
 
 
-### Reserved Query String Parameters
+## Including Related Resource
 
-* **explain** - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional debug information including the SQL run.  The response body will NOT be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this to work.
-* **expands** - A comma separated list of relationships that should be expanded into nested documents instead of referenced by URL in the response body.  For example, if a db 'Order' table has a foreign key to the 'Customer' table, you could query "/orders?expands=customer" or "/customers?expands=orders" to pre expand the relationship and avoid haveing to execute multiple requrests.
-* **includes** - A comma separted list of collection attributes (including dotted.path.references for nested document attributes )that should be included in the response.  All attributes are included if this param is empty...unless they are excluded as below.
-* **excludes** - A comma separated list of collection attributes to exclude.
+This spec defines relationships between the resource of different collections.  In a made up example, a 'book' resource
+may be defined as having a relationship to an 'author' resource.  In addition to the OpenApi 'links' definitions, 
+these relationships are also identified in the HAL format '_links' section of each response. To minimize the number of
+requests round trips, you may want to use the 'expands' parameter to fetch a resource and one or more of its related
+resources in the same request.  The resulting document will hold the JSON of the related resource in a property with the 
+resource name.  The HAL '_links' to the related resource will still be included in the response.
 
+In addition to minimizing GET requests, you may also modify child related resources, including adding new child resources,
+and PUT the entire document back to the root documents enpdoint.  The child documents will be POSTed or PUT automatically
+before the root document's PUT is processed.  This makes it MUCH easier to coordinate saving complex expanded documents.
 
-### Restricted and Required Query Parameters
+You can use 'dot notation' to expand to any desired relationship depth. For example, in a factitious genealogy api, 
+/people?expands=father.mother.brothers would return a result including with each user's father JSON nested under their 
+'father' property, the father's mother nested under the father's 'mother' property, and the mother's brothers nested
+under the mother's 'brothers' property. 
 
-If a table has a column named "userId" or "accountId" these are special case known columns who's
-values may not be supplied by an api user request.  The value of these fields always comes from
-the User object which is configured during authentication (see above).  This is true for
-RQL query params as well as for JSON properties.
+You use the 'expands' parameter as a standard query parameter OR as an RQL function.
 
-### Miscellaneous
+NOTE: When using the 'expands' parameter for one-to-many or many-to-many relationships, where there could be more than
+one result, the expanded result set is limited to the first 100 results sorted by the primary key.  If a relationship
+could involve more than 100 child documents, it is best to fetch and paginate through that relationship directly
+instead of using 'expands'.
 
-* as(col, renamed) - you can rename a property in the returned JSON using the 'as' operator.  Works just like the SQL as operator.
+NOTE: When using 'expands' it is possible that the same resource will be referenced multiple times in a single response.
+For example, if you were querying a "books" endpoint with expands=author, if the same author wrote more than one book that 
+author could logically appear more than once.  It is also possible to expand recursive relationships such as
+/books?expand=author.books.  To minimize the payload size, if a resource is referenced more than once, all subsequent
+occurrence of the resource will be sent as a JSON Pointer '$ref'.     
 
-| RQL Function     |      Database      | Elastic | Dynamo | Description                                                                            |
- | ---------------- | :----------------: | :-----: | :----: | -------------------------------------------------------------------------------------- |
-| as(col, renamed) | :heavy_check_mark: |         |        | change the name of the property in the return JSON, works just like SQL 'as' operator. |
+NOTE: Use of 'expands' can change the 'shape' of the response JSON document beyond what is definable via
+OpenApi 3.0 to the point where it may not be compatible with all client SDKs generated off of the OpenApi definition
+of this API.  If you are using a simple HTTP client, such as in JavaScript in a web browser, curl, Postman etc. you will not have an issue.
+You can also test response for all endpoints and parameter/function combinations in this console. 
 
+| Parameter                               | Description
+| --------------------------------------- | ------------------------------------------------------------------ 
+| expands=relationship[,relationship...]  | /books?expands=author,category,weekly.sales
+| expands(relationship[,relationship...]) | Same as above in RQL syntax to be included in the 'q' parameter. 

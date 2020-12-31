@@ -17,23 +17,9 @@
 package io.inversion.openapi.v3;
 
 import io.inversion.*;
-import io.inversion.utils.Path;
-import io.inversion.utils.Utils;
+import io.inversion.utils.JSNode;
 import io.swagger.v3.core.util.Json;
-import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.media.*;
-import io.swagger.v3.oas.models.parameters.Parameter;
-import io.swagger.v3.oas.models.parameters.RequestBody;
-import io.swagger.v3.oas.models.responses.ApiResponse;
-import io.swagger.v3.oas.models.responses.ApiResponses;
-import io.swagger.v3.oas.models.servers.Server;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * https://github.com/swagger-api/swagger-core/wiki/Swagger-2.X---Getting-started
@@ -44,22 +30,31 @@ import java.util.regex.Pattern;
  * https://github.com/swagger-api/swagger-core
  * https://swagger.io/specification/
  */
-public class OpenApiAction<A extends OpenApiAction> extends Action<A> {
+public class OpenAPIAction<A extends OpenAPIAction> extends Action<A> {
 
-    public OpenApiAction() {
-
+    public interface OpenAPIWriterFactory {
+        default OpenAPIWriter buildWriter(){
+            return new OpenAPIWriter();
+        }
     }
 
+    protected OpenAPIWriterFactory factory = new OpenAPIWriterFactory(){};
 
     public void doGet(Request req, Response res) throws ApiException {
+//        OpenAPI openApi = generateOpenApi(req);
+//        JSNode json = writeOpenAPI(openApi);
+//        res.withJson(json);
+
         OpenAPI openApi = generateOpenApi(req);
         res.withText(Json.pretty(openApi));
     }
 
-    protected OpenAPI generateOpenApi(Request req){
-        OpenApiGenerator generator = new OpenApiGenerator();
-        return generator.generateOpenApi(req);
+    public JSNode writeOpenAPI(OpenAPI openApi){
+        return JSNode.parseJsonNode(Json.pretty(openApi));
     }
 
-
+    public OpenAPI generateOpenApi(Request req){
+        OpenAPIWriter generator = factory.buildWriter();
+        return generator.writeOpenAPI(req);
+    }
 }
