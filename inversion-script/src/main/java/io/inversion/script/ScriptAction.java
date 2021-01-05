@@ -90,8 +90,8 @@ public class ScriptAction extends Action<ScriptAction> {
             return null;
         }
 
-        String scriptsDir        = chain.getConfig("scriptsDir", handler.scriptsDir);
-        String scriptsCollection = chain.getConfig("scriptsCollection", handler.scriptsCollection);
+        String scriptsDir        = handler.scriptsDir;
+        String scriptsCollection = handler.scriptsCollection;
 
         List<String> paths = new ArrayList<>();
         if (ext != null) {

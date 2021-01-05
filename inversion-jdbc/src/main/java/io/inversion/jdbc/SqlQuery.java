@@ -101,30 +101,58 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
             try {
                 Rows rows      = JdbcUtils.selectRows(conn, sql, values);
-                int  foundRows = rows.size();
+                results.withRows(rows);
 
-                int limit = getPage().getLimit();
-                int page  = getPage().getOffset();
+                boolean usesAfter = false;
 
-                //-- don't query for total row count if the DB returned fewer that
-                //-- the max number of rows on the first page...foundRows must be
-                //-- number of rows we just found
-                boolean needsPaging = page > 1 || foundRows == limit;
-                if (needsPaging) {
-                    if (Chain.peek().get("foundRows") == null && Chain.first().getRequest().isMethod("GET")) {
-                        if (rows.size() == 0) {
-                            foundRows = 0;
-                        } else {
-
-                            foundRows = queryFoundRows(conn, sql, values);
+                //-- adds support for index based pagination instead of offset pagination if page params were not supplied
+                if(!getPage().isPaginated()){
+                    if(rows.size() > 0 && collection != null) {
+                        Index pk = collection.getPrimaryIndex();
+                        if (pk != null && pk.size() == 1) {
+                            List<Sort> sorts = getOrder().getSorts();
+                            if (sorts.size() > 0) {
+                                String pkCol = pk.getColumnName(0);
+                                Sort   last  = sorts.get(sorts.size() - 1);
+                                if (last.getProperty().equalsIgnoreCase(pk.getColumnName(0))) {
+                                    String lastPk = collection.encodeDbKey(rows.get(rows.size()-1));
+                                    if(lastPk != null){
+                                        usesAfter = true;
+                                        if(last.isAsc())
+                                            results.withNext(Term.term(null, "gt", pk.getColumnName(0), lastPk));
+                                        else
+                                            results.withNext(Term.term(null, "lt", pk.getColumnName(0), lastPk));
+                                    }
+                                }
+                            }
                         }
-
-                        Chain.peek().put("foundRows", foundRows);
                     }
                 }
 
-                results.withFoundRows(foundRows);
-                results.withRows(rows);
+                if(!usesAfter){
+                    int foundRows = rows.size();
+                    int limit     = getPage().getLimit();
+                    int page      = getPage().getOffset();
+
+                    //-- don't query for total row count if the DB returned fewer that
+                    //-- the max number of rows on the first page...foundRows must be
+                    //-- number of rows we just found
+                    boolean needsPaging = page > 1 || foundRows == limit;
+                    if (needsPaging) {
+                        if (Chain.peek().get("foundRows") == null && Chain.first().getRequest().isMethod("GET")) {
+                            if (rows.size() == 0) {
+                                foundRows = 0;
+                            } else {
+
+                                foundRows = queryFoundRows(conn, sql, values);
+                            }
+
+                            Chain.peek().put("foundRows", foundRows);
+                        }
+                    }
+                    results.withFoundRows(foundRows);
+                }
+
             } catch (Exception ex) {
                 //System.out.println(sql);
                 ex.printStackTrace();
@@ -152,7 +180,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         //printJoins(parts, joins);
         printWhereClause(parts, getWhere().getFilters(), preparedStmt);
         printGroupClause(parts, getGroup().getGroupBy());
-        printOrderClause(parts, getOrder().getSorts());
+        printOrderClause(parts, getOrder());
         printLimitClause(parts, getPage().getOffset(), getPage().getLimit());
 
         String sql = printSql(parts);
@@ -259,17 +287,17 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 //
                 //TODO: maybe this should be put into Select.columns()
                 //so all query subclasses will inherit the behavior???
-                if (!aggregate) {
-                    if (getCollection() != null) {
-                        Index primaryIndex = getCollection().getPrimaryIndex();
-                        if (primaryIndex != null) {
-                            for (String colName : primaryIndex.getColumnNames()) {
-                                if (cols.indexOf(printCol(colName)) < 0)
-                                    cols.append(", ").append(printCol(colName));
-                            }
-                        }
-                    }
-                }
+//                if (!aggregate) {
+//                    if (getCollection() != null) {
+//                        Index primaryIndex = getCollection().getPrimaryIndex();
+//                        if (primaryIndex != null) {
+//                            for (String colName : primaryIndex.getColumnNames()) {
+//                                if (cols.indexOf(printCol(colName)) < 0)
+//                                    cols.append(", ").append(printCol(colName));
+//                            }
+//                        }
+//                    }
+//                }
 
                 //inserts the select list before the *
                 int    idx       = parts.select.substring(0, star).indexOf(" ");
@@ -290,7 +318,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             parts.select = parts.select.substring(0, idx) + " DISTINCT " + parts.select.substring(idx);
         }
 
-        if (Chain.peek() != null && Chain.peek().get("foundRows") == null && "mysql".equalsIgnoreCase(getType()) && parts.select.toLowerCase().trim().startsWith("select")) {
+        if (getPage().isPaginated() && Chain.peek() != null && Chain.peek().get("foundRows") == null && "mysql".equalsIgnoreCase(getType()) && parts.select.toLowerCase().trim().startsWith("select")) {
             int idx = parts.select.toLowerCase().indexOf("select") + 6;
             parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx);
         }
@@ -407,7 +435,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         return parts.group;
     }
 
-    protected String printOrderClause(Parts parts, List<Sort> sorts) {
+    protected String printOrderClause(Parts parts, Order order) {
+
+        List<Sort> sorts = order.getSorts();
+
         //-- before printing the "order by" statement, if the users did not supply
         //-- any sort terms but the primary index key is being selected, sort on the
         //-- primary index.
@@ -415,6 +446,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
         if (sorts.isEmpty()) {
             sorts = getDefaultSorts(parts);
+            order.withSorts(sorts);
         }
 
         for (Sort sort : sorts) {
@@ -482,7 +514,6 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         }
 
         return sorts;
-
     }
 
     protected String printLimitClause(Parts parts, int offset, int limit) {
@@ -1043,6 +1074,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         public String group  = null;
         public String order  = null;
         public String limit  = null;
+
+        public List<Term> orderByTerms = new ArrayList();
 
         void withSql(String sql) {
             if (sql == null)

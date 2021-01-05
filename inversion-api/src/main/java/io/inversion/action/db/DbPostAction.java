@@ -135,8 +135,9 @@ public class DbPostAction extends Action<DbPostAction> {
             body = ((JSArray)body).getNode(0);
 
 
-        boolean     collapseAll = "true".equalsIgnoreCase(req.getChain().getConfig("collapseAll", this.collapseAll + ""));
-        Set<String> collapses   = req.getChain().mergeEndpointActionParamsConfig("collapses");
+        boolean     collapseAll = "true".equalsIgnoreCase(req.getUrl().getParam("collapseAll"));
+        String collapseStr = req.getUrl().getParam("collapse");
+        Set<String> collapses   = collapseStr == null ? new HashSet<>() : Utils.asSet(Utils.explode(",", collapseStr));
 
         if (collapseAll || collapses.size() > 0) {
             body = JSNode.parseJsonNode(body.toString());

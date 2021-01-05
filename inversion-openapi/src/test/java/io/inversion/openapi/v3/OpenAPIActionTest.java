@@ -28,7 +28,7 @@ public class OpenAPIActionTest {
 
     static Api buildApi() {
         Api api = new Api().withName("northwind")
-
+                .withIncludeOn("northwind/v1/:tenant/*")
                 .withDb(new JdbcDb("h2", //
                         "org.h2.Driver", //
                         //"jdbc:h2:mem:swaggertest;IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
@@ -36,9 +36,9 @@ public class OpenAPIActionTest {
                         "sa", //
                         "", //
                         JdbcDb.class.getResource("northwind-h2.ddl").toString()))
-                .withEndpoint(new Endpoint("*", "openapi.json", new OpenAPIAction()))
+                .withEndpoint(new Endpoint("*", "openapi.json,openapi.yaml", new OpenAPIAction()))
                 .withEndpoint(new Endpoint("*", "rapidoc.html", new FileAction()))
-                .withEndpoint(new Endpoint("*", "v1/:tenant/*", new HALAction(), new DbAction()))
+                .withEndpoint(new Endpoint("*", "*", new HALAction(), new DbAction()))
         ;
         return api;
     }

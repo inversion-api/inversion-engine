@@ -22,6 +22,9 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 import java.util.*;
 
 public class Chain {
+
+    public static final Set<String> APPEND_PARAMS = Collections.unmodifiableSet(Utils.add(new HashSet(), "include", "exclude", "collapse"));
+
     static          ThreadLocal<Stack<Chain>>          chainLocal = new ThreadLocal<>();
     protected final Engine                             engine;
     protected final List<ActionMatch>                  actions    = new ArrayList<>();
@@ -191,13 +194,13 @@ public class Chain {
                     String value;
                     String name = epP.getVarName(i);
                     switch (name.toLowerCase()) {
-                        case "collection":
+                        case "_collection":
                             value = collection.getName();
                             break;
-                        case "resource":
+                        case "_resource":
                             value = resourceKey + "";
                             break;
-                        case "relationship":
+                        case "_relationship":
                             value = subCollectionKey;
                             break;
                         default:
@@ -244,7 +247,7 @@ public class Chain {
                 }
             }
         }
-        return url.toString();
+        return new Url(url.toString()).toString();
     }
 
     public Chain withUser(User user) {
@@ -281,16 +284,9 @@ public class Chain {
         if (vars.containsKey(key))
             return vars.get(key);
 
-        Object value = getConfig(key);
+        Object value = request.getUrl().getParam(key);
         if (value != null)
             return value;
-
-        //      for (int i = next - 1; i >= 0; i--)
-        //      {
-        //         Object param = actions.get(i).getConfig(key);
-        //         if (!Utils.empty(param))
-        //            return param;
-        //      }
 
         if (parent != null)
             return parent.get(key);
@@ -302,117 +298,15 @@ public class Chain {
         if (vars.containsKey(key))
             return vars.remove(key);
 
-        return getConfig(key + "");
-    }
-
-    /**
-     * Returns the combined list of endpoint/action stack/request params
-     * for the supplied key
-     * <p>
-     * This for example, allows you to add to but not remove from
-     * a configured "excludes" parameter
-     * <p>
-     * All returned values are lower case
-     *
-     * @param key the name of the param to merge
-     * @return the combined list of values found for key
-     */
-    public Set<String> mergeEndpointActionParamsConfig(String key) {
-        List<String> values = new LinkedList<>();
-
-        String value = request.getEndpoint().getConfig(key);
-        if (value != null) {
-            value = value.toLowerCase();
-            values.addAll(Utils.explode(",", value));
-        }
-
-        for (int i = next - 1; i >= 0; i--) {
-            value = actions.get(i).action.getConfig(key);
-            if (value != null) {
-                value = value.toLowerCase();
-                values.addAll(Utils.explode(",", value));
-            }
-        }
-
-        value = request.getUrl().getParam(key);
-        if (value != null) {
-            value = value.toLowerCase();
-            values.addAll(Utils.explode(",", value));
-        }
-
-        for (int i = 0; i < values.size(); i++) {
-            value = values.get(i);
-            value = Utils.dequote(value);
-            values.set(i, value);
-        }
-
-        return new LinkedHashSet<>(values);
-    }
-
-    public Map<String, String> getConfig() {
-        Map<String, String> config = new HashMap<>();
-        for (String key : getConfigKeys()) {
-            config.put(key, getConfig(key));
-        }
-        return config;
-    }
-
-    public Set<String> getConfigKeys() {
-        Set<String> keys = request.getEndpoint().getConfigKeys();
-        for (int i = next - 1; i >= 0; i--) {
-            keys.addAll(actions.get(i).action.getConfigKeys());
-        }
-
-        return keys;
-    }
-
-    public int getConfig(String key, int defaultValue) {
-        return Integer.parseInt(getConfig(key, defaultValue + ""));
-    }
-
-    public boolean getConfig(String key, boolean defaultValue) {
-        return Boolean.parseBoolean(getConfig(key, defaultValue + ""));
-    }
-
-    public String getConfig(String key) {
-        return getConfig(key, null);
-    }
-
-    public String getConfig(String key, String defaultValue) {
-        if (request == null) {
-            System.out.println("The Request on the Chain is null, this should never happen");
-        } else if (request.getEndpoint() == null) {
-            System.out.println("The Endpoint on the Request is null, this should never happen");
-            System.out.println(" -- Chain stack starting with this chain and then every parent after");
-
-            Chain tempChain = this;
-            while (tempChain != null) {
-                System.out.println(" ----  " + tempChain + " ::: " + tempChain.getRequest() + " ::: " + tempChain.getRequest().getUrl());
-                tempChain = tempChain.getParent();
-            }
-        }
-
-        String value;
-
-        for (int i = next - 1; i >= 0; i--) {
-            value = actions.get(i).action.getConfig(key);
-            if (!Utils.empty(value)) {
-                return value;
-            }
-        }
-
-        value = request.getEndpoint().getConfig(key);
-        if (!Utils.empty(value)) {
-            return value;
-        }
-
-        return defaultValue;
+        return get(key);
     }
 
     public void go() throws ApiException {
         boolean root = next == 0;
-
         try {
+            if(root)
+                applyRuleParams(getRequest().getUrl(), getEngine(), getApi(), getEndpoint());
+
             while (next()) {
                 //-- intentionally empty
             }
@@ -440,6 +334,8 @@ public class Chain {
         }
         return this;
     }
+
+
 
 
     public Chain doNext(Action... newActions){
@@ -473,6 +369,7 @@ public class Chain {
             actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
 
             applyPathParams(pathParams, request.getUrl(), request.getJson());
+            applyRuleParams(request.getUrl(), actionMatch.action);
 
             actionMatch.action.run(request, response);
             return true;
@@ -496,6 +393,26 @@ public class Chain {
         }
 
         pathParamsToRemove.addAll(pathParamsToAdd.keySet());
+    }
+
+
+    public Chain applyRuleParams(Url url, Rule... rules){
+        for(Rule rule : rules){
+            String query = rule.getQuery();
+            if(query != null){
+                Url temp = new Url("http://127.0.0.1?" + query);
+                for(String name : temp.getParams().keySet()){
+                    String value = temp.getParam(name);
+                    if(APPEND_PARAMS.contains(name.toLowerCase())){
+                        String previous = url.getParam(name);
+                        if(previous != null)
+                            value = value + "," + previous;
+                    }
+                    url.withParam(name, value);
+                }
+            }
+        }
+        return this;
     }
 
     public boolean hasNext() {

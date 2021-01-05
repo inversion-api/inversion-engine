@@ -53,7 +53,7 @@ public abstract class Db<T extends Db> {
     /**
      * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves
      */
-    protected static final Set<String>           reservedParams = Collections.unmodifiableSet(new TreeSet<>(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", "excludes", "expands", "q")));
+    protected static final Set<String>           reservedParams = Collections.unmodifiableSet(new TreeSet<>(Arrays.asList("select", "insert", "update", "delete", "drop", "union", "truncate", "exec", "explain", "exclude", "expand", "collapse", "q")));
     protected final        Logger                log            = LoggerFactory.getLogger(getClass());
     /**
      * The Collections that are the REST interface to the backend tables (or buckets, folders, containers etc.) this Db exposes through an Api.
@@ -216,25 +216,7 @@ public abstract class Db<T extends Db> {
 
         List<Term> terms = new ArrayList<>();
 
-        //-- any query terms passed in via the 'q' parameter will be added to the list first
-        for (String key : new ArrayList<String>(params.keySet())) {
-            if (key.equalsIgnoreCase("q")) {
-                String value = params.get(key);
-                if(!Utils.empty(value)){
-                    value = "and(" + value + ")";
-                }
-
-                Term term = RqlParser.parse(key, value);
-                for(Term child : term.getTerms())
-                    params.put(child.toString(), null);
-            }
-        }
-
         for (String key : params.keySet()) {
-
-            if (key.equalsIgnoreCase("q"))
-                continue;
-
             String value = params.get(key);
             Term term = RqlParser.parse(key, value);
 
@@ -308,49 +290,6 @@ public abstract class Db<T extends Db> {
                 } else {
                     JSNode node = new JSNode();
                     results.setRow(i, node);
-
-                    String resourceKey = collection.encodeDbKey(row);
-
-                    JSNode links = new JSNode();
-
-                    if (!Utils.empty(resourceKey)) {
-                        //------------------------------------------------
-                        //next turn all relationships into links that will
-                        //retrieve the related entities
-
-//                        for (Relationship rel : collection.getRelationships()) {
-//                            String link = null;
-//                            if (rel.isManyToOne()) {
-//                                String fkval = null;
-//                                if (rel.getRelated().getPrimaryIndex().size() != rel.getFkIndex1().size() && rel.getFkIndex1().size() == 1) {
-//                                    //this value is already an encoded resourceKey
-//                                    Object obj = row.get(rel.getFk1Col1().getColumnName());
-//                                    if (obj != null)
-//                                        fkval = obj.toString();
-//                                } else {
-//                                    fkval = Collection.encodeResourceKey(row, rel.getFkIndex1());
-//                                }
-//
-//                                if (fkval != null) {
-//                                    link = Chain.buildLink(rel.getRelated(), fkval, null);
-//                                }
-//                            } else {
-//                                //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
-//                                link = Chain.buildLink(collection, resourceKey, rel.getName());
-//                            }
-//                            node.put(rel.getName(), link);
-//                            links.put(rel.getName(), new JSNode("href", link));
-//                        }
-
-                        //------------------------------------------------
-                        // finally make sure the resource key is encoded as the href
-//                        String href = node.getString("href");
-//                        if (Utils.empty(href)) {
-//                            href = Chain.buildLink(collection, resourceKey, null);
-//                            node.putFirst("href", href);
-//                            links.putFirst("self", new JSNode("href", href));
-//                        }
-                    }
 
                     //------------------------------------------------
                     //copy over defined attributes first, if the select returned

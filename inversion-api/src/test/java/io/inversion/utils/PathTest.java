@@ -133,10 +133,10 @@ public class PathTest {
     }
 
     @Test
-    public void extract_stopsOnOptionalWithDollarVarParsing() {
+    public void extract_stopsOnOptional2() {
         Map<String, String> params = new HashMap<>();
 
-        Path rule = new Path("part1/${part2}/part3/*");
+        Path rule = new Path("part1/{part2}/part3/*");
         Path path = new Path("part1/val2/part3/part4");
 
         Path matched = rule.extract(params, path);
@@ -148,26 +148,7 @@ public class PathTest {
     }
 
     @Test
-    public void extract_missingClosingBracketIsConsideredLiteralNotVariable() {
-        Map<String, String> params = new HashMap<>();
-
-        Path rule = new Path("part1/{part2/part3/*");
-        Path path = new Path("part1/val2/part3/part4");
-
-        boolean error = false;
-        try {
-            rule.extract(params, path);
-        } catch (Exception ex) {
-            error = true;
-        }
-
-        assertTrue(error, "The test should have errored because '{part2' is not a literal match fror 'val2'");
-    }
-
-    @Test
     public void match() {
-        assertTrue(new Path("[{^$}]").matches(""));
-
         assertTrue(new Path("*").matches("/something/asdfas/"));
         assertTrue(new Path("*").matches("something/asdfas/"));
         assertTrue(new Path("something/{collection:books|customers}").matches("something/books"));
@@ -175,18 +156,15 @@ public class PathTest {
         assertTrue(new Path("something/{collection:books|customers}").matches("something/customers"));
         assertFalse(new Path("somsething/{collection:books|customers}").matches("something/blah"));
         assertTrue(new Path("something/{collection:books|customers}/*").matches("something/customers/1234"));
-
         assertTrue(new Path("something/{collection:books|customers}/{resource:[0-9a-fA-F]{1,8}}").matches("something/customers/11111111"));
         assertTrue(new Path("something/{collection:books|customers}/{resource:[0-9a-fA-F]{1,8}}").matches("something/customers/aaaaaaaa"));
         assertFalse(new Path("something/{collection:books|customers}/{resource:[0-9a-fA-F]{1,8}}").matches("something/customers/aaaaaaaaaa"));
         assertFalse(new Path("something/{collection:books|customers}/{resource:[0-9a-fA-F]{1,8}}").matches("something/customers/1111111111"));
         assertFalse(new Path("something/{collection:books|customers}/{resource:[0-9a-fA-F]{1,8}}").matches("something/customers/zzzzzzzz"));
-
         assertTrue(new Path("something/{collection:books|customers}/{resource:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/orders"));
         assertTrue(new Path("something/{collection:books|customers}/{resource:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/orders/"));
         assertTrue(new Path("something/{collection:books|customers}/[{resource:[0-9]{1,8}}]/[{relationship:[a-zA-Z]*}]").matches("something/customers/1234/"));
         assertFalse(new Path("something/{collection:books|customers}/{resource:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/"));
-
         assertTrue(new Path("{collection:players|locations|ads}/[{resource:[0-9]{1,12}}]/{relationship:[a-z]*}").matches("Locations/698/players"));
     }
 }

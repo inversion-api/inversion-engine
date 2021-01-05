@@ -105,10 +105,8 @@ public class Path {
      * @param part an array of path part strings
      */
     public Path(String... part) {
-        parts = Utils.explode("/", part);
-        lc = new ArrayList<>(parts.size());
-        for (String s : parts) {
-            lc.add(s.toLowerCase());
+        for (String s : part) {
+            add(s);
         }
     }
 
@@ -185,6 +183,26 @@ public class Path {
     public void add(String parts) {
         if (!Utils.empty(parts)) {
             for (String part : Utils.explode("/", parts)) {
+
+                boolean isOptional = part.startsWith("[");
+                if(isOptional){
+                    part = part.substring(1);
+                    if(part.endsWith("]"))
+                        part = part.substring(0, part.length() -1);
+                    part = part.trim();
+                }
+
+                if(part.startsWith(":"))
+                    part = "{" + part.substring(1) + "}";
+                else if(part.startsWith("$"))
+                    part = parts.substring(1);
+
+                if(part.startsWith("{") && !part.endsWith("}"))
+                    part += "}";
+
+                if(isOptional)
+                    part = "[" + part + "]";
+
                 this.parts.add(part);
                 lc.add(part.toLowerCase());
             }
@@ -306,7 +324,7 @@ public class Path {
                 part = part.substring(1).trim();
 
             char c = part.charAt(0);
-            return c == '$' || c == ':' || c == '{';
+            return c == '{';
         }
         return false;
     }
@@ -336,13 +354,15 @@ public class Path {
         String part = get(index);
         if (part != null) {
             if (part.startsWith("["))
-                part = part.substring(1, part.length() - 1).trim();
+                part = part.substring(1, part.length() - 1);
 
-            int colon = part.indexOf(":");
-            if (colon == 0)
-                return part.substring(1).trim();
-            else if (part.startsWith("{") && colon > 1)
-                return part.substring(1, colon).trim();
+            if(part.startsWith("{")) {
+                int colon = part.indexOf(":");
+                if (colon > 0)
+                    return part.substring(1, colon).trim();
+                else
+                    return part.substring(1, part.lastIndexOf("}"));
+            }
         }
         return null;
     }
@@ -350,16 +370,11 @@ public class Path {
     //TODO DOCUMENT ME
     public String getRegex(int index)
     {
-        try {
-            String part = get(index);
-            part = part.substring(part.indexOf("{") + 1);
-            part = part.substring(0, part.indexOf("}"));
-            return part.substring(part.indexOf(":") + 1);
-        }
-        catch(IndexOutOfBoundsException e)
-        {
-            //
-        }
+        String part = get(index);
+        int colon = part.indexOf(":");
+        if (colon > 0)
+            return part.substring(colon +1, part.lastIndexOf("}")).trim();
+
         return null;
     }
 
@@ -435,18 +450,9 @@ public class Path {
             String theirPart = concretePath.get(i);
             matchedPath.add(theirPart);
 
-            if (myPart.startsWith(":")) {
-                continue;
-            } else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}")) {
-                int nameStart = myPart.indexOf("{") + 1;
-                int endName   = myPart.indexOf(":");
-                if (endName < 0)
-                    endName = myPart.length() - 1;
-
-                String name = myPart.substring(nameStart, endName).trim();
-
-                if (endName < myPart.length() - 1) {
-                    String  regex   = myPart.substring(endName + 1, myPart.length() - 1);
+            if(isVar(i)) {
+                String regex = getRegex(i);
+                if (regex != null) {
                     Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
                     if (!pattern.matcher(theirPart).matches()) {
                         return false;
@@ -455,7 +461,6 @@ public class Path {
             } else if (!myPart.equalsIgnoreCase(theirPart)) {
                 return false;
             }
-
         }
 
         return true;
@@ -543,28 +548,19 @@ public class Path {
                 theirPart = matchingConcretePath.get(nextOptional++);
             }
 
-            if (myPart.startsWith(":")) {
-                String name = myPart.substring(1).trim();
-                params.put(name, theirPart);
-            } else if ((myPart.startsWith("{") || myPart.startsWith("${")) && myPart.endsWith("}")) {
-                int nameStart = myPart.indexOf("{") + 1;
-                int endName   = myPart.indexOf(":");
-                if (endName < 0)
-                    endName = myPart.length() - 1;
-
-                String name = myPart.substring(nameStart, endName).trim();
-
-                if (endName < myPart.length() - 1) {
-                    String  regex   = myPart.substring(endName + 1, myPart.length() - 1);
+            if(isVar(i)){
+                String name = getVarName(i);
+                String regex = getRegex(i);
+                if(regex != null){
                     Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
                     if (!pattern.matcher(theirPart).matches()) {
-                        throw ApiException.new500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), matchingConcretePath.toString());
+                        throw ApiException.new500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this, matchingConcretePath.toString());
                     }
                 }
-
                 params.put(name, theirPart);
+
             } else if (!myPart.equalsIgnoreCase(theirPart)) {
-                throw ApiException.new500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this.parts.toString(), matchingConcretePath.toString());
+                throw ApiException.new500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this, matchingConcretePath.toString());
             }
         }
 

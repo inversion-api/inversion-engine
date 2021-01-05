@@ -59,27 +59,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
 
     protected static String getForeignKey(Relationship rel, JSNode node) {
-
         String key = rel.getCollection().encodeJsonKey(node, rel.getFkIndex1());
-
-//        if(key == null)
-//            throw ApiException.new500InternalServerError("The foreign key '{}' could not be constructed from the data provided.", rel);
-//        if(key != null)
-//            return key;
-//
-//        if(key == null)
-//            key = node.getString(rel.getName());
-//
-//        if(key == null)
-//            key = node.findString("_links." + rel.getName() + ".href");
-//
-//        if(key != null && key.indexOf("/") > 0){
-//            if(key.endsWith("/"))
-//                key = key.substring(0, key.length() -1);
-//
-//            key = Utils.substringAfter(key, "/");
-//        }
-
         return key;
     }
 
@@ -88,7 +68,6 @@ public class DbGetAction extends Action<DbGetAction> {
         String key = collection.encodeJsonKey(node);
         if(key == null)
             throw ApiException.new500InternalServerError("The primary key '{}' could not be constructed from the data provided.", collection.getPrimaryIndex());
-
         return key;
     }
 
@@ -98,41 +77,41 @@ public class DbGetAction extends Action<DbGetAction> {
         return u.toString();
     }
 
-    protected static String stripTerm(String str, String startToken, char... endingTokens) {
-        Set<Character> tokens = new HashSet<>();
-        for (char c : endingTokens)
-            tokens.add(c);
-
-        while (true) {
-            int start = str.toLowerCase().indexOf(startToken);
-
-            //this makes sure the char before the start token is not a letter or number which would mean we are in the
-            //middle of another token, not at the start of a token.
-            while (start > 0 && (Character.isAlphabetic(str.charAt(start - 1)) || Character.isDigit(start - 1)))
-                start = str.toLowerCase().indexOf(startToken, start + 1);
-
-            if (start > -1) {
-                String beginning = str.substring(0, start);
-
-                int end = start + startToken.length() + 1;
-                while (end < str.length()) {
-                    char c = str.charAt(end);
-                    if (tokens.contains(c))
-                        break;
-                    end += 1;
-                }
-
-                if (end == str.length())
-                    str = beginning;
-                else
-                    str = beginning + str.substring(end + 1);
-            } else {
-                break;
-            }
-        }
-
-        return str;
-    }
+//    protected static String stripTerm(String str, String startToken, char... endingTokens) {
+//        Set<Character> tokens = new HashSet<>();
+//        for (char c : endingTokens)
+//            tokens.add(c);
+//
+//        while (true) {
+//            int start = str.toLowerCase().indexOf(startToken);
+//
+//            //this makes sure the char before the start token is not a letter or number which would mean we are in the
+//            //middle of another token, not at the start of a token.
+//            while (start > 0 && (Character.isAlphabetic(str.charAt(start - 1)) || Character.isDigit(start - 1)))
+//                start = str.toLowerCase().indexOf(startToken, start + 1);
+//
+//            if (start > -1) {
+//                String beginning = str.substring(0, start);
+//
+//                int end = start + startToken.length() + 1;
+//                while (end < str.length()) {
+//                    char c = str.charAt(end);
+//                    if (tokens.contains(c))
+//                        break;
+//                    end += 1;
+//                }
+//
+//                if (end == str.length())
+//                    str = beginning;
+//                else
+//                    str = beginning + str.substring(end + 1);
+//            } else {
+//                break;
+//            }
+//        }
+//
+//        return str;
+//    }
 
     protected static String expandPath(String path, Object next) {
         if (Utils.empty(path))
@@ -335,7 +314,7 @@ public class DbGetAction extends Action<DbGetAction> {
                 res.withFoundRows(foundRows);
             }
 
-            if (results.size() > 0) {
+            if (results.size() > 0 && results.size() >= limit) {
                 if (req.getCollection() != null && req.getResourceKey() == null) {
                     List<Term> nextTerms = results.getNext();
                     if (nextTerms != null && !nextTerms.isEmpty()) {
@@ -351,10 +330,9 @@ public class DbGetAction extends Action<DbGetAction> {
 
                             next += nextTerm;
                         }
-                        res.withNext(next);
+                        res.withNext(new Url(next));
                     } else if (results.size() == limit && (foundRows < 0 || (offest + limit) < foundRows)) {
                         String next = req.getUrl().getOriginal();
-
                         next = stripTerms(next, "offset", "page", "pageNum");
 
                         if (!next.contains("?"))
@@ -364,7 +342,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
                         next += "pageNum=" + (page.getPageNum() + 1);
 
-                        res.withNext(next);
+                        res.withNext(new Url(next));
                     }
                 }
             }
@@ -411,8 +389,11 @@ public class DbGetAction extends Action<DbGetAction> {
     }
 
     protected void exclude(List<JSNode> nodes) {
-        Set<String> includes = Chain.peek().mergeEndpointActionParamsConfig("includes");
-        Set<String> excludes = Chain.peek().mergeEndpointActionParamsConfig("excludes");
+        String includesStr = Chain.peek().getRequest().getUrl().getParam("includes");
+        Set<String> includes = includesStr == null ? new HashSet<>() : Utils.asSet(Utils.explode(",", includesStr));
+
+        String excludesStr = Chain.peek().getRequest().getUrl().getParam("excludes");
+        Set<String> excludes = excludesStr == null ? new HashSet<>() : Utils.asSet(Utils.explode(",", excludesStr));
 
         if (includes.size() > 0 || excludes.size() > 0) {
             for (JSNode node : nodes) {
@@ -466,9 +447,6 @@ public class DbGetAction extends Action<DbGetAction> {
     protected void expand(Request request, Collection collection, List<JSNode> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) {
         if (parentObjs.size() == 0)
             return;
-
-        if (expands == null)
-            expands = Chain.peek().mergeEndpointActionParamsConfig("expands");
 
         if (expandsPath == null)
             expandsPath = "";

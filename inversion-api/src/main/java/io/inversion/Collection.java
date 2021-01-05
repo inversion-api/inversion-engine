@@ -85,9 +85,9 @@ public class Collection extends Rule<Collection> implements Serializable {
      */
     protected String tableName = null;
 
-    public String pluralDisplayName = null;
+    protected String pluralDisplayName = null;
 
-    public String singularDisplayName = null;
+    protected String singularDisplayName = null;
 
     /**
      * Set this to true to prevent it from being automatically exposed through your Api.
@@ -242,13 +242,14 @@ public class Collection extends Rule<Collection> implements Serializable {
         String relationship = "[:" + Request.RELATIONSHIP_KEY + "]";
 
         Index pk =  getPrimaryIndex();
-        if (pk.size() == 1) {
-            String regex = pk.getProperty(0).getRegex();
-            if(regex != null){
-                regex += "(," + regex + ")*";//-- this is here to add support for comma separated lists of entity keys
-                resource = "[{" + Request.RESOURCE_KEY + ":" + regex + "}]";
+        if(pk != null) {
+            if (pk.size() == 1) {
+                String regex = pk.getProperty(0).getRegex();
+                if (regex != null) {
+                    regex += "(," + regex + ")*";//-- this is here to add support for comma separated lists of entity keys
+                    resource = "[{" + Request.RESOURCE_KEY + ":" + regex + "}]";
+                }
             }
-
         }
 
         return new RuleMatcher(null, new Path(collection + "/" + resource + "/" + relationship + "/*"));

@@ -16,13 +16,13 @@
  */
 package io.inversion.utils;
 
-import io.inversion.Api;
 import io.inversion.ApiException;
+import io.inversion.rql.RqlParser;
+import io.inversion.rql.Term;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Utility class for parsing and working with HTTP(S) URLs.
@@ -83,8 +83,6 @@ public class Url {
         if (!(url.startsWith("http://") || url.startsWith("https://")))
             url = "http://127.0.0.1" + (!url.startsWith("/") ? "/" : "") + url;
 
-        original = url;
-
         try {
             int queryIndex = url.indexOf('?');
             if (queryIndex >= 0) {
@@ -140,16 +138,19 @@ public class Url {
                 path = '/' + url;
             }
 
-            if(path.contains("//") || url.contains("./") || url.contains(".."))
+            if (path.contains("//") || url.contains("./") || url.contains(".."))
                 throw ApiException.new400BadRequest("Your requested URL '{}' is malformed.", url);
 
             if (!Utils.empty(path))
                 this.path = new Path(path);
 
         } catch (Exception ex) {
-            if(!(ex instanceof ApiException))
+            if (!(ex instanceof ApiException))
                 ex = ApiException.new500InternalServerError(ex);
-            throw (ApiException)ex;
+            throw (ApiException) ex;
+        }
+        finally{
+            this.original = toString();
         }
     }
 
@@ -160,25 +161,38 @@ public class Url {
      * @return a UTF-8 url encoded query string
      * @see java.net.URLEncoder#encode(String, String)
      */
-    public static String toQueryString(Map params) {
-        StringBuilder query = new StringBuilder();
-        if (params != null) {
-            for (Object o : params.keySet()) {
-                String key = o.toString();
-                try {
-                    if (params.get(key) != null) {
-                        query.append(URLEncoder.encode(key, "UTF-8")).append("=").append(URLEncoder.encode(params.get(key).toString(), "UTF-8")).append("&");
-                    } else {
-                        query.append(URLEncoder.encode(key, "UTF-8")).append("&");
-                    }
+    public static String toQueryString(Map<String, String> params) {
 
-                } catch (UnsupportedEncodingException e) {
-                    Utils.rethrow(e);
-                }
-            }
-            if (query.length() > 0)
-                query = new StringBuilder(query.substring(0, query.length() - 1));
+        StringBuilder query = new StringBuilder();
+
+        List<String> qs = new ArrayList();
+        for (String key : params.keySet()) {
+            if (key.indexOf("(") > 0)
+                qs.add(key);
         }
+
+        if (qs.size() > 0) {
+            params = new LinkedHashMap<>(params);
+            for (String q : qs) {
+                params.remove(q);
+            }
+            params.put("q", Utils.implode(",", qs));
+        }
+
+        for (String key : params.keySet()) {
+            try {
+                if (params.get(key) != null) {
+                    query.append(URLEncoder.encode(key, "UTF-8")).append("=").append(URLEncoder.encode(params.get(key).toString(), "UTF-8")).append("&");
+                } else {
+                    query.append(URLEncoder.encode(key, "UTF-8")).append("&");
+                }
+
+            } catch (UnsupportedEncodingException e) {
+                Utils.rethrow(e);
+            }
+        }
+        if (query.length() > 0)
+            query = new StringBuilder(query.substring(0, query.length() - 1));
 
         String str = query.toString();
         str = str.replace("%28", "(");
@@ -210,7 +224,7 @@ public class Url {
                 url = url.substring(0, url.length() - 1);
 
             url += "?";
-            url += toQueryString(params.asMap());
+            url += toQueryString((Map<String, String>)params.asMap());
         }
 
         return url;
@@ -247,7 +261,7 @@ public class Url {
         if (params.size() == 0)
             return "";
 
-        return toQueryString(params.asMap());
+        return toQueryString((Map<String, String>)params.asMap());
     }
 
     public String getHost() {
@@ -305,7 +319,7 @@ public class Url {
      * @return this
      */
     public Url withQueryString(String queryString) {
-        params = new JSNode(Utils.parseQueryString(queryString));
+        withParams(Utils.parseQueryString(queryString));
         return this;
     }
 
@@ -313,12 +327,16 @@ public class Url {
      * Adds all key/value pairs from <code>newParams</code> to <code>params</code>
      * overwriting any exiting keys on a case insensitive basis
      *
-     * @param newParams name/value pairs to add to the query string params map
+     * @param params name/value pairs to add to the query string params map
      * @return this
      */
-    public Url withParams(Map<String, String> newParams) {
-        if (newParams != null)
-            this.params.putAll(newParams);
+    public Url withParams(Map<String, String> params) {
+        if (params != null) {
+            for (String key : params.keySet()) {
+                withParam(key, params.get(key));
+            }
+        }
+
         return this;
     }
 
@@ -331,7 +349,40 @@ public class Url {
      * @return this
      */
     public Url withParam(String name, String value) {
-        params.put(name, value);
+
+        int paren = name.indexOf("(");
+        if(paren > 0){
+            String func = name.substring(0, paren).toLowerCase();
+            if("pagenum".equals(func))
+                func = "page";
+            else if("limit".equals(func))
+                func = "size";
+            else if("order".equals(func))
+                func = "sort";
+            else if("includes".equals(func))
+                func = "include";
+            else if("excludes".equals(func))
+                func = "exclude";
+            else if("collapses".equals(func))
+                func = "collapse";
+
+            if(Utils.in(func, "page", "size", "sort", "include", "exclude", "expand", "collapse")){
+                value = name.substring(paren + 1, name.lastIndexOf(")"));
+                name = func;
+            }
+        }
+
+        if (!Utils.empty(name)) {
+            if ("q".equalsIgnoreCase(name)) {
+                value = "and(" + value + ")";
+                Term term = RqlParser.parse(value);
+                for (Term child : term.getTerms())
+                    withParam(child.toString(), null);
+            } else {
+                params.put(name, value);
+            }
+        }
+
         return this;
     }
 
@@ -346,25 +397,25 @@ public class Url {
         return this;
     }
 
-    /**
-     * Replaces any existing param that has <code>key</code> as a whole word case insensitive substring in its key.
-     * <p>
-     * If the key/value pair <code>"eq(dog,Fido)" = null</code> is in the map <code>replaceParam("DOG", "Fifi")</code>
-     * would cause it to be removed and the pair "DOG" / "Fifi" would be added.
-     *
-     * @param key   the key to add overwrite, may not be null, also used a a regex whole world case insensitive token to search for other keys to remove.
-     * @param value the value, may be null
-     * @see Utils#containsToken
-     */
-    public void replaceParam(String key, String value) {
-        for (String existing : new ArrayList<>(params.keySet())) {
-            if (Utils.containsToken(key, existing)) {
-                params.remove(existing);
-            }
-        }
-
-        withParam(key, value);
-    }
+//    /**
+//     * Replaces any existing param that has <code>key</code> as a whole word case insensitive substring in its key.
+//     * <p>
+//     * If the key/value pair <code>"eq(dog,Fido)" = null</code> is in the map <code>replaceParam("DOG", "Fifi")</code>
+//     * would cause it to be removed and the pair "DOG" / "Fifi" would be added.
+//     *
+//     * @param key   the key to add overwrite, may not be null, also used a a regex whole world case insensitive token to search for other keys to remove.
+//     * @param value the value, may be null
+//     * @see Utils#containsToken
+//     */
+//    public void replaceParam(String key, String value) {
+//        for (String existing : new ArrayList<>(params.keySet())) {
+//            if (Utils.containsToken(key, existing)) {
+//                params.remove(existing);
+//            }
+//        }
+//
+//        withParam(key, value);
+//    }
 
     /**
      * Removes any param that has one of <code>tokens</code> as a whole word case insensitive substring in the key.
@@ -376,9 +427,10 @@ public class Url {
     public String clearParams(String... tokens) {
         String oldValue = null;
         for (String token : tokens) {
-            for (String existing : params.keySet()) {
-                if (Utils.containsToken(token, existing)) {
-                    String removed = (String) params.remove(existing);
+            for (String key : params.keySet()) {
+                String value = (String) params.get(key);
+                if (Utils.containsToken(token, key)) {
+                    String removed = (String) params.remove(key);
                     if (oldValue == null)
                         oldValue = removed;
                 }
@@ -386,6 +438,10 @@ public class Url {
         }
 
         return oldValue;
+    }
+
+    public void clearParams() {
+        params.clear();
     }
 
     /**

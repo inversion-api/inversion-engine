@@ -34,6 +34,16 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P> {
         withFunctions("page", "pageNum", "size", "pageSize", "after", "offset", "limit");
     }
 
+    /**
+     * @return true if a page or pageNum was provided in the query
+     */
+    public boolean isPaginated(){
+        int page = findInt("page", 0, -1);
+        if(page < 0)
+            page = findInt("pageNum", 0, -1);
+        return page >= 0;
+    }
+
     public int getOffset() {
         int offset = findInt("offset", 0, -1);
 

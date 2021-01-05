@@ -19,6 +19,7 @@ package io.inversion;
 import io.inversion.Request.Validation;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
+import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
@@ -272,14 +273,20 @@ public class Response {
 
     public JSArray getData() {
         JSNode json = getJson();
-        JSArray data = null;
-        if (json != null) {
-            data = json.getArray("data");
-        }
-        if(data == null)
-            data = json.getArray("_embedded");
 
-        return data;
+        if(json == null)
+            return null;
+
+        if(json instanceof JSArray)
+            return (JSArray)json;
+
+        if (json.get("data") instanceof JSArray)
+            return json.getArray("data");
+
+        if (json.get("_embedded") instanceof JSArray)
+            return json.getArray("_embedded");
+
+        return new JSArray(json);
     }
 
     public Response withData(JSArray data) {
@@ -367,8 +374,8 @@ public class Response {
         return findString("meta.next");
     }
 
-    public Response withNext(String nextPageUrl) {
-        withMeta("next", nextPageUrl);
+    public Response withNext(Url url) {
+        withMeta("next", url);
         return this;
     }
 

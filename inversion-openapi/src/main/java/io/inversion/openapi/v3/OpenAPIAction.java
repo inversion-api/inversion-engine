@@ -16,9 +16,13 @@
  */
 package io.inversion.openapi.v3;
 
-import io.inversion.*;
+import io.inversion.Action;
+import io.inversion.ApiException;
+import io.inversion.Request;
+import io.inversion.Response;
 import io.inversion.utils.JSNode;
 import io.swagger.v3.core.util.Json;
+import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
 
 /**
@@ -32,26 +36,41 @@ import io.swagger.v3.oas.models.OpenAPI;
  */
 public class OpenAPIAction<A extends OpenAPIAction> extends Action<A> {
 
-    public interface OpenAPIWriterFactory {
-        default OpenAPIWriter buildWriter(){
-            return new OpenAPIWriter();
-        }
-    }
+    protected OpenAPIWriterFactory factory = new OpenAPIWriterFactory() {
+    };
 
-    protected OpenAPIWriterFactory factory = new OpenAPIWriterFactory(){};
 
     public void doGet(Request req, Response res) throws ApiException {
         OpenAPI openApi = generateOpenApi(req);
-        JSNode json = writeOpenAPI(openApi);
+        JSNode  json    = writeOpenAPI(openApi);
         res.withJson(json);
+
+
+        try {
+            if (req.getEndpointPath().toString().toLowerCase().endsWith(".yaml")) {
+                openApi = Json.mapper().readValue(json.toString(), OpenAPI.class);
+                res.withJson(null);
+                res.withContentType("application/yaml");
+                res.withText(Yaml.pretty(openApi));
+            }
+        } catch (Exception ex) {
+            throw ApiException.new500InternalServerError(ex);
+        }
+
     }
 
-    public JSNode writeOpenAPI(OpenAPI openApi){
+    public JSNode writeOpenAPI(OpenAPI openApi) {
         return JSNode.parseJsonNode(Json.pretty(openApi));
     }
 
-    public OpenAPI generateOpenApi(Request req){
+    public OpenAPI generateOpenApi(Request req) {
         OpenAPIWriter generator = factory.buildWriter();
         return generator.writeOpenAPI(req);
+    }
+
+    public interface OpenAPIWriterFactory {
+        default OpenAPIWriter buildWriter() {
+            return new OpenAPIWriter();
+        }
     }
 }

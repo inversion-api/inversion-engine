@@ -222,7 +222,7 @@ public class EngineTest {
         assertEquals(new Path("api1/v1/acme"), req.getApiPath());
 
         api1.withCollection(new Collection("employees"));
-        res = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1/employees/12345/reportsTo");
+        res = e.get("http://localhost:8080/some/servlet/path/api1/v1/acme/ep1/employees/12345/reportsTo").assertOk();
         req = res.getChain().getRequest();
         assertEquals("employees", req.getUrl().getParam("_collection"));
         assertEquals("12345", req.getUrl().getParam("_resource"));
@@ -472,41 +472,41 @@ public class EngineTest {
     @Test
     public void testConfigParamOverrides() {
         //includes/excludes, expands, requires/restricts
-        Endpoint ep = new Endpoint("GET", "*").withConfig("endpointParam=endpointValue&overriddenParam=endpointValue");
+        Endpoint ep = new Endpoint("GET", "*").withQuery("endpointParam=endpointValue&overriddenParam=endpointValue");
         Action actionA = new MockAction() {
 
             public void run(io.inversion.Request req, Response res) throws ApiException {
-                Chain.debug("Endpoint_actionA_overriddenParam " + req.getChain().getConfig("overriddenParam"));
-                Chain.debug("Endpoint_actionA_endpointParam " + req.getChain().getConfig("endpointParam"));
-                Chain.debug("Endpoint_actionA_actionAParam " + req.getChain().getConfig("actionAParam"));
-                Chain.debug("Endpoint_actionA_actionBParam " + req.getChain().getConfig("actionBParam"));
-                Chain.debug("Endpoint_actionA_actionCParam " + req.getChain().getConfig("actionCParam"));
+                Chain.debug("Endpoint_actionA_overriddenParam " + req.getUrl().getParam("overriddenParam"));
+                Chain.debug("Endpoint_actionA_endpointParam " + req.getUrl().getParam("endpointParam"));
+                Chain.debug("Endpoint_actionA_actionAParam " + req.getUrl().getParam("actionAParam"));
+                Chain.debug("Endpoint_actionA_actionBParam " + req.getUrl().getParam("actionBParam"));
+                Chain.debug("Endpoint_actionA_actionCParam " + req.getUrl().getParam("actionCParam"));
             }
-        }.withConfig("overriddenParam=actionAOverride&actionAParam=actionAValue");
+        }.withQuery("overriddenParam=actionAOverride&actionAParam=actionAValue");
 
         Action actionB = new MockAction() {
 
             public void run(io.inversion.Request req, Response res) throws ApiException {
-                Chain.debug("Endpoint_actionB_overriddenParam " + req.getChain().getConfig("overriddenParam"));
-                Chain.debug("Endpoint_actionB_endpointParam " + req.getChain().getConfig("endpointParam"));
-                Chain.debug("Endpoint_actionB_actionAParam " + req.getChain().getConfig("actionAParam"));
-                Chain.debug("Endpoint_actionB_actionBParam " + req.getChain().getConfig("actionBParam"));
-                Chain.debug("Endpoint_actionB_actionCParam " + req.getChain().getConfig("actionCParam"));
+                Chain.debug("Endpoint_actionB_overriddenParam " + req.getUrl().getParam("overriddenParam"));
+                Chain.debug("Endpoint_actionB_endpointParam " + req.getUrl().getParam("endpointParam"));
+                Chain.debug("Endpoint_actionB_actionAParam " + req.getUrl().getParam("actionAParam"));
+                Chain.debug("Endpoint_actionB_actionBParam " + req.getUrl().getParam("actionBParam"));
+                Chain.debug("Endpoint_actionB_actionCParam " + req.getUrl().getParam("actionCParam"));
 
             }
-        }.withConfig("overriddenParam=actionBOverride&actionBParam=actionBValue");
+        }.withQuery("overriddenParam=actionBOverride&actionBParam=actionBValue");
 
         Action actionC = new MockAction() {
 
             public void run(io.inversion.Request req, Response res) throws ApiException {
-                Chain.debug("Endpoint_actionC_overriddenParam " + req.getChain().getConfig("overriddenParam"));
-                Chain.debug("Endpoint_actionC_endpointParam " + req.getChain().getConfig("endpointParam"));
-                Chain.debug("Endpoint_actionC_actionAParam " + req.getChain().getConfig("actionAParam"));
-                Chain.debug("Endpoint_actionC_actionBParam " + req.getChain().getConfig("actionBParam"));
-                Chain.debug("Endpoint_actionC_actionCParam " + req.getChain().getConfig("actionCParam"));
+                Chain.debug("Endpoint_actionC_overriddenParam " + req.getUrl().getParam("overriddenParam"));
+                Chain.debug("Endpoint_actionC_endpointParam " + req.getUrl().getParam("endpointParam"));
+                Chain.debug("Endpoint_actionC_actionAParam " + req.getUrl().getParam("actionAParam"));
+                Chain.debug("Endpoint_actionC_actionBParam " + req.getUrl().getParam("actionBParam"));
+                Chain.debug("Endpoint_actionC_actionCParam " + req.getUrl().getParam("actionCParam"));
 
             }
-        }.withConfig("overriddenParam=actionCOverride&actionCParam=actionCValue");
+        }.withQuery("overriddenParam=actionCOverride&actionCParam=actionCValue");
 
         ep.withAction(actionA);
         ep.withAction(actionB);

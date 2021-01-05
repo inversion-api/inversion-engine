@@ -21,6 +21,8 @@ import java.util.List;
 
 public class Order<T extends Order, P extends Query> extends Builder<T, P> {
 
+    List<Sort> sorts = new ArrayList();
+
     public Order(P query) {
         super(query);
         withFunctions("order", "sort");
@@ -41,23 +43,30 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P> {
     }
 
     public List<Sort> getSorts() {
-        List<Sort> sorts = new ArrayList<>();
-        for (Term term : getTerms()) {
-            if (term.hasToken("sort", "order")) {
-                for (Term child : term.getTerms()) {
-                    String  property = child.token;
-                    boolean asc      = true;
-                    if (property.startsWith("-")) {
-                        asc = false;
-                        property = property.substring(1);
-                    } else if (property.startsWith("+")) {
-                        property = property.substring(1);
+        if(sorts.size() < 1){
+            List<Sort> sorts = new ArrayList<>();
+            for (Term term : getTerms()) {
+                if (term.hasToken("sort", "order")) {
+                    for (Term child : term.getTerms()) {
+                        String  property = child.token;
+                        boolean asc      = true;
+                        if (property.startsWith("-")) {
+                            asc = false;
+                            property = property.substring(1);
+                        } else if (property.startsWith("+")) {
+                            property = property.substring(1);
+                        }
+                        sorts.add(new Sort(property, asc));
                     }
-                    sorts.add(new Sort(property, asc));
                 }
             }
         }
         return sorts;
+    }
+
+    public Order withSorts(List<Sort> sorts){
+        this.sorts.addAll(sorts);
+        return this;
     }
 
     public static class Sort {

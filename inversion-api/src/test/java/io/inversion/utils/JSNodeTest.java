@@ -22,6 +22,28 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JSNodeTest {
+
+    @Test
+    public void testIdentityRef(){
+
+        JSNode abc1 = new JSNode("abc", "123");
+        JSNode abc2 = new JSNode("abc", "123");
+
+        JSNode parent = new JSNode("1", abc1, "2", abc1);
+        String str = parent.toString();
+        System.out.println(str);
+
+        assertTrue(str.indexOf("$ref")> 0);
+
+
+        parent = new JSNode("1", abc1, "2", abc2);
+        str = parent.toString();
+        System.out.println(str);
+
+        assertTrue(str.indexOf("$ref")< 0);
+    }
+
+
     @Test
     void fromJsonPath() {
         assertEquals("**.book.[(@_length-1)]", JSNode.fromJsonPath("$..book[(@.length-1)]"));

@@ -494,6 +494,9 @@ public class Utils {
      * @return true if findThisToken exists as a whole world in inThisString
      */
     public static boolean containsToken(String findThisToken, String inThisString) {
+        if(inThisString == null)
+            return findThisToken == null;
+
         findThisToken = findThisToken.toLowerCase();
         inThisString = inThisString.toLowerCase();
         //-- this replacement is done so that <code>findThisToken</code> can itself contain
@@ -1394,8 +1397,9 @@ public class Utils {
     }
 
     public static LinkedHashMap<String, String> parseQueryString(String query) {
-        LinkedHashMap<String, String> params = new LinkedHashMap<>();
 
+        //TODO: add support for multiple values by concatinating with ","
+        LinkedHashMap<String, String> params = new LinkedHashMap<>();
         if (query != null) {
             try {
                 while (query.startsWith("?") || query.startsWith("&") || query.startsWith("=")) {

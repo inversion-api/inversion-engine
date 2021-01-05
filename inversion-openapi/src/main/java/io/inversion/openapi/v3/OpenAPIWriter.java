@@ -7,6 +7,7 @@ import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.links.Link;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
@@ -114,6 +115,9 @@ public class OpenAPIWriter {
         Schema schema = new Schema();
         openApi.getComponents().addSchemas(coll.getSingularDisplayName(), schema);
 
+        if(coll.getDescription() != null){
+            schema.setDescription(coll.getDescription());
+        }
         schema.setType("object");
 
         List<String> requiredProps = new ArrayList<>();
@@ -127,6 +131,9 @@ public class OpenAPIWriter {
             String type = prop.getJsonType();
 
             Schema propSchema = newTypeSchema(type);
+            if(prop.getDescription() != null)
+                propSchema.setDescription(prop.getDescription());
+
             //TODO...this condition may not be true for non autoincrement PKs
             if (coll.getPrimaryIndex().getProperties().contains(prop)) {
                 propSchema.setReadOnly(true);
@@ -287,7 +294,7 @@ public class OpenAPIWriter {
         Operation op = buildOperation(opToDoc, description, "200", schemaName);
         openApi.getPaths().get(opToDoc.operationPath).setGet(op);
 
-        withParams(op, opToDoc,"includes", "excludes", "expands");
+        withParams(op, opToDoc,"include", "exclude", "expand", "collapse");
         withResponse(op, opToDoc, "404");
     }
 
@@ -304,7 +311,7 @@ public class OpenAPIWriter {
         Operation op = buildOperation(opToDoc, description, "200", schemaName);
         openApi.getPaths().get(opToDoc.operationPath).setGet(op);
 
-        withParams(op, opToDoc,"page", "size", "q", "includes", "excludes", "expands");
+        withParams(op, opToDoc,"page", "size", "sort", "q", "include", "exclude", "expand");
     }
 
     protected void documentRelated(OpenAPI openApi, OpToDoc opToDoc) {
@@ -321,7 +328,34 @@ public class OpenAPIWriter {
         Operation op = buildOperation(opToDoc, description, "200", schemaName);
         openApi.getPaths().get(opToDoc.operationPath).setGet(op);
 
-        withParams(op, opToDoc,"page", "size", "q", "includes", "excludes", "expands");
+        withParams(op, opToDoc,"page", "size", "sort", "q", "include", "exclude", "expand");
+
+        //-- adds this relationship to the {collection}/{resource} endpoint parent
+        for(OpToDoc temp : opsToDoc){
+            if("GET".equalsIgnoreCase(temp.req.getMethod()) //
+             && temp.req.getCollection() == opToDoc.req.getCollection() //
+             && temp.req.getResourceKey() != null //
+             && temp.req.getRelationshipKey() == null){
+
+                PathItem item = openApi.getPaths().get(temp.operationPath);
+                if(item != null){
+                    Operation parentGet = item.getGet();
+                    if(parentGet != null){
+                        ApiResponses resps = parentGet.getResponses();
+                        if(resps != null) {
+                            ApiResponse ok = resps.get("200");
+                            if (ok != null) {
+                                Link link = new Link();
+                                link.setOperationId(opToDoc.operationId);
+                                link.setDescription(opToDoc.req.getRelationship().getName());
+                                ok.link("link-" + opToDoc.operationId, link);
+                                //--TODO document path params
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     protected void documentPost(OpenAPI openApi, OpToDoc opToDoc) {
@@ -352,6 +386,8 @@ public class OpenAPIWriter {
         openApi.getPaths().get(opToDoc.operationPath).setPut(op);
 
         withResponse(op, opToDoc, "404");
+
+        //--TODO: add this operation as a link to GET
     }
 
     protected void documentPatch(OpenAPI openApi, OpToDoc opToDoc) {
@@ -359,14 +395,8 @@ public class OpenAPIWriter {
         if (true)
             return;
 
-        if (opToDoc.req.getCollection() == null)
-            return;
-
-        Operation op = new Operation();
-        openApi.getPaths().get(opToDoc.operationPath).setPatch(op);
-        Collection coll = opToDoc.req.getCollection();
-
-        //TODO -- finish
+        //--TODO: implement me...make DbPatchAction first
+        //--TODO: add this operation as a link to GET
     }
 
     protected void documentDelete(OpenAPI openApi, OpToDoc opToDoc) {
@@ -385,6 +415,7 @@ public class OpenAPIWriter {
 
     protected Operation buildOperation(OpToDoc opToDoc, String description, String status, String schemaName){
         Operation op = new Operation().responses(new ApiResponses()).description(description);
+        op.setOperationId(opToDoc.operationId);
         withResponse(op, opToDoc, status, null, schemaName);
 
         Collection collection = opToDoc.req.getCollection();
@@ -492,28 +523,28 @@ public class OpenAPIWriter {
             q.setIn("query");
             op.addParametersItem(q);
         }
-        if(Utils.in("includes", params)) {
+        if(Utils.in("include", params)) {
             Parameter includes = new Parameter();
             includes.setDescription("An optional comma separated list of json properties to include in the response.  If this field is not supplied, then any field not listed in the 'excludes' parameter are returned.  When using the 'expands' parameter, you can use 'dot' path notation to reference inclusion of nested properties.");
             includes.setSchema(newTypeSchema("string"));
-            includes.setName("includes");
+            includes.setName("include");
             includes.setIn("query");
             op.addParametersItem(includes);
         }
-        if(Utils.in("excludes", params)) {
+        if(Utils.in("exclude", params)) {
             Parameter excludes = new Parameter();
             excludes.setDescription("An optional comma separated list of json properties you specifically do not want to be included in the response. When using the 'expands' parameter, you can use 'dot' path notation to reference exclusion of nested properties.");
             excludes.setSchema(newTypeSchema("string"));
-            excludes.setName("excludes");
+            excludes.setName("exclude");
             excludes.setIn("query");
             op.addParametersItem(excludes);
         }
 
-        if(Utils.in("expands", params)) {
+        if(Utils.in("expand", params)) {
             Parameter expands = new Parameter();
             expands.setDescription("An optional comma separated lists of relationship names that should be expanded in the response. You can reference any number of nesting using 'dot' path notation.");
             expands.setSchema(newTypeSchema("string"));
-            expands.setName("expands");
+            expands.setName("expand");
             expands.setIn("query");
             op.addParametersItem(expands);
         }

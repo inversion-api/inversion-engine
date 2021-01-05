@@ -152,7 +152,7 @@ public class JSNode implements Map<String, Object> {
             if (pretty)
                 json.useDefaultPrettyPrinter();
 
-            JSNode.writeNode(node, json, new HashMap<>(), lowercasePropertyNames, "#");
+            JSNode.writeNode(node, json, new IdentityHashMap<>(), lowercasePropertyNames, "#");
             json.flush();
             baos.flush();
 
@@ -204,7 +204,7 @@ public class JSNode implements Map<String, Object> {
         throw new RuntimeException("unparseable json:" + json);
     }
 
-    static void writeNode(JSNode node, JsonGenerator json, HashMap<Object, String> visited, boolean lowercaseNames, String path) throws Exception {
+    static void writeNode(JSNode node, JsonGenerator json, IdentityHashMap<Object, String> visited, boolean lowercaseNames, String path) throws Exception {
 
         if (visited.containsKey(node)) {
                 json.writeStartObject();
@@ -269,7 +269,7 @@ public class JSNode implements Map<String, Object> {
         json.writeEndObject();
     }
 
-    static void writeArrayNode(JSArray array, JsonGenerator json, HashMap<Object, String> visited, boolean lowercaseNames, String path) throws Exception {
+    static void writeArrayNode(JSArray array, JsonGenerator json, IdentityHashMap<Object, String> visited, boolean lowercaseNames, String path) throws Exception {
         json.writeStartArray();
         List values = array.asList();
 

@@ -149,7 +149,7 @@ public class S3UploadAction extends Action<S3UploadAction> {
 
     private Map<String, Object> saveFile(Chain chain, InputStream inputStream, String fileName, String requestPath) throws Exception {
         AmazonS3 s3              = buildS3Client(chain);
-        String   bucket          = chain.getConfig("s3Bucket", this.s3Bucket);
+        String   bucket          = this.s3Bucket;
         String   pathAndFileName = buildFullPath(chain, requestPath, fileName);
 
         s3.putObject(new PutObjectRequest(bucket, pathAndFileName, inputStream, new ObjectMetadata()));
@@ -165,8 +165,8 @@ public class S3UploadAction extends Action<S3UploadAction> {
     private String buildFullPath(Chain chain, String requestPath, String name) {
         StringBuilder sb = new StringBuilder();
 
-        String basePath = chain.getConfig("s3BasePath", this.s3BasePath);
-        String datePath = chain.getConfig("s3DatePath", this.s3DatePath);
+        String basePath = this.s3BasePath;
+        String datePath = this.s3DatePath;
 
         if (basePath != null) {
             sb.append(basePath);
@@ -195,9 +195,9 @@ public class S3UploadAction extends Action<S3UploadAction> {
     private AmazonS3 buildS3Client(Chain chain) {
         //TODO make this work like dynamo client config as art of db
 
-        String accessKey = chain.getConfig("s3AccessKey", this.s3AccessKey);
-        String secretKey = chain.getConfig("s3SecretKey", this.s3SecretKey);
-        String awsRegion = chain.getConfig("s3AwsRegion", this.s3AwsRegion);
+        String accessKey = this.s3AccessKey;
+        String secretKey = this.s3SecretKey;
+        String awsRegion = this.s3AwsRegion;
 
         AmazonS3ClientBuilder builder;
         if (accessKey != null) {

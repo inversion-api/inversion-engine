@@ -53,11 +53,18 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
      * Rules are always processed in sequence sorted by ascending order.
      */
     protected int order = 1000;
-    protected                 String configStr = null;
+
+    /**
+     * An optional querystring that will be applied to every request processed.
+     * This is useful to force specific params on different endpoints/actions etc.
+     */
+    protected                 String query = null;
 
     protected String includeOn      = null;
 
     protected String excludeOn      = null;
+
+    protected String description = null;
 
     transient boolean lazyConfiged = false;
 
@@ -262,6 +269,16 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return (R) this;
     }
 
+    public Rule withDescription(String description){
+        this.description = description;
+        return this;
+    }
+
+    public String getDescription(){
+        return this.description;
+    }
+
+
     public int getOrder() {
         return order;
     }
@@ -271,34 +288,13 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return (R) this;
     }
 
-    public Set<String> getConfigKeys() {
-        return new HashSet(configMap.keySet());
+    public R withQuery(String query){
+        this.query = query;
+        return (R)this;
     }
 
-    public String getConfig(String key) {
-        return (String) configMap.get(key);
-    }
-
-    public String getConfig(String key, String defaultValue) {
-        String value = configMap.getString(key);
-        if (Utils.empty(value))
-            value = defaultValue;
-
-        return value;
-    }
-
-    public R withConfig(String queryString) {
-        try {
-            if (queryString != null) {
-                configStr = configStr == null ? queryString : configStr + "&" + queryString;
-
-                Map<String, String> parsed = Utils.parseQueryString(queryString);
-                configMap.putAll(parsed);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return (R) this;
+    public String getQuery(){
+        return query;
     }
 
     @Override

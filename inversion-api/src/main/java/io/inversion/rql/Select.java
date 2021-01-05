@@ -75,17 +75,17 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
         }
 
         //-- make sure we always select each part of the primary index...even it may be filtered out downstream.
-        if (term.hasToken("includes")) {
-            Collection coll = getParent().getCollection();
-            if (coll != null) {
-                Index idx = coll.getPrimaryIndex();
-                for (String idxCol : idx.getColumnNames()) {
-                    if (!term.hasChildLeafToken(idxCol)) {
-                        term.withTerm(Term.term(term, idxCol));
-                    }
-                }
-            }
-        }
+//        if (term.hasToken("includes")) {
+//            Collection coll = getParent().getCollection();
+//            if (coll != null) {
+//                Index idx = coll.getPrimaryIndex();
+//                for (String idxCol : idx.getColumnNames()) {
+//                    if (!term.hasChildLeafToken(idxCol)) {
+//                        term.withTerm(Term.term(term, idxCol));
+//                    }
+//                }
+//            }
+//        }
 
         if (functions.contains(token.toLowerCase()) && !term.hasToken("as", "includes", "excludes", "distinct")) {
             String asName = "$$$ANON";

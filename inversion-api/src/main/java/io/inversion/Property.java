@@ -26,12 +26,14 @@ import java.io.Serializable;
 public class Property implements Serializable {
     protected String  jsonName   = null;
     protected String  columnName = null;
+    protected String description = null;
     protected String  type       = "string";
     protected boolean nullable   = false;
     protected boolean readOnly = false;
     protected boolean required = false;
     protected String jsonType = null;
     protected String regex = null;
+
 
     public void setCollection(Collection collection) {
         this.collection = collection;
@@ -68,20 +70,6 @@ public class Property implements Serializable {
         withNullable(nullable);
     }
 
-//   @Override
-//   public int compareTo(Property o)
-//   {
-//      if (o == null)
-//         return 1;
-//
-//      if (o.collection == collection)
-//      {
-//         return getName().compareTo(((Property)collection.indexOf(this) > collection.indexOf(o) ? 1 : -1;
-//      }
-//
-//      return 0;
-//   }
-
     public boolean equals(Object object) {
         if (object == this)
             return true;
@@ -95,6 +83,15 @@ public class Property implements Serializable {
 
     public String toString() {
         return hint == null ? getJsonName() : hint;
+    }
+
+    public Property withDescription(String description){
+        this.description = description;
+        return this;
+    }
+
+    public String getDescription(){
+        return this.description;
     }
 
     /**

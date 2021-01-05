@@ -997,7 +997,7 @@ public class RestClient {
         return this;
     }
 
-    protected HttpClient getHttpClient() {
+    public HttpClient getHttpClient() {
         if (httpClient == null) {
             synchronized (this) {
                 if (httpClient == null) {

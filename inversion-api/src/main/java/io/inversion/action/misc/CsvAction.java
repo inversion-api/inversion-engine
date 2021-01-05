@@ -42,7 +42,7 @@ public class CsvAction extends Action<CsvAction> {
             return;
         }
 
-        if (!"csv".equalsIgnoreCase(req.getUrl().getParam("format")) && !"csv".equalsIgnoreCase(req.getChain().getConfig("format", null))) {
+        if (!"csv".equalsIgnoreCase(req.getUrl().getParam("format"))) {
             return;
         }
 
