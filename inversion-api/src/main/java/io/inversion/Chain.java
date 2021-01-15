@@ -60,6 +60,11 @@ public class Chain {
         return get().size();
     }
 
+    public static boolean isRoot(){
+        Stack<Chain> stack = get();
+        return stack.isEmpty() || stack.size() == 1;
+    }
+
     public static Chain first() {
         Stack<Chain> stack = get();
         if (!stack.empty()) {

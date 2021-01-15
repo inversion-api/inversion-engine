@@ -70,8 +70,7 @@ public class Api extends Rule<Api> {
 
     protected String version = "1";
 
-    public Api() {
-    }
+    public Api() { }
 
     public Api(String name) {
         withName(name);

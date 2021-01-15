@@ -39,78 +39,78 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
         setUrlPrefix(urlPrefix);
         setType(type);
 
-        withTestRequest("eq", "orders?eq(orderID, 10248)&eq(shipCountry,France)");
-        withTestRequest("ne", "orders?ne(shipCountry,France)");
-
-        withTestRequest("n", "orders?n(shipRegion)");
-        withTestRequest("nn", "orders?nn(shipRegion)");
-        withTestRequest("emp", "orders?emp(shipRegion)");
-        withTestRequest("nemp", "orders?nemp(shipRegion)");
-
-        withTestRequest("likeMiddle", "orders?like(shipCountry,F*ance)");
-        withTestRequest("likeStartsWith", "orders?like(shipCountry,Franc*)");
-        withTestRequest("likeEndsWith", "orders?like(shipCountry,*ance)");
-        withTestRequest("sw", "orders?sw(shipCountry,Franc)");
-        withTestRequest("ew", "orders?ew(shipCountry,nce)");
-        withTestRequest("w", "orders?w(shipCountry,ance)");
-        withTestRequest("wo", "orders?wo(shipCountry,ance)");
-
-        withTestRequest("lt", "orders?lt(freight,10)");
-        withTestRequest("le", "orders?le(freight,10)");
-        withTestRequest("gt", "orders?gt(freight,3.67)");
-        withTestRequest("ge", "orders?ge(freight,3.67)");
-        withTestRequest("in", "orders?in(shipCity,Reims,Charleroi)");
-        withTestRequest("out", "orders?out(shipCity,Reims,Charleroi)");
-
-        withTestRequest("and", "orders?and(eq(shipCity,Lyon),eq(shipCountry,France))");
-        withTestRequest("or", "orders?or(eq(shipCity, Reims),eq(shipCity,Charleroi))");
-        withTestRequest("not", "orders?not(or(eq(shipCity, Reims),eq(shipCity,Charleroi)))");
-
-        withTestRequest("as", "orders?as(orderid,order_identifier)");
+//        withTestRequest("eq", "orders?eq(orderID, 10248)&eq(shipCountry,France)");
+//        withTestRequest("ne", "orders?ne(shipCountry,France)");
+//
+//        withTestRequest("n", "orders?n(shipRegion)");
+//        withTestRequest("nn", "orders?nn(shipRegion)");
+//        withTestRequest("emp", "orders?emp(shipRegion)");
+//        withTestRequest("nemp", "orders?nemp(shipRegion)");
+//
+//        withTestRequest("likeMiddle", "orders?like(shipCountry,F*ance)");
+//        withTestRequest("likeStartsWith", "orders?like(shipCountry,Franc*)");
+//        withTestRequest("likeEndsWith", "orders?like(shipCountry,*ance)");
+//        withTestRequest("sw", "orders?sw(shipCountry,Franc)");
+//        withTestRequest("ew", "orders?ew(shipCountry,nce)");
+//        withTestRequest("w", "orders?w(shipCountry,ance)");
+//        withTestRequest("wo", "orders?wo(shipCountry,ance)");
+//
+//        withTestRequest("lt", "orders?lt(freight,10)");
+//        withTestRequest("le", "orders?le(freight,10)");
+//        withTestRequest("gt", "orders?gt(freight,3.67)");
+//        withTestRequest("ge", "orders?ge(freight,3.67)");
+//        withTestRequest("in", "orders?in(shipCity,Reims,Charleroi)");
+//        withTestRequest("out", "orders?out(shipCity,Reims,Charleroi)");
+//
+//        withTestRequest("and", "orders?and(eq(shipCity,Lyon),eq(shipCountry,France))");
+//        withTestRequest("or", "orders?or(eq(shipCity, Reims),eq(shipCity,Charleroi))");
+//        withTestRequest("not", "orders?not(or(eq(shipCity, Reims),eq(shipCity,Charleroi)))");
+//
+//        withTestRequest("as", "orders?as(orderid,order_identifier)");
         withTestRequest("includes", "orders?includes(shipCountry,shipCity)");
-        withTestRequest("distinct", "orders?distinct&includes=shipCountry");
-
-        withTestRequest("count1", "orders?count(*)");
-        withTestRequest("count2", "orders?count(1)");
-        withTestRequest("count3", "orders?count(shipRegion)");//in the data some shipRegions are null so this would be fewer than count(*) or count(1)
-        withTestRequest("countAs", "orders?as(count(*),countOrders)");
-        //-- this is commented out because Select.java translates this to as(count(shipCountry), numRows) which is tested above
-        //-- withTest("countAs2", "orders?count(shipCountry,numRows)"); //
-
-        withTestRequest("sum", "orders?sum(freight)");
-        withTestRequest("sumAs", "orders?as(sum(freight),'Sum Freight')");
-
-        //-- this is commented out because Select.java translates this to as(sum(freight), sumFreight) which is tested above
-        //-- withTest("sumAs", "orders?sum(freight,sumFreight)");
-
-        withTestRequest("sumIf", "orders?as(sum(if(eq(shipCountry,France),1,0)), 'French Orders')");
-        withTestRequest("min", "orders?min(freight)");
-        withTestRequest("max", "orders?max(freight)");
-        //withTest("if", "orders?");
-        withTestRequest("groupCount", "orders?group(shipCountry)&as(count(*),countryCount)&includes=shipCountry,countryCount");
-
-        //      withTest("aggregate", "orders?");
-        //      withTest("function", "orders?");
-        //      withTest("countascol", "orders?");
-        //      withTest("rowcount", "orders?");
-
-        withTestRequest("offset", "orders?offset=3");
-        withTestRequest("limit", "orders?limit=7");
-        withTestRequest("page", "orders?pageSize=7&page=3");
-        withTestRequest("pageNum", "orders?pageSize=7&pageNum=3");
-        withTestRequest("after", "orders?after=10248");
-
-        withTestRequest("sort", "orders?sort(-shipCountry,shipCity)");
-        withTestRequest("order", "orders?order(shipCountry,-shipCity)");
-
-        withTestRequest("onToManyExistsEq", "employees?eq(reportsTo.firstName,Andrew)");
-        withTestRequest("onToManyNotExistsNe", "employees?ne(reportsTo.firstName,Andrew)");
-
-        withTestRequest("manyToOneExistsEq", "employees?eq(employees.firstName,Nancy)");
-        withTestRequest("manyToOneNotExistsNe", "employees?ne(employees.firstName,Nancy)");
-
-        withTestRequest("manyTManyNotExistsNe", "employees?ne(orderdetails.quantity,12)");
-        withTestRequest("eqNonexistantColumn", "orders?ge(orderId, 1000)&eq(nonexistantColumn,12)");
+//        withTestRequest("distinct", "orders?distinct&includes=shipCountry");
+//
+//        withTestRequest("count1", "orders?count(*)");
+//        withTestRequest("count2", "orders?count(1)");
+//        withTestRequest("count3", "orders?count(shipRegion)");//in the data some shipRegions are null so this would be fewer than count(*) or count(1)
+//        withTestRequest("countAs", "orders?as(count(*),countOrders)");
+//        //-- this is commented out because Select.java translates this to as(count(shipCountry), numRows) which is tested above
+//        //-- withTest("countAs2", "orders?count(shipCountry,numRows)"); //
+//
+//        withTestRequest("sum", "orders?sum(freight)");
+//        withTestRequest("sumAs", "orders?as(sum(freight),'Sum Freight')");
+//
+//        //-- this is commented out because Select.java translates this to as(sum(freight), sumFreight) which is tested above
+//        //-- withTest("sumAs", "orders?sum(freight,sumFreight)");
+//
+//        withTestRequest("sumIf", "orders?as(sum(if(eq(shipCountry,France),1,0)), 'French Orders')");
+//        withTestRequest("min", "orders?min(freight)");
+//        withTestRequest("max", "orders?max(freight)");
+//        //withTest("if", "orders?");
+//        withTestRequest("groupCount", "orders?group(shipCountry)&as(count(*),countryCount)&includes=shipCountry,countryCount");
+//
+//        //      withTest("aggregate", "orders?");
+//        //      withTest("function", "orders?");
+//        //      withTest("countascol", "orders?");
+//        //      withTest("rowcount", "orders?");
+//
+//        withTestRequest("offset", "orders?offset=3");
+//        withTestRequest("limit", "orders?limit=7");
+//        withTestRequest("page", "orders?pageSize=7&page=3");
+//        withTestRequest("pageNum", "orders?pageSize=7&pageNum=3");
+//        withTestRequest("after", "orders?after=10248");
+//
+//        withTestRequest("sort", "orders?sort(-shipCountry,shipCity)");
+//        withTestRequest("order", "orders?order(shipCountry,-shipCity)");
+//
+//        withTestRequest("onToManyExistsEq", "employees?eq(reportsTo.firstName,Andrew)");
+//        withTestRequest("onToManyNotExistsNe", "employees?ne(reportsTo.firstName,Andrew)");
+//
+//        withTestRequest("manyToOneExistsEq", "employees?eq(employees.firstName,Nancy)");
+//        withTestRequest("manyToOneNotExistsNe", "employees?ne(employees.firstName,Nancy)");
+//
+//        withTestRequest("manyTManyNotExistsNe", "employees?ne(orderdetails.quantity,12)");
+//        withTestRequest("eqNonexistantColumn", "orders?ge(orderId, 1000)&eq(nonexistantColumn,12)");
 
         //        withExpectedResult("eq", "PUT YOUR SQL HERE");//
         //        withExpectedResult("ne", "");//
@@ -247,6 +247,9 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
                 return false;
         }
 
+        if(res.getError() != null)
+            res.getError().printStackTrace();
+
         String debug = res.getDebug();
         if (debug == null)
             return false;
@@ -258,7 +261,13 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
         {
             //if the tests produced an error, make sure the users is matching against the error
             if(res.getError() != null) {
+                res.getError().printStackTrace();
                 String errorContent = res.getError().getMessage();
+                if(errorContent == null){
+                    res.getError().printStackTrace();
+                    Utils.rethrow(res.getError());
+                }
+
                 doesContain = errorContent.contains(expectedMatch);
             }
         }

@@ -688,6 +688,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             rs.close();
         } catch (Exception ex) {
+            ex.printStackTrace();
             throw ApiException.new500InternalServerError(ex);
         } finally {
             Utils.close(rs);

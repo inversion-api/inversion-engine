@@ -52,10 +52,12 @@ public class CsvActionTest {
         JSArray array = new JSArray();
         array.put(0, singleObject);
         array.put(1, singleObject.copy());
-        res.withData(array);
+        res.withRecords(array.asList());
         res.withMeta("blah", "blahvalue");
         action.run(buildSuccessfulRequest(), res);
         assertNull(res.getJson());
+        String text = res.getText();
+        System.out.println(text);
         assertEquals("key1,key2\r\nvalue1,value2\r\nvalue1,value2\r\n", res.getText());
     }
 

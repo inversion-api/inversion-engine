@@ -19,6 +19,7 @@ package io.inversion.action.hateoas;
 import io.inversion.*;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
+import io.inversion.utils.Rows;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,42 +29,45 @@ import java.util.List;
 public class LinksAction extends Action<LinksAction> {
 
     public void run(Request req, Response res) throws ApiException {
+        if (Chain.isRoot() && req.getCollection() != null){
+            if(req.getJson() != null)
+                req.getJson().asNodeList().forEach(node -> removeLinks(req.getCollection(), node));
 
-        req.getChain().go();
+            req.getChain().go();
 
-        if(res.isSuccess() && req.getCollection() != null && res.getJson() != null) {
-            JSNode data = res.getJson().getNode("data");
-            if (data != null) {
-                data.stream().filter(node -> node instanceof JSNode && !(node instanceof JSArray)).forEach(node -> updateResourceLinks(req, (JSNode) node));
+            if (res.isSuccess() && res.getJson() != null){
+                Collection coll = req.getRelationship() != null ? req.getRelationship().getRelated() : req.getCollection();
+                res.getData().stream().filter(node -> node instanceof JSNode && !(node instanceof JSArray)).forEach(node -> addLinks(coll, (JSNode) node));
             }
         }
     }
 
-    protected void updateResourceLinks(Request req, JSNode node){
+    protected void addLinks(Collection coll, JSNode node){
 
-        String link = null;
-        String resourceKey = req.getCollection().encodeJsonKey(node);
-        Collection coll = req.getCollection();
-
+        String resourceKey = coll.encodeJsonKey(node);
         LinkedHashMap<String, String> toAdd = new LinkedHashMap<>();
 
         if(coll != null && resourceKey != null){
-            for(Relationship rel : req.getCollection().getRelationships()){
+            for(Relationship rel : coll.getRelationships()){
 
-                if(node.get(rel.getName()) instanceof JSNode)//-- means this property was expanded.
-                    continue;
-
-                if(rel.isManyToOne()){
-                    //-- this is an optimization that prevents potentially unnecessary db queries on return access
-                    String key = rel.getCollection().encodeJsonKey(node, rel.getFkIndex1());
-                    if(key != null)
-                        link = Chain.buildLink(rel.getRelated(), key, null);
+                Object value = node.get(rel.getName());
+                if(value instanceof JSNode){
+                    ((JSNode)value).asNodeList().forEach(child -> addLinks(rel.getRelated(), child));
                 }
+                else{
+                    String link = null;
+                    if(rel.isManyToOne()){
+                        //-- this is an optimization that prevents potentially unnecessary db queries on return access
+                        String key = rel.getCollection().encodeJsonKey(node, rel.getFkIndex1());
+                        if(key != null)
+                            link = Chain.buildLink(rel.getRelated(), key, null);
+                    }
 
-                if(link == null)
-                    link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
+                    if(link == null)
+                        link = Chain.buildLink(coll, resourceKey, rel.getName());
 
-                toAdd.put(rel.getName(), link);
+                    toAdd.put(rel.getName(), link);
+                }
             }
         }
 
@@ -78,10 +82,46 @@ public class LinksAction extends Action<LinksAction> {
             }
         }
 
-        link = node.getString("href");
-        if(link == null){
-            node.putFirst("href", Chain.buildLink(coll, resourceKey, null));
+        if(node.get("href") == null){
+            String href = Chain.buildLink(coll, resourceKey, null);
+            node.putFirst("href", href);
         }
     }
 
+
+    protected void removeLinks(Collection coll, final JSNode node) {
+
+        if (node.get("href") instanceof String){
+            String href = (String)node.remove("href");
+            Rows.Row row = coll.decodeJsonKey((String) href);
+            for (String key : row.keySet()) {
+                node.put(key, row.get(key));
+            }
+        }
+
+        for (Relationship rel : coll.getRelationships()) {
+            if (node.containsKey(rel.getName())) {
+                Object value = node.get(rel.getName());
+
+                if (value instanceof JSNode) {
+                    ((JSNode)value).asNodeList().forEach(child -> removeLinks(rel.getRelated(), child));
+                }else {
+                    if (rel.isManyToOne()) {
+                        if (value != null) {
+
+                            Index fkIdx = rel.getFkIndex1();
+                            Index pkIdx = rel.getRelated().getPrimaryIndex();
+
+                            Rows.Row row = rel.getRelated().decodeJsonKey((String) value);
+                            for(int i=0; i<fkIdx.size(); i++){
+                                node.put(fkIdx.getPropertyName(i), row.get(i));
+                            }
+                        }
+                    } else {
+                        node.remove(rel.getName());
+                    }
+                }
+            }
+        }
+    }
 }

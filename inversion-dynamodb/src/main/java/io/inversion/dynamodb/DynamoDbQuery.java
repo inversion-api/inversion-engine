@@ -545,7 +545,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
         int pageSize = getPage().getPageSize();
 
         String projectionExpression = null;
-        List   columns              = getSelect().getColumnNames();
+        List   columns              = getSelect().getIncludeColumns();
         if (columns.size() > 0)
             projectionExpression = Utils.implode(",", columns);
 

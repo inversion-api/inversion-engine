@@ -47,43 +47,33 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * An HttpClient wrapper designed specifically to run inside of an Inversion {@code io.inversion.Action} with some superpowers.
+ * An HttpClient wrapper designed specifically to run inside of an Inversion request Chain with some extra superpowers.
  * <p>
  * RestClient gives you easy or built in:
  * <ul>
- *  <li>fluent asynchronous response handler api
- *
+ *  <li>request response listeners that operate on all requests/responses.  See RestClient.withRequestListener()/.withResponseListener()</li>
+ *  <li>fluent asynchronous response handler api on FutureResponse for response specific handling.  See FutureResponse.onResponse()/onSuccess()/onFailure()
  *  <li>automatic retry support
- *
  *  <li>header forwarding w/ whitelists and blacklists
- *
  *  <li>url query string param forwarding w/ whitelist and blacklists
- *
- *  <li>lazy runtime host url construction through lookup of
- *      "${name}.url" in the environment
- *
- *  <li>dynamic host url variables - any "${paramName}" tokens in
- *      the host url will be replaced with Chain.peek.getRequest().getUrl().getParam(paramName).
- *
- *  <li>short circuit remote calls or transform Requests/Responses with a single
- *      override of <code>doRequest(Request)</code>
- *
+ *  <li>lazy runtime host url construction through lookup of "{RestClient.name}.url" in the environment
+ *  <li>dynamic host url variables - any "{paramName}" tokens in the host url will be replaced with Chain.peek.getRequest().getUrl().getParam(paramName).
+ *  <li>change any request/response in an always thread safe way by overriding <code>doRequest(Request)</code>
  * </ul>
  *
  * <p>
- * <b>Transforming requests / responses</b>
- * <p>
- * You can easily override the <code>doRequest(Request)</code> method to potentially short circuit calls or perform request/response transforms.
- * <p>
- * For example:
+ * <b>Intercepting and transforming requests and responses examples:</b>
  * <pre>
  *
- *      protected RestClient client = new RestClient("myservice")
+ *      RestClient client = new RestClient().withRequestListener(req -> return new Response())//-- edit the request or return your own response to short circuits the remote call
+ *                                          .withResponseListener(res -> res.setStatus(200))//-- edit anything you want about the response
+ *
+ *      //-- you can also override "doRequest" to control everything before and after the actual HttpClient call.
+ *      client = new RestClient("myservice")
  *      {
  *          protected Response doRequest(Request request)
  *          {
@@ -96,11 +86,8 @@ import java.util.zip.GZIPOutputStream;
  *              else
  *              {
  *                  doMyRequestTransformation(request);
- *
- *                  Response response = super.getResponse(request);
- *
+ *                  Response response = super.doRequest(request);
  *                  doMyResponseTransformation(response);
- *
  *                  return response;
  *              }
  *          }
@@ -129,9 +116,44 @@ import java.util.zip.GZIPOutputStream;
  */
 public class RestClient {
 
-    static final Log log = LogFactory.getLog(RestClient.class);
+    static final    Log                                    log                   = LogFactory.getLog(RestClient.class);
+
     /**
-     * Always forward these headers.
+     * Headers that are always sent regardless of <code>forwardHeaders</code>, <code>includeForwardHeaders</code> and <code>excludeForwardHeaders</code> state.
+     * <p>
+     * These headers will overwrite any caller supplied or forwarded header with the same key, not simply appending to the value list.
+     * <p>
+     * This list is initially empty.
+     */
+    protected final ArrayListValuedHashMap<String, String> forcedHeaders         = new ArrayListValuedHashMap();
+
+    protected final List<RequestListener>    requestListeners  = new ArrayList<>();
+
+    protected final List<Consumer<Response>> responseListeners = new ArrayList<>();
+
+    /**
+     * The RestClient name that will be used for property decoding.
+     *
+     * @see Configurator
+     */
+    protected       String                   name              = null;
+
+    /**
+     * Optional base url that will be prepended to the url arg of any calls assuming that the url arg supplied is a relative path and not an absolute url.
+     * Any {paramName} variables will be replaced with with values from the current Request Url.
+     */
+    protected String     url                = null;
+
+
+    /**
+     * Indicates the headers from the root inbound Request being handled on this Chain should be included on this request minus any <code>excludeForwardHeaders</code>.
+     * <p>
+     * Default value is true.
+     */
+    protected boolean    forwardHeaders     = true;
+
+    /**
+     * Forward these headers when forwardHeaders is true.
      *
      * @see #shouldForwardHeader(String)
      * @see <a href="https://en.wikipedia.org/wiki/List_of_HTTP_header_fields">HTTP Header Fields</a>
@@ -140,7 +162,7 @@ public class RestClient {
      * @see <a href="https://docs.microsoft.com/en-us/azure/azure-monitor/app/correlation">Azure Request Correlation</a>
      * @see <a href="https://github.com/dotnet/runtime/blob/master/src/libraries/System.Diagnostics.DiagnosticSource/src/HttpCorrelationProtocol.md">MS Http Corolation Protocol - Deprecated</a>
      */
-    protected final Set includeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)//
+    protected final Set                                    includeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)//
             , "authorization", "cookie" //-- can't login to downstream services if you don't forward the authorization
             , "x-forwarded-for", "x-forwarded-host", " x-forwarded-proto" //-- these are generic for servers hosted behind a reverse proxy/load balancer etc.
             , "x-request-id", "x-correlation-id" //-- common but not standard
@@ -154,108 +176,49 @@ public class RestClient {
      *
      * @see #shouldForwardHeader(String)
      */
-    protected final Set excludeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER) //
+    protected final Set                                    excludeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER) //
             , "content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host");
+
     /**
-     * Headers that are always sent regardless of <code>forwardHeaders</code>, <code>includeForwardHeaders</code> and <code>excludeForwardHeaders</code> state.
+     * Indicates the params from the root inbound Request being handled on this Chain should be included on this request minus any <code>excludeParams</code>.
      * <p>
-     * These headers will overwrite any caller supplied or forwarded header with the same key, not append to the value list.
-     * <p>
-     * This list is initially empty.
+     * Default value is false.
      */
-    protected final ArrayListValuedHashMap<String, String> forcedHeaders = new ArrayListValuedHashMap();
+    protected boolean    forwardParams      = false;
+
     /**
-     * Always forward these params.
+     * Forward these params when forwardParams is true.
      *
      * @see #shouldForwardParam(String)
      */
-    protected final Set<String>     includeParams = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    protected final Set<String>                            includeParams         = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+
     /**
-     * Never forward these params.
+     * Never forward these params.  Contains ["explain"] by default.
      *
      * @see #shouldForwardParam(String)
      */
-    protected final Set<String>     excludeParams = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-    protected final List<RequestListener> requestListeners = new ArrayList<>();
-    protected final List<Consumer<Response>> responseListeners = new ArrayList<>();
-    /**
-     * The RestClient name that will be for property decoding.
-     *
-     * @see Configurator
-     */
-    protected String name = null;
-    /**
-     * Indicates the headers from the root inbound Request being handled on this Chain should be included on this request minus any <code>excludeForwardHeaders</code>.
-     * <p>
-     * Default value is true.
-     */
-    protected boolean forwardHeaders = true;
-    /**
-     * Optional base url that will be prepended to the url arg of any calls assuming that the url arg supplied is a relative path and not an absolute url.
-     */
-    protected String url = null;
+    protected final Set<String>              excludeParams     = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER), "explain");
+
     /**
      * Indicates that a request body should be gzipped and the content-encoding header should be sent with value "gzip".
      * <p>
      * Default value is true.
      */
-    protected boolean  useCompression     = true;
+    protected boolean    useCompression     = true;
+
     /**
      * If <code>useCompression</code> is true, anything over this size in bytes will be compressed.
      * <p>
      * Default value is 1024.
      */
-    protected int      compressionMinSize = 1024;
+    protected int        compressionMinSize = 1024;
+
     /**
-     * Indicates the params from the root inbound Request being handled on this Chain should be included on this request minus any blacklisted params.
+     * The thread pool executor used to make asynchronous requests.  The Executor will expand to
+     * <code>threadsMax</code> worker threads.
      */
-    protected boolean  forwardParams      = false;
-    /**
-     * The thread pool executor used to make asynchronous requests
-     */
-    protected Executor executor           = null;
-    /**
-     * The default maximum number of times to retry a request
-     * <p>
-     * The default value is zero meaning by default, failed requests will not be retried
-     */
-    protected int retryMax = 0;
-    /**
-     * The length of time before the first retry.
-     * <p>
-     * Incremental retries receive progressively more of a timeout up to <code>retryTimeoutMax</code>.
-     *
-     * @see #computeTimeout(Request, Response)
-     */
-    protected int retryTimeoutMin = 10;
-    /**
-     * The maximum amount of time to wait before a single retry.
-     *
-     * @see #computeTimeout(Request, Response)
-     */
-    protected int retryTimeoutMax = 1000;
-    /**
-     * Parameter for default HttpClient configuration
-     *
-     * @see org.apache.http.client.config.RequestConfig.Builder#setSocketTimeout(int)
-     */
-    protected int socketTimeout = 30000;
-    /**
-     * Parameter for default HttpClient configuration
-     *
-     * @see org.apache.http.client.config.RequestConfig.Builder#setConnectTimeout(int)
-     */
-    protected int connectTimeout = 30000;
-    /**
-     * Parameter for default HttpClient configuration
-     *
-     * @see org.apache.http.client.config.RequestConfig.Builder#setConnectionRequestTimeout(int)
-     */
-    protected int requestTimeout = 30000;
-    /**
-     * The underlying HttpClient use for all network comms.
-     */
-    protected HttpClient httpClient = null;
+    protected Executor   executor           = null;
 
     /**
      * The number of background executor threads.
@@ -266,6 +229,62 @@ public class RestClient {
      * The default value is 5.
      */
     protected int threadsMax = 5;
+
+    /**
+     * The default maximum number of times to retry a request
+     * <p>
+     * The default value is zero meaning failed requests will not be retried
+     */
+    protected int        retryMax           = 0;
+
+    /**
+     * The length of time before the first retry.
+     * <p>
+     * Incremental retries receive progressively more of a timeout up to <code>retryTimeoutMax</code>.
+     *
+     * @see #computeTimeout(Request, Response)
+     */
+    protected int        retryTimeoutMin    = 10;
+
+    /**
+     * The maximum amount of time to wait before a single retry.
+     *
+     * @see #computeTimeout(Request, Response)
+     */
+    protected int        retryTimeoutMax    = 1000;
+
+    /**
+     * Parameter for default HttpClient configuration
+     * <p>
+     * Default value is 30000ms
+     *
+     * @see org.apache.http.client.config.RequestConfig.Builder#setSocketTimeout(int)
+     */
+    protected int        socketTimeout      = 30000;
+
+    /**
+     * Parameter for default HttpClient configuration
+     * <p>
+     * Default value is 30000ms
+     *
+     * @see org.apache.http.client.config.RequestConfig.Builder#setConnectTimeout(int)
+     */
+    protected int        connectTimeout     = 30000;
+
+    /**
+     * Parameter for default HttpClient configuration
+     * <p>
+     * Default value is 30000ms
+     *
+     * @see org.apache.http.client.config.RequestConfig.Builder#setConnectionRequestTimeout(int)
+     */
+    protected int        requestTimeout     = 30000;
+
+    /**
+     * The underlying HttpClient use for all network comms.
+     */
+    protected HttpClient httpClient         = null;
+
 
     /**
      * The timer used it trigger retries.
@@ -386,9 +405,9 @@ public class RestClient {
     }
 
     /**
-     * Executes the request as provided without modification.
+     * Executes the Request as provided without modification ignoring forwardHeaders/forwardParams etc.
      * <p>
-     * All of the other 'get/post/put/patch/delete/call' methods will construct a Request based on the configured
+     * All of the other 'get/post/put/patch/delete/call' methods will use buildRequest() to construct a Request based on the configured
      * properties of this RestClient and optionally the data in Request on the top of the Chain if operating inside an Engine.
      * <p>
      * Those methods ultimately delegate to this method and no further modification of the Request is made from here out.
@@ -396,27 +415,30 @@ public class RestClient {
      * @param request
      * @return
      */
-    public FutureResponse call(Request request){
+    public FutureResponse call(Request request) {
         FutureResponse future = buildFuture(request);
-        submit(future);
+        if(threadsMax < 1)
+            future.run();
+        else
+            submit(future);
         return future;
     }
 
     /**
      * Builds a request with the supplied information merged with the url, query param, and header options configured
-     * on this reset client and potentially pulled from the Chain request.
+     * on this reset client and potentially pulled from the Chain.first() root caller request.
      *
-     * @param method - the http method
+     * @param method                - the http method
      * @param fullUrlOrRelativePath - a full url or a relative path that will be appended to this.url
-     * @param params - query params to pass
-     * @param body - the request body to pass
-     * @param headers - request headers to pass
-     * @param retryMax - the number of times to retry this call if it fails.
+     * @param params                - query params to pass
+     * @param body                  - the request body to pass
+     * @param headers               - request headers to pass
+     * @param retryMax              - the number of times to retry this call if it fails.
      * @return the configure request
      */
     public Request buildRequest(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, ArrayListValuedHashMap<String, String> headers, int retryMax) {
 
-        String url = buildUrl(fullUrlOrRelativePath);
+        String url         = buildUrl(fullUrlOrRelativePath);
         String queryString = StringUtils.substringAfter(url, "?");
         if (!Utils.empty(queryString)) {
             url = Utils.substringBefore(url, "?");
@@ -460,7 +482,7 @@ public class RestClient {
             Chain chain = Chain.first();
             if (chain != null) {
                 Request             originalInboundRequest = chain.getRequest();
-                Map<String, String> origionalParams        = originalInboundRequest.getUrl().getParams();
+                Map<String, String> origionalParams        = new Url(originalInboundRequest.getUrl().getOriginal()).getParams();
                 if (origionalParams.size() > 0) {
                     for (String key : origionalParams.keySet()) {
                         if (shouldForwardParam(key)) {
@@ -524,11 +546,8 @@ public class RestClient {
      *      else
      *      {
      *          doMyRequestTransformation(request);
-     *
-     *          Response response = super.getResponse(request);
-     *
+     *          Response response = super.doRequest(request);
      *          doMyResponseTransformation(response);
-     *
      *          return response;
      *      }
      *  }
@@ -551,13 +570,15 @@ public class RestClient {
         Response response = new Response(url);
         response.withRequest(request);
 
-        for(RequestListener l : requestListeners){
+        for (RequestListener l : requestListeners) {
             Response replacementResponse = l.onRequest(request);
-            if(replacementResponse != null) {
-                if(replacementResponse.getUrl() == null)
+            if (replacementResponse != null) {
+                if (replacementResponse.getUrl() == null)
                     replacementResponse.withUrl(url);
-                if(replacementResponse.getRequest() == null)
+                if (replacementResponse.getRequest() == null)
                     replacementResponse.withRequest(request);
+
+                return replacementResponse;
             }
         }
 
@@ -700,6 +721,14 @@ public class RestClient {
         return response;
     }
 
+    /**
+     * Requests listeners can modify the Request.  If they return null, request processing/execution
+     * will continue.  If they return a Response, no additional RequestListeners will be notified
+     * and the supplied Response will be used instead of actually making the remote response.  In this
+     * case all response listeners on this class or the FutureResponse will still be notified.
+     * @param requestListener
+     * @return
+     */
     public RestClient onRequest(RequestListener requestListener) {
         this.requestListeners.add(requestListener);
         return this;
@@ -709,12 +738,6 @@ public class RestClient {
         this.responseListeners.add(responseListener);
         return this;
     }
-
-    public static interface RequestListener{
-        Response onRequest(Request request);
-    }
-
-
 
     /**
      * Computes an incremental retry backoff time between retryTimeoutMin and retryTimeoutMax.
@@ -1037,6 +1060,7 @@ public class RestClient {
      * You can dependency inject your Executor or override this method to provide advanced customizations.
      * <p>
      * As a convenience RestClient.threadsMax is configured on the default executor.
+     *
      * @return a default new Executor.
      */
     protected Executor buildExecutor() {
@@ -1169,9 +1193,13 @@ public class RestClient {
 
     public RestClient withThreadsMax(int threadsMax) {
         this.threadsMax = threadsMax;
-        if(executor != null)
+        if (executor != null)
             executor.withThreadsMax(threadsMax);
         return this;
+    }
+
+    public interface RequestListener {
+        Response onRequest(Request request);
     }
 
     static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase {

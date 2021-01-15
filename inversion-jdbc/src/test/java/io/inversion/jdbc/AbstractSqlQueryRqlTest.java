@@ -22,7 +22,6 @@ public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements
 
     public AbstractSqlQueryRqlTest(String type) {
         super("northwind/" + type + "/", type);
-
         withExpectedResult("eq", "SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"orderID\" = ? AND \"orders\".\"shipCountry\" = ? ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[10248, France]");
         withExpectedResult("ne", "SELECT \"orders\".* FROM \"orders\" WHERE (NOT (\"orders\".\"shipCountry\" = ?)) ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[France]");
         withExpectedResult("n", "SELECT \"orders\".* FROM \"orders\" WHERE \"orders\".\"shipRegion\" IS NULL ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]");
@@ -46,7 +45,8 @@ public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements
         withExpectedResult("or", "SELECT \"orders\".* FROM \"orders\" WHERE (\"orders\".\"shipCity\" = ? OR \"orders\".\"shipCity\" = ?) ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[Reims, Charleroi]");
         withExpectedResult("not", "SELECT \"orders\".* FROM \"orders\" WHERE NOT ((\"orders\".\"shipCity\" = ? OR \"orders\".\"shipCity\" = ?)) ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[Reims, Charleroi]");
         withExpectedResult("as", "SELECT \"orders\".*, \"orders\".\"orderid\" AS \"order_identifier\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]");
-        withExpectedResult("includes", "SELECT \"orders\".\"shipCountry\", \"orders\".\"shipCity\", \"orders\".\"orderId\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]");
+        //withExpectedResult("includes", "SELECT \"orders\".\"shipCountry\", \"orders\".\"shipCity\", \"orders\".\"orderId\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]");
+          withExpectedResult("includes", "SELECT \"Orders\".\"ShipCountry\", \"Orders\".\"ShipCity\" FROM \"Orders\" ORDER BY \"Orders\".\"ShipCity\" ASC, \"Orders\".\"ShipCountry\" ASC LIMIT 100 OFFSET 0 args=[]");
         withExpectedResult("distinct", "SELECT DISTINCT \"orders\".\"shipCountry\", \"orders\".\"orderId\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]");
         withExpectedResult("count1", "SELECT COUNT(*) FROM \"orders\" args=[]");
         withExpectedResult("count2", "SELECT COUNT(?) FROM \"orders\" args=[1]");

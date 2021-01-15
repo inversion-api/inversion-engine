@@ -126,6 +126,14 @@ public class DbPostAction extends Action<DbPostAction> {
         List         resourceKeys;
         JSNode       body        = req.getJson();
 
+        System.out.println(body);
+        JSArray bodyArr = body.asArray();
+        Map visited = new HashMap();
+        for(int i=0; i<bodyArr.size(); i++){
+            swapLogicalDuplicateReferences(collection, (JSNode)bodyArr.get(i), bodyArr, i + "0", visited);
+        }
+        System.out.println(body);
+
         //if the caller posted back an Inversion GET style envelope with meta/data sections, unwrap to get to the real body
         if(body.find("meta") instanceof JSNode && body.find("data") instanceof  JSArray)
             body = body.findNode("data");
@@ -205,7 +213,7 @@ public class DbPostAction extends Action<DbPostAction> {
      * <p>
      * Step 2: For each relationship POST back through the "front door".  This is the primary
      * recursion that enables nested documents to submitted all at once by client.  Putting
-     * this step first ensure that all new objects are POSTed, with their newly created hrefs
+     * this step first ensures that all new objects are POSTed, with their newly created hrefs
      * placed back in the JSON prior to any PUTs that depend on relationship keys to exist.
      * <p>
      * Step 3: PKs generated for child documents which are actually relationship parents, are set
@@ -231,13 +239,17 @@ public class DbPostAction extends Action<DbPostAction> {
         //--
 
         System.out.println("UPSERT: " + collection.getName() + ":\r\n" + nodes);
-
         List<String> returnList = collection.getDb().upsert(collection, nodes.asList());
+
         for (int i = 0; i < nodes.length(); i++) {
             //-- new records need their newly assigned id/href assigned back on them
-            if (nodes.getNode(i).get("href") == null) {
-                String newHref = Chain.buildLink(collection, returnList.get(i) + "", null);
-                nodes.getNode(i).put("href", newHref);
+//            if (nodes.getNode(i).get("href") == null) {
+//                String newHref = Chain.buildLink(collection, returnList.get(i) + "", null);
+//                nodes.getNode(i).put("href", newHref);
+//            }
+            Row row = collection.decodeJsonKey(returnList.get(i));
+            for(String key : row.keySet()){
+                nodes.getNode(i).put(key, row.get(key));
             }
         }
 
@@ -250,65 +262,111 @@ public class DbPostAction extends Action<DbPostAction> {
         //-- THE ACTION (MAYBE THIS ONE) THAT HANDLES THE UPSERT FOR THAT CHILD COLLECTION
         //-- AND ITS DESCENDANTS.
         for (Relationship rel : collection.getRelationships()) {
-            Relationship inverse    = rel.getInverse();
-            List         childNodes = new ArrayList<>();
+            Relationship                  inverse    = rel.getInverse();
+            LinkedHashMap<String, JSNode> childMap = new LinkedHashMap<>();
+            ArrayList<JSNode> childList = new ArrayList<>();
 
             for (JSNode node : nodes.asNodeList()) {
                 Object value = node.get(rel.getName());
-                if (value instanceof JSArray) //this is a one-to-many or many-to-many
-                {
-                    JSArray childArr = ((JSArray) value);
-                    for (int i = 0; i < childArr.size(); i++) {
-                        //-- removals will be handled in the next section, not this recursion
-                        Object child = childArr.get(i);
-                        if (child == null)
-                            continue;
 
-                        if (child instanceof String) {
-                            //-- this was passed in as an href reference, not as an object
-                            if (rel.isOneToMany()) {
-                                //-- the child inverse of this is a many-to-one that modifies the child row.
-                                child = new JSArray(child);
-                                childArr.set(i, child);
-                            } else {
-                                //-- don't do anything..the many-to-many section below will update this
-                            }
+                if (value instanceof JSNode) {
+                    for (JSNode child : ((JSNode) value).asNodeList()) {
+                        String resourceKey = rel.getRelated().encodeJsonKey(child);
+                        String hashKey     = resourceKey != null ? req.getCollectionKey() : "child" + childMap.size();
+                        if(!childMap.containsKey(hashKey))
+                            childMap.put(hashKey, child);
+                        childList.add(child);
+                    }
+                }
+
+//                if (value instanceof JSArray) //this is a one-to-many or many-to-many
+//                {
+//                    JSArray childArr = ((JSArray) value);
+//                    for (int i = 0; i < childArr.size(); i++) {
+//                        //-- removals will be handled in the next section, not this recursion
+//                        Object child = childArr.get(i);
+//                        if (child == null)
+//                            continue;
+//
+//                        if (child instanceof String) {
+//                            //-- this was passed in as an href reference, not as an object
+//                            if (rel.isOneToMany()) {
+//                                //-- the child inverse of this is a many-to-one that modifies the child row.
+//                                child = new JSArray(child);
+//                                childArr.set(i, child);
+//                            } else {
+//                                //-- don't do anything..the many-to-many section below will update this
+//                            }
+//                        }
+//
+//                        if (child instanceof JSNode) {
+//                            JSNode childNode = (JSNode) child;
+//                            if (rel.isOneToMany()) {
+//                                //-- this generations one-to-many, are the next generation's many-to-ones
+//                                //-- the child generation receives an implicit relationship via nesting
+//                                //-- under the parent, have to set the inverse prop on the child so
+//                                //-- its many-to-one FK gets set to this parent.
+//
+//                                childNode.put(inverse.getName(), node.getString("href"));
+//                            }
+//                            childNodes.add(childNode);
+//                        }
+//                    }
+//                } else if (value instanceof JSNode) {
+//                    //-- this must be a many-to-one...the FK is in this generation, not the child
+//                    JSNode childNode = ((JSNode) value);
+//                    childNodes.add(childNode);
+//                }
+//            }
+
+                if (childMap.size() > 0) {
+                    String   path = Chain.buildLink(rel.getRelated(), null, null);
+
+                    JSArray childArr = new JSArray();
+                    for (String key : childMap.keySet()) {
+                        childArr.add(childMap.get(key));
+                    }
+
+                    Response res  = req.getEngine().post(path, childArr);
+                    if (!res.isSuccess())
+                        res.rethrow();
+
+                    if(res.getData().length() != childMap.size()){
+                        throw new ApiException("Can not determine if all children submitted were updated.  Request size = {}.  Response size = {}", childMap.size(), res.getData().length());
+                    }
+
+                    //-- now get response URLS and set them BACK on the source from this generation
+
+                    int                 i            = -1;
+                    Map<String, JSNode> updatedKeys  = new HashMap();
+                    Map<JSNode, String> updatedNodes = new HashMap();
+                    for (String childKey : childMap.keySet()) {
+                        i++;
+                        JSNode newChild = (JSNode) res.data().get(i);
+                        String newKey = rel.getRelated().encodeJsonKey(newChild);
+                        if(newKey == null)
+                            throw new ApiException("New child key was null {}", newChild);
+
+                        JSNode oldChild = childMap.get(childKey);
+                        oldChild.removeAll();
+                        oldChild.putAll(newChild.asMap());
+
+                        updatedNodes.put(oldChild, newKey);
+                        updatedKeys.put(newKey, oldChild);
+                    }
+                    for (JSNode child : childList) {
+                        String childKey = rel.getRelated().encodeJsonKey(child);
+                        if (childKey == null) {
+                            //-- this should never happen, if it does FIX IT, algorithm implementation error
+                            childKey = rel.getRelated().encodeJsonKey(child);
+                            throw new ApiException("Child primary key could not be determined after upsert for {}", childKey);
                         }
-
-                        if (child instanceof JSNode) {
-                            JSNode childNode = (JSNode) child;
-                            if (rel.isOneToMany()) {
-                                //-- this generations one-to-many, are the next generation's many-to-ones
-                                //-- the child generation receives an implicity relationship via nesting
-                                //-- under the parent, have to set the inverse prop on the child so
-                                //-- its many-to-one FK gets set to this parent.
-
-                                childNode.put(inverse.getName(), node.getString("href"));
-                            }
-                            childNodes.add(childNode);
-
+                        if (!updatedNodes.containsKey(child)) {
+                            JSNode newChild = childMap.get(childKey);
+                            child.removeAll();
+                            child.putAll(newChild.asMap());
                         }
                     }
-                } else if (value instanceof JSNode) {
-                    //-- this must be a many-to-one...the FK is in this generation, not the child
-                    JSNode childNode = ((JSNode) value);
-                    childNodes.add(childNode);
-                }
-            }
-
-            if (childNodes.size() > 0) {
-                String   path = Chain.buildLink(rel.getRelated(), null, null);
-                Response res  = req.getEngine().post(path, new JSArray(childNodes));
-                if (!res.isSuccess() || res.getData().length() != childNodes.size()) {
-                    res.rethrow();
-                    //throw new ApiException(Status.SC_400_BAD_REQUEST, res.getErrorContent());
-                }
-
-                //-- now get response URLS and set them BACK on the source from this generation
-                JSArray data = res.getData();
-                for (int i = 0; i < data.length(); i++) {
-                    String childHref = ((JSNode) data.get(i)).getString("href");
-                    ((JSNode) childNodes.get(i)).put("href", childHref);
                 }
             }
         }
@@ -318,44 +376,58 @@ public class DbPostAction extends Action<DbPostAction> {
         //-- Step 3. sets foreign keys on json parent entities..this happens
         //-- when a JSON parent is actually a ONE_TO_MANY child.
         //--
-        //-- ...important for when
+        //-- ...THIS HAPPENS WHEN
         //-- new ONE_TO_MANY entities are passed in...they won't have an href
         //-- on the initial record submit..the recursion has to happen to
         //-- give them an href
         //--
-        //-- TODO: can optimize this to not upsert if the key was available
         //-- in the first pass
         for (Relationship rel : collection.getRelationships()) {
             List<Map> updatedRows = new ArrayList<>();
             if (rel.isManyToOne())//this means we have a FK to the related element's PK
             {
                 for (JSNode node : nodes.asNodeList()) {
-                    Map<String, Object> primaryKey         = collection.getDb().getKey(collection, node);
-                    Map<String, Object> foreignResourceKey = collection.getDb().getKey(rel.getRelated(), node.get(rel.getName()));
 
+                    //TODO AGAIN NEED TO FILTER OUT DUPLICATES FOR THE PATCH
+
+                    String foreignKey = collection.encodeJsonKey(node, rel.getFkIndex1());
+                    if(foreignKey != null)
+                        continue;
+
+                    Object childObj = node.getNode(rel.getName());
+                    if(childObj == null)
+                        continue;
+
+                    JSNode childNode = (JSNode)childObj;
                     Index foreignIdx        = rel.getFkIndex1();
-                    Index relatedPrimaryIdx = rel.getRelated().getPrimaryIndex();
+                    Index relatedIdx = rel.getRelated().getPrimaryIndex();
+                    Map<String, Object> updatedRow = new HashMap<>();
+                    updatedRows.add(updatedRow);
 
-                    Object docChild = node.get(rel.getName());
-                    if (docChild instanceof JSNode) {
-                        Map<Object, Object> updatedRow = new HashMap<>();
-                        updatedRows.add(updatedRow);
-                        updatedRow.putAll(primaryKey);
-
-                        if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1) {
+                    if(foreignIdx.size() != relatedIdx.size()){
+                        if (foreignIdx.size() == 1) {
                             //-- the fk is an resourceKey not a one-to-one column mapping to the primary composite key
-                            updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeDbKey(foreignResourceKey));
-                        } else {
-                            Map foreignKey = collection.getDb().mapTo(foreignResourceKey, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
-                            updatedRow.putAll(foreignKey);
+                            String fkProp = foreignIdx.getPropertyName(0);
+                            String fkVal = rel.getRelated().encodeJsonKey(childNode, relatedIdx);
+                            updatedRow.put(fkProp, fkVal);
+                        }
+                        else if(relatedIdx.size() == 1){
+                            Map<String, Object> fkValues = collection.decodeJsonKey(foreignIdx, childNode.getString(relatedIdx.getPropertyName(0)));
+                            updatedRow.putAll(fkValues);
+                        }else{
+                            throw new ApiException("Attempting to map indexes of different size {}, {}", foreignIdx, relatedIdx);
                         }
                     }
+                    else{
+                        for(int i = 0; i<foreignIdx.size(); i++){
+                            updatedRow.put(foreignIdx.getPropertyName(i), childNode.get(relatedIdx.getPropertyName(i)));
+                        }
+                    }
+                    node.putAll(updatedRow);
                 }
 
                 if (updatedRows.size() > 0) {
-                    //-- don't need to "go back through the front door and PATCH to the engine
-                    //-- here because we are updating our own collection.
-                    //-- TODO...make sure of above statement.
+                    //-- don't need to "go back through the front door and PATCH to the engine because we are updating our own collection.
                     collection.getDb().doPatch(collection, updatedRows);
                 }
             }
@@ -471,7 +543,7 @@ public class DbPostAction extends Action<DbPostAction> {
 
             Map<String, String> queryTerms = new HashMap<>();
             queryTerms.put("limit", "100");
-            queryTerms.put("includes", Utils.implode(",", includesKeys));
+            queryTerms.put("include", Utils.implode(",", includesKeys));
 
             for (Object parentKeyProp : parentKey.keySet()) {
                 queryTerms.put(parentKeyProp.toString(), parentKey.get(parentKeyProp).toString());
@@ -516,6 +588,44 @@ public class DbPostAction extends Action<DbPostAction> {
         }
 
         return returnList;
+    }
+
+
+    protected void swapLogicalDuplicateReferences(Collection childColl, JSNode child, JSNode parent, String parentProp, Map<Collection, Map<String, JSNode>> visited){
+        if(child == null)
+            return;
+
+        System.out.println(child);
+
+        String resourceKey = childColl.encodeDbKey(child);
+        if(resourceKey != null){
+            Map<String, JSNode> keys = visited.get(childColl);
+            if(keys == null){
+                keys = new HashMap<>();
+                visited.put(childColl, keys);
+            }
+
+            JSNode existing = keys.get(resourceKey);
+            if(existing != null){
+                parent.put(parentProp, existing);
+                return;
+            }else{
+                keys.put(resourceKey, child);
+            }
+        }
+
+        for(Relationship rel : childColl.getRelationships()){
+            Object grandchild = child.get(rel.getName());
+            if(grandchild instanceof JSArray){
+                JSArray arr = (JSArray)grandchild;
+                for(int i=0; i<arr.size(); i++){
+                    swapLogicalDuplicateReferences(rel.getRelated(), arr.getNode(i), arr, i + "", visited);
+                }
+            }
+            else if(grandchild instanceof JSNode){
+                swapLogicalDuplicateReferences(rel.getRelated(), (JSNode)grandchild, child, rel.getName(), visited);
+            }
+        }
     }
 
 

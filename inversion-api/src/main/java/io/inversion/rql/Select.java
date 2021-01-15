@@ -26,7 +26,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
 
     public Select(P query) {
         super(query);
-        withFunctions("as", "includes", "excludes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
+        withFunctions("as", "include", "exclude", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
     }
 
     public boolean isDistinct() {
@@ -87,7 +87,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
 //            }
 //        }
 
-        if (functions.contains(token.toLowerCase()) && !term.hasToken("as", "includes", "excludes", "distinct")) {
+        if (functions.contains(token.toLowerCase()) && !term.hasToken("as", "include", "exclude", "distinct")) {
             String asName = "$$$ANON";
             if (term.size() > 1 && term.hasToken("count", "sum", "min", "max")) {
                 Term asT = term.getTerm(1);
@@ -103,21 +103,21 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
         }
     }
 
-    public List<String> getColumnNames() {
+    public List<String> getIncludeColumns() {
         List<String> columns = new ArrayList<>();
-
-        for (Term include : findAll("includes")) {
+        for (Term include : findAll("include")) {
             for (Term child : include.getTerms()) {
                 columns.add(child.getToken());
             }
         }
-        return columns;//getColumnNames();
+
+        return columns;
     }
 
-    public List<Term> columns() {
+    public List<Term> getAllColumns() {
         List<Term> columns = new ArrayList<>();
 
-        for (Term include : findAll("includes")) {
+        for (Term include : findAll("include")) {
             columns.addAll(include.getTerms());
         }
 

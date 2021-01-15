@@ -278,14 +278,14 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
             for (Term term : select.getTerms()) {
                 String token = term.getToken();
-                if (token.equalsIgnoreCase("source") || token.equalsIgnoreCase("includes")) {
+                if (token.equalsIgnoreCase("source") || token.equalsIgnoreCase("include")) {
                     if (includesList == null)
                         includesList = new ArrayList<>();
 
                     for (Term selectTerm : term.getTerms()) {
                         includesList.add(selectTerm.getToken());
                     }
-                } else if (token.equalsIgnoreCase("excludes")) {
+                } else if (token.equalsIgnoreCase("exclude")) {
                     if (excludesList == null)
                         excludesList = new ArrayList<>();
 

@@ -37,26 +37,6 @@ public class DbGetAction extends Action<DbGetAction> {
 
     protected int maxRows = 100;
 
-    protected static boolean exclude(String path, Set<String> includes, Set<String> excludes) {
-        boolean exclude = false;
-
-        if (includes.size() > 0 || excludes.size() > 0) {
-            path = path.toLowerCase();
-
-            if (includes.size() > 0)
-                if (!(path.endsWith("href") || path.endsWith(".href")))
-                    if (!find(includes, path, true))
-                        exclude = true;
-
-            if (excludes != null && excludes.size() > 0)
-                if (find(excludes, path, false))
-                    exclude = true;
-        }
-        //System.out.println("exclude(" + path + ", " + includes + ", " + excludes + ") -> " + exclude);
-
-        return exclude;
-    }
-
 
     protected static String getForeignKey(Relationship rel, JSNode node) {
         String key = rel.getCollection().encodeJsonKey(node, rel.getFkIndex1());
@@ -77,41 +57,6 @@ public class DbGetAction extends Action<DbGetAction> {
         return u.toString();
     }
 
-//    protected static String stripTerm(String str, String startToken, char... endingTokens) {
-//        Set<Character> tokens = new HashSet<>();
-//        for (char c : endingTokens)
-//            tokens.add(c);
-//
-//        while (true) {
-//            int start = str.toLowerCase().indexOf(startToken);
-//
-//            //this makes sure the char before the start token is not a letter or number which would mean we are in the
-//            //middle of another token, not at the start of a token.
-//            while (start > 0 && (Character.isAlphabetic(str.charAt(start - 1)) || Character.isDigit(start - 1)))
-//                start = str.toLowerCase().indexOf(startToken, start + 1);
-//
-//            if (start > -1) {
-//                String beginning = str.substring(0, start);
-//
-//                int end = start + startToken.length() + 1;
-//                while (end < str.length()) {
-//                    char c = str.charAt(end);
-//                    if (tokens.contains(c))
-//                        break;
-//                    end += 1;
-//                }
-//
-//                if (end == str.length())
-//                    str = beginning;
-//                else
-//                    str = beginning + str.substring(end + 1);
-//            } else {
-//                break;
-//            }
-//        }
-//
-//        return str;
-//    }
 
     protected static String expandPath(String path, Object next) {
         if (Utils.empty(path))
@@ -137,30 +82,7 @@ public class DbGetAction extends Action<DbGetAction> {
         return expand;
     }
 
-    protected static boolean find(java.util.Collection<String> params, String path, boolean matchStart) {
-        boolean rtval = false;
 
-        if (params.contains(path)) {
-            rtval = true;
-        } else {
-            for (String param : params) {
-                if (matchStart) {
-                    if (param.startsWith(path + ".")) {
-                        rtval = true;
-                        break;
-                    }
-                }
-
-                if (Utils.wildcardMatch(param, path))
-                    rtval = true;
-            }
-        }
-
-        //System.out.println("find(" + params + ", " + path + ", " + matchStart + ") -> " + path);
-
-        return rtval;
-
-    }
 
     @Override
     public void run(Request req, Response res) throws ApiException {
@@ -330,7 +252,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
                             next += nextTerm;
                         }
-                        res.withNext(new Url(next));
+                        res.withNext(next);
                     } else if (results.size() == limit && (foundRows < 0 || (offest + limit) < foundRows)) {
                         String next = req.getUrl().getOriginal();
                         next = stripTerms(next, "offset", "page", "pageNum");
@@ -342,7 +264,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
                         next += "pageNum=" + (page.getPageNum() + 1);
 
-                        res.withNext(new Url(next));
+                        res.withNext(next);
                     }
                 }
             }
@@ -381,53 +303,13 @@ public class DbGetAction extends Action<DbGetAction> {
         if (results.size() > 0) {
             if (collection != null)
                 expand(req, collection, (List<JSNode>) results.getRows(), null, null, null);
-
-            exclude(results.getRows());
         }
 
         return results;
     }
 
-    protected void exclude(List<JSNode> nodes) {
-        String includesStr = Chain.peek().getRequest().getUrl().getParam("includes");
-        Set<String> includes = includesStr == null ? new HashSet<>() : Utils.asSet(Utils.explode(",", includesStr));
 
-        String excludesStr = Chain.peek().getRequest().getUrl().getParam("excludes");
-        Set<String> excludes = excludesStr == null ? new HashSet<>() : Utils.asSet(Utils.explode(",", excludesStr));
 
-        if (includes.size() > 0 || excludes.size() > 0) {
-            for (JSNode node : nodes) {
-                exclude(node, includes, excludes, null);
-            }
-        }
-    }
-
-    //-------------------------------------------------------------------------------------
-    //-------------------------------------------------------------------------------------
-    //-Static Utils -----------------------------------------------------------------------
-    //-------------------------------------------------------------------------------------
-
-    protected void exclude(JSNode node, Set<String> includes, Set<String> excludes, String path) {
-        for (String key : node.keySet()) {
-            String attrPath = path != null ? (path + "." + key) : key;
-            if (exclude(attrPath, includes, excludes)) {
-                node.remove(key);
-            } else {
-                Object value = node.get(key);
-
-                if (value instanceof JSArray) {
-                    JSArray arr = (JSArray) value;
-                    for (int i = 0; i < arr.size(); i++) {
-                        if (arr.get(i) instanceof JSNode) {
-                            exclude((JSNode) arr.get(i), includes, excludes, attrPath);
-                        }
-                    }
-                } else if (value instanceof JSNode) {
-                    exclude((JSNode) value, includes, excludes, attrPath);
-                }
-            }
-        }
-    }
 
     /**
      * This is more complicated than it seems like it would need to be because
@@ -447,6 +329,14 @@ public class DbGetAction extends Action<DbGetAction> {
     protected void expand(Request request, Collection collection, List<JSNode> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) {
         if (parentObjs.size() == 0)
             return;
+
+        if (expands == null){
+            String expandsStr = request.getUrl().getParam("expand");
+            if(expandsStr == null)
+                return;
+
+            expands = new LinkedHashSet(Utils.explode(",", expandsStr));
+        }
 
         if (expandsPath == null)
             expandsPath = "";
@@ -586,7 +476,7 @@ public class DbGetAction extends Action<DbGetAction> {
         columns.addAll(idxToRetrieve.getColumnNames());
 
         Term termKeys = Term.term(null, "_key", idxToMatch.getName(), toMatchEks);
-        Term includes = Term.term(null, "includes", columns);
+        Term includes = Term.term(null, "include", columns);
         Term sort     = Term.term(null, "sort", columns);
         Term notNull  = Term.term(null, "nn", columns);
 

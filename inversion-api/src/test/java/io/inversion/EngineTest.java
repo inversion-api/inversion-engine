@@ -20,6 +20,7 @@ import io.inversion.Chain.ActionMatch;
 import io.inversion.action.misc.MockAction;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -537,6 +538,26 @@ public class EngineTest {
         res.assertDebug("Endpoint_actionC_actionBParam", "actionBValue");
         res.assertDebug("Endpoint_actionC_actionCParam", "actionCValue");
 
+    }
+
+    @Test
+    public void test_exclude(){
+        Engine engine;
+
+        MockAction action = new MockAction().withJson(JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("EngineTest_test_excludes.response.json"))));
+
+        engine = new Engine()//
+                .withApi(new Api()//
+                        .withEndpoint("GET", "test/*", action));
+
+        Response resp;
+        //resp = engine.get("/test?include=val1,val3|val4,rel1.val1|val2,rel1.rel1_1.rel1_1_1.*&exclude=rel1.rel1_1.rel1_1_1.val1|val3,rel1.rel1_1.rel1_1_1.rel1_1_1_1.val3");
+        resp = engine.get("/test?include=val1,val3|val4,rel1.val1|val2,rel1.rel1_1.rel1_1_1.*&excludes(rel1.rel1_1.rel1_1_1.val1|val3,rel1.rel1_1.rel1_1_1.rel1_1_1_1.val3)");
+
+        String actual = resp.getJson().toString();
+        String expected = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("EngineTest_test_excludes.expected.json"))).toString();
+
+        assertEquals(expected, actual);
     }
 }
 

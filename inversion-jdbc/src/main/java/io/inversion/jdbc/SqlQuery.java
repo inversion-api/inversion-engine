@@ -244,7 +244,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     protected String printTermsSelect(Parts parts, boolean preparedStmt) {
         StringBuilder cols = new StringBuilder();
 
-        List<Term> terms = getSelect().columns();
+        List<Term> terms = getSelect().getAllColumns();
         for (int i = 0; i < terms.size(); i++) {
             Term term = terms.get(i);
             if (term.hasToken("as")) {
@@ -269,36 +269,15 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
         if (cols.length() > 0) {
             boolean aggregate = find("sum", "min", "max", "count", "function", "aggregate", "distinct") != null;
-            //boolean restrictCols = find("includes", "sum", "min", "max", "count", "function", "aggregate") != null;
-            boolean restrictCols = find("includes") != null || aggregate;
+            boolean restrictCols = find("include") != null || aggregate;
 
             if (db == null || db.isType("mysql")) {
                 //-- this a special case for legacy mysql that does not require grouping each column when aggregating
-                restrictCols = find("includes") != null;
+                restrictCols = find("include") != null;
             }
 
             int star = parts.select.lastIndexOf("* ");
             if (restrictCols && star > 0) {
-                //force the inclusion of pk cols even if there
-                //were not requested by the caller.  Actions such
-                //as RestGetHandler need the pk values to do
-                //anything interesting with the results and they
-                //are responsible for filtering out the values
-                //
-                //TODO: maybe this should be put into Select.columns()
-                //so all query subclasses will inherit the behavior???
-//                if (!aggregate) {
-//                    if (getCollection() != null) {
-//                        Index primaryIndex = getCollection().getPrimaryIndex();
-//                        if (primaryIndex != null) {
-//                            for (String colName : primaryIndex.getColumnNames()) {
-//                                if (cols.indexOf(printCol(colName)) < 0)
-//                                    cols.append(", ").append(printCol(colName));
-//                            }
-//                        }
-//                    }
-//                }
-
                 //inserts the select list before the *
                 int    idx       = parts.select.substring(0, star).indexOf(" ");
                 String newSelect = parts.select.substring(0, idx) + cols + parts.select.substring(star + 1);
@@ -490,7 +469,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         //-- TODO: make test case for this
         if (sorts.size() == 0) {
             boolean hasCol = false;
-            for (Term term : select.columns()) {
+            for (Term term : select.getAllColumns()) {
                 if (term.isLeaf() || term.hasToken("as") && term.getTerm(0).isLeaf()) {
                     hasCol = true;
                     break;
@@ -507,7 +486,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                         sorts.add(new Sort(prop.getColumnName(), true));
                 }
             } else {
-                for (String col : getSelect().getColumnNames()) {
+                for (String col : getSelect().getIncludeColumns()) {
                     sorts.add(new Sort(col, true));
                 }
             }

@@ -90,6 +90,11 @@ public class Collection extends Rule<Collection> implements Serializable {
     protected String singularDisplayName = null;
 
     /**
+     * A reference to an externa OpenAPI schema that will be used in OpenAPI/documentation generation.
+     */
+    protected String schemaRef = null;
+
+    /**
      * Set this to true to prevent it from being automatically exposed through your Api.
      */
     protected boolean exclude = false;
@@ -207,7 +212,6 @@ public class Collection extends Rule<Collection> implements Serializable {
      * @param string the string to decode
      * @return a string with characters escaped to their hex equivalent replaced with the unescaped value.
      * @see #encodeKey(Map, Index, boolean)
-     * @see #decodeDbKeys(Index, String)
      * @see #encodeStr(String)
      */
     public static String decodeStr(String string) {
@@ -785,6 +789,15 @@ public class Collection extends Rule<Collection> implements Serializable {
         return this;
     }
 
+    public String getSchemaRef() {
+        return schemaRef;
+    }
+
+    public Collection withSchemaRef(String schemaRef) {
+        this.schemaRef = schemaRef;
+        return this;
+    }
+
     /**
      * Encodes the potentially multiple values of a resources primary index into a url path safe single value.
      *
@@ -832,6 +845,10 @@ public class Collection extends Rule<Collection> implements Serializable {
         if (index == null)
             throw ApiException.new500InternalServerError("Table '{}' does not have a unique index", this.getTableName());
 
+        return decodeKeys(index, inKeys, true).iterator().next();
+    }
+
+    public Row decodeJsonKey(Index index, String inKeys) {
         return decodeKeys(index, inKeys, true).iterator().next();
     }
 

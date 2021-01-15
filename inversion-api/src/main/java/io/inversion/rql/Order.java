@@ -44,7 +44,6 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P> {
 
     public List<Sort> getSorts() {
         if(sorts.size() < 1){
-            List<Sort> sorts = new ArrayList<>();
             for (Term term : getTerms()) {
                 if (term.hasToken("sort", "order")) {
                     for (Term child : term.getTerms()) {

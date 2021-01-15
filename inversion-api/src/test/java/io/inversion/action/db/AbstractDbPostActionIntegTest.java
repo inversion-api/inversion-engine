@@ -33,6 +33,40 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
     }
 
     @Test
+    public void testCompressDups() throws Exception {
+        Response res;
+        Engine   engine = engine();
+
+        res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.region"));
+
+        res.dump();
+        JSNode employee5 = res.findNode("data.0");
+
+        JSArray territories = res.findArray("data.0.territories");
+        territories.add(territories.get(territories.length()-1));
+        territories.add(JSNode.parseJson(territories.get(territories.length()-1).toString()));
+        territories.getNode(1).put("region", new JSNode("regionId", 1));
+
+        System.out.println(territories);
+
+
+        res.dump();
+        res = engine.put(employee5.getString("href"), employee5);
+        res.dump();
+
+
+        if(res.getError() != null)
+            res.getError().printStackTrace();
+
+        res.assertOk();
+        res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.region"));
+        JSNode updated5 = res.findNode("data.0");
+
+        assertEquals(employee5.toString(), updated5.toString());
+    }
+
+
+    @Test
     public void testAddOneRecord() throws Exception {
         Response res;
         Engine   engine = engine();
@@ -59,14 +93,24 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         Response res;
         Engine   engine = engine();
 
-        res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.regions"));
+        res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.region"));
 
         res.dump();
         JSNode employee5 = res.findNode("data.0");
 
-        engine.put(employee5.getString("href"), employee5).assertOk();
+        String comp1 = res.getJson().toString();
+        String comp2 = JSNode.parseJson(comp1).toString();
+        assertEquals(comp1, comp2);
 
-        res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.regions"));
+        res = engine.put(employee5.getString("href"), employee5);
+        res.dump();
+
+
+        if(res.getError() != null)
+            res.getError().printStackTrace();
+
+        res.assertOk();
+        res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.region"));
         JSNode updated5 = res.findNode("data.0");
 
         assertEquals(employee5.toString(), updated5.toString());

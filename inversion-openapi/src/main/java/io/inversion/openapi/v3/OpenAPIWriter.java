@@ -26,11 +26,7 @@ import java.util.Map;
 public class OpenAPIWriter {
 
     protected List<String> ignoredEndpointTokens = Utils.add(new ArrayList(), ".json", ".yaml", ".html", ".xml");
-    /**
-     * method,collection,endpoint,id
-     */
-    MultiKeyMap            operationIds   = new MultiKeyMap();
-    Map<String, Operation> operationIdMap = new HashMap<>();
+
     List<OpToDoc>          opsToDoc       = new ArrayList();
 
     protected String getDescription() {
@@ -84,7 +80,9 @@ public class OpenAPIWriter {
         for (Collection coll : req.getApi().getCollections()) {
             if(ignoreCollection(coll))
                 continue;
-            documentResourceSchemas(openApi, coll);
+            if(coll.getSchemaRef() == null)
+                documentResourceSchemas(openApi, coll);
+
             documentCollectionSchemas(openApi, coll);
         }
     }
@@ -171,7 +169,8 @@ public class OpenAPIWriter {
         schema.addProperties("total", newTypeSchema("number"));
 
         ArraySchema embedded = new ArraySchema();
-        embedded.setItems(newComponentRefSchema(coll.getSingularDisplayName()));
+
+        embedded.setItems(newComponentRefSchema(coll));
         schema.addProperties("_embedded", embedded);
     }
 
@@ -787,11 +786,27 @@ public class OpenAPIWriter {
         return schema;
     }
 
-    protected Schema newComponentRefSchema(String name) {
+    protected Schema newComponentRefSchema(String nameOrRef) {
         Schema schema = new Schema();
-        schema.set$ref("#/components/schemas/" + name);
+        if(!nameOrRef.contains("/"))
+            nameOrRef = "#/components/schemas/" + nameOrRef;
+        schema.set$ref(nameOrRef);
         return schema;
     }
+
+    protected Schema newComponentRefSchema(Collection coll){
+        Schema schema = new Schema();
+        String ref = coll.getSchemaRef();
+        if(ref == null){
+            ref = coll.getSingularDisplayName();
+        }
+
+        if(!ref.contains("/"))
+            ref = "#/components/schemas/" + ref;
+        schema.set$ref(ref);
+        return schema;
+    }
+
 
     protected String beautifyTag(String str) {
         str = str.replace("_", " ");

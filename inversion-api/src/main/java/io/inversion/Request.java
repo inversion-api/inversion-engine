@@ -25,7 +25,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Request {
+public class Request implements JSNode.JSAccessor {
 
     public static final String COLLECTION_KEY   = "_collection";
     public static final String RESOURCE_KEY     = "_resource";
@@ -141,6 +141,8 @@ public class Request {
     }
 
     public Request withUrl(String url) {
+        if(url == null)
+            System.out.println("asdf");
         Url u = new Url(url);
 
         String key = u.findKey("explain");

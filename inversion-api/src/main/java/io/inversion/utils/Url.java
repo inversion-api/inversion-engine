@@ -88,7 +88,6 @@ public class Url {
             if (queryIndex >= 0) {
                 String query = url.substring(queryIndex + 1);
                 url = url.substring(0, queryIndex);
-
                 withQueryString(query);
             }
 
@@ -352,24 +351,13 @@ public class Url {
 
         int paren = name.indexOf("(");
         if(paren > 0){
-            String func = name.substring(0, paren).toLowerCase();
-            if("pagenum".equals(func))
-                func = "page";
-            else if("limit".equals(func))
-                func = "size";
-            else if("order".equals(func))
-                func = "sort";
-            else if("includes".equals(func))
-                func = "include";
-            else if("excludes".equals(func))
-                func = "exclude";
-            else if("collapses".equals(func))
-                func = "collapse";
-
+            String func = fixLegacyParamName(name.substring(0, paren));
             if(Utils.in(func, "page", "size", "sort", "include", "exclude", "expand", "collapse")){
                 value = name.substring(paren + 1, name.lastIndexOf(")"));
                 name = func;
             }
+        }else{
+            name = fixLegacyParamName(name);
         }
 
         if (!Utils.empty(name)) {
@@ -382,8 +370,27 @@ public class Url {
                 params.put(name, value);
             }
         }
-
         return this;
+    }
+
+    String fixLegacyParamName(String name){
+        switch(name.toLowerCase()){
+            case "pagenum" :
+                return "page";
+            case "limit" :
+                return "size";
+            case "order" :
+                return "sort";
+            case "includes" :
+                return "include";
+            case "excludes" :
+                return "exclude";
+            case "expands" :
+                return "expand";
+            case "collapses" :
+                return "collapse";
+        }
+        return name;
     }
 
     public Url withParams(String... nvpairs) {

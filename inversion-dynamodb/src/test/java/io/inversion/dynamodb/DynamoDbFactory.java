@@ -157,7 +157,7 @@ public class DynamoDbFactory {
                     break;
 
                 pages += 1;
-                next = res.next();
+                next = res.getNext();
 
                 //-- now post to DynamoDb
                 for (Object o : res.getData()) {

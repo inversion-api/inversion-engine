@@ -109,7 +109,7 @@ public class JSNode implements Map<String, Object> {
             ObjectMapper mapper   = new ObjectMapper();
             JsonNode     rootNode = mapper.readValue(json, JsonNode.class);
 
-            Object parsed = JSNode.mapNode(rootNode);
+            Object parsed = JSNode.mapJsonNode(rootNode, "#", new HashMap());
 
             return parsed;
         } catch (Exception ex) {
@@ -121,6 +121,64 @@ public class JSNode implements Map<String, Object> {
 
             throw new RuntimeException("400 Bad Request: '" + msg + "'");
         }
+    }
+
+    static Object mapJsonNode(JsonNode json, String path, Map<String, JSNode> visited) {
+        if (json == null)
+            return null;
+
+        if (json.isNull())
+            return null;
+
+        if (json.isValueNode()) {
+            if (json.isNumber())
+                return json.numberValue();
+
+            if (json.isBoolean())
+                return json.booleanValue();
+
+            return json.asText();
+        }
+
+        if (json.isArray()) {
+            JSArray retVal = new JSArray();
+            visited.put(path, retVal);
+
+            int i=0;
+            for (JsonNode child : json) {
+                retVal.add(mapJsonNode(child, (path + "[" + i + "]"), visited));
+                i++;
+            }
+
+            return retVal;
+        } else if (json.isObject()) {
+
+            JsonNode refNode = json.get("$ref");
+            if(refNode != null){
+                String ref = refNode.asText();
+                JSNode refTarget = visited.get(ref);
+                if(refTarget == null) {
+                    throw new ApiException("JSON $ref invalid {}", ref);
+                }
+
+                return refTarget;
+            }
+            else{
+                JSNode retVal = new JSNode();
+                visited.put(path, retVal);
+                System.out.println("path -> " + path);
+
+                Iterator<String> it = json.fieldNames();
+                while (it.hasNext()) {
+                    String   field = it.next();
+                    JsonNode value = json.get(field);
+                    retVal.put(field, mapJsonNode(value, path + "/" + field, visited));
+                }
+                return retVal;
+            }
+        }
+
+        throw new ApiException("Unparseable json {}", json);
     }
 
     /**
@@ -162,60 +220,15 @@ public class JSNode implements Map<String, Object> {
         }
     }
 
-    static Object mapNode(JsonNode json) {
-        if (json == null)
-            return null;
-
-        if (json.isNull())
-            return null;
-
-        if (json.isValueNode()) {
-            if (json.isNumber())
-                return json.numberValue();
-
-            if (json.isBoolean())
-                return json.booleanValue();
-
-            return json.asText();
-        }
-
-        if (json.isArray()) {
-            JSArray retVal;
-            retVal = new JSArray();
-
-            for (JsonNode child : json) {
-                retVal.add(mapNode(child));
-            }
-
-            return retVal;
-        } else if (json.isObject()) {
-            JSNode retVal;
-            retVal = new JSNode();
-
-            Iterator<String> it = json.fieldNames();
-            while (it.hasNext()) {
-                String   field = it.next();
-                JsonNode value = json.get(field);
-                retVal.put(field, mapNode(value));
-            }
-            return retVal;
-        }
-
-        throw new RuntimeException("unparseable json:" + json);
-    }
-
     static void writeNode(JSNode node, JsonGenerator json, IdentityHashMap<Object, String> visited, boolean lowercaseNames, String path) throws Exception {
 
         if (visited.containsKey(node)) {
                 json.writeStartObject();
                 json.writeStringField("$ref", visited.get(node));
                 json.writeEndObject();
-
-                Object href = node.get("href");
-                if(href instanceof String)
-                    json.writeStringField("@link", href + "");
             return;
         }
+
         visited.put(node, path);
 
         if (node instanceof JSArray) {
@@ -224,6 +237,8 @@ public class JSNode implements Map<String, Object> {
         }
 
         json.writeStartObject();
+
+        //json.writeStringField("$id", path);
 
         for (String key : node.keySet()) {
             JSProperty p = node.getProperty(key);
@@ -278,7 +293,7 @@ public class JSNode implements Map<String, Object> {
             if (value == null) {
                 json.writeNull();
             } else if (value instanceof JSNode) {
-                writeNode((JSNode) value, json, visited, lowercaseNames, path += "[" + i + "]");
+                writeNode((JSNode) value, json, visited, lowercaseNames, path + "[" + i + "]");
             } else {
                 if (value instanceof String) {
                     if(value.equals("null"))
@@ -885,6 +900,21 @@ public class JSNode implements Map<String, Object> {
     }
 
     /**
+     * Convenience overloading of {@link #findAll(String, int)} that returns the first item found
+     *
+     * @param pathExpression specifies the properties to find
+     * @return the first item found at <code>pathExpression</code>
+     * @see #findAll(String, int)
+     */
+    public Object find(String pathExpression) {
+        JSArray found = findAll(pathExpression, 1);
+        if (found.size() > 0)
+            return found.get(0);
+
+        return null;
+    }
+
+    /**
      * Convenience overloading of {@link #find(String)}
      *
      * @param pathExpression specifies the nodes to find
@@ -982,21 +1012,6 @@ public class JSNode implements Map<String, Object> {
             return Utils.atob(found);
 
         return false;
-    }
-
-    /**
-     * Convenience overloading of {@link #findAll(String, int)} that returns the first item found
-     *
-     * @param pathExpression specifies the properties to find
-     * @return the first item found at <code>pathExpression</code>
-     * @see #findAll(String, int)
-     */
-    public Object find(String pathExpression) {
-        JSArray found = findAll(pathExpression, 1);
-        if (found.size() > 0)
-            return found.get(0);
-
-        return null;
     }
 
     /**
@@ -1527,6 +1542,65 @@ public class JSNode implements Map<String, Object> {
 
         void append(char c) {
             next.append(c);
+        }
+    }
+
+    public interface JSAccessor{
+
+        JSNode getJson();
+
+        default Object find(String path) {
+            return getJson().find(path);
+        }
+
+        default JSArray findAll(String pathExpression) {
+            if(getJson() == null)
+                return new JSArray();
+
+            return getJson().findAll(pathExpression, -1);
+        }
+
+        default JSNode findNode(String path) {
+            if(getJson() == null)
+                return null;
+
+            return getJson().findNode(path);
+        }
+
+        default JSArray findArray(String path) {
+            if(getJson() == null)
+                return null;
+            return getJson().findArray(path);
+        }
+
+        default String findString(String path) {
+            if(getJson() == null)
+                return null;
+            return getJson().findString(path);
+        }
+
+        default int findInt(String path) {
+            if(getJson() == null)
+                return -1;
+            return getJson().findInt(path);
+        }
+
+        default Long findLong(String path) {
+            if(getJson() == null)
+                return -1l;
+            return getJson().findLong(path);
+        }
+
+        default Double findDouble(String path) {
+            if(getJson() == null)
+                return -1d;
+            return getJson().findDouble(path);
+        }
+
+        default boolean findBoolean(String path) {
+            if(getJson() == null)
+                return false;
+            return getJson().findBoolean(path);
         }
     }
 }

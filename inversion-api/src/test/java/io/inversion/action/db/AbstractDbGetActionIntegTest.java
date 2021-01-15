@@ -43,8 +43,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         //-- gets a sorted list of all hrefs
         res = engine.get(url("orders?includes=customerid,orderid"));
         res.dump();
-        assertEquals(3, res.findNode("data.0").size());
-        assertTrue(res.findNode("data.0").hasProperty("href"));
+        assertEquals(2, res.findNode("data.0").size());
         assertTrue(res.findNode("data.0").hasProperty("customerid"));
         assertTrue(res.findNode("data.0").hasProperty("ORDERID"));
     }
@@ -103,13 +102,15 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
     public void testSort01() throws Exception {
         Engine   engine = engine();
         Response res;
+        String href = null;
+        String url = null;
 
-        String url = url("orders?limit=2&sort=orderid");
-        res = engine.get(url);
-        assertEquals(2, res.getData().length());
-
-        String href = res.findString("data.0.href");
-        assertTrue(href.indexOf("/orders/10248") > 0);
+//        String url = url("orders?limit=2&sort=orderid");
+//        res = engine.get(url);
+//        assertEquals(2, res.getData().length());
+//
+//        String href = res.findString("data.0.href");
+//        assertTrue(href.indexOf("/orders/10248") > 0);
 
         res = engine.get(url("orders?limit=2&sort=-orderid"));
         res.dump();
@@ -188,7 +189,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
             total += res.getData().length();
             pages += 1;
 
-            next = res.next();
+            next = res.getNext();
 
             if (next != null) {
                 assertEquals(3, res.getData().length());

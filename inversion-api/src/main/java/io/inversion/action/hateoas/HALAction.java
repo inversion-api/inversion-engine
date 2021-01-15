@@ -36,7 +36,7 @@ public class HALAction extends Action<HALAction> {
 
                 if (req.getCollection() != null) {
 
-                    JSNode meta = res.getMeta();
+                    JSNode meta = res.findNode("meta");
 
                     if (meta != null) {
 

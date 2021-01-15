@@ -373,6 +373,8 @@ public class Engine extends Rule<Engine> {
      * @see #service(Request, Response)
      */
     public Response service(String method, String url, String body, Map<String, String> params) {
+        if(url == null)
+            throw new ApiException("Unable to service request with null url.");
         Request req = new Request(method, url, body);
         req.withEngine(this);
 
@@ -532,6 +534,8 @@ public class Engine extends Rule<Engine> {
             return chain;
         } catch (Throwable ex) {
 
+            Chain.debug("Uncaught Exception: " + Utils.getShortCause(ex));
+
             JSNode json = buildErrorJson(ex);
             res.withStatus(json.getString("status"));
             res.withError(ex);
@@ -547,57 +551,29 @@ public class Engine extends Rule<Engine> {
             }
 
         } finally {
-            for (ApiListener listener : getApiListeners(req)) {
-                try {
-                    listener.beforeFinally(req, res);
-                } catch (Exception ex) {
-                    log.warn("Error notifying EngineListener.onFinally", ex);
+
+            if(Chain.isRoot()){
+                exclude(req, res);
+            }
+
+            try{
+                for (ApiListener listener : getApiListeners(req)) {
+                    try {
+                        listener.beforeFinally(req, res);
+                    } catch (Exception ex) {
+                        log.warn("Error notifying EngineListener.onFinally", ex);
+                    }
                 }
             }
+            finally{
+                if (chain != null)
+                    Chain.pop();
 
-            try {
-                writeResponse(req, res);
-            } catch (Throwable ex) {
-                log.error("Error writing response.", ex);
+                lastResponse = res;
             }
-
-            if (chain != null)
-                Chain.pop();
-
-            lastResponse = res;
         }
 
         return chain;
-    }
-
-    public static JSNode buildErrorJson(Throwable ex){
-        String status = "500";
-        String message = "Internal Server Error";
-        String error = null;
-        if (ex instanceof ApiException) {
-            ApiException apiEx = ((ApiException) ex);
-            status = apiEx.getStatus();
-            message = status.substring(4, status.length());
-            status = status.substring(0, 3);
-
-            if("500".equals(status)){
-                error = ex.getMessage() + "\r\n" + Utils.getShortCause(ex);
-            }else{
-                error = apiEx.getMessage();
-                if(error != null && error.indexOf(" - ") < 20)
-                    error = error.substring(error.indexOf(" - ") + 3);
-            }
-        }
-
-        if(error == null && "500".equalsIgnoreCase(status)){
-            error = Utils.getShortCause(ex);
-        }
-
-        JSNode json = new JSNode("status", status, "message", message);
-        if(error != null)
-            json.put("error", error);
-
-        return json;
     }
 
     public void matchRequest(Request req){
@@ -709,56 +685,34 @@ public class Engine extends Rule<Engine> {
         chain.withActions(actions).go();
     }
 
-    void writeResponse(Request req, Response res) throws ApiException {
-        boolean debug   = req != null && req.isDebug();
-        boolean explain = req != null && req.isExplain();
+    public static JSNode buildErrorJson(Throwable ex){
+        String status = "500";
+        String message = "Internal Server Error";
+        String error = null;
+        if (ex instanceof ApiException) {
+            ApiException apiEx = ((ApiException) ex);
+            status = apiEx.getStatus();
+            message = status.substring(4, status.length());
+            status = status.substring(0, 3);
 
-        String method = req != null ? req.getMethod() : null;
-
-        if (!"OPTIONS".equals(method)) {
-            if (debug) {
-                res.debug("\r\n<< response -------------\r\n");
-                res.debug(res.getStatusCode() + "");
-            }
-
-            if (!Utils.empty(res.getRedirect())) {
-                res.withHeader("Location", res.getRedirect());
-                res.withStatus(Status.SC_308_PERMANENT_REDIRECT);
-            } else {
-                String output      = res.getContent();
-                String contentType = res.getContentType();
-                if (output != null && contentType == null) {
-                    if (res.getJson() != null)
-                        contentType = "application/json";
-                    else if (output.contains("<html"))
-                        contentType = "text/html";
-                    else
-                        contentType = "text/text";
-
-                    res.withContentType(contentType);
-                }
-                res.out(output);
-            }
-
-            if (debug) {
-                for (String key : res.getHeaders().keySet()) {
-                    List          values = res.getHeaders().get(key);
-                    StringBuilder buff   = new StringBuilder();
-                    for (int i = 0; i < values.size(); i++) {
-                        buff.append(values.get(i));
-                        if (i < values.size() - 1)
-                            buff.append(",");
-                    }
-                    res.debug(key + " " + buff);
-                }
-
-                res.debug("\r\n-- done -----------------\r\n");
-            }
-
-            if (explain) {
-                res.withOutput(res.getDebug());
+            if("500".equals(status)){
+                error = ex.getMessage() + "\r\n" + Utils.getShortCause(ex);
+            }else{
+                error = apiEx.getMessage();
+                if(error != null && error.indexOf(" - ") < 20)
+                    error = error.substring(error.indexOf(" - ") + 3);
             }
         }
+
+        if(error == null && "500".equalsIgnoreCase(status)){
+            error = Utils.getShortCause(ex);
+        }
+
+        JSNode json = new JSNode("status", status, "message", message);
+        if(error != null)
+            json.put("error", error);
+
+        return json;
     }
 
     public boolean isStarted() {
@@ -946,6 +900,108 @@ public class Engine extends Rule<Engine> {
         default void onShutdown(Engine engine) {
             //implement me
         }
+    }
+
+    protected static void exclude(Request req, Response res) {
+
+        JSArray data = res.getData();
+        if(data == null)
+            return;
+
+        Set<String> includes = getXcludesSet(req.getUrl().getParam("include"));
+        Set<String> excludes = getXcludesSet(req.getUrl().getParam("exclude"));
+
+        if ((includes != null && includes.size() > 0) || (excludes != null && excludes.size() > 0)) {
+            for (JSNode node : data.asNodeList()) {
+                exclude(node, includes, excludes, null);
+            }
+        }
+    }
+
+    protected static void exclude(JSNode node, Set<String> includes, Set<String> excludes, String path) {
+        for (String key : node.keySet()) {
+            String attrPath = (path != null ? (path + "." + key) : key).toLowerCase();
+
+            Object value = node.get(key);
+            if (exclude(attrPath, includes, excludes)) {
+                node.remove(key);
+            } else {
+                if(!(value instanceof JSNode))
+                    continue;
+
+                if (value instanceof JSArray) {
+                    JSArray arr = (JSArray) value;
+                    for (int i = 0; i < arr.size(); i++) {
+                        if (arr.get(i) instanceof JSNode) {
+                            exclude((JSNode) arr.get(i), includes, excludes, attrPath);
+                        }
+                    }
+                } else {
+                    exclude((JSNode) value, includes, excludes, attrPath);
+                }
+            }
+        }
+    }
+
+    protected static boolean exclude(String path, Set<String> includes, Set<String> excludes) {
+        boolean exclude = false;
+
+            if (includes != null && includes.size() > 0)
+                if (!find(includes, path, true))
+                    exclude = true;
+
+            if (excludes != null && excludes.size() > 0)
+                if (find(excludes, path, false))
+                    exclude = true;
+
+        return exclude;
+    }
+
+    protected static boolean find(java.util.Collection<String> paths, String path, boolean matchStart) {
+        boolean found = false;
+        if (paths.contains(path)) {
+            found = true;
+        } else {
+            for (String param : paths) {
+                if (matchStart) {
+                    if (param.startsWith(path + ".")) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (Utils.wildcardMatch(param, path))
+                    found = true;
+            }
+        }
+        //System.out.println("find(" + paths + ", " + path + ", " + matchStart + ") -> " + found);
+        return found;
+    }
+
+    static Set getXcludesSet(String str){
+        if(str == null)
+            return null;
+
+        LinkedHashSet set = new LinkedHashSet();
+        for(String path : Utils.explode(",", str.toLowerCase())) {
+            int pipe = path.indexOf('|');
+            if(pipe > -1){
+                String prefix = "";
+                String props = path;
+                int dot = path.indexOf('.');
+                if(dot > -1 && dot < pipe){
+                    prefix = path.substring(0, pipe);
+                    prefix = prefix.substring(0, prefix.lastIndexOf('.') + 1);
+                    props = path.substring(prefix.length());
+                }
+                for(String prop : Utils.explode("\\|", props)){
+                    set.add(prefix + prop);
+                }
+            }
+            else{
+                set.add(path);
+            }
+        }
+        return set;
     }
 
 }

@@ -78,7 +78,7 @@ public class MockAction extends Action<MockAction> {
 
         if (json != null) {
             if (json instanceof JSArray)
-                res.withData((JSArray) json);
+                res.withRecords(json.asList());
             else
                 res.withJson(json);
         }

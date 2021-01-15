@@ -1,6 +1,7 @@
 package io.inversion;
 
 import io.inversion.action.db.DbAction;
+import io.inversion.action.hateoas.LinksAction;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,6 +36,7 @@ public interface AbstractEngineTest extends AbstractDbTest {
 
         Engine engine = new Engine().withApi(buildApi(db));
         setEngine(engine);
+        //engine.startup();
     }
 
     default Api buildApi(Db db) {
@@ -45,7 +47,7 @@ public interface AbstractEngineTest extends AbstractDbTest {
     default Api buildDefaultApi(Db db) {
 
         return new Api("northwind") //
-                .withEndpoint("*", db.getType() + "/*", new DbAction())//
+                .withEndpoint("*", db.getType() + "/*", new LinksAction(), new DbAction())//
                 .withDb(db);
     }
 

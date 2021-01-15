@@ -226,7 +226,7 @@ public abstract class Db<T extends Db> {
                 continue;
             }
 
-            if (term.hasToken("eq") && term.getTerm(0).hasToken("includes")) {
+            if (term.hasToken("eq") && term.getTerm(0).hasToken("include")) {
                 //THIS IS AN OPTIMIZATION...the rest action can pull stuff OUT of the results based on
                 //dotted path expressions.  If you don't use dotted path expressions the includes values
                 //can be used to limit the sql select clause...however if any of the columns are actually
@@ -623,10 +623,11 @@ public abstract class Db<T extends Db> {
                 //-- this is an API behavior that we want to be "automatic" that
                 //-- may not be part of the data declaration.
                 Index index = coll.getPrimaryIndex();
-                for(Property property : index.getProperties()){
-                    property.withNullable(false);
+                if(index != null){
+                    for(Property property : index.getProperties()){
+                        property.withNullable(false);
+                    }
                 }
-
                 api.withCollection(coll);
             }
         }
