@@ -115,7 +115,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                                 String pkCol = pk.getColumnName(0);
                                 Sort   last  = sorts.get(sorts.size() - 1);
                                 if (last.getProperty().equalsIgnoreCase(pk.getColumnName(0))) {
-                                    String lastPk = collection.encodeDbKey(rows.get(rows.size()-1));
+                                    String lastPk = collection.encodeKeyFromColumnNames(rows.get(rows.size()-1));
                                     if(lastPk != null){
                                         usesAfter = true;
                                         if(last.isAsc())

@@ -93,7 +93,7 @@ public class CosmosDb extends Db<CosmosDb> {
                 if (term.hasToken("_key")) {
                     String indexName = term.getToken(0);
                     Index idx = collection.getIndex(indexName);
-                    Rows.Row key = collection.decodeDbKey(idx, term.getToken(1));
+                    Map<String, Object>  key = collection.decodeKeyToColumnNames(idx, term.getToken(1));
 //                    Rows.Row key = collection.decodeResourceKey(term.getToken(0));
                     for (Property prop : partitionIdx.getProperties()) {
                         String colName = prop.getColumnName();
@@ -149,7 +149,7 @@ public class CosmosDb extends Db<CosmosDb> {
             JSNode doc = new JSNode(row);
             String id  = doc.getString("id");
             if (id == null) {
-                id = collection.encodeDbKey(row);
+                id = collection.encodeKeyFromColumnNames(row);
                 if (id == null)
                     throw ApiException.new400BadRequest("Your record does not contain the required key fields.");
                 doc.putFirst("id", id);
@@ -192,7 +192,7 @@ public class CosmosDb extends Db<CosmosDb> {
     }
 
     @Override
-    public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
+    public void doDelete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
         for (Map<String, Object> row : indexValues) {
             deleteRow(table, row);
         }
@@ -211,7 +211,7 @@ public class CosmosDb extends Db<CosmosDb> {
 
         normalizePartitionKey(collection, indexValues);
 
-        Object id                = collection.encodeDbKey(indexValues);
+        Object id                = collection.encodeKeyFromColumnNames(indexValues);
         Object partitionKeyValue = indexValues.get(collection.getIndex(CosmosDb.INDEX_TYPE_PARTITION_KEY).getProperty(0).getColumnName());
         String documentUri       = "/dbs/" + db + "/colls/" + collection.getTableName() + "/docs/" + id;
 

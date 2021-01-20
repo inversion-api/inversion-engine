@@ -161,7 +161,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
     }
 
     @Override
-    public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
+    public void doDelete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
         for (Map<String, Object> row : indexValues) {
             deleteRow(table, row);
         }
@@ -174,7 +174,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
      * @param indexValues identifiers for the records to delete
      */
     protected void deleteRow(Collection collection, Map<String, Object> indexValues) throws ApiException {
-        Object id = collection.encodeDbKey(indexValues);
+        Object id = collection.encodeKeyFromColumnNames(indexValues);
 
         try {
             DeleteRequest request = new DeleteRequest(collection.getTableName(), "doc", id.toString());
@@ -208,7 +208,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
 
         String id = doc.getString("id");
         if (id == null) {
-            id = table.encodeDbKey(columnMappedTermsRow);
+            id = table.encodeKeyFromColumnNames(columnMappedTermsRow);
             if (id == null)
                 throw ApiException.new400BadRequest("Your record does not contain the required key fields.");
             doc.putFirst("id", id);

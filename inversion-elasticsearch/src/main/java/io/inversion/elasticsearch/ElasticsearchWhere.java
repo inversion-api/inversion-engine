@@ -23,6 +23,7 @@ import io.inversion.rql.Where;
 import io.inversion.utils.Rows.Row;
 
 import java.util.List;
+import java.util.Map;
 
 public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends ElasticsearchQuery> extends Where<T, P> {
     public ElasticsearchWhere(P query) {
@@ -101,7 +102,7 @@ public class ElasticsearchWhere<T extends ElasticsearchWhere, P extends Elastics
                     if (!child.isLeaf())
                         throw ApiException.new400BadRequest("Resource key value is not a leaf node: %s", child);
 
-                    Row  keyParts = getParent().getCollection().decodeDbKey(index, child.getToken());
+                    Map<String, Object> keyParts = getParent().getCollection().decodeKeyToColumnNames(index, child.getToken());
                     Term and      = Term.term(or, "and");
                     for (String key : keyParts.keySet()) {
                         and.withTerm(Term.term(and, "eq", key, keyParts.get(key).toString()));

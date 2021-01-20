@@ -23,8 +23,7 @@ import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionIntegTest {
 
@@ -39,21 +38,16 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
 
         res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.region"));
 
-        res.dump();
         JSNode employee5 = res.findNode("data.0");
+        JSNode employee5Copy = JSNode.parseJsonNode(employee5.toString());
 
+        //-- this adds a logical duplicate
         JSArray territories = res.findArray("data.0.territories");
-        territories.add(territories.get(territories.length()-1));
-        territories.add(JSNode.parseJson(territories.get(territories.length()-1).toString()));
-        territories.getNode(1).put("region", new JSNode("regionId", 1));
+        territories.add(territories.get(territories.length()-1));                                   //-- this adds a referential duplicate
+        territories.add(JSNode.parseJson(territories.get(territories.length()-1).toString()));      //--this adds a copy duplicate
+        territories.getNode(1).put("region", new JSNode("regionId", 1)); //-- this is another duplicate
 
-        System.out.println(territories);
-
-
-        res.dump();
         res = engine.put(employee5.getString("href"), employee5);
-        res.dump();
-
 
         if(res.getError() != null)
             res.getError().printStackTrace();
@@ -62,7 +56,10 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.region"));
         JSNode updated5 = res.findNode("data.0");
 
-        assertEquals(employee5.toString(), updated5.toString());
+        System.out.println(employee5);
+        System.out.println(updated5);
+
+        assertEquals(employee5Copy.toString(), updated5.toString());
     }
 
 
@@ -78,14 +75,18 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         //post one new bogus order
         res = engine.post(url("orders"), new JSNode("shipaddress", "somewhere in atlanta", "shipcity", "atlanta")).assertOk();
 
+        res.dump();
         //check the values we sent are the values we got back
         res = engine.get(res.findString("data.0.href"));
         assertEquals("somewhere in atlanta", res.find("data.0.shipaddress"));
         assertEquals("atlanta", res.find("data.0.shipcity"));
 
         //check total records
-        res = engine.get(url("orders?limit=25&sort=orderid"));
+        res = engine.get(url("orders?page=1&sort=orderid"));
+        res.dump();
         assertEquals(26, res.find("meta.foundRows"));
+
+        assertEquals(10273, res.getData().getNode(25).getInt("orderId"));
     }
 
     @Test
@@ -102,6 +103,8 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         String comp2 = JSNode.parseJson(comp1).toString();
         assertEquals(comp1, comp2);
 
+        System.out.println(employee5);
+
         res = engine.put(employee5.getString("href"), employee5);
         res.dump();
 
@@ -115,6 +118,99 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
 
         assertEquals(employee5.toString(), updated5.toString());
     }
+
+    @Test
+    public void test_put_with_nested_one_to_many_new_child(){
+        Response res;
+        Engine   engine = engine();
+
+        res = engine.get(url("territories/30346?expands=region"));
+        JSNode origional30346 = res.data();
+        res.dump();
+
+        assertEquals(4, res.findInt("data.0.region.regionId"));
+        assertEquals("Southern", res.findString("data.0.region.regionDescription"));
+
+        JSNode updateTo30346 = JSNode.parseJsonNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/put_with_nested_one_to_many_post.json")));
+        res = engine.put(url("territories"), updateTo30346);
+        res.dump();
+
+        res = engine.get(url("territories/30346?expands=region"));
+        res.dump();
+        JSNode updated30346 = res.getData();
+
+        assertEquals(5, res.findInt("data.0.regionId"));
+        assertEquals(5, res.findInt("data.0.region.regionId"));
+        assertEquals("HotLanta", res.findString("data.0.region.regionDescription"));
+    }
+
+
+
+    @Test
+    public void test_post_remove_many_to_many_relationships() {
+
+        Response res;
+        Engine   engine = engine();
+
+        res = engine.get(url("employees?employeeId=5&expands=territories"));
+        assertEquals(7, res.findArray("data.0.territories").size());
+
+        JSArray territories = res.findArray("data.0.territories");
+        territories.remove(6);
+        territories.remove(0);
+
+        res = engine.put(res.findString("data.0.href"), res.getJson().findNode("data.0"));
+        res.dump();
+        res.assertOk();
+        res = engine.get(url("employees?employeeId=5&expands=territories")).dump();
+        res.dump();
+        assertEquals(territories.toString(), res.find("data.0.territories").toString());
+    }
+
+    @Test
+    public void test_post_remove_one_to_many_relationships(){
+
+        Response res;
+        Engine   engine = engine();
+
+        res = engine.get(url("employees?employeeId=5&expands=employees"));
+        JSArray employees = res.findArray("data.0.employees");
+        System.out.println(employees.size());
+
+        assertEquals(3, employees.length());
+        employees.remove(2);
+        employees.remove(0);
+
+        res = engine.put(res.findString("data.0.href"), res.getJson());
+        res.dump();
+        res.assertOk();
+
+        res = engine.get(url("employees?employeeId=5&expands=employees"));
+        JSArray newEmployees = res.findArray("data.0.employees");
+        assertEquals(employees.toString(), newEmployees.toString());
+    }
+
+    @Test
+    public void test_post_remove_many_to_one_relationship(){
+
+        Response res;
+        Engine   engine = engine();
+
+        res = engine.get(url("employees/1"));
+        res.dump();
+        assertTrue(res.findString("data.0.reportsTo").endsWith("/2"));
+
+        res.findNode("data.0").put("reportsTo", null);
+        res = engine.put(res.findString("data.0.href"), res.getJson());
+        res.dump();
+        res.assertOk();
+
+        res = engine.get(url("employees/1"));
+        res.dump();
+        assertNull(res.find("data.0.reportsTo"));
+    }
+
+
 
     @Test
     public void testNestedPost1() throws Exception {
@@ -142,13 +238,15 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         assertEquals(4, res.findArray("data.0.employees").size(), "the new employee was not related to its parent");
 
         //-- make sure the new employee was POSTED
-        res = engine.get(url("employees/99999991?expands=reportsTo,territories"));
+        res = engine.get(url("employees/99999991?expands=reportsTo,territories,territories.region"));
+        res.dump();
         assertEquals(1, res.getData().size());
         assertTrue(res.findString("data.0.href").contains("/99999991"));
         assertTrue(res.findString("data.0.reportsTo.href").contains("employees/5"));
         assertEquals(res.findString("data.0.territories.0.TerritoryID"), "30346");
 
         res = engine.get(res.findString("data.0.territories.0.href") + "?expands=region");
+        res.dump();
 
         //-- confirms that a the new region was created and assigned to territory 30346
         assertEquals(url("regions/5"), res.findString("data.0.region.href"));

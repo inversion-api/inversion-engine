@@ -66,7 +66,7 @@ public class RedisDb extends Db<RedisDb> {
     }
 
     @Override
-    public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
+    public void doDelete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
         // TODO Auto-generated method stub
 
     }

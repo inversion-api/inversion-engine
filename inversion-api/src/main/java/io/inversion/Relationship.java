@@ -17,6 +17,8 @@
 package io.inversion;
 
 import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class Relationship implements Serializable {
     public static final String REL_MANY_TO_ONE  = "MANY_TO_ONE";
@@ -164,7 +166,7 @@ public class Relationship implements Serializable {
             String str = collection.getName() + "." + getName() + " : " + getType() + " ";
 
             if (isManyToOne()) {
-                str += getFkIndex1() + " -> " + collection.getPrimaryIndex();
+                str += getFkIndex1() + " -> " + getRelated().getPrimaryIndex();
             } else if (isOneToMany()) {
                 str += collection.getPrimaryIndex() + " <- " + getFkIndex1();
             } else {
@@ -215,10 +217,6 @@ public class Relationship implements Serializable {
         return fkIndex1.getProperty(0).getCollection();
     }
 
-    public Collection getPrimaryKeyTable2() {
-        return fkIndex2.getProperty(0).getCollection();
-    }
-
     /**
      * @return the fkCol1
      */
@@ -226,31 +224,97 @@ public class Relationship implements Serializable {
         return fkIndex1.getProperty(0);
     }
 
-    //
-    //   /**
-    //    * @param fkCol1 the fkCol1 to set
-    //    */
-    //   public Relationship withFkCol1(Column fkCol1)
-    //   {
-    //      this.fkCol1 = fkCol1;
-    //      return this;
-    //   }
-    //
-
     /**
      * @return the fkCol2
      */
     public Property getFk2Col1() {
         return fkIndex2.getProperty(0);
     }
-    //
-    //   /**
-    //    * @param fkCol2 the fkCol2 to set
-    //    */
-    //   public Relationship withFkCol2(Column fkCol2)
-    //   {
-    //      this.fkCol2 = fkCol2;
-    //      return this;
-    //   }
+
+
+    public Map<String, Object> buildPrimaryKeyFromForeignKey(Map<String, Object> foreignKey) {
+
+        if(!isManyToOne())
+            throw new ApiException("unsupported");
+
+        Map<String, Object> primaryKey = new LinkedHashMap<>();
+
+        Index fkIdx = getFkIndex1();
+        Index pkIdx = getRelated().getPrimaryIndex();
+
+        if(fkIdx.size() == 1 && pkIdx.size() > 1){
+            //-- this is compressed foreign key and a composite primary key
+
+            Object compressedFk = foreignKey.get(fkIdx.getProperty(0));
+            if(!(compressedFk instanceof String))
+                return null;
+
+            Map decoded = getRelated().decodeKeyToJsonNames((String)compressedFk);
+            if(decoded == null)
+                return null;
+
+            primaryKey.putAll(decoded);
+
+        }else if(fkIdx.size() > 1 && pkIdx.size() > 0){
+            //-- this is compressed primary key and a composite foreign key
+            String compressedPk= related.encodeKey(foreignKey, getFkIndex1(), true);
+            if(compressedPk == null)
+                return null;
+            primaryKey.put(fkIdx.getPropertyName(0), compressedPk);
+
+
+        }else if(fkIdx.size() == pkIdx.size()){
+            for(int i=0; i<fkIdx.size(); i++){
+                Property prop = fkIdx.getProperty(i);
+                String pkProp = prop.getPk().getJsonName();
+                Object value = foreignKey.get(prop.getJsonName());
+                if(value == null)
+                    return null;
+                primaryKey.put(pkProp, value);
+            }
+        }else{
+            throw new ApiException("Unable to map between indexes.");
+        }
+
+        return primaryKey;
+    }
+
+    public Map<String, Object> buildForeignKeyFromPrimaryKey(Map<String, Object> primaryKey){
+
+        if(!isManyToOne())
+            throw new ApiException("unsupported");
+
+        Map<String, Object> foreignKey = new LinkedHashMap<>();
+
+        Index fkIdx = getFkIndex1();
+        Index pkIdx = getRelated().getPrimaryIndex();
+
+        if(fkIdx.size() == 1 && pkIdx.size() > 1){
+            //-- this is compressed foreign key and a composite primary key
+            String compressedFk = getRelated().encodeKey(primaryKey, getRelated().getPrimaryIndex(), true);
+            if(compressedFk == null)
+                return null;
+            foreignKey.put(fkIdx.getPropertyName(0), compressedFk);
+        }else if(fkIdx.size() > 1 && pkIdx.size() == 0){
+            //-- this is compressed primary key and a composite foreign key
+            //TODO: map a compressed primary key to a composite foreign key
+            System.out.println("asdf");
+        }else if(fkIdx.size() == pkIdx.size()){
+            for(int i=0; i<fkIdx.size(); i++){
+                Property prop = fkIdx.getProperty(i);
+                if(prop == null || prop.getPk() == null)
+                    System.out.println("what?");
+                Object value = primaryKey.get(prop.getPk().getJsonName());
+                if(value == null)
+                    return null;
+                foreignKey.put(prop.getJsonName(), value);
+            }
+        }else{
+            throw new ApiException("Unable to map between indexes.");
+        }
+
+        return foreignKey;
+    }
+
 
 }

@@ -16,10 +16,7 @@
  */
 package io.inversion;
 
-import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
-import io.inversion.utils.Rows;
-import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.text.StringEscapeUtils;
@@ -106,130 +103,6 @@ public class Collection extends Rule<Collection> implements Serializable {
     public Collection(String defaultName) {
         withName(defaultName);
         withTableName(defaultName);
-    }
-
-    /**
-     * Encodes the potentially multiple values of an index into a url path and query string safe single value.
-     * <p>
-     * In a typical REST Api configuration where you url paths might map to something like
-     * "${endpoint}/${collection}/[${resource}][?{querystring}]", ${resource} is
-     * the primary index of the resource that has been encoded here.
-     * <p>
-     * That might look like "/bookstore/books/12345" or in the case of a compound primary index
-     * It might look like "/bookstore/orders/4567~abcde" where the "~" character is used to
-     * separate parts of the key.
-     * <p>
-     * The names of the index fields are not encoded, only the values, relying on index property order to remain consistent.
-     * <p>
-     * This methods is used by various actions when constructing hypermedia urls that allow you to
-     * uniquely identify individual resources (records in a Db) or to traverse Relationships.
-     * <p>
-     * The inverse of this method is {@link #decodeKeys(Index, String, boolean)} which is used to
-     * decode inbound Url path and query params to determine which resource is being referenced.
-     *
-     * @param values column name to Property value mapping for a resource
-     * @param index  the index identifying the values that should be encoded
-     * @param jsonFormat use json prop names vs db col names
-     * @return a url safe encoding of the index values separated by "~" characters or null if any of the values for an index key is null.
-     * @see #encodeStr(String)
-     * @see #decodeKeys(Index, String, boolean)
-     */
-    public static String encodeKey(Map values, Index index, boolean jsonFormat) {
-        StringBuilder key = new StringBuilder();
-        for (String name : (jsonFormat ? index.getJsonNames() : index.getColumnNames())) {
-            Object val = values.get(name);
-            if (Utils.empty(val))
-                return null;
-
-            val = encodeStr(val.toString());
-
-            if (key.length() > 0)
-                key.append("~");
-
-            key.append(val);
-        }
-
-        return key.toString();
-    }
-
-    /**
-     * Creates a "~" separated url safe concatenation of <code>pieces</code>
-     *
-     * @param pieces key parts to be encoded
-     * @return a url safe encoding of the <code>pieces</code> separated by "~" characters
-     * @see #encodeStr(String)
-     * @see #encodeKey(Map, Index, boolean)
-     */
-    public static String encodeKey(List pieces) {
-        StringBuilder resourceKey = new StringBuilder();
-        for (int i = 0; i < pieces.size(); i++) {
-            Object piece = pieces.get(i);
-            if (piece == null)
-                throw ApiException.new500InternalServerError("Trying to encode an resource key with a null component: '{}'.", pieces);
-
-            resourceKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
-            if (i < pieces.size() - 1)
-                resourceKey.append("~");
-        }
-        return resourceKey.toString();
-    }
-    /**
-     * Encodes non url safe characters into a friendly "@FOUR_DIGIT_HEX_VALUE" equivalent that itself will not be modified by URLEncoder.encode(String).
-     * <p>
-     * For example, encodeing "abcd/efg" would result in "abcd@002fefg" where "@002f" is the hex encoding for "/".
-     * <p>
-     * While "~" characters are considered url safe, the are specifically included for encoding so that
-     * {@link #decodeKeys(Index, String, boolean)} can split a value on "~" before decoding its parts.
-     *
-     * @param string the string to encode
-     * @return a url safe string with non safe characters encoded as '@FOUR_DIGIT_HEX_VALUE'
-     * @see <a href="https://stackoverflow.com/questions/695438/safe-characters-for-friendly-url">Safe characters for friendly urls</a>
-     * @see #encodeKey(Map, Index, boolean)
-     * @see #decodeKeys(Index, String, boolean)
-     * @see #decodeStr(String)
-     */
-    public static String encodeStr(String string) {
-        //- . _ ~ ( ) ' ! * : @ , ;
-        Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\:\\,\\;\\*]");
-
-        Matcher      m  = p.matcher(string);
-        StringBuffer sb = new StringBuffer();
-        while (m.find()) {
-            String        chars = m.group();
-            StringBuilder hex   = new StringBuilder("@").append(Hex.encodeHex(chars.getBytes()));
-            while (hex.length() < 5)
-                hex.insert(1, "0");
-
-            m.appendReplacement(sb, hex.toString());
-        }
-        m.appendTail(sb);
-        return sb.toString();
-    }
-
-    /**
-     * The reciprocal of {@link #encodeStr(String)} that replaces "\@[0-9a-f]{4}" hex sequences with the unescaped oritional unescaped character.
-     *
-     * @param string the string to decode
-     * @return a string with characters escaped to their hex equivalent replaced with the unescaped value.
-     * @see #encodeKey(Map, Index, boolean)
-     * @see #encodeStr(String)
-     */
-    public static String decodeStr(String string) {
-        try {
-            Pattern      p  = Pattern.compile("\\@[0-9a-f]{4}");
-            Matcher      m  = p.matcher(string);
-            StringBuffer sb = new StringBuffer();
-            while (m.find()) {
-                String group = m.group();
-                String hex   = group.substring(1);
-                String chars = StringEscapeUtils.unescapeJava("\\u" + hex);
-                m.appendReplacement(sb, chars);
-            }
-            m.appendTail(sb);
-            return sb.toString();
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
     }
 
     /**
@@ -799,227 +672,6 @@ public class Collection extends Rule<Collection> implements Serializable {
     }
 
     /**
-     * Encodes the potentially multiple values of a resources primary index into a url path safe single value.
-     *
-     * @param values the key value pairs to encode
-     * @return a url safe encoding of the resources primary index values
-     * @see #encodeKey(Map, Index, boolean)
-     */
-    public String encodeDbKey(Map<String, Object> values) {
-        Index index = getPrimaryIndex();
-        if (index == null)
-            return null;
-
-        return encodeKey(values, index, false);
-    }
-
-    /**
-     * Encodes the potentially multiple values of a resources primary index into a url path safe single value.
-     *
-     * @param node the key value pairs to encode
-     * @return a url safe encoding of the resources primary index values
-     * @see #encodeKey(Map, Index, boolean)
-     */
-    public String encodeJsonKey(JSNode node) {
-        Index index = getPrimaryIndex();
-        if (index == null)
-            return null;
-
-        return encodeKey(node, index, true);
-    }
-
-    public String encodeJsonKey(JSNode node, Index index) {
-        return encodeKey(node, index, true);
-    }
-
-    /**
-     * Decodes a resource key into its columnName / value parts.
-     *
-     * @param inKeys the resource key to decode
-     * @return the decoded columnName / value pairs.
-     * @see #decodeKeys(Index, String, boolean)
-     * @see #encodeKey(Map, Index, boolean)
-     */
-    public Row decodeJsonKey(String inKeys) {
-        Index index = getPrimaryIndex();
-        if (index == null)
-            throw ApiException.new500InternalServerError("Table '{}' does not have a unique index", this.getTableName());
-
-        return decodeKeys(index, inKeys, true).iterator().next();
-    }
-
-    public Row decodeJsonKey(Index index, String inKeys) {
-        return decodeKeys(index, inKeys, true).iterator().next();
-    }
-
-    /**
-     * Decodes a resource key into its columnName / value parts.
-     *
-     * @param inKey the resource key to decode
-     * @return the decoded columnName / value pairs.
-     * @see #decodeKeys(Index, String, boolean)
-     * @see #encodeKey(Map, Index, boolean)
-     */
-    public Row decodeDbKey(String inKey) {
-        return decodeDbKeys(inKey).iterator().next();
-    }
-
-    //parses val1~val2,val3~val4,val5~valc6
-    public Rows decodeDbKeys(String inKeys) {
-        Index index = getPrimaryIndex();
-        if (index == null)
-            throw ApiException.new500InternalServerError("Table '{}' does not have a unique index", this.getTableName());
-
-        return decodeKeys(index, inKeys, false);
-    }
-
-    /**
-     * Decodes a resource key into its columnName / value parts.
-     *
-     * @param index identifies the columnNames by position
-     * @param inKey the encoded string to decode
-     * @return the decoded columnName / value pairs.
-     * @see #decodeKeys(Index, String, boolean)
-     * @see #encodeKey(Map, Index, boolean)
-     */
-    public Row decodeDbKey(Index index, String inKey) {
-        return decodeKeys(index, inKey, false).iterator().next();
-    }
-
-    /**
-     * Decodes a comma separated list of encoded resource keys.
-     *
-     * @param index  identifies the columnNames to decode
-     * @param inKeys a comma separated list of encoded resource keys
-     * @param jsonFormat indicates to preserve json prop names/types and not convert to db column name/types
-     * @return a list of decoded name value pairs
-     * @see #encodeKey(Map, Index, boolean)
-     * @see #encodeStr(String)
-     * @see #decodeStr(String)
-     */
-    public Rows decodeKeys(Index index, String inKeys, boolean jsonFormat) {
-        //someone passed in the whole href...no problem, just strip it out.
-        if (inKeys.startsWith("http") && inKeys.indexOf("/") > 0)
-            inKeys = inKeys.substring(inKeys.lastIndexOf("/") + 1);
-
-        List<String> names = jsonFormat ? index.getJsonNames() : index.getColumnNames();
-
-        Rows rows = new Rows(names);
-        for (String key : Utils.explode(",", inKeys)) {
-            List row = Utils.explode("~", key);
-
-            if (row.size() != names.size())
-                throw ApiException.new400BadRequest("Supplied resource key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
-
-            for (int i = 0; i < names.size(); i++) {
-                Object value = decodeStr(row.get(i).toString());//.replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
-
-                if (((String) value).length() == 0)
-                    throw ApiException.new400BadRequest("A key component can not be empty '{}'", inKeys);
-
-                if(!jsonFormat)
-                    value = getDb().castJsonInput(index.getProperty(i), value);
-
-                row.set(i, value);
-            }
-            rows.addRow(row);
-        }
-
-        return rows;
-    }
-
-    //   //parses val1~val2,val3~val4,val5~valc6
-    //   public Rows decodeResourceKeys(Index index, String inKeys)
-    //   {
-    //      //someone passed in the whole href...no problem, just strip it out.
-    //      if (inKeys.startsWith("http") && inKeys.indexOf("/") > 0)
-    //         inKeys = inKeys.substring(inKeys.lastIndexOf("/") + 1, inKeys.length());
-    //
-    //      List colNames = index.getColumnNames();
-    //
-    //      Rows rows = new Rows(colNames);
-    //      for (List row : parseKeys(inKeys))
-    //      {
-    //         if (row.size() != colNames.size())
-    //            throw ApiException.new400BadRequest("Supplied resource key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
-    //
-    //         for (int i = 0; i < colNames.size(); i++)
-    //         {
-    //            Object value = decodeStr(row.get(i).toString());//.replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
-    //
-    //            if (((String) value).length() == 0)
-    //               throw ApiException.new400BadRequest("A key component can not be empty '{}'", inKeys);
-    //
-    //            value = getDb().cast(index.getProperty(i), value);
-    //            row.set(i, value);
-    //         }
-    //         rows.addRow(row);
-    //      }
-    //
-    //      return rows;
-    //   }
-    //
-    //   //parses val1~val2,val3~val4,val5~valc6
-    //   public static List<List<String>> parseKeys(String inKeys)
-    //   {
-    //      String resourceKeys = inKeys;
-    //      List<String> splits = new ArrayList<>();
-    //
-    //      List<List<String>> rows = new ArrayList<>();
-    //
-    //      boolean escaped = false;
-    //      for (int i = 0; i < resourceKeys.length(); i++)
-    //      {
-    //         char c = resourceKeys.charAt(i);
-    //         switch (c)
-    //         {
-    //            case '\\':
-    //               escaped = !escaped;
-    //               continue;
-    //            case ',':
-    //               if (!escaped)
-    //               {
-    //                  rows.add(splits);
-    //                  splits = new ArrayList<>();
-    //                  resourceKeys = resourceKeys.substring(i + 1, resourceKeys.length());
-    //                  i = 0;
-    //                  continue;
-    //               }
-    //            case '~':
-    //               if (!escaped)
-    //               {
-    //                  splits.add(resourceKeys.substring(0, i));
-    //                  resourceKeys = resourceKeys.substring(i + 1, resourceKeys.length());
-    //                  i = 0;
-    //                  continue;
-    //               }
-    //            default :
-    //               escaped = false;
-    //         }
-    //      }
-    //      if (resourceKeys.length() > 0)
-    //      {
-    //         splits.add(resourceKeys);
-    //      }
-    //
-    //      if (splits.size() > 0)
-    //      {
-    //         rows.add(splits);
-    //      }
-    //
-    //      for (List<String> row : rows)
-    //      {
-    //         for (int i = 0; i < row.size(); i++)
-    //         {
-    //            String value = row.get(i).replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
-    //            row.set(i, value);
-    //         }
-    //      }
-    //
-    //      return rows;
-    //   }
-
-    /**
      * Performs a deep clone operation via object serialization/deserialization.
      * <p>
      * It is useful when you want to manually wire up numerous copies of a collection but tweak each one a bit differently.
@@ -1051,4 +703,232 @@ public class Collection extends Rule<Collection> implements Serializable {
         }
         return null;
     }
+
+    /**
+     * Encodes the resourceKey from the values using column names from the primary index.
+     *
+     * @param values a map containing key value pairs for the Collection's primary index using column names not json names.
+     * @return a url safe encoding of the resources primary index values
+     * @see #encodeKey(Map, Index, boolean)
+     */
+    public String encodeKeyFromColumnNames(Map<String, Object> values) {
+        Index index = getPrimaryIndex();
+        if (index == null)
+            return null;
+
+        return encodeKey(values, index, false);
+    }
+
+    /**
+     * Encodes the resourceKey from the values using json names from the primary index.
+     *
+     * @param values the key value pairs to encode
+     * @return a url safe encoding of the resources primary index values
+     * @see #encodeKey(Map, Index, boolean)
+     */
+    public String encodeKeyFromJsonNames(Map<String, Object> values) {
+        Index index = getPrimaryIndex();
+        if (index == null)
+            return null;
+
+        return encodeKey(values, index, true);
+    }
+
+    public String encodeKeyFromJsonNames(Map<String, Object> values, Index index) {
+        return encodeKey(values, index, true);
+    }
+
+
+
+
+    /**
+     * Encodes the potentially multiple values of an index into a url path and query string safe single value.
+     * <p>
+     * In a typical REST Api configuration where you url paths might map to something like
+     * "${endpoint}/${collection}/[${resource}][?{querystring}]", ${resource} is
+     * the primary index of the resource that has been encoded here.
+     * <p>
+     * That might look like "/bookstore/books/12345" or in the case of a compound primary index
+     * It might look like "/bookstore/orders/4567~abcde" where the "~" character is used to
+     * separate parts of the key.
+     * <p>
+     * The names of the index fields are not encoded, only the values, relying on index property order to remain consistent.
+     * <p>
+     * This methods is used by various actions when constructing hypermedia urls that allow you to
+     * uniquely identify individual resources (records in a Db) or to traverse Relationships.
+     * <p>
+     * The inverse of this method is {@link #decodeKey(Index, String, boolean)} which is used to
+     * decode inbound Url path and query params to determine which resource is being referenced.
+     *
+     * @param values column name to Property value mapping for a resource
+     * @param index  the index identifying the values that should be encoded
+     * @param useJsonPropertyNames use json prop names vs db col names
+     * @return a url safe encoding of the index values separated by "~" characters or null if any of the values for an index key is null.
+     * @see #encodeStr(String)
+     * @see #decodeKey(Index, String, boolean)
+     */
+    public static String encodeKey(Map<String, Object> values, Index index, boolean useJsonPropertyNames) {
+        StringBuilder key = new StringBuilder();
+        for (String name : (useJsonPropertyNames ? index.getJsonNames() : index.getColumnNames())) {
+            Object val = values.get(name);
+            if (Utils.empty(val))
+                return null;
+
+            val = encodeStr(val.toString());
+
+            if (key.length() > 0)
+                key.append("~");
+
+            key.append(val);
+        }
+
+        return key.toString();
+    }
+
+    /**
+     * Creates a "~" separated url safe concatenation of <code>pieces</code>
+     *
+     * @param pieces key parts to be encoded
+     * @return a url safe encoding of the <code>pieces</code> separated by "~" characters
+     * @see #encodeStr(String)
+     * @see #encodeKey(Map, Index, boolean)
+     */
+    public static String encodeKey(List pieces) {
+        StringBuilder resourceKey = new StringBuilder();
+        for (int i = 0; i < pieces.size(); i++) {
+            Object piece = pieces.get(i);
+            if (piece == null)
+                throw ApiException.new500InternalServerError("Trying to encode an resource key with a null component: '{}'.", pieces);
+
+            resourceKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
+            if (i < pieces.size() - 1)
+                resourceKey.append("~");
+        }
+        return resourceKey.toString();
+    }
+    /**
+     * Encodes non url safe characters into a friendly "@FOUR_DIGIT_HEX_VALUE" equivalent that itself will not be modified by URLEncoder.encode(String).
+     * <p>
+     * For example, encodeing "abcd/efg" would result in "abcd@002fefg" where "@002f" is the hex encoding for "/".
+     * <p>
+     * While "~" characters are considered url safe, the are specifically included for encoding so that
+     * {@link #decodeKey(Index, String, boolean)} can split a value on "~" before decoding its parts.
+     *
+     * @param string the string to encode
+     * @return a url safe string with non safe characters encoded as '@FOUR_DIGIT_HEX_VALUE'
+     * @see <a href="https://stackoverflow.com/questions/695438/safe-characters-for-friendly-url">Safe characters for friendly urls</a>
+     * @see #encodeKey(Map, Index, boolean)
+     * @see #decodeKey(Index, String, boolean)
+     * @see #decodeStr(String)
+     */
+    static String encodeStr(String string) {
+        //- . _ ~ ( ) ' ! * : @ , ;
+        Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\:\\,\\;\\*]");
+
+        Matcher      m  = p.matcher(string);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            String        chars = m.group();
+            StringBuilder hex   = new StringBuilder("@").append(Hex.encodeHex(chars.getBytes()));
+            while (hex.length() < 5)
+                hex.insert(1, "0");
+
+            m.appendReplacement(sb, hex.toString());
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+
+
+    /**
+     * Decodes a resource key into its columnName / value parts.
+     *
+     * @param index identifies the columnNames by position
+     * @param inKey the encoded string to decode
+     * @return the decoded columnName / value pairs.
+     * @see #decodeKey(Index, String, boolean)
+     * @see #encodeKey(Map, Index, boolean)
+     */
+    public Map<String, Object> decodeKeyToColumnNames(Index index, String inKey) {
+        return decodeKey(index, inKey, false);
+    }
+
+    /**
+     * Decodes a resource key into its columnName / value parts.
+     *
+     * @param inKeys the resource key to decode
+     * @return the decoded columnName / value pairs.
+     * @see #decodeKey(Index, String, boolean)
+     * @see #encodeKey(Map, Index, boolean)
+     */
+    public Map<String, Object> decodeKeyToJsonNames(String inKeys) {
+        Index index = getPrimaryIndex();
+        if (index == null)
+            throw ApiException.new500InternalServerError("Table '{}' does not have a unique index", this.getTableName());
+
+        return decodeKey(index, inKeys, true);
+    }
+
+    /**
+     * Decodes a resource key.
+     *
+     * @param index  identifies the columnNames to decode
+     * @param key a comma separated list of encoded resource keys
+     * @param useJsonPropertyNames indicates to preserve json prop names/types and not convert to db column name/types
+     * @return a list of decoded name value pairs
+     * @see #encodeKey(Map, Index, boolean)
+     * @see #encodeStr(String)
+     * @see #decodeStr(String)
+     */
+    public Map<String, Object> decodeKey(Index index, String key, boolean useJsonPropertyNames) {
+
+        List<String> names = useJsonPropertyNames ? index.getJsonNames() : index.getColumnNames();
+        Map<String, Object> row = new LinkedHashMap<>();
+        List parts = Utils.explode("~", key);
+
+        if (parts.size() != names.size())
+            throw ApiException.new400BadRequest("Supplied resource key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
+
+        for (int i = 0; i < names.size(); i++) {
+            Object value = decodeStr(parts.get(i).toString());
+
+            if (((String) value).length() == 0)
+                throw ApiException.new400BadRequest("A key component can not be empty '{}'", key);
+
+            if(!useJsonPropertyNames)
+                value = getDb().castJsonInput(index.getProperty(i), value);
+
+            row.put(names.get(i), value);
+        }
+
+        return row;
+    }
+
+    /**
+     * The reciprocal of {@link #encodeStr(String)} that replaces "\@[0-9a-f]{4}" hex sequences with the unescaped oritional unescaped character.
+     *
+     * @param string the string to decode
+     * @return a string with characters escaped to their hex equivalent replaced with the unescaped value.
+     * @see #encodeKey(Map, Index, boolean)
+     * @see #encodeStr(String)
+     */
+    static String decodeStr(String string) {
+        try {
+            Pattern      p  = Pattern.compile("\\@[0-9a-f]{4}");
+            Matcher      m  = p.matcher(string);
+            StringBuffer sb = new StringBuffer();
+            while (m.find()) {
+                String group = m.group();
+                String hex   = group.substring(1);
+                String chars = StringEscapeUtils.unescapeJava("\\u" + hex);
+                m.appendReplacement(sb, chars);
+            }
+            m.appendTail(sb);
+            return sb.toString();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+
 }

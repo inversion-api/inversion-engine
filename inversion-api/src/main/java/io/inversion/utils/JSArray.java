@@ -46,6 +46,15 @@ public class JSArray extends JSNode implements Iterable {
             add(objects[i]);
     }
 
+    @Override
+    List<JSProperty> getProperties() {
+        List<JSProperty> props = new ArrayList();
+        for(int i=0; i<objects.size(); i++){
+            props.add(new JSProperty(i + "", objects.get(i)));
+        }
+        return props;
+    }
+
     /**
      * @return true
      * @see JSNode#isArray()

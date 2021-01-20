@@ -147,7 +147,7 @@ public class Chain {
                 if (obj != null)
                     fkval = obj.toString();
             } else {
-                fkval = toHere.getCollection().encodeJsonKey(fromHere, toHere.getFkIndex1());
+                fkval = toHere.getCollection().encodeKeyFromJsonNames(fromHere, toHere.getFkIndex1());
             }
 
             if (fkval != null) {
@@ -155,7 +155,7 @@ public class Chain {
             }
         } else {
             //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
-            String resourceKey = toHere.getCollection().encodeJsonKey(fromHere);
+            String resourceKey = toHere.getCollection().encodeKeyFromJsonNames(fromHere);
             link = Chain.buildLink(toHere.getCollection(), resourceKey, toHere.getName());
         }
         return link;

@@ -24,6 +24,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.zjsonpatch.JsonDiff;
 import com.flipkart.zjsonpatch.JsonPatch;
 import io.inversion.ApiException;
+import io.inversion.Property;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
@@ -123,6 +126,42 @@ public class JSNode implements Map<String, Object> {
         }
     }
 
+    public static interface JSNodeVisitor{
+        boolean visit(JSNode node, String key, Object value, Stack<Triple<JSNode, String, Object>> path);
+    }
+
+    public void visit(JSNodeVisitor visitor){
+        visit(visitor, this, new Stack<>(), new IdentityHashMap<>());
+    }
+
+    void visit(JSNodeVisitor visitor, JSNode node, Stack<Triple<JSNode, String, Object>> path, IdentityHashMap<JSNode, JSNode> visited){
+
+        if(visited.containsKey(node))
+            return;
+        visited.put(node, node);
+
+        List<JSProperty> props = node.getProperties();
+        for(int i=0; i<props.size(); i++){
+            JSProperty prop = props.get(i);
+            String name = prop.getName();
+            Object value = prop.getValue();
+
+            Triple triple = Triple.of(node, name, value);
+            path.push(triple);
+            try {
+                if(visitor.visit(node, name, value, path)){
+                    if(value instanceof JSNode){
+                        visit(visitor, (JSNode)value, path, visited);
+                    }
+                }
+            }
+            finally {
+                path.pop();
+            }
+        }
+    }
+
+
     static Object mapJsonNode(JsonNode json, String path, Map<String, JSNode> visited) {
         if (json == null)
             return null;
@@ -153,20 +192,20 @@ public class JSNode implements Map<String, Object> {
             return retVal;
         } else if (json.isObject()) {
 
-            JsonNode refNode = json.get("$ref");
-            if(refNode != null){
-                String ref = refNode.asText();
-                JSNode refTarget = visited.get(ref);
-                if(refTarget == null) {
-                    throw new ApiException("JSON $ref invalid {}", ref);
-                }
-
-                return refTarget;
-            }
-            else{
+//            JsonNode refNode = json.get("$ref");
+//            if(refNode != null){
+//                String ref = refNode.asText();
+//                JSNode refTarget = visited.get(ref);
+//                if(refTarget == null) {
+//                    throw new ApiException("JSON $ref invalid {}", ref);
+//                }
+//
+//                return refTarget;
+//            }
+//            else
+                {
                 JSNode retVal = new JSNode();
                 visited.put(path, retVal);
-                System.out.println("path -> " + path);
 
                 Iterator<String> it = json.fieldNames();
                 while (it.hasNext()) {
@@ -349,8 +388,12 @@ public class JSNode implements Map<String, Object> {
      * @return a dot based path expression
      */
     static String fromJsonPointer(String jsonPointer) {
-        if (jsonPointer.charAt(0) == '#')
+        if (jsonPointer.charAt(0) == '#'){
             jsonPointer = jsonPointer.substring(1);
+            if(jsonPointer.charAt(0) == '/')
+                jsonPointer = jsonPointer.substring(1);
+        }
+
 
         return jsonPointer.replace('/', '.');
     }
@@ -360,8 +403,9 @@ public class JSNode implements Map<String, Object> {
      * so that it is easier to parse.
      */
     static String fromJsonPath(String jsonPath) {
-        if (jsonPath.charAt(0) == '#')
+        if (jsonPath.charAt(0) == '#') {
             jsonPath = jsonPath.substring(1);
+        }
 
         if (jsonPath.charAt(0) == '$')
             jsonPath = jsonPath.substring(1);
@@ -371,7 +415,9 @@ public class JSNode implements Map<String, Object> {
         jsonPath = jsonPath.replace("..", "**."); //translate from jsonpath format
         jsonPath = jsonPath.replaceAll("([a-zA-Z])[*]", "$1.*"); //translate from jsonpath format
         jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[([0-9]*)\\]", "$1.$2"); // x[1] to x.1
+        jsonPath = jsonPath.replaceAll("([a-zA-Z])\\[([0-9]*)\\]", "$1.$2"); // x[1] to x.1
         jsonPath = jsonPath.replaceAll("\\.\\[([0-9]*)\\]", ".$1"); //translate .[1]. to .1. */
+        jsonPath = jsonPath.replaceAll("\\[([0-9]*)\\]", "$1"); // [123] to 123 ...catches a root array
         jsonPath = jsonPath.replace("[*]", "*");
 
         //System.out.println(pathStr);
@@ -659,10 +705,16 @@ public class JSNode implements Map<String, Object> {
                         if(idx <= length)
                             found.add(get(length - idx));
                     } else {
+                        try{
+
                         int start = Integer.parseInt(expr.substring(0, expr.indexOf(":")).trim());
                         int end   = Integer.parseInt(expr.substring(expr.indexOf(":") + 1).trim());
                         for (int i = start; i <= end && i < length; i++){
                             found.add(get(i));
+                        }}
+                        catch(Exception ex){
+                            System.out.println(expr);
+                            ex.printStackTrace();
                         }
                     }
                     if(found.size() > 0) {
@@ -1046,7 +1098,7 @@ public class JSNode implements Map<String, Object> {
     @Override
     public void putAll(Map<? extends String, ? extends Object> map) {
         for (String key : map.keySet()) {
-            put(key.toString(), map.get(key));
+            put(key, map.get(key));
         }
     }
 

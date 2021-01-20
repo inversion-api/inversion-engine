@@ -76,7 +76,7 @@ public class Engine extends Rule<Engine> {
     transient volatile           boolean              starting         = false;
 
     public Engine() {
-
+        System.out.println("Engine() <>");
     }
 
     public Engine(Api... apis) {
@@ -534,6 +534,9 @@ public class Engine extends Rule<Engine> {
             return chain;
         } catch (Throwable ex) {
 
+            if(req.isDebug())
+                ex.printStackTrace();
+
             Chain.debug("Uncaught Exception: " + Utils.getShortCause(ex));
 
             JSNode json = buildErrorJson(ex);
@@ -547,7 +550,6 @@ public class Engine extends Rule<Engine> {
                 } catch (Exception ex2) {
                     log.warn("Error notifying EngineListener.beforeError", ex);
                 }
-
             }
 
         } finally {

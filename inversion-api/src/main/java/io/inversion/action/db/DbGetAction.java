@@ -39,13 +39,17 @@ public class DbGetAction extends Action<DbGetAction> {
 
 
     protected static String getForeignKey(Relationship rel, JSNode node) {
-        String key = rel.getCollection().encodeJsonKey(node, rel.getFkIndex1());
+        Index idx = rel.getFkIndex1();
+        if(idx.size() == 1 && node.get(idx.getPropertyName(0)) != null)
+            return node.getString(idx.getPropertyName(0));
+
+        String key = rel.getCollection().encodeKeyFromJsonNames(node, rel.getFkIndex1());
         return key;
     }
 
 
     protected static String getResourceKey(Collection collection, JSNode node) {
-        String key = collection.encodeJsonKey(node);
+        String key = collection.encodeKeyFromJsonNames(node);
         if(key == null)
             throw ApiException.new500InternalServerError("The primary key '{}' could not be constructed from the data provided.", collection.getPrimaryIndex());
         return key;
@@ -71,6 +75,7 @@ public class DbGetAction extends Action<DbGetAction> {
         path = path.toLowerCase();
 
         for (String ep : expands) {
+            ep = ep.toLowerCase();
             if (ep.startsWith(path) && (ep.length() == path.length() || ep.charAt(path.length()) == '.')) {
                 expand = true;
                 break;
@@ -95,7 +100,7 @@ public class DbGetAction extends Action<DbGetAction> {
             Relationship rel         = collection.getRelationship(req.getRelationshipKey());
 
             if (rel == null)
-                throw ApiException.new404NotFound("'{}' is not a valid relationship", req.getRelationshipKey());
+                throw ApiException.new400BadRequest("'{}' is not a valid relationship", req.getRelationshipKey());
 
             StringBuilder newHref = null;
 
@@ -109,7 +114,7 @@ public class DbGetAction extends Action<DbGetAction> {
                 //TODO: need a compound key test case here
                 Collection relatedCollection = rel.getRelated();
                 newHref = new StringBuilder(Chain.buildLink(relatedCollection, null, null) + "?");
-                Row resourceKeyRow = collection.decodeJsonKey(req.getResourceKey());
+                Map<String, Object> resourceKeyRow = collection.decodeKeyToJsonNames(req.getResourceKey());
 
                 if (rel.getFkIndex1().size() != collection.getPrimaryIndex().size() //
                         && rel.getFkIndex1().size() == 1)//assume the single fk prop is an encoded resourceKey
@@ -211,7 +216,8 @@ public class DbGetAction extends Action<DbGetAction> {
         Results results = select(req, req.getCollection(), req.getApi());
 
         if (results.size() == 0 && req.getResourceKey() != null && req.getCollectionKey() != null) {
-            throw ApiException.new404NotFound("The requested resource '{}' was not found.", req.getResourceKey());
+            res.withJson(null);
+            res.withStatus(Status.SC_404_NOT_FOUND);
         } else {
             //-- copy data into the response
             res.withRecords(results.getRows());

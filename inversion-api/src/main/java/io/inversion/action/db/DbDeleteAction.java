@@ -17,13 +17,12 @@
 package io.inversion.action.db;
 
 import io.inversion.*;
+import io.inversion.Collection;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows;
-import io.inversion.utils.Rows.Row;
+import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class DbDeleteAction extends Action<DbDeleteAction> {
     @Override
@@ -40,7 +39,7 @@ public class DbDeleteAction extends Action<DbDeleteAction> {
         if (req.getJson() != null)
             throw ApiException.new501NotImplemented("A JSON body can not be included with a DELETE.  Batch delete is not supported.");
 
-        int deleted = delete(req.getEngine(), req.getCollection(), req.getUrl().toString());
+        int deleted = delete(req.getEngine(), req.getCollection(), req.getUrl());
 
         if (deleted < 1)
             throw ApiException.new404NotFound("The requested resource '{}' could not be found.", resourceKey);
@@ -48,34 +47,37 @@ public class DbDeleteAction extends Action<DbDeleteAction> {
             res.withStatus(Status.SC_204_NO_CONTENT);
     }
 
-    protected int delete(Engine engine, Collection collection, String url) throws ApiException {
+    protected int delete(Engine engine, Collection collection, Url url) throws ApiException {
         int deleted = 0;
 
         Set<String> alreadyDeleted = new HashSet<>();
 
         for (int i = 0; i < 1000; i++) {
             //-- regardless of the query string passed in, this should resolve the keys 
-            //-- that need to be deleted and make sure the uses has read access to the key
-            Response res = engine.get(url).assertStatus(200, 404);
+            //-- that need to be deleted and make sure the user has read access to the key
 
-            if (res.getData().size() == 0)
+            Url query = new Url(url.getOriginal());
+            query.withParam("include", Utils.implode(",", collection.getPrimaryIndex().getJsonNames()));
+            String urlStr = query.toString();
+            Response res = engine.get(urlStr).assertStatus(200, 404);
+
+            if (res.hasStatus(404))
                 break;
 
-            Rows rows = new Rows();
+            List<Map<String, Object>> rows = new ArrayList();
 
             for (JSNode node : res.getData().asNodeList()) {
-                String href = node.getString("href");
 
-                if (alreadyDeleted.contains(href))
-                    throw ApiException.new500InternalServerError("Deletion of '{}' was not successful.", href);
+                String key = collection.encodeKeyFromJsonNames(node);
+
+                if (alreadyDeleted.contains(key))
+                    throw ApiException.new500InternalServerError("Deletion of '{}' was not successful.", key);
                 else
-                    alreadyDeleted.add(href);
+                    alreadyDeleted.add(key);
 
-                Row key = collection.decodeJsonKey((String) Utils.last(Utils.explode("/", href)));
-                rows.add(key);
+                rows.add(node);
             }
             collection.getDb().delete(collection, rows);
-
             deleted += res.getData().size();
         }
 

@@ -45,7 +45,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
 
             List<Term> unknownCols = term.stream().filter(this::isInvalidColumn).collect(Collectors.toList());
             if (unknownCols.size() > 0) {
-                Chain.debug("Ignoring query terms with unknown columns: " + unknownCols);
+                //Chain.debug("Ignoring query terms with unknown columns: " + unknownCols);
                 //System.err.println("Ignoring query terms with unknown columns: " + unknownCols);
                 return true;
             }
@@ -196,7 +196,7 @@ public class Where<T extends Where, P extends Query> extends Builder<T, P> {
                     if (!child.isLeaf())
                         throw ApiException.new400BadRequest("Resource key value is not a leaf node: {}", child);
 
-                    Row  keyParts = getParent().getCollection().decodeDbKey(index, child.getToken());
+                    Map<String, Object>  keyParts = getParent().getCollection().decodeKeyToColumnNames(index, child.getToken());
                     Term and      = Term.term(or, "and");
                     for (String key : keyParts.keySet()) {
                         and.withTerm(Term.term(and, "eq", key, keyParts.get(key).toString()));

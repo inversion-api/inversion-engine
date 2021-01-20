@@ -94,6 +94,8 @@ public class Action<A extends Action> extends Rule<A> {
                 if(!(ex instanceof ApiException))
                     ex = ex.getCause();
 
+                ex.printStackTrace();
+
                 if(!(ex instanceof ApiException))
                     ex = ApiException.new500InternalServerError(ex);
 

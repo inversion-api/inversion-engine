@@ -98,7 +98,7 @@ public class S3Db extends Db<S3Db> {
     }
 
     @Override
-    public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
+    public void doDelete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
         // TODO Auto-generated method stub
 
     }

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -89,8 +90,8 @@ public class TestOverloadedDynamicTables {
 
                             if (resourceKey != null) {
                                 //-- handles /addresses/$resourceKey1,$resourceKey2,$resourceKey3
-                                List<String> resourceKeys = Utils.explode(",", resourceKey);
-                                Row          row          = req.getCollection().decodeDbKey(resourceKeys.get(0));
+                                List<String>        resourceKeys = Utils.explode(",", resourceKey);
+                                Map<String, Object> row          = req.getCollection().decodeKeyToJsonNames(resourceKeys.get(0));
                                 partitionKey = row.get(partitionProp);
                             }
 
@@ -130,7 +131,7 @@ public class TestOverloadedDynamicTables {
                                             String customerKey = (String) customerNode;
                                             customerKey = customerKey.substring(customerKey.lastIndexOf("/") + 1);
 
-                                            Row row = req.getApi().getCollection("customers").decodeDbKey(customerKey);
+                                            Map<String, Object> row = req.getApi().getCollection("customers").decodeKeyToJsonNames(customerKey);
                                             customerId = row.get("id");
                                         }
 
@@ -186,7 +187,10 @@ public class TestOverloadedDynamicTables {
 
         res = e.post("crm/acmeco/customers", new JSNode("firstName", "myFirstName", "lastName", "myLastName", "addresses", //
                 new JSArray(new JSNode("alias", "home", "address1", "1234 hometown rd."), //
-                        new JSNode("alias", "office", "address1", "6789 workville st.")))).assertOk();
+                        new JSNode("alias", "office", "address1", "6789 workville st."))));
+
+        res.dump();
+        res.assertOk();
 
         String customerHref = res.findString("data.0.href");
         String customerKey  = customerHref.substring(customerHref.lastIndexOf("/") + 1);

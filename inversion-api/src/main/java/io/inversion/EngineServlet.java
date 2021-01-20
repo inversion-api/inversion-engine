@@ -193,7 +193,7 @@ public class EngineServlet extends HttpServlet {
                 //
             } else {
                 String contentType = res.getContentType();
-                byte[] bytes       = res.getOutput().getBytes();
+                byte[] bytes       = (req.isDebug() && req.isExplain() ? res.getDebug() : res.getOutput()).getBytes();
 
                 http.setContentType(contentType);
                 http.setContentLength(bytes.length);

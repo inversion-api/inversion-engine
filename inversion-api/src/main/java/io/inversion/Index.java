@@ -16,11 +16,13 @@
  */
 package io.inversion;
 
+import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -159,6 +161,39 @@ public class Index implements Serializable {
 
     public List<String> getColumnNames() {
         return properties.stream().map(Property::getColumnName).collect(Collectors.toList());
+    }
+
+
+    public <T extends Map<String, Object>> T getKey(JSNode node, T key){
+        for(String name : getJsonNames()){
+            Object value = node.get(name);
+            if(value == null)
+                throw new ApiException("Key value should not be null");
+
+            key.put(name, value);
+        }
+        return key;
+    }
+
+    public  <T extends Map<String, Object>> T asForeignKey(T key){
+
+        List<Property> targetProps = new ArrayList();
+        for(Property prop : properties){
+            Property related = prop.getPk();
+            if(related == null){
+                if(targetProps.size() != 1)
+                    throw new ApiException("Can't map from primary to foreign index {}", this);
+                break;
+            }
+        }
+
+
+        return key;
+    }
+
+    public  <T extends Map<String, Object>> T asPrimaryKey(T key){
+
+        return key;
     }
 
 }

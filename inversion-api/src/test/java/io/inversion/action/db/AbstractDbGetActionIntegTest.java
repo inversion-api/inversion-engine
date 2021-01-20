@@ -35,6 +35,33 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
     }
 
     @Test
+    public void testExpandOneToMany() throws Exception {
+        Engine   engine = engine();
+        Response res;
+        res = engine.get(url("employees/1?expand=reportsTo"));
+        res.dump();
+        assertEquals(2, res.find("data.0.reportsTo.employeeId"));
+    }
+
+    @Test
+    public void testExpandManyToOne() throws Exception {
+        Engine   engine = engine();
+        Response res;
+        res = engine.get(url("employees/2?expand=employees"));
+        assertEquals(5, res.findArray("data.0.employees").length());
+    }
+
+    @Test
+    public void testExpandManyToMany() throws Exception {
+        Engine   engine = engine();
+        Response res;
+        res = engine.get(url("employees/2?expand=territories"));
+        assertEquals(7, res.findArray("data.0.territories").length());
+    }
+
+
+
+    @Test
     public void testIncludes0() throws Exception {
         Engine   engine = engine();
         Response res;

@@ -133,7 +133,7 @@ public class OpenAPIWriter {
                 propSchema.setDescription(prop.getDescription());
 
             //TODO...this condition may not be true for non autoincrement PKs
-            if (coll.getPrimaryIndex().getProperties().contains(prop)) {
+            if (coll.getPrimaryIndex() == null || coll.getPrimaryIndex().getProperties().contains(prop)) {
                 propSchema.setReadOnly(true);
             }
 
@@ -602,15 +602,18 @@ public class OpenAPIWriter {
                                             }
                                         } else if (candidatePath.hasAllVars(Request.COLLECTION_KEY, Request.RESOURCE_KEY)) {
                                             if (pass == 2) {
-                                                queueOpToDoc("GET", matchPath, req, endpoint, collection, null);
-                                                queueOpToDoc("PUT", matchPath, req, endpoint, collection, null);
-                                                queueOpToDoc("PATCH", matchPath, req, endpoint, collection, null);
-                                                queueOpToDoc("DELETE", matchPath, req, endpoint, collection, null);
+                                                if(collection.getPrimaryIndex() != null) { //CANT do these things to a specific resource without a primary key field
+                                                    queueOpToDoc("GET", matchPath, req, endpoint, collection, null);
+                                                    queueOpToDoc("PUT", matchPath, req, endpoint, collection, null);
+                                                    queueOpToDoc("PATCH", matchPath, req, endpoint, collection, null);
+                                                    queueOpToDoc("DELETE", matchPath, req, endpoint, collection, null);
+                                                }
                                             }
                                         } else if (candidatePath.hasAllVars(Request.COLLECTION_KEY)) {
                                             if (pass == 1) {
                                                 queueOpToDoc("LIST", matchPath, req, endpoint, collection, null);
-                                                queueOpToDoc("POST", matchPath, req, endpoint, collection, null);
+                                                if(collection.getPrimaryIndex() != null)
+                                                    queueOpToDoc("POST", matchPath, req, endpoint, collection, null);
                                             }
                                         } else {
                                             //TODO document these additional eps? ...but what do they do?
@@ -743,7 +746,7 @@ public class OpenAPIWriter {
                 String varName = null;
                 String regex   = path.getRegex(i);
                 Index  pk      = coll.getPrimaryIndex();
-                if (pk.size() == 1) {
+                if (pk != null && pk.size() == 1) {
                     varName = pk.getPropertyName(0);
                     regex = regex != null ? regex : pk.getProperty(0).getRegex();
                 } else {

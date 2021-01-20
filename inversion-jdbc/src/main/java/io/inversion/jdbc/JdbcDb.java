@@ -298,14 +298,14 @@ public class JdbcDb extends Db<JdbcDb> {
             }
 
             List<Row> upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
-            return upserted.stream().map(table::encodeDbKey).collect(Collectors.toList());
+            return upserted.stream().map(table::encodeKeyFromColumnNames).collect(Collectors.toList());
         } catch (Exception ex) {
             throw ApiException.new500InternalServerError(ex);
         }
     }
 
     @Override
-    public void doPatch(Collection table, List<Map<String, Object>> rows) throws ApiException {
+    public List<String> doPatch(Collection table, List<Map<String, Object>> rows) throws ApiException {
         try {
             for (Map<String, Object> row : rows) {
                 for (String key : new ArrayList<>(row.keySet())) {
@@ -314,14 +314,31 @@ public class JdbcDb extends Db<JdbcDb> {
                 }
             }
 
-            JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+            List<String> resourceKeys = new ArrayList<>();
+            List<Integer> updateCounts = JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+            for(int i=0; i<rows.size(); i++){
+                Integer count = updateCounts.get(i);
+                if(count == null)
+                    count = 0;
+
+                if(count <= 0)
+                    continue;
+                else if(count == 1){
+                    resourceKeys.add(table.encodeKeyFromColumnNames(rows.get(i)));
+                }
+                else{
+                    throw new ApiException("A patch requested reported that it updated more than one row");
+                }
+            }
+
+            return resourceKeys;
         } catch (Exception ex) {
             throw ApiException.new500InternalServerError(ex);
         }
     }
 
     @Override
-    public void delete(Collection table, List<Map<String, Object>> columnMappedIndexValues) throws ApiException {
+    public void doDelete(Collection table, List<Map<String, Object>> columnMappedIndexValues) throws ApiException {
         try {
             if (columnMappedIndexValues.size() == 0)
                 return;

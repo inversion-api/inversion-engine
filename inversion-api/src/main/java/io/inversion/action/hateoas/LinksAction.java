@@ -17,21 +17,20 @@
 package io.inversion.action.hateoas;
 
 import io.inversion.*;
+import io.inversion.Collection;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Rows;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 public class LinksAction extends Action<LinksAction> {
 
     public void run(Request req, Response res) throws ApiException {
         if (Chain.isRoot() && req.getCollection() != null){
-            if(req.getJson() != null)
-                req.getJson().asNodeList().forEach(node -> removeLinks(req.getCollection(), node));
+            if(req.getJson() != null){
+                req.getData().asNodeList().forEach(node -> removeLinks(req.getCollection(), node));
+            }
 
             req.getChain().go();
 
@@ -44,7 +43,7 @@ public class LinksAction extends Action<LinksAction> {
 
     protected void addLinks(Collection coll, JSNode node){
 
-        String resourceKey = coll.encodeJsonKey(node);
+        String resourceKey = coll.encodeKeyFromJsonNames(node);
         LinkedHashMap<String, String> toAdd = new LinkedHashMap<>();
 
         if(coll != null && resourceKey != null){
@@ -57,10 +56,14 @@ public class LinksAction extends Action<LinksAction> {
                 else{
                     String link = null;
                     if(rel.isManyToOne()){
-                        //-- this is an optimization that prevents potentially unnecessary db queries on return access
-                        String key = rel.getCollection().encodeJsonKey(node, rel.getFkIndex1());
+
+                        Map<String, Object> primaryKey = rel.buildPrimaryKeyFromForeignKey(node);
+                        String key = primaryKey == null ? null : Collection.encodeKey(primaryKey, rel.getRelated().getPrimaryIndex(), true);
+
                         if(key != null)
                             link = Chain.buildLink(rel.getRelated(), key, null);
+                        else
+                            continue;
                     }
 
                     if(link == null)
@@ -93,7 +96,12 @@ public class LinksAction extends Action<LinksAction> {
 
         if (node.get("href") instanceof String){
             String href = (String)node.remove("href");
-            Rows.Row row = coll.decodeJsonKey((String) href);
+
+            if(href.startsWith("http://") || href.startsWith("https://")){
+                href = href.substring(href.lastIndexOf("/") + 1);
+            }
+
+            Map<String, Object> row = coll.decodeKeyToJsonNames((String) href);
             for (String key : row.keySet()) {
                 node.put(key, row.get(key));
             }
@@ -107,14 +115,18 @@ public class LinksAction extends Action<LinksAction> {
                     ((JSNode)value).asNodeList().forEach(child -> removeLinks(rel.getRelated(), child));
                 }else {
                     if (rel.isManyToOne()) {
-                        if (value != null) {
-
-                            Index fkIdx = rel.getFkIndex1();
-                            Index pkIdx = rel.getRelated().getPrimaryIndex();
-
-                            Rows.Row row = rel.getRelated().decodeJsonKey((String) value);
-                            for(int i=0; i<fkIdx.size(); i++){
-                                node.put(fkIdx.getPropertyName(i), row.get(i));
+                        if (value != null && value instanceof String) {
+                            String href = (String)value;
+                            if(href.startsWith("http://") || href.startsWith("https://")) {
+                                node.remove(rel.getName());
+                                href = href.substring(href.lastIndexOf("/") + 1);
+                                Map<String, Object> primaryKey = rel.getRelated().decodeKeyToJsonNames(href);
+                                Map<String, Object> foreignKey = rel.buildForeignKeyFromPrimaryKey(primaryKey);
+                                for(String key : foreignKey.keySet()){
+                                    if(!node.containsKey(key)){
+                                        node.put(key, foreignKey.get(key));
+                                    }
+                                }
                             }
                         }
                     } else {

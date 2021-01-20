@@ -117,7 +117,7 @@ public class HALAction extends Action<HALAction> {
 
         Collection coll        = req.getCollection();
         if(coll != null) {
-            String resourceKey = coll.encodeJsonKey(node);
+            String resourceKey = coll.encodeKeyFromJsonNames(node);
             if (resourceKey != null) {
                 JSNode links = new JSNode();
                 node.putFirst("_links", links);

@@ -132,7 +132,7 @@ public class DynamoDb extends Db<DynamoDb> {
         for (int i = 0; i < rows.size(); i++) {
             Map<String, Object> row = rows.get(i);
 
-            String key = table.encodeDbKey(row);
+            String key = table.encodeKeyFromColumnNames(row);
             keys.add(key);
 
             for (String attr : new ArrayList<>(row.keySet())) {
@@ -165,7 +165,7 @@ public class DynamoDb extends Db<DynamoDb> {
     }
 
     @Override
-    public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
+    public void doDelete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
         for (Map<String, Object> row : indexValues) {
             deleteRow(table, row);
         }

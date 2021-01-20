@@ -17,7 +17,10 @@
 package io.inversion.utils;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.Test;
+
+import java.util.Stack;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -422,6 +425,37 @@ public class JSNodeTest {
         JSNode test = new JSNode();
         test.put("test", test);
         JSArray found = test.findAll("**.*");
+    }
+
+//    @Test
+//    public void testVisit(){
+//        JSNode parent = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testVisit.json")));
+//        parent.visit(new JSNode.JSNodeVisitor() {
+//            public boolean visit(JSNode node, String key, Object value, Stack<Triple<JSNode, String, Object>> path) {
+//                if(key.equals("$ref") && value instanceof String){
+//                    if(((String)value).startsWith("#")){
+//                        Object found = parent.find((String)value);
+//                        if(found != null){
+//                            System.out.println("Sasdfasd");
+//                        }
+//                    }
+//                }
+//                return true;
+//            }
+//        });
+//    }
+
+    @Test
+    public void test_find_withJsonPointerAndNodeBody() {
+        JSNode node = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testVisit.json")));
+        Object found = node.find("#/data[0]/territories[0]/region");
+        assertNotNull(found);
+    }
+    @Test
+    public void test_find_withJsonPointerAndArrayBody() {
+        JSNode node = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("test_find_withJsonPointerAndArrayBody.json")));
+        Object found = node.find("#/[0]/territories[0]/region");
+        assertNotNull(found);
     }
 
 }

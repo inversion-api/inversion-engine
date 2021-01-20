@@ -262,11 +262,10 @@ public class Request implements JSNode.JSAccessor {
     }
 
     public boolean isDebug() {
-        String url = getUrl().toString();
-        if (url.indexOf("://localhost/") > 0)
+        String host = getUrl().getHost().toLowerCase();
+        if("127.0.0.1".equals(host))
             return true;
-
-        if (url.indexOf("://127.0.0.1/") > 0)
+        if("localhost".equals(host))
             return true;
 
         if (getApi() != null)
@@ -319,6 +318,7 @@ public class Request implements JSNode.JSAccessor {
      * <ol>
      *   <li>if getBody() is a JSArray return it.
      *   <li>if getBody() is a JSNode with a "data" array prop, return it
+     *   <li>if getBody() is a JSNode with a "_embedded" array prop, return it
      *   <li>if getBody() is a JSNode wrap it in an array and return it.
      *   <li>if getBody() is not a JSNode and getBody() is null, return an empty array.
      * </ol>
@@ -332,6 +332,8 @@ public class Request implements JSNode.JSAccessor {
                 return (JSArray) node;
             } else if (node.get("data") instanceof JSArray) {
                 return node.getArray("data");
+            } else if (node.get("_embedded") instanceof JSArray) {
+                return node.getArray("_embedded");
             } else {
                 return new JSArray(node);
             }

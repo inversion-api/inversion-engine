@@ -49,7 +49,7 @@ public class SqlServerRqlUnitTest extends AbstractSqlQueryRqlTest {
         withExpectedResult("or", "SELECT \"orders\".* FROM \"orders\" WHERE (\"orders\".\"shipCity\" = ? OR \"orders\".\"shipCity\" = ?) ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[Reims, Charleroi]");
         withExpectedResult("not", "SELECT \"orders\".* FROM \"orders\" WHERE NOT ((\"orders\".\"shipCity\" = ? OR \"orders\".\"shipCity\" = ?)) ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[Reims, Charleroi]");
         withExpectedResult("as", "SELECT \"orders\".*, \"orders\".\"orderid\" AS \"order_identifier\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
-        withExpectedResult("includes", "SELECT \"orders\".\"shipCountry\", \"orders\".\"shipCity\", \"orders\".\"orderId\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
+        withExpectedResult("includes", "SELECT \"orders\".\"shipCountry\", \"orders\".\"shipCity\" FROM \"orders\" ORDER BY \"orders\".\"shipCity\" ASC, \"orders\".\"shipCountry\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
         withExpectedResult("distinct", "SELECT DISTINCT \"orders\".\"shipCountry\", \"orders\".\"orderId\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
         //      .withResult("count1", "");
         //      .withResult("count2", "");

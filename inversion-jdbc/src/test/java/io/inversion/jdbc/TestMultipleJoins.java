@@ -80,7 +80,7 @@ public class TestMultipleJoins {
         res = engine.get("crm/customers?identifiers.providerCode=vendorD_1&identifiers.identifier=SHARED");
         res.dump();
         assertEquals(res.getData().size(), 1);
-        assertEquals("http://localhost/crm/customers/1", res.find("data.0.href"));
+        assertEquals(1, res.findInt("data.0.id"));
 
     }
 }

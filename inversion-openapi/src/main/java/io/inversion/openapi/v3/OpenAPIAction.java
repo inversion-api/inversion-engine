@@ -60,7 +60,9 @@ public class OpenAPIAction<A extends OpenAPIAction> extends Action<A> {
     }
 
     public JSNode writeOpenAPI(OpenAPI openApi) {
-        return JSNode.parseJsonNode(Json.pretty(openApi));
+        String json = Json.pretty(openApi);
+        System.out.println(json);
+        return JSNode.parseJsonNode(json);
     }
 
     public OpenAPI generateOpenApi(Request req) {
