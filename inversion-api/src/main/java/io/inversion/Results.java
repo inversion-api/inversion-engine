@@ -138,19 +138,19 @@ public class Results<M extends Map<String, Object>> implements Iterable<M> {
         return this;
     }
 
-    public boolean isDryRun() {
-        return query.isDryRun();
-    }
-
-    public String getDebugQuery() {
-        return debugQuery;
-    }
-
-    public Results withDebugQuery(String debugQuery) {
-        LAST_QUERY = debugQuery;
-        this.debugQuery = debugQuery;
-        return this;
-    }
+//    public boolean isDryRun() {
+//        return query.isDryRun();
+//    }
+//
+//    public String getDebugQuery() {
+//        return debugQuery;
+//    }
+//
+//    public Results withDebugQuery(String debugQuery) {
+//        LAST_QUERY = debugQuery;
+//        this.debugQuery = debugQuery;
+//        return this;
+//    }
 
     public String getTestQuery() {
         return testQuery;

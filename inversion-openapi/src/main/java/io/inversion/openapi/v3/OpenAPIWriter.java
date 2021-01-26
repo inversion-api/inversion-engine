@@ -1,8 +1,29 @@
+/*
+ * Copyright (c) 2015-2021 Rocket Partners, LLC
+ * https://github.com/inversion-api
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.inversion.openapi.v3;
 
 import com.github.curiousoddman.rgxgen.RgxGen;
 import com.github.curiousoddman.rgxgen.iterators.StringIterator;
 import io.inversion.*;
+import io.inversion.Collection;
+import io.inversion.action.security.AuthAction;
+import io.inversion.action.security.AuthScheme;
+import io.inversion.action.security.schemes.ApiKeyScheme;
+import io.inversion.action.security.schemes.BearerScheme;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 import io.swagger.v3.oas.models.*;
@@ -15,64 +36,80 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
-import org.apache.commons.collections.map.MultiKeyMap;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static io.swagger.v3.oas.models.security.SecurityScheme.*;
 
 public class OpenAPIWriter {
 
     protected List<String> ignoredEndpointTokens = Utils.add(new ArrayList(), ".json", ".yaml", ".html", ".xml");
-
     List<OpToDoc>          opsToDoc       = new ArrayList();
 
     protected String getDescription() {
         return Utils.read(Utils.findInputStream("description.md"));
     }
 
-    public OpenAPI writeOpenAPI(Request req) throws ApiException {
-        return writeOpenAPI0(req);
-    }
-
-    final OpenAPI writeOpenAPI0(Request req) throws ApiException {
+    public OpenAPI writeOpenAPI(Request req, OpenAPI openApi) throws ApiException {
 
         buildOpsToDoc(req);
 
-        OpenAPI openApi = new OpenAPI();
         documentInfo(openApi, req);
         documentServers(openApi, req);
         documentSchemas(openApi, req);
-        documentPathItems(openApi);
+        documentPathItems(openApi, opsToDoc);
         documentOperations(openApi, opsToDoc);
+        documentSecurity(openApi, opsToDoc);
 
         return openApi;
     }
 
     protected void documentInfo(OpenAPI openApi, Request req) {
-        Info info = new Info();
-        openApi.setInfo(info);
+        Info info = openApi.getInfo();
+        if(info == null) {
+            info = new Info();
+            openApi.setInfo(info);
+        }
 
-        String version = req.getApi().getVersion();
-        if (version == null)
-            version = "1";
-        info.setVersion(version);
-        info.setTitle(req.getApi().getName());
-        info.setDescription(getDescription());
+        if(info.getVersion() == null) {
+            String version = req.getApi().getVersion();
+            if (version == null)
+                version = "1";
+            info.setVersion(version);
+        }
+        if(info.getTitle() == null)
+            info.setTitle(req.getApi().getName());
+
+        if(info.getDescription() == null){
+            info.setDescription(getDescription());
+        }
     }
 
     protected void documentServers(OpenAPI openApi, Request req) {
-        Server server = new Server();
-        String url    = req.getApiPath().toString();
-        server.setUrl("/" + url);
-        openApi.setServers(Utils.add(new ArrayList(), server));
+        if(openApi.getServers() == null){
+            Server server = new Server();
+            String url    = req.getApiPath().toString();
+            server.setUrl("/" + url);
+            openApi.setServers(Utils.add(new ArrayList(), server));
+        }
     }
 
     protected void documentSchemas(OpenAPI openApi, Request req) {
 
-        openApi.setComponents(new Components());//-- prevents NPE
+        Components comps = openApi.getComponents();
+        if (comps == null) {
+            comps = new Components();
+            openApi.setComponents(comps);
+        }
+
+        Map<String, Schema> schemas = comps.getSchemas();
+        if(schemas == null){
+            schemas = new HashMap<>();
+            comps.setSchemas(schemas);
+        }
 
         documentErrorSchema(openApi);
         documentCollectionLinksSchema(openApi);
@@ -87,7 +124,128 @@ public class OpenAPIWriter {
         }
     }
 
+    protected void documentSecurity(OpenAPI openApi, List<OpToDoc> opsToDoc) {
+        Components components = openApi.getComponents();
+        Map<String, SecurityScheme> securitySchemes = new HashMap();
+
+        boolean allTheSame = true;
+        String lastSecReqs = null;
+
+        for(OpToDoc doc : opsToDoc) {
+
+            if(doc.operation == null)
+                continue;
+
+            List<SecurityRequirement> opSecurity = new ArrayList();
+
+            for(Chain.ActionMatch match : doc.req.getActionMatches()){
+                Action action = match.getAction();
+                if (action instanceof AuthAction) {
+                    List<AuthScheme> schemes = ((AuthAction)action).getAuthSchemes();
+
+
+                    for(AuthScheme ss : schemes) {
+                        if (ss instanceof BearerScheme) {
+                            String              name   = ss.getName();
+                            SecurityRequirement secReq = new SecurityRequirement();
+                            opSecurity.add(secReq);
+                            secReq.addList(name);
+
+                            if (!securitySchemes.containsKey(name)) {
+                                SecurityScheme oasSS = new SecurityScheme();
+                                oasSS.setDescription(getDescription(ss, null));
+                                oasSS.setType(Type.HTTP);
+                                oasSS.setScheme(ss.getScheme());
+                                oasSS.setBearerFormat(ss.getBarerFormat());
+                                securitySchemes.put(name, oasSS);
+                            }
+                        } else if (ss instanceof ApiKeyScheme) {
+
+                            SecurityRequirement secReq = new SecurityRequirement();
+                            opSecurity.add(secReq);
+
+                            for (io.inversion.Parameter param : ss.getParameters()) {
+                                String name = ss.getName() + "_" + param.getName();
+                                secReq.addList(name);
+
+                                if (!securitySchemes.containsKey(name)) {
+                                    SecurityScheme oasSS = new SecurityScheme();
+                                    oasSS.setDescription(getDescription(ss, param));
+                                    oasSS.setType(Type.APIKEY);
+                                    oasSS.setName(param.getName());
+
+                                    String in = param.getIn();
+                                    if (in.equalsIgnoreCase("header"))
+                                        oasSS.setIn(In.HEADER);
+                                    if (in.equalsIgnoreCase("query"))
+                                        oasSS.setIn(In.QUERY);
+                                    if (in.equalsIgnoreCase("cookie"))
+                                        oasSS.setIn(In.COOKIE);
+
+                                    oasSS.setDescription(getDescription(ss, param));
+                                    securitySchemes.put(name, oasSS);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(lastSecReqs == null) {
+                lastSecReqs = opSecurity.toString();
+            }
+            else if(allTheSame){
+                String newSecReqs = opSecurity.toString();
+                if(!lastSecReqs.equals(newSecReqs)){
+                    allTheSame = false;
+                }
+            }
+            if(opSecurity.size() > 0)
+                doc.securityRequirements = opSecurity;
+        }
+
+        //-- don't overwrite something that a potentially overridden Operation construction method set.
+        Map oasSs = components.getSecuritySchemes();
+        if(oasSs == null)
+            oasSs = new LinkedHashMap();
+
+        for(String key : securitySchemes.keySet()){
+            if(!oasSs.containsKey(key))
+                oasSs.put(key, securitySchemes.get(key));
+        }
+        components.setSecuritySchemes(oasSs);
+
+        if(allTheSame && opsToDoc.size() > 0){
+            openApi.setSecurity(opsToDoc.get(0).securityRequirements);
+        }else
+        {
+            for(OpToDoc opToDoc : opsToDoc){
+                if(opToDoc.operation == null)
+                    continue;
+                if(opToDoc.operation.getSecurity() == null)
+                    opToDoc.operation.setSecurity(opToDoc.securityRequirements);
+            }
+        }
+    }
+
+    protected String getDescription(AuthScheme scheme, io.inversion.Parameter param){
+        String schemeDesc = scheme.getDescription();
+        String paramDesc = param == null ? null : param.getDescription();
+        if(schemeDesc == null && paramDesc == null)
+            return null;
+
+        if(schemeDesc != null && paramDesc != null)
+            return schemeDesc + " " + paramDesc;
+        if(schemeDesc != null)
+            return schemeDesc;
+        return paramDesc;
+    }
+
+
     protected void documentErrorSchema(OpenAPI openApi){
+        if(openApi.getComponents().getSchemas().get("error") != null)
+            return;
+
         Schema schema = new Schema();
         openApi.getComponents().addSchemas("error", schema);
 
@@ -97,6 +255,9 @@ public class OpenAPIWriter {
     }
 
     protected void documentCollectionLinksSchema(OpenAPI openApi) {
+        if(openApi.getComponents().getSchemas().get("_links") != null)
+            return;
+
         Schema schema = new Schema();
         openApi.getComponents().addSchemas("_links", schema);
 
@@ -109,6 +270,9 @@ public class OpenAPIWriter {
     }
 
     protected void documentResourceSchemas(OpenAPI openApi, Collection coll) {
+
+        if(openApi.getComponents().getSchemas().get(coll.getSingularDisplayName()) != null)
+            return;
 
         Schema schema = new Schema();
         openApi.getComponents().addSchemas(coll.getSingularDisplayName(), schema);
@@ -160,8 +324,12 @@ public class OpenAPIWriter {
 
     protected void documentCollectionSchemas(OpenAPI openApi, Collection coll) {
 
+        String name = "Get" + coll.getPluralDisplayName() + "Result";
+        if(openApi.getComponents().getSchemas().get(name) != null)
+            return;
+
         Schema schema = new Schema();
-        openApi.getComponents().addSchemas("Get" + coll.getPluralDisplayName() + "Result", schema);
+        openApi.getComponents().addSchemas(name, schema);
 
         schema.addProperties("_links", newComponentRefSchema("_links"));
         schema.addProperties("page", newTypeSchema("number"));
@@ -174,9 +342,10 @@ public class OpenAPIWriter {
         schema.addProperties("_embedded", embedded);
     }
 
-    protected void documentPathItems(OpenAPI openApi) {
+    protected void documentPathItems(OpenAPI openApi, List<OpToDoc> opsToDoc) {
 
-        openApi.setPaths(new Paths());//--prevents an NPE for uninitialized paths
+        if(openApi.getPaths() == null)
+            openApi.setPaths(new Paths());//--prevents an NPE for uninitialized paths
 
         for (OpToDoc opToDoc : opsToDoc) {
             String   path     = opToDoc.operationPath;
@@ -189,8 +358,13 @@ public class OpenAPIWriter {
 
     protected void documentPathItem(OpenAPI openApi, OpToDoc opToDoc) {
 
-        PathItem pathItem = new PathItem();
-        openApi.getPaths().addPathItem(opToDoc.operationPath, pathItem);
+        PathItem pathItem = openApi.getPaths().get(opToDoc.operationPath);
+        if(pathItem == null){
+            pathItem = new PathItem();
+            openApi.getPaths().addPathItem(opToDoc.operationPath, pathItem);
+        }
+
+
 
         String  operationPath = opToDoc.operationPath;
         Path    pathMatch     = opToDoc.matchPath;
@@ -233,18 +407,28 @@ public class OpenAPIWriter {
                 param.setRequired(true);
                 param.setSchema(schema);
 
-                pathItem.addParametersItem(param);
+                boolean hasParam = false;
+                if(pathItem.getParameters() != null){
+                    for(Parameter existing : pathItem.getParameters()){
+                        if(name.equalsIgnoreCase(existing.getName()) && param.getIn().equalsIgnoreCase(existing.getIn())){
+                            hasParam = true;
+                            break;
+                        }
+                    }
+                }
+                if(!hasParam)
+                    pathItem.addParametersItem(param);
             }
         }
     }
 
     protected void documentOperations(OpenAPI openApi, List<OpToDoc> opsToDoc) {
         for (OpToDoc opToDoc : opsToDoc) {
-            documentOperation(openApi, opToDoc);
+            documentOperation(openApi, opsToDoc, opToDoc);
         }
     }
 
-    protected void documentOperation(OpenAPI openApi, OpToDoc opToDoc) {
+    protected void documentOperation(OpenAPI openApi, List<OpToDoc> opsToDoc, OpToDoc opToDoc) {
             switch (opToDoc.function.toLowerCase()) {
                 case "list":
                     documentList(openApi, opToDoc);
@@ -253,7 +437,7 @@ public class OpenAPIWriter {
                     documentGet(openApi, opToDoc);
                     break;
                 case "related":
-                    documentRelated(openApi, opToDoc);
+                    documentRelated(openApi, opsToDoc, opToDoc);
                     break;
                 case "post":
                     documentPost(openApi, opToDoc);
@@ -290,8 +474,11 @@ public class OpenAPIWriter {
         String description = "A specific " + coll.getSingularDisplayName() + " object";
         String schemaName = coll.getSingularDisplayName();
 
-        Operation op = buildOperation(opToDoc, description, "200", schemaName);
-        openApi.getPaths().get(opToDoc.operationPath).setGet(op);
+        Operation op = openApi.getPaths().get(opToDoc.operationPath).getGet();
+        if(op == null){
+            op = buildOperation(opToDoc, description, "200", schemaName);
+            openApi.getPaths().get(opToDoc.operationPath).setGet(op);
+        }
 
         withParams(op, opToDoc,"include", "exclude", "expand", "collapse");
         withResponse(op, opToDoc, "404");
@@ -307,13 +494,16 @@ public class OpenAPIWriter {
         String description = "A pageable list of all " + coll.getSingularDisplayName() + " resources the user has access to and also match any query parameters.  The list may be empty.";
         String schemaName = "Get" + coll.getPluralDisplayName() + "Result";
 
-        Operation op = buildOperation(opToDoc, description, "200", schemaName);
-        openApi.getPaths().get(opToDoc.operationPath).setGet(op);
+        Operation op = openApi.getPaths().get(opToDoc.operationPath).getGet();
+        if(op == null){
+            op = buildOperation(opToDoc, description, "200", schemaName);
+            openApi.getPaths().get(opToDoc.operationPath).setGet(op);
+        }
 
         withParams(op, opToDoc,"page", "size", "sort", "q", "include", "exclude", "expand");
     }
 
-    protected void documentRelated(OpenAPI openApi, OpToDoc opToDoc) {
+    protected void documentRelated(OpenAPI openApi, List<OpToDoc> opsToDoc, OpToDoc opToDoc) {
 
         if (opToDoc.req.getCollection() == null)
             return;
@@ -324,10 +514,12 @@ public class OpenAPIWriter {
         String description = "Retrieves all of the " + related.getPluralDisplayName() + " related to the " + parent.getSingularDisplayName();
         String schemaName = "Get" + parent.getPluralDisplayName() + "Result";
 
-        Operation op = buildOperation(opToDoc, description, "200", schemaName);
-        openApi.getPaths().get(opToDoc.operationPath).setGet(op);
-
-        withParams(op, opToDoc,"page", "size", "sort", "q", "include", "exclude", "expand");
+        Operation op = openApi.getPaths().get(opToDoc.operationPath).getGet();
+        if(op == null){
+            op = buildOperation(opToDoc, description, "200", schemaName);
+            openApi.getPaths().get(opToDoc.operationPath).setGet(op);
+            withParams(op, opToDoc,"page", "size", "sort", "q", "include", "exclude", "expand");
+        }
 
         //-- adds this relationship to the {collection}/{resource} endpoint parent
         for(OpToDoc temp : opsToDoc){
@@ -367,8 +559,11 @@ public class OpenAPIWriter {
         String description = "Creates a new " + coll.getSingularDisplayName() + " resource.";
         String schemaName = coll.getSingularDisplayName();
 
-        Operation op = buildOperation(opToDoc, description, "201", schemaName);
-        openApi.getPaths().get(opToDoc.operationPath).setPost(op);
+        Operation op = openApi.getPaths().get(opToDoc.operationPath).getPost();
+        if(op == null){
+            op = buildOperation(opToDoc, description, "201", schemaName);
+            openApi.getPaths().get(opToDoc.operationPath).setPost(op);
+        }
     }
 
     protected void documentPut(OpenAPI openApi, OpToDoc opToDoc) {
@@ -381,10 +576,14 @@ public class OpenAPIWriter {
         String description = "Updates an existing " + coll.getSingularDisplayName() + " resource.  Properties of the existing resource that are not supplied in the request body will not be updated.";
         String schemaName = coll.getSingularDisplayName();
 
-        Operation op = buildOperation(opToDoc, description, "201", schemaName);
-        openApi.getPaths().get(opToDoc.operationPath).setPut(op);
+        Operation op = openApi.getPaths().get(opToDoc.operationPath).getPost();
+        if(op == null){
+            op = buildOperation(opToDoc, description, "201", schemaName);
+            openApi.getPaths().get(opToDoc.operationPath).setPut(op);
+            withResponse(op, opToDoc, "404");
+        }
 
-        withResponse(op, opToDoc, "404");
+
 
         //--TODO: add this operation as a link to GET
     }
@@ -406,14 +605,17 @@ public class OpenAPIWriter {
         Collection coll = opToDoc.req.getCollection();
         String description = "Deletes an existing " + coll.getSingularDisplayName() + " resource.";
 
-        Operation op = buildOperation(opToDoc, description, "204", null);
-        withResponse(op,opToDoc, "404");
-
-        openApi.getPaths().get(opToDoc.operationPath).setDelete(op);
+        Operation op = openApi.getPaths().get(opToDoc.operationPath).getPost();
+        if(op == null){
+            op = buildOperation(opToDoc, description, "204", null);
+            openApi.getPaths().get(opToDoc.operationPath).setDelete(op);
+            withResponse(op,opToDoc, "404");
+        }
     }
 
     protected Operation buildOperation(OpToDoc opToDoc, String description, String status, String schemaName){
         Operation op = new Operation().responses(new ApiResponses()).description(description);
+        opToDoc.operation = op;
         op.setOperationId(opToDoc.operationId);
         withResponse(op, opToDoc, status, null, schemaName);
 
@@ -478,7 +680,9 @@ public class OpenAPIWriter {
             response.content(new Content().addMediaType("application/json",
                     new MediaType().schema(newComponentRefSchema(schemaName))));
 
-        op.getResponses().addApiResponse(status, response);
+        if(op.getResponses().get(status) == null){
+            op.getResponses().addApiResponse(status, response);
+        }
 
         return this;
     }
@@ -491,7 +695,8 @@ public class OpenAPIWriter {
             page.setDescription("The optional value used to compute the 'offset' of the first resource returned as 'offset'='page'*'limit'.  If an 'offset' parameter is also supplied it will be used instead of the 'page' parameter.");
             page.setName("page");
             page.setIn("query");
-            op.addParametersItem(page);
+            if(!hasParameter(op, page))
+                op.addParametersItem(page);
         }
 
         if(Utils.in("size", params)) {
@@ -500,7 +705,8 @@ public class OpenAPIWriter {
             size.setSchema(newTypeSchema("string"));
             size.setName("size");
             size.setIn("query");
-            op.addParametersItem(size);
+            if(!hasParameter(op, size))
+                op.addParametersItem(size);
         }
 
         if(Utils.in("sort", params)) {
@@ -509,7 +715,8 @@ public class OpenAPIWriter {
             sort.setSchema(newTypeSchema("string"));
             sort.setName("sort");
             sort.setIn("query");
-            op.addParametersItem(sort);
+            if(!hasParameter(op, sort))
+                op.addParametersItem(sort);
         }
         if(Utils.in("q", params)) {
             Parameter q    = new Parameter();
@@ -520,7 +727,8 @@ public class OpenAPIWriter {
             q.setSchema(newTypeSchema("string"));
             q.setName("q");
             q.setIn("query");
-            op.addParametersItem(q);
+            if(!hasParameter(op, q))
+                op.addParametersItem(q);
         }
         if(Utils.in("include", params)) {
             Parameter includes = new Parameter();
@@ -528,7 +736,8 @@ public class OpenAPIWriter {
             includes.setSchema(newTypeSchema("string"));
             includes.setName("include");
             includes.setIn("query");
-            op.addParametersItem(includes);
+            if(!hasParameter(op, includes))
+                op.addParametersItem(includes);
         }
         if(Utils.in("exclude", params)) {
             Parameter excludes = new Parameter();
@@ -536,7 +745,8 @@ public class OpenAPIWriter {
             excludes.setSchema(newTypeSchema("string"));
             excludes.setName("exclude");
             excludes.setIn("query");
-            op.addParametersItem(excludes);
+            if(!hasParameter(op, excludes))
+                op.addParametersItem(excludes);
         }
 
         if(Utils.in("expand", params)) {
@@ -545,10 +755,21 @@ public class OpenAPIWriter {
             expands.setSchema(newTypeSchema("string"));
             expands.setName("expand");
             expands.setIn("query");
-            op.addParametersItem(expands);
+            if(!hasParameter(op, expands))
+                op.addParametersItem(expands);
         }
 
         return this;
+    }
+
+    boolean hasParameter(Operation op, Parameter param){
+        if(op.getParameters() == null)
+            return false;
+        for(Parameter existing : op.getParameters()){
+            if(param.getName().equalsIgnoreCase(existing.getName()) && param.getIn().equalsIgnoreCase(existing.getIn()))
+                return true;
+        }
+        return false;
     }
 
 
@@ -747,7 +968,7 @@ public class OpenAPIWriter {
                 String regex   = path.getRegex(i);
                 Index  pk      = coll.getPrimaryIndex();
                 if (pk != null && pk.size() == 1) {
-                    varName = pk.getPropertyName(0);
+                    varName = pk.getJsonName(0);
                     regex = regex != null ? regex : pk.getProperty(0).getRegex();
                 } else {
                     varName = "id";
@@ -871,6 +1092,8 @@ public class OpenAPIWriter {
         Path   matchPath   = null;
         String  operationPath = null;
         Request req           = null;
+        Operation operation = null;
+        List<SecurityRequirement> securityRequirements = new ArrayList();
 
         public OpToDoc(String function, Path matchPath, Request req) {
             this.function = function;

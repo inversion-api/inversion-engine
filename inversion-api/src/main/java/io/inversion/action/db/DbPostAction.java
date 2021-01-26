@@ -21,7 +21,6 @@ import io.inversion.*;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.keyvalue.MultiKey;
 import org.apache.commons.collections4.map.MultiKeyMap;
@@ -527,10 +526,10 @@ public class DbPostAction extends Action<DbPostAction> {
         //TODO add support for keys of different lengths
         LinkedHashMap<String, Object> key = new LinkedHashMap<>();
         for(int i=0; i<index.size(); i++){
-            Object value = node.get(index.getPropertyName(i));
+            Object value = node.get(index.getJsonName(i));
             if(value == null)
                 throw new ApiException("Foreign key component can not be null.");
-            key.put(index.getPropertyName(i), value);
+            key.put(index.getJsonName(i), value);
         }
         return key;
     }
@@ -544,10 +543,10 @@ public class DbPostAction extends Action<DbPostAction> {
 
         LinkedHashMap<String, Object> foreignKey = new LinkedHashMap<>();
         for(int i=0; i<fromIndex.size(); i++){
-            Object value = node.get(fromIndex.getPropertyName(i));
+            Object value = node.get(fromIndex.getJsonName(i));
             if(value == null)
                 throw new ApiException("Foreign key component can not be null.");
-            foreignKey.put(toIndex.getPropertyName(i), value);
+            foreignKey.put(toIndex.getJsonName(i), value);
         }
         return foreignKey;
     }

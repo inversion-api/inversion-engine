@@ -91,7 +91,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         debug = debug.replaceAll("\r", "");
         debug = debug.replaceAll("\n", " ");
         debug = debug.replaceAll(" +", " ");
-        Chain.debug(debug);
+        //Chain.debug(debug);
         results.withTestQuery(debug);
 
         if (!isDryRun()) {

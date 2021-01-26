@@ -22,7 +22,6 @@ import io.inversion.rql.Page;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
@@ -40,8 +39,8 @@ public class DbGetAction extends Action<DbGetAction> {
 
     protected static String getForeignKey(Relationship rel, JSNode node) {
         Index idx = rel.getFkIndex1();
-        if(idx.size() == 1 && node.get(idx.getPropertyName(0)) != null)
-            return node.getString(idx.getPropertyName(0));
+        if(idx.size() == 1 && node.get(idx.getJsonName(0)) != null)
+            return node.getString(idx.getJsonName(0));
 
         String key = rel.getCollection().encodeKeyFromJsonNames(node, rel.getFkIndex1());
         return key;
@@ -128,7 +127,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
                     for (int i = 0; i < fkIdx.size(); i++) {
                         Property fk     = fkIdx.getProperty(i);
-                        String pkName = pkIdx.getPropertyName(i);
+                        String pkName = pkIdx.getJsonName(i);
                         Object   pkVal  = resourceKeyRow.get(pkName);
 
                         if (pkVal == null)

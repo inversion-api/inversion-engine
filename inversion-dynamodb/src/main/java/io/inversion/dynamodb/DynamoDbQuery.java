@@ -213,7 +213,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             debug.append(" key: ").append(gis.getKeyComponents());
 
             result.withTestQuery(debug.toString());
-            Chain.debug(debug);
+            Chain.debug(debug.toString());
 
             if (!isDryRun()) {
                 Item item = dynamoTable.getItem(gis);
@@ -251,7 +251,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 debug.append(" scanIndexForward=false");
 
             result.withTestQuery(debug.toString());
-            Chain.debug(debug);
+            Chain.debug(debug.toString());
 
             if (!isDryRun()) {
                 ItemCollection<QueryOutcome> queryResult = dynamoIndex != null ? dynamoIndex.query(qs) : dynamoTable.query(qs);
@@ -285,7 +285,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 debug.append(" exclusiveStartKey='").append(ss.getExclusiveStartKey());
 
             result.withTestQuery(debug.toString());
-            Chain.debug(debug);
+            Chain.debug(debug.toString());
 
             if (!isDryRun()) {
                 ItemCollection<ScanOutcome> scanResult = dynamoIndex != null ? dynamoIndex.scan(ss) : dynamoTable.scan(ss);

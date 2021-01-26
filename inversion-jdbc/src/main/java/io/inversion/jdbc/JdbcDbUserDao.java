@@ -19,7 +19,6 @@ package io.inversion.jdbc;
 import io.inversion.ApiException;
 import io.inversion.User;
 import io.inversion.action.security.AuthAction;
-import io.inversion.action.security.AuthAction.JwtUserDao;
 import io.inversion.utils.Config;
 import io.inversion.utils.Rows;
 import io.inversion.utils.Rows.Row;
@@ -42,7 +41,7 @@ import java.util.List;
  * environment var or system prop.
  * <p>
  * In this model, Users, Groups, and Roles can all be
- * assigned Permissions.  Users can Groups can both
+ * assigned Permissions.  Users and Groups can both
  * be assigned Roles and Users can be assigned to Groups.
  * This means users can be assigned permissions through
  * any one of the following relationship paths.
@@ -54,7 +53,7 @@ import java.util.List;
  * </ol>
  * See users-h2.ddl for full underlying schema
  */
-public class JdbcDbUserDao extends JwtUserDao {
+public class JdbcDbUserDao implements AuthAction.UserDao {
     /**
      * Optional name param that is used for $name.salt
      * parameter configuration.
@@ -71,46 +70,9 @@ public class JdbcDbUserDao extends JwtUserDao {
         withDb(db);
     }
 
-    public static String strongHash(Object salt, String password) throws ApiException {
-        try {
-            int           iterationNb = 1000;
-            MessageDigest digest      = MessageDigest.getInstance("SHA-512");
-            digest.reset();
-            digest.update(salt.toString().getBytes());
-            byte[] input = digest.digest(password.getBytes(StandardCharsets.UTF_8));
-            for (int i = 0; i < iterationNb; i++) {
-                digest.reset();
-                input = digest.digest(input);
-            }
-
-            return Base64.encodeBase64String(input).trim();
-        } catch (Exception ex) {
-            throw new ApiException(ex);
-        }
-    }
-
-    public static String weakHash(String password) {
-        try {
-            byte[]        byteArr = password.getBytes();
-            MessageDigest digest  = MessageDigest.getInstance("MD5");
-            digest.update(byteArr);
-            byte[] bytes = digest.digest();
-            return (new HexBinaryAdapter()).marshal(bytes);
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    protected boolean checkPassword(String actual, String supplied) {
-        String salt = getSalt();
-        if (salt == null) {
-            throw ApiException.new500InternalServerError("You must configure a salt value for password hashing.");
-        }
-
-        String strongHash = strongHash(salt, supplied);
-        String weakHash   = weakHash(supplied);
-
-        return actual.equals(strongHash) || actual.equals(weakHash);
+    @Override
+    public User getUser(AuthAction action, String jwt, String apiName, String tenant) throws ApiException {
+        return null;
     }
 
     public User getUser(AuthAction action, String username, String suppliedPassword, String apiName, String tenant) throws ApiException {
@@ -157,6 +119,50 @@ public class JdbcDbUserDao extends JwtUserDao {
 
         return user;
     }
+
+    public static String strongHash(Object salt, String password) throws ApiException {
+        try {
+            int           iterationNb = 1000;
+            MessageDigest digest      = MessageDigest.getInstance("SHA-512");
+            digest.reset();
+            digest.update(salt.toString().getBytes());
+            byte[] input = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+            for (int i = 0; i < iterationNb; i++) {
+                digest.reset();
+                input = digest.digest(input);
+            }
+
+            return Base64.encodeBase64String(input).trim();
+        } catch (Exception ex) {
+            throw new ApiException(ex);
+        }
+    }
+
+    public static String weakHash(String password) {
+        try {
+            byte[]        byteArr = password.getBytes();
+            MessageDigest digest  = MessageDigest.getInstance("MD5");
+            digest.update(byteArr);
+            byte[] bytes = digest.digest();
+            return (new HexBinaryAdapter()).marshal(bytes);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    protected boolean checkPassword(String actual, String supplied) {
+        String salt = getSalt();
+        if (salt == null) {
+            throw ApiException.new500InternalServerError("You must configure a salt value for password hashing.");
+        }
+
+        String strongHash = strongHash(salt, supplied);
+        String weakHash   = weakHash(supplied);
+
+        return actual.equals(strongHash) || actual.equals(weakHash);
+    }
+
+
 
     void populateGRP(User user, Rows rows) {
         for (Row row : rows) {

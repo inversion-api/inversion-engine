@@ -70,7 +70,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             @Override
             public void afterStmt(String method, String sql, Object args, Exception ex, Object result) {
-                String debugPrefix = "SqlDb: ";
+                String debugPrefix = "JdbcDb: ";
 
                 String debugType = "unknown";
 

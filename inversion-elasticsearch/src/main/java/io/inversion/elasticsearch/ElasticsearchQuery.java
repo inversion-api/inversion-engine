@@ -64,7 +64,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
         Results         results = new Results(this);
         ElasticsearchDb db      = getDb();
 
-        Chain.debug(collection);
+        Chain.debug(collection + "");
 
         //-- for test cases and query explain
         String debug = "ElasticsearchDb: index: " + collection.getName() + ", QueryBuilder=" + this.getJson();

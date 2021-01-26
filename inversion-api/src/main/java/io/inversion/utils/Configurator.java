@@ -138,14 +138,12 @@ public class Configurator {
             dump("properties found by encoding initial model", primaryEncoder.props);
 
             //-- reverse the encoder bean-to-name map to be used for decoding
-            Map<String, Object> beans = new HashMap();
-            for (Object bean : primaryEncoder.names.keySet())
-                beans.put(primaryEncoder.names.get(bean), bean);
+            Map<String, Object> beans = new HashMap(primaryEncoder.namesToObjects);
 
             //-- wires in all config properties to the existing model
             //-- including instantiating any beans that were not part of the initial model
             Decoder primaryDecoder = new Decoder();
-            primaryDecoder.beans.putAll(beans);
+            primaryDecoder.namesToObjects.putAll(primaryEncoder.namesToObjects);
             primaryDecoder.decode(configProps);
 
             dump("properties applied in primary decoding", primaryDecoder.applied);
@@ -153,7 +151,7 @@ public class Configurator {
             //-- this is a shortcut bootstrapping options for
             //-- apis configured primarily through configuration
             if (primaryDecoder.findBeans(Api.class).size() == 0)
-                primaryDecoder.beans.put("api", new Api());
+                primaryDecoder.namesToObjects.put("api", new Api());
 
             for (Api api : (List<Api>) primaryDecoder.findBeans(Api.class))
                 if (!engine.getApis().contains(api))
@@ -169,12 +167,12 @@ public class Configurator {
 
                     if(primaryDecoder.getBean("endpoint") == null)
                     {
-                        primaryDecoder.beans.put("endpoint", ep);
+                        primaryDecoder.namesToObjects.put("endpoint", ep);
                         ep.withName("endpoint");
                     }
                     if(primaryDecoder.getBean("action") == null)
                     {
-                        primaryDecoder.beans.put("action", action);
+                        primaryDecoder.namesToObjects.put("action", action);
                         action.withName("acton");
                     }
                     api.withEndpoint(ep);
@@ -196,9 +194,7 @@ public class Configurator {
             dump("re-encoded properties after db startup", secondaryEncoder.props);
 
             //-- reverse the encoder bean-to-name map to be used for decoding
-            beans = new HashMap();
-            for (Object bean : secondaryEncoder.names.keySet())
-                beans.put(secondaryEncoder.names.get(bean), bean);
+            beans = new HashMap(secondaryEncoder.namesToObjects);
 
             //-- remove all the props that were set in the
             //-- primary decoding so you don't apply them twice
@@ -206,7 +202,7 @@ public class Configurator {
                 configProps.remove(key);
 
             Decoder secondaryDecoder = new Decoder();
-            secondaryDecoder.beans.putAll(beans);
+            secondaryDecoder.namesToObjects.putAll(beans);
             secondaryDecoder.decode(configProps);
 
             for (Rule rule : secondaryDecoder.getBeans(Rule.class)) {
@@ -228,6 +224,10 @@ public class Configurator {
 
 
         } catch (Exception e) {
+            if(e instanceof ApiException)
+                throw (ApiException)e;
+
+            e.printStackTrace();
             throw ApiException.new500InternalServerError(e, "Error loading configuration.");
         }
     }
@@ -237,7 +237,7 @@ public class Configurator {
 
         static List<Field> excludeFields = new ArrayList<>();
         static List excludeTypes = Utils.asList(Logger.class, Configurator.class);
-        static MultiKeyMap<String, String> defaults = new MultiKeyMap();
+        static MultiKeyMap<Object, Object> defaults = new MultiKeyMap();
 
         /**
          * Encoding an object of this type will simply involve recording calling toString().
@@ -258,16 +258,17 @@ public class Configurator {
             STRINGIFIED_TYPES.add(Path.class);
         }
 
-        Map<String, String>                  props    = new HashMap();
-        Map<Object, String>         names    = new HashMap<>();
+        Set<Object>         encoded  = new HashSet();
+        Map<String, String> props          = new HashMap();
+        Map<Object, String> objectsToNames = new HashMap<>();
+        Map<String, Object> namesToObjects = new HashMap<>();
 
-        Set<String>                 encoded  = new HashSet();
 
         public String encode(Object object) throws Exception {
-            return encode0(object, props, names, defaults, encoded);
+            return encode0(object);
         }
 
-        static String encode0(Object object, Map<String, String>  props, Map<Object, String> names, MultiKeyMap defaults, Set encoded) throws Exception {
+        String encode0(Object object) throws Exception {
             try {
 
                 if (object == null)
@@ -276,171 +277,176 @@ public class Configurator {
                 if (STRINGIFIED_TYPES.contains(object.getClass()))
                     return object + "";
 
-                final String name = getName(object, names);
+                if(encoded.contains(object))
+                    return objectsToNames.get(object);
 
-                if (!encoded.contains(object)) {
-                    encoded.add(object); //recursion guard
+                encoded.add(object); //recursion guard
 
-                    List<Field> fields = Utils.getFields(object.getClass());
+                final String name = getName(object);
 
-                    if (!defaults.containsKey(object.getClass())) {
-                        Object clean        = null;
-                        try
-                        {
-                            for (Field field : fields) {
-                                if (!include(field))
-                                    continue;
+                List<Field> fields = Utils.getFields(object.getClass());
 
-                                if(clean == null)
-                                    clean = object.getClass().getDeclaredConstructor().newInstance();
-
-                                try {
-                                    Object defaultValue = field.get(clean);
-                                    String encodedDefault = new Encoder().encode(defaultValue);
-                                    defaults.put(object.getClass(), field.getName(), encodedDefault);
-                                } catch (Exception ex) {
-                                    log.debug("Unable to determine default value for {}: ", field, ex);
-                                    Object defaultValue = field.get(clean);
-                                }
-                            }
-                        }
-                        catch(Exception ex)//-- probably no empty constructor
-                        {
-                            //put this here so future encoders won't try to load defaults
-                            defaults.put(object.getClass(), "__none", "__none");
-                        }
-
-
-                    }
-
-                    for (Field field : fields) {
-
-                        try {
+                if (!defaults.containsKey(object.getClass())) {
+                    Object clean        = null;
+                    try
+                    {
+                        for (Field field : fields) {
                             if (!include(field))
                                 continue;
 
-                            Object value    = field.get(object);
-                            String fieldKey = name + "." + field.getName();
+                            if(clean == null)
+                                clean = object.getClass().getDeclaredConstructor().newInstance();
 
-                            if (value != null) {
-                                if (value.getClass().isArray())
-                                    value = Utils.asList(value);
-
-                                if (value instanceof java.util.Collection) {
-                                    if (((java.util.Collection) value).size() == 0)
-                                        continue;
-
-                                    List values = new ArrayList<>();
-                                    for (Object child : ((java.util.Collection) value)) {
-                                        String childKey = encode0(child, props, names, defaults, encoded);
-                                        values.add(childKey);
-                                    }
-
-                                    String encodedProp =  Utils.implode(",", values);
-                                    Object defaultProp = defaults.get(object.getClass(), field.getName());
-
-                                    if(!Utils.equal(encodedProp, defaultProp))
-                                        props.put(fieldKey, encodedProp );
-
-                                } else if (value instanceof Map) {
-                                    Map map = (Map) value;
-                                    if (map.size() == 0)
-                                        continue;
-
-                                    for (Object mapKey : map.keySet()) {
-                                        String encodedKey   = encode0(mapKey, props, names, defaults, encoded);
-                                        String encodedValue = encode0(map.get(mapKey), props, names, defaults, encoded);
-                                        props.put(fieldKey + "." + encodedKey, encodedValue);
-                                    }
-                                } else {
-                                    if (STRINGIFIED_TYPES.contains(value.getClass())) {
-                                        Object defaultVal = defaults.get(object.getClass(), field.getName());
-                                        if (defaultVal != null && defaultVal.equals(value))
-                                            continue;
-                                    } else if (!include(field))
-                                        continue;
-
-                                    String encodedProp =  encode0(value, props, names, defaults, encoded);
-                                    Object defaultProp = defaults.get(object.getClass(), field.getName());
-
-                                    if(!Utils.equal(encodedProp, defaultProp))
-                                        props.put(fieldKey, encodedProp );
-                                }
+                            try {
+                                Object defaultValue = field.get(clean);
+                                String encodedDefault = new Encoder().encode(defaultValue);
+                                defaults.put(object.getClass(), field.getName(), encodedDefault);
+                            } catch (Exception ex) {
+                                log.debug("Unable to determine default value for {}: ", field, ex);
+                                Object defaultValue = field.get(clean);
                             }
-                        } catch (Exception fieldEx) {
-                            log.warn("Skipping field encoding due to error: " + field, fieldEx);
                         }
                     }
+                    catch(Exception ex)//-- probably no empty constructor
+                    {
+                        //put this here so future encoders won't try to load defaults
+                        defaults.put(object.getClass(), "__none", "__none");
+                    }
                 }
+
+                for (Field field : fields) {
+
+                    try {
+                        if (!include(field))
+                            continue;
+
+                        Object value    = field.get(object);
+                        String fieldKey = name + "." + field.getName();
+
+                        if (value != null) {
+                            if (value.getClass().isArray())
+                                value = Utils.asList(value);
+
+                            if (value instanceof java.util.Collection) {
+                                if (((java.util.Collection) value).size() == 0)
+                                    continue;
+
+                                List values = new ArrayList<>();
+                                for (Object child : ((java.util.Collection) value)) {
+                                    String childKey = encode0(child);
+                                    values.add(childKey);
+                                }
+
+                                String encodedProp = Utils.implode(",", values);
+                                Object defaultProp = defaults.get(object.getClass(), field.getName());
+
+                                if (!Utils.equal(encodedProp, defaultProp))
+                                    props.put(fieldKey, encodedProp);
+
+                            } else if (value instanceof Map) {
+                                Map map = (Map) value;
+                                if (map.size() == 0)
+                                    continue;
+
+                                for (Object mapKey : map.keySet()) {
+                                    String encodedKey   = encode0(mapKey);
+                                    String encodedValue = encode0(map.get(mapKey));
+                                    props.put(fieldKey + "." + encodedKey, encodedValue);
+                                }
+                            } else {
+                                if (STRINGIFIED_TYPES.contains(value.getClass())) {
+                                    Object defaultVal = defaults.get(object.getClass(), field.getName());
+                                    if (defaultVal != null && defaultVal.equals(value))
+                                        continue;
+                                } else if (!include(field))
+                                    continue;
+
+                                String encodedProp = encode0(value);
+                                Object defaultProp = defaults.get(object.getClass(), field.getName());
+
+                                if (!Utils.equal(encodedProp, defaultProp))
+                                    props.put(fieldKey, encodedProp);
+                            }
+                        }
+//                    } catch (Exception fieldEx) {
+//                        //log.warn("Skipping field encoding due to error: " + field, fieldEx);
+//                    }
+                    } finally{
+
+                    }
+                }
+
                 return name;
-            } catch (Exception ex) {
-                log.warn("Error encoding " + object.getClass().getName() , ex);
-                throw ex;
+            } catch(ApiException ex){
+               throw ex;
+            }  catch (Exception ex) {
+                throw new ApiException(ex, Status.SC_500_INTERNAL_SERVER_ERROR, "Error encoding class {}", object.getClass().getName());
             }
         }
 
-        static String getName(Object object, Map<Object, String> names) throws Exception {
-            if (names.containsKey(object))
-                return names.get(object);
+        String getName(Object object) throws Exception {
 
-            String name = getName(object);
-            if (name != null) {
-                names.put(object, name);
-                return name;
-            }
+            if (objectsToNames.containsKey(object))
+                return objectsToNames.get(object);
 
-            name = "";
-
-            Field nameField = Utils.getField("name", object.getClass());
-            if (nameField != null) {
-                name = nameField.get(object) + "";
-            }
-
-            name = "_anonymous_" + object.getClass().getSimpleName() + "_" + name + "_" + names.size();
-            names.put(object, name);
-            return name;
-        }
-
-        static String getName(Object o) throws Exception {
             Object name  = null;
-            Class  clazz = o.getClass();
-            if (o instanceof Engine) {
-                name = "engine";
-            } else if (o instanceof Api) {
-                name = ((Api) o).getName();
-            } else if (o instanceof Db)// || o instanceof Action || o instanceof Endpoint)
-            {
-                name = Utils.getField("name", clazz).get(o);
-            } else if (o instanceof Collection) {
-                Collection t = (Collection) o;
-                if (t.getDb() != null)
-                    name = t.getDb().getName() + ".collections." + t.getTableName();
-            } else if (o instanceof Property) {
-                Property col = (Property) o;
+            Class  clazz = object.getClass();
+            if (object instanceof Engine) {
+                name = ((Engine) object).getName();
+                if(name == null)
+                    name = "engine";
+            } else if (object instanceof Api) {
+                name = ((Api) object).getName();
+            } else if (object instanceof Db) {
+                name = Utils.getField("name", clazz).get(object);
+            } else if (object instanceof Collection) {
+                Collection coll = (Collection) object;
+                if (coll.getDb() != null)
+                    name = coll.getDb().getName() + ".collections." + coll.getTableName();
+            } else if (object instanceof Property) {
+                Property col = (Property) object;
                 if (col.getCollection() != null && col.getCollection().getDb() != null)
                     name = col.getCollection().getDb().getName() + ".collections." + col.getCollection().getTableName() + ".properties." + col.getColumnName();
-            } else if (o instanceof Index) {
-                Index index = (Index) o;
+            } else if (object instanceof Index) {
+                Index index = (Index) object;
                 if (index.getCollection() != null && index.getCollection().getDb() != null)
                     name = index.getCollection().getDb().getName() + ".collections." + index.getCollection().getTableName() + ".indexes." + index.getName();
-            } else if (o instanceof Relationship) {
-                Relationship rel = (Relationship) o;
+            } else if (object instanceof Relationship) {
+                Relationship rel = (Relationship) object;
                 if (rel.getCollection() != null)
                     name = getName(rel.getCollection()) + ".relationships." + rel.getName();
             }
 
             if (name == null) {
                 try {
-                    name = Utils.getProperty("name", o);
+                    Method getter = Utils.getMethod(object.getClass(), "get" + name);
+                    if (getter != null) {
+                        name = getter.invoke(object);
+                    }
                 } catch (Throwable ex) {
-                    System.err.println("Unable to determine name for bean: " + o);
+                    throw new ApiException(ex, Status.SC_500_INTERNAL_SERVER_ERROR, "Unable to determine name for object '{}'", object);
                 }
             }
 
-            if (name != null)
-                return name.toString();
+            if(name == null){
+                Field nameField = Utils.getField("name", object.getClass());
+                if (nameField != null) {
+                    name = nameField.get(object) + "";
+                }
+            }
 
-            return null;
+            if(name == null || name.toString().trim().length() == 0){
+                name = "_anonymous_" + object.getClass().getSimpleName() + "_" + name + "_" + objectsToNames.size();
+            }
+
+            String nameStr = name.toString();
+            //if(namesToObjects.containsKey(nameStr))
+            //    throw new ApiException("You have a configuration error.  Multiple objects have been given the name {}.  All object names are required to be unique if they are not null.", nameStr);
+
+            namesToObjects.put(nameStr, object);
+            objectsToNames.put(object, nameStr);
+
+            return nameStr;
         }
 
         static boolean excludeField(Field field) {
@@ -527,10 +533,10 @@ public class Configurator {
 
     static class Decoder {
 
-        final Map<String, String> props   = new HashMap();
-        final TreeSet<String>  propKeys   = new TreeSet<>();
-        final Map<String, Object> beans   = new HashMap<>();
-        final Map<String, String> applied = new HashMap();
+        final Map<String, String> props          = new HashMap();
+        final TreeSet<String>     propKeys       = new TreeSet<>();
+        final Map<String, Object> namesToObjects = new HashMap<>();
+        final Map<String, String> applied        = new HashMap();
 
         /**
          * Sorts based on the number of "." characters first and then
@@ -618,8 +624,8 @@ public class Configurator {
 
                     applied.put(key, cn);
 
-                    if (beans.containsKey(name))
-                        obj = beans.get(name);
+                    if (namesToObjects.containsKey(name))
+                        obj = namesToObjects.get(name);
                     else {
                         try {
                             obj = Class.forName(cn).getDeclaredConstructor().newInstance();
@@ -630,16 +636,16 @@ public class Configurator {
                             System.err.println("Error instantiating class: '" + cn + "'");
                             throw ex;
                         }
-                        beans.put(name, obj);
+                        namesToObjects.put(name, obj);
                     }
                     loaded.put(name, new HashMap<>());
                 }
                 if (key.lastIndexOf(".") < 0) {
-                    beans.put(key, cast0(props.get(key)));
+                    namesToObjects.put(key, cast0(props.get(key)));
                 }
             }
 
-            List<String> keys = new ArrayList(beans.keySet());
+            List<String> keys = new ArrayList(namesToObjects.keySet());
             keys = sort(keys);
 
             //LOOP THROUGH TWICE.
@@ -650,7 +656,7 @@ public class Configurator {
                 boolean isFirstPassSoLoadOnlyPrimitives = i == 0;
 
                 for (String beanName : keys) {
-                    Object bean     = beans.get(beanName);
+                    Object bean     = namesToObjects.get(beanName);
                     List   beanKeys = getKeys(beanName);
                     for (Object p : beanKeys) {
                         String key = (String) p;
@@ -672,11 +678,11 @@ public class Configurator {
                             }
 
                             Object value = valueStr;
-                            if (!Utils.empty(valueStr) && beans.containsKey(valueStr)) {
-                                value = beans.get(valueStr);
+                            if (!Utils.empty(valueStr) && namesToObjects.containsKey(valueStr)) {
+                                value = namesToObjects.get(valueStr);
                             }
 
-                            boolean valueIsBean = (!(value == null || valueStr.equals("") || valueStr.equals("null")) && (beans.containsKey(value) || beans.containsKey(Utils.explode(",", valueStr).get(0))));
+                            boolean valueIsBean = (!(value == null || valueStr.equals("") || valueStr.equals("null")) && (namesToObjects.containsKey(value) || namesToObjects.containsKey(Utils.explode(",", valueStr).get(0))));
 
                             if (isFirstPassSoLoadOnlyPrimitives && valueIsBean) {
                                 continue;
@@ -699,13 +705,13 @@ public class Configurator {
                                     }
 
                                 } else if (java.util.Collection.class.isAssignableFrom(type)) {
-                                    java.util.Collection list = (java.util.Collection) cast(key, valueStr, type, field, beans);
+                                    java.util.Collection list = (java.util.Collection) cast(key, valueStr, type, field, namesToObjects);
                                     ((java.util.Collection) field.get(bean)).addAll(list);
                                 } else if (Map.class.isAssignableFrom(type)) {
-                                    Map map = (Map) cast(key, valueStr, type, null, beans);
+                                    Map map = (Map) cast(key, valueStr, type, null, namesToObjects);
                                     ((Map) field.get(bean)).putAll(map);
                                 } else {
-                                    field.set(bean, cast(key, valueStr, type, null, beans));
+                                    field.set(bean, cast(key, valueStr, type, null, namesToObjects));
                                 }
                             } else {
                                 log.debug("Can't map: " + maskOutput(key, value + ""));
@@ -719,12 +725,12 @@ public class Configurator {
             // - Perform implicit setters based on nested paths of keys
 
             for (String beanName : keys) {
-                Object obj   = beans.get(beanName);
+                Object obj   = namesToObjects.get(beanName);
                 int    count = beanName.length() - beanName.replace(".", "").length();
                 if (count > 0) {
                     String parentKey = beanName.substring(0, beanName.lastIndexOf("."));
                     String propKey   = beanName.substring(beanName.lastIndexOf(".") + 1);
-                    if (beans.containsKey(parentKey)) {
+                    if (namesToObjects.containsKey(parentKey)) {
                         //               Object parent = beans.get(parentKey);
                         //               System.out.println(parent);
                     } else if (count > 1) {
@@ -732,7 +738,7 @@ public class Configurator {
                         propKey = parentKey.substring(parentKey.lastIndexOf(".") + 1);
                         parentKey = parentKey.substring(0, parentKey.lastIndexOf("."));
 
-                        Object parent = beans.get(parentKey);
+                        Object parent = namesToObjects.get(parentKey);
                         if (parent != null) {
                             Field field = Utils.getField(propKey, parent.getClass());
                             if (field != null) {
@@ -761,16 +767,16 @@ public class Configurator {
         }
 
         public void putBean(String key, Object bean) {
-            beans.put(key, bean);
+            namesToObjects.put(key, bean);
         }
 
         public Object getBean(String key) {
-            return beans.get(key);
+            return namesToObjects.get(key);
         }
 
         public <T> List<T> getBeans(Class<T> type) {
             List found = new ArrayList<>();
-            for (Object bean : beans.values()) {
+            for (Object bean : namesToObjects.values()) {
                 if (type.isAssignableFrom(bean.getClass()))
                     found.add(bean);
             }
@@ -778,7 +784,7 @@ public class Configurator {
         }
 
         public <T> T getBean(Class<T> type) {
-            for (Object bean : beans.values()) {
+            for (Object bean : namesToObjects.values()) {
                 if (type.isAssignableFrom(bean.getClass()))
                     return (T) bean;
             }
@@ -787,7 +793,7 @@ public class Configurator {
 
         public List findBeans(Class type) {
             List matches = new ArrayList<>();
-            for (Object bean : beans.values()) {
+            for (Object bean : namesToObjects.values()) {
                 if (type.isAssignableFrom(bean.getClass()))
                     matches.add(bean);
             }
@@ -915,10 +921,10 @@ public class Configurator {
 
     static void dump(String title, Map<String, String>  properties) {
 
-        List<String> keys = Decoder.sort(properties.keySet());//new ArrayList(autoProps.keySet());
-        //Collections.sort(keys);
+        List<String> keys = Decoder.sort(properties.keySet());
 
         log.debug("-- START: " + title + " ----------------------------------------------");
+        System.out.println("-- START: " + title + " ----------------------------------------------");
         for (String key : keys) {
 
             if(key.startsWith("_anonymous_"))
@@ -930,8 +936,10 @@ public class Configurator {
                 continue;
 
             log.debug("   > " + maskOutput(key, value));
+            System.out.println("   > " + maskOutput(key, value));
         }
         log.debug("-- END: " + title + " ----------------------------------------------");
+        System.out.println("-- END: " + title + " ----------------------------------------------");
 
     }
 

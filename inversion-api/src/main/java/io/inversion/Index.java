@@ -60,7 +60,7 @@ public class Index implements Serializable {
     public String toString() {
         StringBuilder buff = new StringBuilder(getCollection().getTableName()).append(".").append(name).append("(");
         for (int i = 0; i < size(); i++) {
-            buff.append(getPropertyName(i));
+            buff.append(getJsonName(i));
             if (i < size() - 1)
                 buff.append(", ");
         }
@@ -127,6 +127,10 @@ public class Index implements Serializable {
         return this;
     }
 
+    public int size() {
+        return properties.size();
+    }
+
     public Index withProperties(Property... properties) {
         for (int i = 0; properties != null && i < properties.length; i++) {
             if (properties[i] != null && !this.properties.contains(properties[i]))
@@ -143,57 +147,52 @@ public class Index implements Serializable {
         return properties.get(idx);
     }
 
-    public int size() {
-        return properties.size();
-    }
-
-    public String getPropertyName(int index) {
-        return index < properties.size() ? properties.get(index).getJsonName() : null;
-    }
-
     public String getColumnName(int index) {
         return index < properties.size() ? properties.get(index).getColumnName() : null;
-    }
-
-    public List<String> getJsonNames() {
-        return properties.stream().map(Property::getJsonName).collect(Collectors.toList());
     }
 
     public List<String> getColumnNames() {
         return properties.stream().map(Property::getColumnName).collect(Collectors.toList());
     }
 
-
-    public <T extends Map<String, Object>> T getKey(JSNode node, T key){
-        for(String name : getJsonNames()){
-            Object value = node.get(name);
-            if(value == null)
-                throw new ApiException("Key value should not be null");
-
-            key.put(name, value);
-        }
-        return key;
+    public String getJsonName(int index) {
+        return index < properties.size() ? properties.get(index).getJsonName() : null;
     }
 
-    public  <T extends Map<String, Object>> T asForeignKey(T key){
-
-        List<Property> targetProps = new ArrayList();
-        for(Property prop : properties){
-            Property related = prop.getPk();
-            if(related == null){
-                if(targetProps.size() != 1)
-                    throw new ApiException("Can't map from primary to foreign index {}", this);
-                break;
-            }
-        }
-
-
-        return key;
+    public List<String> getJsonNames() {
+        return properties.stream().map(Property::getJsonName).collect(Collectors.toList());
     }
 
-    public  <T extends Map<String, Object>> T asPrimaryKey(T key){
-
-        return key;
-    }
+//    public <T extends Map<String, Object>> T getKey(JSNode node, T key){
+//        for(String name : getJsonNames()){
+//            Object value = node.get(name);
+//            if(value == null)
+//                throw new ApiException("Key value should not be null");
+//
+//            key.put(name, value);
+//        }
+//        return key;
+//    }
+//
+//    public  <T extends Map<String, Object>> T asForeignKey(T key){
+//
+//        List<Property> targetProps = new ArrayList();
+//        for(Property prop : properties){
+//            Property related = prop.getPk();
+//            if(related == null){
+//                if(targetProps.size() != 1)
+//                    throw new ApiException("Can't map from primary to foreign index {}", this);
+//                break;
+//            }
+//        }
+//
+//
+//        return key;
+//    }
+//
+//    public  <T extends Map<String, Object>> T asPrimaryKey(T key){
+//
+//        return key;
+//    }
 
 }

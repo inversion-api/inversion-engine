@@ -64,6 +64,10 @@ public class AclAction extends Action<AclAction> {
         return this;
     }
 
+    public List<AclRule> getAclRules(){
+        return new ArrayList<>(aclRules);
+    }
+
     @Override
     public void run(Request req, Response resp) throws ApiException {
 

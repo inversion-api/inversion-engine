@@ -26,6 +26,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @TestInstance(Lifecycle.PER_METHOD)
 public class ConfiguratorTest {
@@ -77,7 +78,28 @@ public class ConfiguratorTest {
     }
 
 
-    //
+    @Test
+    public void test_CodeWiredObjectsWithSameName_throwsException() {
+
+        try{
+            MockAction mockAction = new MockAction().withName("duplicateName");
+            Endpoint   endpoint   = new Endpoint().withIncludeOn("*", "*").withName("myEndpoint").withAction(mockAction);
+            Api api = new Api("duplicateName").withEndpoint(endpoint);
+            Engine e = new Engine().withApi(api);
+            e.startup();
+        }
+        catch(Exception ex){
+            return;
+        }
+        fail();
+    }
+
+    @Test
+    public void test_diObjectHasSameNameAsCodeWiredObject_throwsException() {
+
+    }
+
+        //
     //   /**
     //    * Test the stability of properties file encoding/decoding
     //    * by encoding an Api to a properties file, decoding it back

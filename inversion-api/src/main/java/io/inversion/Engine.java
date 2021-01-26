@@ -495,8 +495,15 @@ public class Engine extends Rule<Engine> {
                 }
                 res.debug("");
 
-                Chain.debug("Endpoint: " + req.getEndpoint());
-                Chain.debug("Actions: " + req.getActionMatches());
+                List actionNames = new ArrayList();
+                for(ActionMatch am : req.getActionMatches()){
+                    String name = am.action.getName();
+                    if(name == null)
+                        name = am.action.getClass().getSimpleName();
+                    actionNames.add(name);
+                }
+                String msg = req.getMethod() + " " + url.getPath() + " [" + Utils.implode(",", actionNames) + "]";
+                Chain.debug(msg);
             }
 
             if (req.getApi() == null) {

@@ -260,7 +260,7 @@ public class Relationship implements Serializable {
             String compressedPk= related.encodeKey(foreignKey, getFkIndex1(), true);
             if(compressedPk == null)
                 return null;
-            primaryKey.put(fkIdx.getPropertyName(0), compressedPk);
+            primaryKey.put(fkIdx.getJsonName(0), compressedPk);
 
 
         }else if(fkIdx.size() == pkIdx.size()){
@@ -294,7 +294,7 @@ public class Relationship implements Serializable {
             String compressedFk = getRelated().encodeKey(primaryKey, getRelated().getPrimaryIndex(), true);
             if(compressedFk == null)
                 return null;
-            foreignKey.put(fkIdx.getPropertyName(0), compressedFk);
+            foreignKey.put(fkIdx.getJsonName(0), compressedFk);
         }else if(fkIdx.size() > 1 && pkIdx.size() == 0){
             //-- this is compressed primary key and a composite foreign key
             //TODO: map a compressed primary key to a composite foreign key

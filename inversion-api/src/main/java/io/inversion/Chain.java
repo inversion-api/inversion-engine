@@ -120,7 +120,11 @@ public class Chain {
         return get().size();
     }
 
-    public static void debug(Object... msgs) {
+    public static void debug(String format, Object... args) {
+
+        if(format == null || format.trim().length() == 0)
+            return;
+
         Stack<Chain> stack = get();
         if (stack.size() < 1) {
             return;
@@ -130,11 +134,10 @@ public class Chain {
         for (int i = 1; i < stack.size(); i++)
             prefix.append("   ");
 
-        if (msgs != null && msgs.length == 1 && msgs[0].toString().trim().length() == 0)
-            return;
+        format = prefix.toString() + format;
 
         Chain root = stack.get(0);
-        root.response.debug(prefix.toString(), msgs);
+        root.response.debug(format, args);
     }
 
     public static String buildLink(JSNode fromHere, Relationship toHere){
@@ -470,7 +473,7 @@ public class Chain {
         return response;
     }
 
-    static class ActionMatch implements Comparable<ActionMatch> {
+    public static class ActionMatch implements Comparable<ActionMatch> {
         final Path   rule;
         final Path   path;
         final Action action;
@@ -489,6 +492,18 @@ public class Chain {
 
         public String toString() {
             return rule + " " + path + " " + action;
+        }
+
+        public Path getRule() {
+            return rule;
+        }
+
+        public Path getPath() {
+            return path;
+        }
+
+        public Action getAction() {
+            return action;
         }
     }
 

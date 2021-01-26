@@ -20,10 +20,20 @@ import io.inversion.Action;
 import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
+import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
+import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Yaml;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.parser.OpenAPIParser;
+import io.swagger.v3.parser.core.models.SwaggerParseResult;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * https://github.com/swagger-api/swagger-core/wiki/Swagger-2.X---Getting-started
@@ -36,15 +46,15 @@ import io.swagger.v3.oas.models.OpenAPI;
  */
 public class OpenAPIAction<A extends OpenAPIAction> extends Action<A> {
 
-    protected OpenAPIWriterFactory factory = new OpenAPIWriterFactory() {
-    };
+    String templateDir = "";
+    String patchesDir = "";
 
+    protected OpenAPIWriterFactory factory = new OpenAPIWriterFactory() {};
 
     public void doGet(Request req, Response res) throws ApiException {
         OpenAPI openApi = generateOpenApi(req);
-        JSNode  json    = writeOpenAPI(openApi);
+        JSNode  json    = writeOpenAPI(req, openApi);
         res.withJson(json);
-
 
         try {
             if (req.getEndpointPath().toString().toLowerCase().endsWith(".yaml")) {
@@ -56,18 +66,33 @@ public class OpenAPIAction<A extends OpenAPIAction> extends Action<A> {
         } catch (Exception ex) {
             throw ApiException.new500InternalServerError(ex);
         }
-
     }
 
-    public JSNode writeOpenAPI(OpenAPI openApi) {
-        String json = Json.pretty(openApi);
-        System.out.println(json);
-        return JSNode.parseJsonNode(json);
+    /**
+     * Override me to manually edit the OpenAPI pojo before it is serialized to JSON
+     * OR to edit the JSNode model after it has been serialized.
+     *
+     * @param openApi
+     * @return the JSNode representation of the OpenAPI JSON.
+     */
+    public JSNode writeOpenAPI(Request req, OpenAPI openApi) {
+        String string = Json.pretty(openApi);
+        JSNode json = JSNode.parseJsonNode(string);
+        JSArray patches = findPatches(req);
+        if(patches.size() > 0)
+            json.patch(patches);
+        return json;
     }
 
     public OpenAPI generateOpenApi(Request req) {
+        OpenAPI openApi = new OpenAPI();
+        String template = findTemplate(req);
+        if(template != null){
+            SwaggerParseResult result = new OpenAPIParser().readContents(template, null, null);
+            openApi = result.getOpenAPI();
+        }
         OpenAPIWriter generator = factory.buildWriter();
-        return generator.writeOpenAPI(req);
+        return generator.writeOpenAPI(req, openApi);
     }
 
     public interface OpenAPIWriterFactory {
@@ -75,4 +100,64 @@ public class OpenAPIAction<A extends OpenAPIAction> extends Action<A> {
             return new OpenAPIWriter();
         }
     }
+
+    public String findTemplate(Request req){
+        for(Path path : getConfigPaths(req)){
+            String templatePath = new Path(path.toString(), "openApi.json").toString();
+            System.out.println(templatePath);
+            InputStream stream = Utils.findInputStream(templatePath);
+            if(stream == null){
+                templatePath = new Path(path.toString(), "openApi.yaml").toString();
+                System.out.println(templatePath);
+                stream = Utils.findInputStream(templatePath);
+            }
+            if(stream != null)
+                return Utils.read(stream);
+        }
+        return null;
+    }
+
+    public JSArray findPatches(Request req){
+        JSArray patches = new JSArray();
+        for(Path path : getConfigPaths(req)){
+            String pathString = path.toString();
+            for(int i=0; i<=10; i++){
+                String patchPath = new Path(pathString, "openApi.patch" + (i==0? "" : ("." + i)) + ".json").toString();
+                System.out.println(patchPath);
+                InputStream stream = Utils.findInputStream(patchPath);
+                if(stream != null){
+                    patches.add(JSNode.parseJsonNode(Utils.read(stream)));
+                }
+            }
+        }
+        return patches;
+    }
+
+    List<Path> getConfigPaths(Request req){
+        List<Path> paths = new ArrayList();
+
+        String str = req.getUrl().toString();
+        if(str.indexOf("?") > 0)
+            str = str.substring(0, str.indexOf("?"));
+        str = str.substring(str.indexOf("/", 7) + 1);
+        str = str.substring(0, str.lastIndexOf("/"));
+
+        Path path = new Path(str);
+        for(int i=path.size()-1; i>=-1; i--){
+
+            Path subpath = null;
+            if(i == -1){
+                subpath = new Path();
+            }
+            else{
+                subpath = path.subpath(0, i+1);
+            }
+
+            paths.add(new Path(templateDir, subpath.toString()));
+        }
+        return paths;
+    }
+
+
+
 }
