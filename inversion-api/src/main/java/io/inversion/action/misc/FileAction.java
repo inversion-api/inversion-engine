@@ -17,11 +17,14 @@
 package io.inversion.action.misc;
 
 import io.inversion.*;
+import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 
 import java.io.InputStream;
 
 public class FileAction extends Action<io.inversion.action.misc.CsvAction> {
+
+    protected String baseDir = null;
 
     public void doGet(Request req, Response res) throws ApiException {
 
@@ -29,11 +32,24 @@ public class FileAction extends Action<io.inversion.action.misc.CsvAction> {
         if(filePath.startsWith("/"))
             filePath = filePath.substring(1, filePath.length());
 
-        InputStream is = Utils.findInputStream(filePath);
+        String fullPath = filePath;
+        if(baseDir != null)
+            fullPath = new Path(baseDir, filePath).toString();
+
+        InputStream is = Utils.findInputStream(fullPath);
         if(is == null)
             throw ApiException.new404NotFound("File '{}' could not be found", filePath);
 
         String txt = Utils.read(is);
         res.withText(txt);
+    }
+
+    public String getBaseDir() {
+        return baseDir;
+    }
+
+    public FileAction withBaseDir(String baseDir) {
+        this.baseDir = baseDir;
+        return this;
     }
 }

@@ -42,6 +42,7 @@ public class BearerScheme extends AuthScheme {
         withName("bearerAuth");
         withType("http");
         withScheme("bearer");
+        withBarerFormat("JWT");
     }
 
     @Override

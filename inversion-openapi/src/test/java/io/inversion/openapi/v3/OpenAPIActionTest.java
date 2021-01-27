@@ -43,7 +43,7 @@ public class OpenAPIActionTest {
                 .withEndpoint(new Endpoint("*", "openapi.json,openapi.yaml", new OpenAPIAction()))
                 .withEndpoint(new Endpoint("*", "rapidoc.html", new FileAction()))
                 .withEndpoint(new Endpoint("*", "*", new HALAction(), //
-                        new AuthAction().withAuthScheme(new BearerScheme())
+                        new AuthAction().withAuthScheme(new BearerScheme().withDescription("this is a JWT."))
                                         .withAuthScheme(new ApiKeyScheme().withParameter(new Parameter("username", "username", "query", false))
                                                 .withParameter(new Parameter("password", "password", "query", false))), new DbAction()))
         ;

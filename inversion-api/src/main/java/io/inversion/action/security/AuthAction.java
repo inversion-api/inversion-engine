@@ -43,22 +43,19 @@ public class AuthAction extends Action<AuthAction> {
 
     @Override
     public void run(Request req, Response resp) throws ApiException {
-//        User user = Chain.getUser();
-//
-//        if (user != null && !req.isDelete()) {
-//            //the users is already logged in, have to let
-//            //deletes through because this could be a logout
-//            return;
-//        }
-//
-//        for(SecurityScheme scheme : schemes){
-//            user = scheme.getUser(req, resp);
-//            if(user != null)
-//                break;
-//        }
-//
-//        if(user == null)
-//            throw ApiException.new401Unauthroized();
+        User user = Chain.getUser();
+
+        if(user != null)
+            return;
+
+        for(AuthScheme scheme : schemes){
+            user = scheme.getUser(req, resp);
+            if(user != null)
+                break;
+        }
+
+        if(user == null)
+            throw ApiException.new401Unauthroized();
 //
 //        String apiName = req.getApi().getName();
 //        String tenant  = req.getUrl().getParam("tenant");

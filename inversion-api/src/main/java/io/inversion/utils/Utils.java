@@ -18,6 +18,7 @@ package io.inversion.utils;
 
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 import io.inversion.ApiException;
+import io.inversion.Request;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;

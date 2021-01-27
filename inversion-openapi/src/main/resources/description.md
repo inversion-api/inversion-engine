@@ -122,7 +122,7 @@ You can also test response for all endpoints and parameter/function combinations
 | min(term, [as(name)])                 | Min          | Finds the minimum value of the property (per the grouping) and optionally names the resulting JSON property. <br />q=min(temperature, 'Coldest Day of 2020'),eq(year, 2020)    
 | max(term, [as(name)])                 | Max          | Finds the maximum value of the property (per the grouping) and optionally names the resulting JSON property  <br />max(  
 | countascol(property, value...)        | Count As Col | Roughly translates to "sum(if(eq(property, value), 1, 0)) as 'value'". <br />countascol(color, 'Red', 'Green', 'Blue')     
-| distinct([property...])               | Distinct     | Filters out duplicates based on the given properties.<br />includes=firstName,lastName&q=eq(state, 'CA'),distinct                         
+| distinct([property...])               | Distinct     | Filters out duplicates based on the given properties.<br />include=firstName,lastName&q=eq(state, 'CA'),distinct                         
 | if(term, termWhenTrue, termWhenFalse) | If           | sum(if(lt(price,0),0,price)) 
 | as([term, name]...)                   | As           | Changes the name of the term result in the return JSON, works just like SQL 'as' operator. |
 
@@ -132,22 +132,22 @@ You can also test response for all endpoints and parameter/function combinations
 Often you may want to retrieve a subset of properties from a query.  As a made up example, when querying a 'user' collection you 
 may only want to retrieve the user's userId, firstName, and lastName out of hundreds of user properties.
 
-In this scenario, you can use the 'includes' query parameter to list the specific properties that should be returned.
-Conversely, you can use the 'excludes' parameter identify specific properties you don't want returned.
-If a property is listed in both an 'includes' and 'excludes' parameter, it will be excluded.
+In this scenario, you can use the 'include' query parameter to list the specific properties that should be returned.
+Conversely, you can use the 'exclude' parameter identify specific properties you don't want returned.
+If a property is listed in both an 'include' and 'exclude' parameter, it will be excluded.
 
-If you use the 'expands' parameter (see below) to 'pre fetch' related resource into a single request, you can use 
+If you use the 'expand' parameter (see below) to 'pre fetch' related resource into a single request, you can use 
 dot notation to specify nested JSON properties.'
 
-You use the 'includes' and 'excludes' parameter as a standard query parameter OR as an RQL function.
+You use the 'include' and 'exclude' parameter as a standard query parameter OR as an RQL function.
 
 
 | Parameter                        | Description                                                                                  
 | -------------------------------- | -------------------------------------------------------------------------------------------- 
-| includes=property[,property...]  | Limits the result to the properties listed.<br />includes=userId,firstName,lastName,address.zipCode&expands=address 
-| includes(property[,property...]) | Same as above in RQL syntax to be included in the 'q' parameter.
-| excludes=property[,property...]  | Specifically removes listed properties from the result.
-| excludes(property[,property...]) | Same as above in RQL syntax to be included in the 'q' parameter.
+| include=property[,property...]  | Limits the result to the properties listed.<br />include=userId,firstName,lastName,address.zipCode&expand=address 
+| include(property[,property...]) | Same as above in RQL syntax to be included in the 'q' parameter.
+| exclude=property[,property...]  | Specifically removes listed properties from the result.
+| exclude(property[,property...]) | Same as above in RQL syntax to be included in the 'q' parameter.
 
 
 ## Including Related Resource
@@ -155,7 +155,7 @@ You use the 'includes' and 'excludes' parameter as a standard query parameter OR
 This spec defines relationships between the resource of different collections.  In a made up example, a 'book' resource
 may be defined as having a relationship to an 'author' resource.  In addition to the OpenApi 'links' definitions, 
 these relationships are also identified in the HAL format '_links' section of each response. To minimize the number of
-requests round trips, you may want to use the 'expands' parameter to fetch a resource and one or more of its related
+requests round trips, you may want to use the 'expand' parameter to fetch a resource and one or more of its related
 resources in the same request.  The resulting document will hold the JSON of the related resource in a property with the 
 resource name.  The HAL '_links' to the related resource will still be included in the response.
 
@@ -164,29 +164,29 @@ and PUT the entire document back to the root documents enpdoint.  The child docu
 before the root document's PUT is processed.  This makes it MUCH easier to coordinate saving complex expanded documents.
 
 You can use 'dot notation' to expand to any desired relationship depth. For example, in a factitious genealogy api, 
-/people?expands=father.mother.brothers would return a result including with each user's father JSON nested under their 
+/people?expand=father.mother.brothers would return a result including with each user's father JSON nested under their 
 'father' property, the father's mother nested under the father's 'mother' property, and the mother's brothers nested
 under the mother's 'brothers' property. 
 
-You use the 'expands' parameter as a standard query parameter OR as an RQL function.
+You use the 'expand' parameter as a standard query parameter OR as an RQL function.
 
-NOTE: When using the 'expands' parameter for one-to-many or many-to-many relationships, where there could be more than
+NOTE: When using the 'expand' parameter for one-to-many or many-to-many relationships, where there could be more than
 one result, the expanded result set is limited to the first 100 results sorted by the primary key.  If a relationship
 could involve more than 100 child documents, it is best to fetch and paginate through that relationship directly
-instead of using 'expands'.
+instead of using 'expand'.
 
-NOTE: When using 'expands' it is possible that the same resource will be referenced multiple times in a single response.
-For example, if you were querying a "books" endpoint with expands=author, if the same author wrote more than one book that 
+NOTE: When using 'expand' it is possible that the same resource will be referenced multiple times in a single response.
+For example, if you were querying a "books" endpoint with expand=author, if the same author wrote more than one book that 
 author could logically appear more than once.  It is also possible to expand recursive relationships such as
 /books?expand=author.books.  To minimize the payload size, if a resource is referenced more than once, all subsequent
 occurrence of the resource will be sent as a JSON Pointer '$ref'.     
 
-NOTE: Use of 'expands' can change the 'shape' of the response JSON document beyond what is definable via
+NOTE: Use of 'expand' can change the 'shape' of the response JSON document beyond what is definable via
 OpenApi 3.0 to the point where it may not be compatible with all client SDKs generated off of the OpenApi definition
 of this API.  If you are using a simple HTTP client, such as in JavaScript in a web browser, curl, Postman etc. you will not have an issue.
 You can also test response for all endpoints and parameter/function combinations in this console. 
 
 | Parameter                               | Description
 | --------------------------------------- | ------------------------------------------------------------------ 
-| expands=relationship[,relationship...]  | /books?expands=author,category,weekly.sales
-| expands(relationship[,relationship...]) | Same as above in RQL syntax to be included in the 'q' parameter. 
+| expand=relationship[,relationship...]  | /books?expand=author,category,weekly.sales
+| expand(relationship[,relationship...]) | Same as above in RQL syntax to be included in the 'q' parameter. 

@@ -13,7 +13,7 @@ public class BasicScheme  extends AuthScheme {
     public BasicScheme() {
         withName("basicAuth");
         withType("http");
-        withScheme("baskc");
+        withScheme("basic");
     }
 
     @Override

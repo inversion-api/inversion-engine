@@ -46,9 +46,14 @@ import java.util.List;
  */
 public class OpenAPIAction<A extends OpenAPIAction> extends Action<A> {
 
-    String templateDir = "";
-    String patchesDir = "";
+    public interface OpenAPIWriterFactory {
+        default OpenAPIWriter buildWriter() {
+            return new OpenAPIWriter();
+        }
+    }
 
+    protected String templateDir = null;
+    protected String patchesDir = "patches";
     protected OpenAPIWriterFactory factory = new OpenAPIWriterFactory() {};
 
     public void doGet(Request req, Response res) throws ApiException {
@@ -95,69 +100,69 @@ public class OpenAPIAction<A extends OpenAPIAction> extends Action<A> {
         return generator.writeOpenAPI(req, openApi);
     }
 
-    public interface OpenAPIWriterFactory {
-        default OpenAPIWriter buildWriter() {
-            return new OpenAPIWriter();
-        }
-    }
 
     public String findTemplate(Request req){
-        for(Path path : getConfigPaths(req)){
-            String templatePath = new Path(path.toString(), "openApi.json").toString();
-            System.out.println(templatePath);
-            InputStream stream = Utils.findInputStream(templatePath);
-            if(stream == null){
-                templatePath = new Path(path.toString(), "openApi.yaml").toString();
-                System.out.println(templatePath);
-                stream = Utils.findInputStream(templatePath);
+        if(templateDir != null) {
+            Path path = req.getUrl().getPath();
+            for (int i=path.size()-1; i>= 0; i--) {
+                String pathString = path.subpath(0, i).toString();
+                String templatePath = new Path(templateDir, pathString, "openapi.json").toString();
+                InputStream stream = Utils.findInputStream(templatePath);
+                if (stream == null) {
+                    templatePath = new Path(templateDir, pathString, "openapi.yaml").toString();
+                    stream = Utils.findInputStream(templatePath);
+                }
+                if (stream != null)
+                    return Utils.read(stream);
             }
-            if(stream != null)
-                return Utils.read(stream);
         }
         return null;
     }
 
     public JSArray findPatches(Request req){
         JSArray patches = new JSArray();
-        for(Path path : getConfigPaths(req)){
-            String pathString = path.toString();
-            for(int i=0; i<=10; i++){
-                String patchPath = new Path(pathString, "openApi.patch" + (i==0? "" : ("." + i)) + ".json").toString();
-                System.out.println(patchPath);
-                InputStream stream = Utils.findInputStream(patchPath);
-                if(stream != null){
-                    patches.add(JSNode.parseJsonNode(Utils.read(stream)));
+
+        if(patchesDir != null) {
+            Path path = req.getUrl().getPath();
+            for (int i=path.size()-1; i>= 0; i--) {
+                String pathString = path.subpath(0, i).toString();
+                for (int j = 0; j <= 10; j++) {
+                    String patchPath = new Path(patchesDir, pathString, "openapi.patch" + (j == 0 ? "" : ("." + j)) + ".json").toString();
+                    InputStream stream = Utils.findInputStream(patchPath);
+                    if (stream != null) {
+                        patches.add(JSNode.parseJsonNode(Utils.read(stream)));
+                    }
                 }
             }
         }
         return patches;
     }
 
-    List<Path> getConfigPaths(Request req){
-        List<Path> paths = new ArrayList();
-
-        String str = req.getUrl().toString();
-        if(str.indexOf("?") > 0)
-            str = str.substring(0, str.indexOf("?"));
-        str = str.substring(str.indexOf("/", 7) + 1);
-        str = str.substring(0, str.lastIndexOf("/"));
-
-        Path path = new Path(str);
-        for(int i=path.size()-1; i>=-1; i--){
-
-            Path subpath = null;
-            if(i == -1){
-                subpath = new Path();
-            }
-            else{
-                subpath = path.subpath(0, i+1);
-            }
-
-            paths.add(new Path(templateDir, subpath.toString()));
-        }
-        return paths;
+    public String getTemplateDir() {
+        return templateDir;
     }
 
+    public OpenAPIAction withTemplateDir(String templateDir) {
+        this.templateDir = templateDir;
+        return this;
+    }
 
+    public String getPatchesDir() {
+        return patchesDir;
+    }
+
+    public OpenAPIAction withPatchesDir(String patchesDir) {
+        this.patchesDir = patchesDir;
+        return this;
+    }
+
+    public OpenAPIWriterFactory getFactory() {
+        return factory;
+    }
+
+    public OpenAPIAction withFactory(OpenAPIWriterFactory factory) {
+        this.factory = factory;
+        return this;
+    }
 
 }

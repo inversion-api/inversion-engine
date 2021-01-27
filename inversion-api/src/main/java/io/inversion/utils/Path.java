@@ -214,6 +214,13 @@ public class Path {
         lc.set(index, part.toLowerCase());
     }
 
+    public Path chop(){
+        if(size() > 0){
+            return subpath(0, size()-1);
+        }
+        return this;
+    }
+
     /**
      * Simple way to remove the path part at <code>index</code> without having to check for <code>size() @lt; index</code> first.
      *

@@ -10,7 +10,7 @@ After running JdbcNorthwindApiDemoMain.java, your API will be running at
 
 You can get started by exploring some of these urls:
   - GET http://localhost:8080/northwind/products
-  - GET http://localhost:8080/northwind/orders?expands=orderDetails&page=2
+  - GET http://localhost:8080/northwind/orders?expand=orderDetails&page=2
   - GET http://localhost:8080/northwind/customers?in(country,France,Spain)&sort=-customerid&pageSize=10
   - GET http://localhost:8080/northwind/customers?orders.shipCity=Mannheim
 
