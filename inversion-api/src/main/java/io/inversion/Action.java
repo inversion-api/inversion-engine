@@ -82,9 +82,9 @@ public class Action<A extends Action> extends Rule<A> {
         if(method == null && collectionKey != null)
             method = Utils.getMethod(getClass(), "do" + collectionKey + req.getMethod());
         if(method == null)
-            Utils.getMethod(getClass(), "do" + collectionKey);
+            method = Utils.getMethod(getClass(), "do" + collectionKey);
         if(method == null)
-            Utils.getMethod(getClass(), "do" + req.getMethod());
+            method = Utils.getMethod(getClass(), "do" + req.getMethod());
 
         if(method != null) {
             try {
