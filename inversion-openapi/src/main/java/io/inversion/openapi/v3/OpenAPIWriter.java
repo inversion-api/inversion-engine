@@ -83,9 +83,9 @@ public class OpenAPIWriter {
         if(info.getTitle() == null)
             info.setTitle(req.getApi().getName());
 
-        if(info.getDescription() == null){
-            info.setDescription(getDescription());
-        }
+//        if(info.getDescription() == null){
+//            info.setDescription(getDescription());
+//        }
     }
 
     protected void documentServers(OpenAPI openApi, Request req) {
@@ -112,14 +112,17 @@ public class OpenAPIWriter {
         }
 
         documentErrorSchema(openApi);
+
+        //TODO: change this to HAL Links
+        //TODO: inspect optodoc to make sure we are using HAL
         documentCollectionLinksSchema(openApi);
 
         for (Collection coll : req.getApi().getCollections()) {
             if(ignoreCollection(coll))
                 continue;
-            if(coll.getSchemaRef() == null)
-                documentResourceSchemas(openApi, coll);
 
+            //TODO: only document collections with an optodoc
+            documentResourceSchemas(openApi, coll);
             documentCollectionSchemas(openApi, coll);
         }
     }
@@ -269,62 +272,81 @@ public class OpenAPIWriter {
         schema.addProperties("after", newHrefSchema());
     }
 
+
+    protected String getResourceSchemaName(Collection coll){
+        //TODO find a way to distinguish between collections with the same name
+        return coll.getSingularDisplayName();
+    }
+
     protected void documentResourceSchemas(OpenAPI openApi, Collection coll) {
 
-        if(openApi.getComponents().getSchemas().get(coll.getSingularDisplayName()) != null)
+        String schemaName = getResourceSchemaName(coll);
+
+        if(openApi.getComponents().getSchemas().get(schemaName) != null)
             return;
 
-        Schema schema = new Schema();
-        openApi.getComponents().addSchemas(coll.getSingularDisplayName(), schema);
+        if(coll.getSchemaRef() != null){
+            openApi.getComponents().addSchemas(schemaName, newComponentRefSchema(coll.getSchemaRef()));
+        }else {
+            Schema schema = new Schema();
+            openApi.getComponents().addSchemas(schemaName, schema);
 
-        if(coll.getDescription() != null){
-            schema.setDescription(coll.getDescription());
-        }
-        schema.setType("object");
-
-        List<String> requiredProps = new ArrayList<>();
-        Index        primaryIndex  = coll.getPrimaryIndex();
-        if (primaryIndex != null)
-            requiredProps.addAll(primaryIndex.getJsonNames());
-
-        //-- TODO filter excludes/includes
-        for (Property prop : coll.getProperties()) {
-            String name = prop.getJsonName();
-            String type = prop.getJsonType();
-
-            Schema propSchema = newTypeSchema(type);
-            if(prop.getDescription() != null)
-                propSchema.setDescription(prop.getDescription());
-
-            //TODO...this condition may not be true for non autoincrement PKs
-            if (coll.getPrimaryIndex() == null || coll.getPrimaryIndex().getProperties().contains(prop)) {
-                propSchema.setReadOnly(true);
+            if (coll.getDescription() != null) {
+                schema.setDescription(coll.getDescription());
             }
+            schema.setType("object");
 
-            if (prop.isNullable()) {
-                propSchema.setNullable(true);
+            List<String> requiredProps = new ArrayList<>();
+            Index        primaryIndex  = coll.getPrimaryIndex();
+            if (primaryIndex != null)
+                requiredProps.addAll(primaryIndex.getJsonNames());
+
+            //-- TODO filter excludes/includes
+            for (Property prop : coll.getProperties()) {
+                String name = prop.getJsonName();
+                String type = prop.getJsonType();
+
+                Schema propSchema = newTypeSchema(type);
+                if (prop.getDescription() != null)
+                    propSchema.setDescription(prop.getDescription());
+
+                //TODO...this condition may not be true for non autoincrement PKs
+                if (coll.getPrimaryIndex() == null || coll.getPrimaryIndex().getProperties().contains(prop)) {
+                    propSchema.setReadOnly(true);
+                }
+
+                if (prop.isNullable()) {
+                    propSchema.setNullable(true);
+                }
+
+                schema.addProperties(name, propSchema);
+
+                if (prop.isRequired() && !requiredProps.contains(name))
+                    requiredProps.add(name);
             }
+            schema.setRequired(requiredProps);
 
-            schema.addProperties(name, propSchema);
+            Schema links = new Schema();
+            links.addProperties("self", newHrefSchema());
 
-            if (prop.isRequired() && !requiredProps.contains(name))
-                requiredProps.add(name);
+            for (Relationship rel : coll.getRelationships()) {
+                links.addProperties(rel.getName(), newHrefSchema());
+            }
+            schema.addProperties("_links", links);
         }
-        schema.setRequired(requiredProps);
+    }
 
-        Schema links = new Schema();
-        links.addProperties("self", newHrefSchema());
 
-        for (Relationship rel : coll.getRelationships()) {
-            links.addProperties(rel.getName(), newHrefSchema());
-        }
-        schema.addProperties("_links", links);
-
+    protected String getCollectionSchemaName(Collection coll){
+        //TODO find a way to distinguish between collections with the same name
+        String name = coll.getPluralDisplayName();
+        name = Character.toUpperCase(name.charAt(0)) + (name.length() == 1 ? "" : name.substring(1));
+        name = "Get" + name + "Result";
+        return name;
     }
 
     protected void documentCollectionSchemas(OpenAPI openApi, Collection coll) {
-
-        String name = "Get" + coll.getPluralDisplayName() + "Result";
+        String name = getCollectionSchemaName(coll);
         if(openApi.getComponents().getSchemas().get(name) != null)
             return;
 
@@ -472,8 +494,7 @@ public class OpenAPIWriter {
         Collection coll = opToDoc.req.getCollection();
 
         String description = "A specific " + coll.getSingularDisplayName() + " object";
-        String schemaName = coll.getSingularDisplayName();
-
+        String schemaName = getResourceSchemaName(coll);
         Operation op = openApi.getPaths().get(opToDoc.operationPath).getGet();
         if(op == null){
             op = buildOperation(opToDoc, description, "200", schemaName);
@@ -492,7 +513,7 @@ public class OpenAPIWriter {
         Collection coll = opToDoc.req.getCollection();
 
         String description = "A pageable list of all " + coll.getSingularDisplayName() + " resources the user has access to and also match any query parameters.  The list may be empty.";
-        String schemaName = "Get" + coll.getPluralDisplayName() + "Result";
+        String schemaName = getCollectionSchemaName(coll);
 
         Operation op = openApi.getPaths().get(opToDoc.operationPath).getGet();
         if(op == null){
@@ -512,7 +533,7 @@ public class OpenAPIWriter {
         Collection related = opToDoc.req.getRelationship().getRelated();
 
         String description = "Retrieves all of the " + related.getPluralDisplayName() + " related to the " + parent.getSingularDisplayName();
-        String schemaName = "Get" + parent.getPluralDisplayName() + "Result";
+        String schemaName = getCollectionSchemaName(parent);
 
         Operation op = openApi.getPaths().get(opToDoc.operationPath).getGet();
         if(op == null){
@@ -557,7 +578,7 @@ public class OpenAPIWriter {
         Collection coll = opToDoc.req.getCollection();
 
         String description = "Creates a new " + coll.getSingularDisplayName() + " resource.";
-        String schemaName = coll.getSingularDisplayName();
+        String schemaName = getResourceSchemaName(coll);
 
         Operation op = openApi.getPaths().get(opToDoc.operationPath).getPost();
         if(op == null){
@@ -574,7 +595,7 @@ public class OpenAPIWriter {
         Collection coll = opToDoc.req.getCollection();
 
         String description = "Updates an existing " + coll.getSingularDisplayName() + " resource.  Properties of the existing resource that are not supplied in the request body will not be updated.";
-        String schemaName = coll.getSingularDisplayName();
+        String schemaName = getResourceSchemaName(coll);
 
         Operation op = openApi.getPaths().get(opToDoc.operationPath).getPost();
         if(op == null){
@@ -825,19 +846,20 @@ public class OpenAPIWriter {
                                             if (pass == 2) {
                                                 if(collection.getPrimaryIndex() != null) { //CANT do these things to a specific resource without a primary key field
                                                     queueOpToDoc("GET", matchPath, req, endpoint, collection, null);
-                                                    queueOpToDoc("PUT", matchPath, req, endpoint, collection, null);
-                                                    queueOpToDoc("PATCH", matchPath, req, endpoint, collection, null);
-                                                    queueOpToDoc("DELETE", matchPath, req, endpoint, collection, null);
+//                                                    queueOpToDoc("PUT", matchPath, req, endpoint, collection, null);
+//                                                    queueOpToDoc("PATCH", matchPath, req, endpoint, collection, null);
+//                                                    queueOpToDoc("DELETE", matchPath, req, endpoint, collection, null);
                                                 }
                                             }
                                         } else if (candidatePath.hasAllVars(Request.COLLECTION_KEY)) {
                                             if (pass == 1) {
                                                 queueOpToDoc("LIST", matchPath, req, endpoint, collection, null);
-                                                if(collection.getPrimaryIndex() != null)
-                                                    queueOpToDoc("POST", matchPath, req, endpoint, collection, null);
+//                                                if(collection.getPrimaryIndex() != null)
+//                                                    queueOpToDoc("POST", matchPath, req, endpoint, collection, null);
                                             }
                                         } else {
                                             //TODO document these additional eps? ...but what do they do?
+                                            System.out.println("What to do with path: " + candidatePath);
                                         }
                                     }
                                 }
@@ -1022,7 +1044,7 @@ public class OpenAPIWriter {
         Schema schema = new Schema();
         String ref = coll.getSchemaRef();
         if(ref == null){
-            ref = coll.getSingularDisplayName();
+            ref = getResourceSchemaName(coll);
         }
 
         if(!ref.contains("/"))
