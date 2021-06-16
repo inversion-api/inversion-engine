@@ -211,13 +211,22 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
      * @see <a href="https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-offset-limit">Cosmos Offset and Limit</a>
      */
     protected String printLimitClause(Parts parts, int offset, int limit) {
-        if (offset < 0)
-            offset = 0;
+        if(Utils.empty(parts.order))
+            return "";
 
-        if (limit <= 0)
-            limit = 100;
+        String s = null;
+        if (offset >= 0 || limit >= 0) {
+            if (offset < 0)
+                offset = 0;
 
-        return "OFFSET " + offset + " LIMIT " + limit;
+            if (limit <= 0)
+                limit = 100;
+
+            s = "OFFSET " + offset + " LIMIT " + limit;
+        }
+
+        parts.limit = s;
+        return parts.limit;
     }
 
     /**
