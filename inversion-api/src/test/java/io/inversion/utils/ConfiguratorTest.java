@@ -95,8 +95,18 @@ public class ConfiguratorTest {
     }
 
     @Test
-    public void test_diObjectHasSameNameAsCodeWiredObject_throwsException() {
-
+    public void propWiredObjectNameAlreadyExits_throwsException() {
+        try{
+            MockAction action = new MockAction().withName("action");
+            Api api = new Api("api").withEndpoint("*", "*", action);
+            Engine e = new Engine().withApi(api);
+            e.startup();
+        }
+        catch(Exception ex){
+            ex.printStackTrace();
+            return;
+        }
+        fail();
     }
 
         //

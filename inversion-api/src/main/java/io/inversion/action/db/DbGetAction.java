@@ -112,7 +112,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
                 //TODO: need a compound key test case here
                 Collection relatedCollection = rel.getRelated();
-                newHref = new StringBuilder(Chain.buildLink(relatedCollection, null, null) + "?");
+                newHref = new StringBuilder(Chain.buildLink(relatedCollection) + "?");
                 Map<String, Object> resourceKeyRow = collection.decodeKeyToJsonNames(req.getResourceKey());
 
                 if (rel.getFkIndex1().size() != collection.getPrimaryIndex().size() //
@@ -151,14 +151,14 @@ public class DbGetAction extends Action<DbGetAction> {
                     Collection relatedCollection = rel.getRelated();
                     String     resourceKeys      = Utils.implode(",", foreignKeys.toArray());
 
-                    newHref = new StringBuilder(Chain.buildLink(relatedCollection, resourceKeys, null));
+                    newHref = new StringBuilder(Chain.buildLink(relatedCollection, resourceKeys));
                 } else {
                     return;
                 }
             } else {
                 //-- The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
-                //-- The system would have written out : http://localhost/northwind/source/orders/YYYYY
-                //throw new UnsupportedOperationException("FIX ME IF FOUND...implementation logic error.");
+                //-- By default, the system would have written out : http://localhost/northwind/source/orders/YYYYY
+                //-- We are going to have to re-query to get the FK value from the resource of the passed in link
 
                 String url = req.getUrl().getOriginal();
                 //String query = Utils.substringAfter(url, "?");
@@ -170,7 +170,7 @@ public class DbGetAction extends Action<DbGetAction> {
                 url = url.substring(0, url.lastIndexOf("/"));
 
                 Response tempRes = res.getEngine().get(url).assertOk();
-                JSNode data = tempRes.getData();
+                JSNode data = tempRes.getStream();
                 if(data instanceof JSArray)
                     data = (JSNode)((JSArray)data).get(0);
 
@@ -191,15 +191,16 @@ public class DbGetAction extends Action<DbGetAction> {
 
             }
 
-            String query = req.getUrl().getQueryString();
-
-            if (query != null) {
+            Map<String, String> params = req.getUrl().getParams();
+            Utils.filter(params, Request.COLLECTION_KEY, Request.RESOURCE_KEY, Request.RELATIONSHIP_KEY);
+            if(params.size() > 0){
+                String queryString = Url.toQueryString(params);
                 if (!newHref.toString().contains("?"))
                     newHref.append("?");
                 else
                     newHref.append("&");
 
-                newHref.append(query);
+                newHref.append(queryString);
             }
 
             Response included = req.getEngine().get(newHref.toString());
@@ -531,7 +532,7 @@ public class DbGetAction extends Action<DbGetAction> {
         if (resourceKeys.size() == 0)
             return Collections.EMPTY_LIST;
 
-        String url = Chain.buildLink(collection, Utils.implode(",", resourceKeys), null);
+        String url = Chain.buildLink(collection, Utils.implode(",", resourceKeys));
 
         //      //--
         //      //-- Nested param support
@@ -568,7 +569,7 @@ public class DbGetAction extends Action<DbGetAction> {
         } else if (sc == 500) {
             res.rethrow();
         } else if (sc == 200) {
-            List<JSNode> nodes = (List<JSNode>) res.getData().asList();
+            List<JSNode> nodes = (List<JSNode>) res.getStream().asList();
 
             for (JSNode node : nodes) {
                 Object resourceKey = getResourceKey(collection, node);

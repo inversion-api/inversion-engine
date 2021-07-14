@@ -122,7 +122,7 @@ The demo API is now running at 'http://localhost:8080/northwind with REST collec
 
 You can get started by exploring some of these urls:
  - GET http://localhost:8080/northwind/products
- - GET http://localhost:8080/northwind/orders?expands=orderDetails&page=2
+ - GET http://localhost:8080/northwind/orders?expand=orderDetails&page=2
  - GET http://localhost:8080/northwind/customers?in(country,France,Spain)&sort=-customerid&pageSize=10
  - GET http://localhost:8080/northwind/customers?orders.shipCity=Mannheim
       
@@ -258,7 +258,7 @@ Examples example:
  * 'http&#58;//localhost/johns_books/orders' would return a paginated listing of all orders from the api with an accountCode and apiCode of 'johns_books'
  * 'http&#58;//localhost/johns_books/orders/1234' would return the details of order 1234
  * 'http&#58;//localhost/johns_books/orders/1234/books' would return all of the books related to the order without returning order 1234 itself
- * 'http&#58;//localhost/johns_books/orders/1234?expands=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
+ * 'http&#58;//localhost/johns_books/orders/1234?expand=books' would return the 1234 details document with the related array of books already expanded (see document expansion below) 
 
 ## Configuring Your API
 
@@ -391,10 +391,10 @@ RQL is the set of HTTP query string parameters that allows developers to "slice 
 
  | RQL Function            |      Database      | Elastic | Dynamo | Description                                                                                            |
  | ----------------------- | :----------------: | :-----: | :----: | ------------------------------------------------------------------------------------------------------ |
- | includes=col1,col2,colN | :heavy_check_mark: |         |        | restricts the properties returned in the document to the ones specified.  All others will be excluded. |
- | includes(col1...colN)   | :heavy_check_mark: |         |        | same as above                                                                                          |
- | excludes=col1,col2,colN | :heavy_check_mark: |         |        | specifically excludes the supplied props.  All others will be included.                                |
- | excludes(col1...colN)   | :heavy_check_mark: |         |        | same as above                                                                                          |
+ | include=col1,col2,colN | :heavy_check_mark: |         |        | restricts the properties returned in the document to the ones specified.  All others will be excluded. |
+ | include(col1...colN)   | :heavy_check_mark: |         |        | same as above                                                                                          |
+ | exclude=col1,col2,colN | :heavy_check_mark: |         |        | specifically exclude the supplied props.  All others will be included.                                |
+ | exclude(col1...colN)   | :heavy_check_mark: |         |        | same as above                                                                                          |
 
 
 
@@ -425,15 +425,15 @@ RQL is the set of HTTP query string parameters that allows developers to "slice 
 
  | RQL Function                                                   |      Database      | Elastic | Dynamo | Description                                                                                                                                     |
  | -------------------------------------------------------------- | :----------------: | :-----: | :----: | ----------------------------------------------------------------------------------------------------------------------------------------------- |
- | expands=collection.property[...property][,table2.property2...] | :heavy_check_mark: |         |        | if "property" is a foreign key, referenced resource will be included as a nested document in the returned JSON instead of an HREF reference value |
+ | expand=collection.property[...property][,table2.property2...] | :heavy_check_mark: |         |        | if "property" is a foreign key, referenced resource will be included as a nested document in the returned JSON instead of an HREF reference value |
   
 
 ### Reserved Query String Parameters
 
  * **explain** - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional debug information including the SQL run.  The response body will NOT be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this to work. 
- * **expands** - A comma separated list of relationships that should be expanded into nested documents instead of referenced by URL in the response body.  For example, if a db 'Order' table has a foreign key to the 'Customer' table, you could query "/orders?expands=customer" or "/customers?expands=orders" to pre expand the relationship and avoid haveing to execute multiple requrests.
- * **includes** - A comma separted list of collection attributes (including dotted.path.references for nested document attributes )that should be included in the response.  All attributes are included if this param is empty...unless they are excluded as below.
- * **excludes** - A comma separated list of collection attributes to exclude.
+ * **expand** - A comma separated list of relationships that should be expanded into nested documents instead of referenced by URL in the response body.  For example, if a db 'Order' table has a foreign key to the 'Customer' table, you could query "/orders?expand=customer" or "/customers?expand=orders" to pre expand the relationship and avoid haveing to execute multiple requrests.
+ * **include** - A comma separted list of collection attributes (including dotted.path.references for nested document attributes )that should be included in the response.  All attributes are included if this param is empty...unless they are excluded as below.
+ * **exclude** - A comma separated list of collection attributes to exclude.
  
 
 ### Restricted and Required Query Parameters
@@ -500,7 +500,7 @@ be setup (in that order) to protect resources according to configed AclRules.  A
     
 ### Path Matching
 
-Endpoints, Actions and AclRules are selected when they can be matched to a request url path.  Each one of these objects contains an "includesPaths" and "excludesPaths" configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used to match any arbitrary path ending.  Regular expressions can be used to match specific path requirements.  If a path is both included and excluded, the exclusion will "win" and the path will not be considered a match. 
+Endpoints, Actions and AclRules are selected when they can be matched to a request url path.  Each one of these objects contains an "includePaths" and "excludesPaths" configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used to match any arbitrary path ending.  Regular expressions can be used to match specific path requirements.  If a path is both included and excluded, the exclusion will "win" and the path will not be considered a match. 
 Leading and trailing '/' characters are not considered when path matching.
 
 Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-parameters) regex path matching.  A regex-based match component follows the pattern "{optionalParamName:regex}".  If you surround any path part with [] it makes that part and all subsequent

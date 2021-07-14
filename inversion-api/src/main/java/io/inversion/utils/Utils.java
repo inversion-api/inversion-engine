@@ -18,7 +18,6 @@ package io.inversion.utils;
 
 import com.fasterxml.jackson.databind.util.ISO8601Utils;
 import io.inversion.ApiException;
-import io.inversion.Request;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
@@ -319,7 +318,7 @@ public class Utils {
         if(format == null)
             format = "";
 
-        if(args != null && args.length == 1 && args[0].getClass().isArray())
+        if(args != null && args.length == 1 && args[0] != null && args[0].getClass().isArray())
         {
             Object arg0 = args[0];
             int size = Array.getLength(arg0);
@@ -475,8 +474,8 @@ public class Utils {
      * @return a new HashMap containing keyValuePairs
      */
     @SuppressWarnings("unchecked")
-    public static HashMap asMap(Object... keyValuePairs) {
-        HashMap map = new HashMap<>();
+    public static LinkedHashMap asMap(Object... keyValuePairs) {
+        LinkedHashMap map = new LinkedHashMap<>();
         for (int i = 0; keyValuePairs != null && i < keyValuePairs.length - 1; i += 2) {
             map.put(keyValuePairs[i], keyValuePairs[i + 1]);
         }
@@ -504,6 +503,26 @@ public class Utils {
         //-- special chars and word brakes etc that will throw off the whole word regex.
         inThisString = inThisString.replace(findThisToken, CONTAINS_TOKEN_PLACEHOLDER);
         return CONTAINS_TOKEN_PATTERN.matcher(inThisString).find();
+    }
+
+    /**
+     * Removes any keys that contain a whole word token contained in tokensToRemove
+     * @param map
+     * @param tokensToRemove
+     * @param <M>
+     * @return the same map instance, filtered
+     */
+    public static <M extends Map<String, ?>> M filter(M map, String... tokensToRemove){
+        for(String key : new ArrayList<String>(map.keySet())){
+            for(String token : tokensToRemove){
+                if(token != null)
+                    if(containsToken(key, token)){
+                        map.remove(token);
+                    }
+            }
+        }
+
+        return map;
     }
 
     /**
@@ -1242,42 +1261,46 @@ public class Utils {
      * @throws IOException when thrown
      */
     public static void pipe(InputStream in, OutputStream out) throws IOException {
+        pipe(in, out, true, true);
+    }
+
+    public static void pipe(InputStream in, OutputStream out, boolean closeInputStream, boolean closeOutputStream) throws IOException {
         int    read;
         byte[] buffer = new byte[1024];
         while ((read = in.read(buffer)) > -1) {
             out.write(buffer, 0, read);   // Don't allow any extra bytes to creep in, final write
         }
-        out.close();
+        out.flush();
+
+        if(closeInputStream)
+            in.close();
+
+        if(closeOutputStream)
+            out.close();
     }
 
 
     public static File createTempFile(String fileName) throws IOException {
-        if (empty(fileName))
-            fileName = "working.tmp";
 
-        fileName = fileName.trim();
-        fileName = fileName.replace('\\', '/');
-
-        if (fileName.endsWith("/")) {
+        if (empty(fileName)){
             fileName = "working.tmp";
-        } else {
-            if (fileName.lastIndexOf('/') > 0) {
-                fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
-            }
+        } else{
+            int idx = fileName.lastIndexOf("/");
+            if(idx > -1)
+                fileName = fileName.substring(idx +1);
+
+            idx = fileName.lastIndexOf("\\");
+            if(idx > -1)
+                fileName = fileName.substring(idx +1);
+
+            fileName = slugify(fileName.trim());
         }
 
-        if (empty(fileName))
-            fileName = "working.tmp";
-
-        fileName = slugify(fileName);
-        if (fileName.lastIndexOf('.') > 0) {
-            String prefix = fileName.substring(0, fileName.lastIndexOf('.'));
-            String suffix = fileName.substring(fileName.lastIndexOf('.'));
-
-            return File.createTempFile(prefix + "-", suffix);
-        } else {
-            return File.createTempFile(fileName, "");
+        if(fileName.length() < 3){
+            fileName += "___";
         }
+
+        return File.createTempFile(fileName, ".tmp");
     }
 
     /**
@@ -1633,4 +1656,8 @@ public class Utils {
         }
     }
 
+    public static String capitalize(String str){
+        str =Character.toUpperCase(str.charAt(0)) + (str.length() > 0 ? str.substring(1, str.length()) : "");
+        return str;
+    }
 }

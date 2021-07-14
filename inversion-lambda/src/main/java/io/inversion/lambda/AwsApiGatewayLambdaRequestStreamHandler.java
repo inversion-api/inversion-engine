@@ -25,6 +25,7 @@ import io.inversion.Response;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Url;
 import io.inversion.utils.Utils;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -87,8 +88,11 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
                 }
             }
 
-            JSNode              jsonHeaders = json.getNode("headers");
-            Map<String, String> headers     = jsonHeaders == null ? new HashMap<>() : (Map<String, String>) jsonHeaders.asMap();
+
+            ArrayListValuedHashMap<String, String> headers     = new ArrayListValuedHashMap<>();
+            JSNode                                 jsonHeaders = json.getNode("headers");
+            if(jsonHeaders != null)
+                headers.putAll((Map<String, String>)jsonHeaders.asMap());
 
             JSNode              jsonParams = json.getNode("queryStringParameters");
             Map<String, String> params     = jsonParams == null ? new HashMap<>() : (Map<String, String>) jsonParams.asMap();
@@ -100,7 +104,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
                 params.putAll(postParams);
             }
 
-            Request  req = new Request(method, url.toString(), headers, params, body);
+            Request  req = new Request(method, url.toString(), body, params, headers);
             Response res = new Response();
 
             engine.service(req, res);
@@ -181,30 +185,31 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
     }
 
     protected void writeResponse(Response res, OutputStream outputStream) throws IOException {
-        JSNode responseJson = new JSNode();
-
-        responseJson.put("isBase64Encoded", false);
-        responseJson.put("statusCode", res.getStatusCode());
-        JSNode headers = new JSNode();
-        responseJson.put("headers", headers);
-
-        for (String key : res.getHeaders().keySet()) {
-            List          values = res.getHeaders().get(key);
-            StringBuilder buff   = new StringBuilder();
-            for (int i = 0; i < values.size(); i++) {
-                buff.append(values.get(i));
-                if (i < values.size() - 1)
-                    buff.append(",");
-            }
-            headers.put(key, buff.toString());
-        }
-
-        String output = res.getOutput();
-
-        responseJson.put("body", output);
-        OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
-        writer.write(responseJson.toString());
-        writer.close();
+//        JSNode responseJson = new JSNode();
+//
+//        responseJson.put("isBase64Encoded", false);
+//        responseJson.put("statusCode", res.getStatusCode());
+//        JSNode headers = new JSNode();
+//        responseJson.put("headers", headers);
+//
+//        asdfasdf
+//        for (String key : res.getHeaders().keySet()) {
+//            List          values = res.getHeaders().get(key);
+//            StringBuilder buff   = new StringBuilder();
+//            for (int i = 0; i < values.size(); i++) {
+//                buff.append(values.get(i));
+//                if (i < values.size() - 1)
+//                    buff.append(",");
+//            }
+//            headers.put(key, buff.toString());
+//        }
+//
+//        String output = res.getOutput();
+//
+//        responseJson.put("body", output);
+//        OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+//        writer.write(responseJson.toString());
+//        writer.close();
     }
 
     public void debug(String msg) {

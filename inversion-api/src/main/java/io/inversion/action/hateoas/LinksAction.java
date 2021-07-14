@@ -20,11 +20,10 @@ import io.inversion.*;
 import io.inversion.Collection;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows;
 
 import java.util.*;
 
-public class LinksAction extends Action<LinksAction> {
+public class LinksAction extends HATEOASAction<LinksAction> {
 
     public void run(Request req, Response res) throws ApiException {
         if (Chain.isRoot() && req.getCollection() != null){
@@ -36,7 +35,7 @@ public class LinksAction extends Action<LinksAction> {
 
             if (res.isSuccess() && res.getJson() != null){
                 Collection coll = req.getRelationship() != null ? req.getRelationship().getRelated() : req.getCollection();
-                res.getData().stream().filter(node -> node instanceof JSNode && !(node instanceof JSArray)).forEach(node -> addLinks(coll, (JSNode) node));
+                res.getStream().stream().filter(node -> node instanceof JSNode && !(node instanceof JSArray)).forEach(node -> addLinks(coll, (JSNode) node));
             }
         }
     }
@@ -61,7 +60,7 @@ public class LinksAction extends Action<LinksAction> {
                         String key = primaryKey == null ? null : Collection.encodeKey(primaryKey, rel.getRelated().getPrimaryIndex(), true);
 
                         if(key != null)
-                            link = Chain.buildLink(rel.getRelated(), key, null);
+                            link = Chain.buildLink(rel.getRelated(), key);
                         else
                             continue;
                     }

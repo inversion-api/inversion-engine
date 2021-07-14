@@ -22,23 +22,23 @@ public class ApiException extends RuntimeException implements Status {
     protected String status = Status.SC_500_INTERNAL_SERVER_ERROR;
 
     public ApiException() throws ApiException {
-        this(SC_500_INTERNAL_SERVER_ERROR, null, null);
+        this(null, SC_500_INTERNAL_SERVER_ERROR, null, null);
     }
 
     public ApiException(Throwable cause) throws ApiException {
-        this(SC_500_INTERNAL_SERVER_ERROR, cause, null);
+        this(cause, SC_500_INTERNAL_SERVER_ERROR, null);
     }
 
-    public ApiException(String httpStatus) throws ApiException {
-        this(httpStatus, null, null);
-    }
+//    public ApiException(String httpStatus) throws ApiException {
+//        this(httpStatus, null, null);
+//    }
 
-    public ApiException(String httpStatus, String messageFormat, Object... args) throws ApiException {
-        this(null, httpStatus, messageFormat, args);
-    }
+//    public ApiException(String httpStatus, String messageFormat, Object... args) throws ApiException {
+//        this(null, httpStatus, messageFormat, args);
+//    }
 
     public ApiException(String messageFormat, Object... args) throws ApiException {
-        this(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, args);
+        this((Exception)null, SC_500_INTERNAL_SERVER_ERROR, messageFormat, args);
     }
 
     public ApiException(Throwable cause, String httpStatus, String messageFormat, Object... args) throws ApiException {
@@ -145,7 +145,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new400BadRequest() throws ApiException {
-        return new ApiException(SC_400_BAD_REQUEST, null);
+        return new ApiException((Throwable)null, SC_400_BAD_REQUEST, null);
     }
 
     public static ApiException new400BadRequest(Throwable cause) throws ApiException {
@@ -153,7 +153,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new400BadRequest(String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_400_BAD_REQUEST, messageFormat, args);
+        return new ApiException(null, SC_400_BAD_REQUEST, messageFormat, args);
     }
 
 
@@ -162,7 +162,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new401Unauthroized() throws ApiException {
-        return new ApiException(SC_401_UNAUTHORIZED, null);
+        return new ApiException((Throwable)null, SC_401_UNAUTHORIZED, null);
     }
 
     public static ApiException new401Unauthroized(Throwable cause) throws ApiException {
@@ -170,7 +170,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new401Unauthroized(String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_401_UNAUTHORIZED, messageFormat, args);
+        return new ApiException(null, SC_401_UNAUTHORIZED, messageFormat, args);
     }
 
     public static ApiException new401Unauthroized(Throwable cause, String messageFormat, Object... args) throws ApiException {
@@ -178,7 +178,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new403Forbidden() throws ApiException {
-        return new ApiException(SC_403_FORBIDDEN, null);
+        return new ApiException((Throwable)null, SC_403_FORBIDDEN, null);
     }
 
     public static ApiException new403Forbidden(Throwable cause) throws ApiException {
@@ -186,7 +186,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new403Forbidden(String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_403_FORBIDDEN, messageFormat, args);
+        return new ApiException(null, SC_403_FORBIDDEN, messageFormat, args);
     }
 
     public static ApiException new403Forbidden(Throwable cause, String messageFormat, Object... args) throws ApiException {
@@ -194,7 +194,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new404NotFound() throws ApiException {
-        return new ApiException(SC_404_NOT_FOUND);
+        return new ApiException((Throwable)null, SC_404_NOT_FOUND, null);
     }
 
     public static ApiException new404NotFound(Throwable cause) throws ApiException {
@@ -202,7 +202,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new404NotFound(String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_404_NOT_FOUND, messageFormat, args);
+        return new ApiException(null, SC_404_NOT_FOUND, messageFormat, args);
     }
 
     public static ApiException new404NotFound(Throwable cause, String messageFormat, Object... args) throws ApiException {
@@ -210,7 +210,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new429TooManyRequests() throws ApiException {
-        return new ApiException(SC_429_TOO_MANY_REQUESTS, null);
+        return new ApiException((Throwable)null, SC_429_TOO_MANY_REQUESTS, null);
     }
 
     public static ApiException new429TooManyRequests(Throwable cause) throws ApiException {
@@ -218,7 +218,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new429TooManyRequests(String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_429_TOO_MANY_REQUESTS, messageFormat, args);
+        return new ApiException(null, SC_429_TOO_MANY_REQUESTS, messageFormat, args);
     }
 
     public static ApiException new429TooManyRequests(Throwable cause, String messageFormat, Object... args) throws ApiException {
@@ -226,7 +226,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new500InternalServerError() throws ApiException {
-        return new ApiException(SC_500_INTERNAL_SERVER_ERROR, null);
+        return new ApiException((Throwable)null, SC_500_INTERNAL_SERVER_ERROR, null);
     }
 
     public static ApiException new500InternalServerError(Throwable cause) throws ApiException {
@@ -234,7 +234,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new500InternalServerError(String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_500_INTERNAL_SERVER_ERROR, messageFormat, args);
+        return new ApiException(null, SC_500_INTERNAL_SERVER_ERROR, messageFormat, args);
     }
 
     public static ApiException new500InternalServerError(Throwable cause, String messageFormat, Object... args) throws ApiException {
@@ -242,7 +242,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new501NotImplemented() throws ApiException {
-        return new ApiException(SC_501_NOT_IMPLEMENTED, null);
+        return new ApiException((Throwable)null, SC_501_NOT_IMPLEMENTED, null);
     }
 
     public static ApiException new501NotImplemented(Throwable cause) throws ApiException {
@@ -250,7 +250,7 @@ public class ApiException extends RuntimeException implements Status {
     }
 
     public static ApiException new501NotImplemented(String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_501_NOT_IMPLEMENTED, messageFormat, args);
+        return new ApiException(null, SC_501_NOT_IMPLEMENTED, messageFormat, args);
     }
 
     public static ApiException new501NotImplemented(Throwable cause, String messageFormat, Object... args) throws ApiException {

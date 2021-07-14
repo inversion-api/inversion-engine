@@ -18,6 +18,7 @@ package io.inversion.action.db;
 
 import io.inversion.Collection;
 import io.inversion.*;
+import io.inversion.action.misc.BatchAction;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
@@ -28,7 +29,7 @@ import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.*;
 
-public class DbPostAction extends Action<DbPostAction> {
+public class DbPostAction extends BatchAction<DbPostAction> {
     protected boolean collapseAll = false;
 
     /**
@@ -97,12 +98,12 @@ public class DbPostAction extends Action<DbPostAction> {
 
         if (resourceKeys.size() == req.getJson().asNodeList().size()) {
             res.withStatus(Status.SC_201_CREATED);
-            String location = Chain.buildLink(req.getCollection(), Utils.implode(",", resourceKeys), null);
+            String location = Chain.buildLink(req.getCollection(), Utils.implode(",", resourceKeys));
             res.withHeader("Location", location);
 
             if(isGetResponse()){
                 Response getResponse = req.getChain().getEngine().service("GET", location);
-                res.getJson().put("data", getResponse.getData());
+                res.getJson().put("data", getResponse.getStream());
             }
         }
         else
@@ -180,7 +181,7 @@ public class DbPostAction extends Action<DbPostAction> {
         StringBuilder buff = new StringBuilder();
         for (Object key : resourceKeys) {
             String resourceKey = key + "";
-            String href        = Chain.buildLink(collection, resourceKey, null);
+            String href        = Chain.buildLink(collection, resourceKey);
             res.data().add(new JSNode("href", href));
 
             String nextId = href.substring(href.lastIndexOf("/") + 1);
@@ -189,12 +190,12 @@ public class DbPostAction extends Action<DbPostAction> {
 
         if (buff.length() > 0) {
             res.withStatus(Status.SC_201_CREATED);
-            String location = Chain.buildLink(collection, buff.substring(1, buff.length()), null);
+            String location = Chain.buildLink(collection, buff.substring(1, buff.length()));
             res.withHeader("Location", location);
 
             if(isGetResponse()){
                 Response getResponse = req.getChain().getEngine().service("GET", location);
-                res.getJson().put("data", getResponse.getData());
+                res.getJson().put("data", getResponse.getStream());
             }
         }
         else
@@ -286,7 +287,7 @@ public class DbPostAction extends Action<DbPostAction> {
                 }
 
                 if (childMap.size() > 0) {
-                    String   path = Chain.buildLink(rel.getRelated(), null, null);
+                    String   path = Chain.buildLink(rel.getRelated());
 
                     JSArray childArr = new JSArray();
                     for (String key : childMap.keySet()) {
@@ -297,8 +298,8 @@ public class DbPostAction extends Action<DbPostAction> {
                     if (!res.isSuccess())
                         res.rethrow();
 
-                    if(res.getData().length() != childMap.size()){
-                        throw new ApiException("Can not determine if all children submitted were updated.  Request size = {}.  Response size = {}", childMap.size(), res.getData().length());
+                    if(res.getStream().length() != childMap.size()){
+                        throw new ApiException("Can not determine if all children submitted were updated.  Request size = {}.  Response size = {}", childMap.size(), res.getStream().length());
                     }
 
                     //-- now get response and set properties BACK on the source from this generation
@@ -660,6 +661,7 @@ public class DbPostAction extends Action<DbPostAction> {
         this.getResponse = expandResponse;
         return this;
     }
+
 
     /*
      * Collapses nested objects so that relationships can be preserved but the fields

@@ -18,10 +18,13 @@ package io.inversion;
 
 import io.inversion.Request.Upload;
 import io.inversion.utils.JSNode;
+import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,6 +33,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
+
 
 public class EngineServlet extends HttpServlet {
     Engine engine = null;//new Engine();
@@ -103,26 +107,34 @@ public class EngineServlet extends HttpServlet {
                 urlstr += "?" + query;
             }
 
-            Map                 headers    = new HashMap<>();
-            Enumeration<String> headerEnum = httpReq.getHeaderNames();
+            ArrayListValuedHashMap headers    = new ArrayListValuedHashMap<>();
+            Enumeration<String>    headerEnum = httpReq.getHeaderNames();
             while (headerEnum.hasMoreElements()) {
-                String key = headerEnum.nextElement();
-                String val = httpReq.getHeader(key);
-                headers.put(key, val);
+                String      key    = headerEnum.nextElement();
+                Enumeration values = httpReq.getHeaders(key);
+                while (values.hasMoreElements()) {
+                    String val = (String) values.nextElement();
+                    headers.put(key, val);
+                }
             }
 
-            Map<String, String>                 params       = new HashMap<>();
+            Map<String, String> params       = new HashMap<>();
             Enumeration<String> paramsEnumer = httpReq.getParameterNames();
             while (paramsEnumer.hasMoreElements()) {
-                String key = paramsEnumer.nextElement();
+                String   key    = paramsEnumer.nextElement();
                 String[] values = httpReq.getParameterValues(key);
-                String value = values == null ? null : (values.length == 1 ? values[0] : Utils.implode(",", values));
+                String   value  = values == null ? null : (values.length == 1 ? values[0] : Utils.implode(",", values));
                 params.put(key, value);
             }
 
             String body = readBody(httpReq);
 
-            req = new Request(method, urlstr, headers, params, body);
+            if(body != null && body.startsWith("--") && body.indexOf("Content-Disposition") > 0){
+                throw ApiException.new400BadRequest("Received invalid multipart content.");
+            }
+
+
+            req = new Request(method, urlstr, body, params, headers);
             req.withRemoteAddr(httpReq.getRemoteAddr());
 
             req.withUploader(() -> {
@@ -163,48 +175,37 @@ public class EngineServlet extends HttpServlet {
             engine.service(req, res);
             writeResponse(req, res, httpResp);
         } catch (Throwable ex) {
-            JSNode json = Engine.buildErrorJson(ex);
-            OutputStream out = httpResp.getOutputStream();
-            out.write(json.toString().getBytes(StandardCharsets.UTF_8));
+            JSNode       json = Engine.buildErrorJson(ex);
+            OutputStream out  = httpResp.getOutputStream();
+            byte[] bytes = json.toString().getBytes(StandardCharsets.UTF_8);
+            out.write(bytes);
             out.flush();
             out.close();
         }
     }
 
     void writeResponse(Request req, Response res, HttpServletResponse http) throws Exception {
-        String method = req != null ? req.getMethod() : null;
 
         http.setStatus(res.getStatusCode());
-
         OutputStream out = http.getOutputStream();
-        try {
-            for (String key : res.getHeaders().keySet()) {
-                List          values = res.getHeaders().get(key);
-                StringBuilder buff   = new StringBuilder();
-                for (int i = 0; i < values.size(); i++) {
-                    buff.append(values.get(i));
-                    if (i < values.size() - 1)
-                        buff.append(",");
-                }
-                http.setHeader(key, buff.toString());
-                res.debug(key + " " + buff);
-            }
-            if ("OPTIONS".equals(method)) {
-                //
-            } else {
-                String contentType = res.getContentType();
-                byte[] bytes       = (req.isDebug() && req.isExplain() ? res.getDebug() : res.getOutput()).getBytes();
 
-                http.setContentType(contentType);
-                http.setContentLength(bytes.length);
-                res.debug("Content-Length " + bytes.length + "");
+        ArrayListValuedHashMap<String, String> headers = res.getHeaders();
+        headers.keySet().forEach(key -> http.setHeader(key, Utils.implode(",", res.getHeaders().get(key))));
 
-                out.write(bytes);
+        if (req.isMethod("OPTIONS")) {
+            //
+        } else {
+            String contentType = res.getContentType();
+            http.setContentType(contentType);
+
+            StreamBuffer buffer = res.getOutput();
+            if(buffer != null){
+                http.setContentLength(buffer.getLength());
+                Utils.pipe(buffer.getInputStream(), out, true, false);
             }
-        } finally {
-            out.flush();
-            out.close();
         }
+        out.flush();
+        out.close();
     }
 
     static class EngineServletLocal {

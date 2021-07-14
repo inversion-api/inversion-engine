@@ -186,11 +186,11 @@ public class JdbcDb extends Db<JdbcDb> {
         api.withApiListener(new ApiListener() {
 
             @Override
-            public void onStartup(Api api) {
+            public void onStartup(Engine engine, Api api) {
             }
 
             @Override
-            public void onShutdown(Api api) {
+            public void onShutdown(Engine engine, Api api) {
             }
 
             @Override

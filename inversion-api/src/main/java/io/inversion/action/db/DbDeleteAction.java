@@ -66,7 +66,7 @@ public class DbDeleteAction extends Action<DbDeleteAction> {
 
             List<Map<String, Object>> rows = new ArrayList();
 
-            for (JSNode node : res.getData().asNodeList()) {
+            for (JSNode node : res.getStream().asNodeList()) {
 
                 String key = collection.encodeKeyFromJsonNames(node);
 
@@ -78,7 +78,7 @@ public class DbDeleteAction extends Action<DbDeleteAction> {
                 rows.add(node);
             }
             collection.getDb().delete(collection, rows);
-            deleted += res.getData().size();
+            deleted += res.getStream().size();
         }
 
         return deleted;

@@ -24,7 +24,9 @@ dependencies {
 
     //JWT support
     api group: "com.auth0", name: "java-jwt", version: "${auth0JwtVersion}"
-    
+
+    //Generate strings matching a regex
+    api group: "com.github.curious-odd-man", name: "rgxgen", version: "1.3"
 
        
 }

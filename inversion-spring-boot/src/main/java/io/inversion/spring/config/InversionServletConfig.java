@@ -18,36 +18,94 @@ package io.inversion.spring.config;
 
 import io.inversion.Engine;
 import io.inversion.EngineServlet;
+import io.inversion.utils.Config;
 import io.inversion.utils.Path;
 import org.apache.coyote.http11.AbstractHttp11Protocol;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
+import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.unit.DataSize;
+import org.springframework.web.multipart.commons.CommonsMultipartResolver;
+import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
+import javax.servlet.MultipartConfigElement;
+import javax.servlet.annotation.MultipartConfig;
 import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
 public class InversionServletConfig {
 
-    public InversionServletConfig()
-    {
+    public InversionServletConfig() {
         System.out.println("InversionServletConfig()<>");
     }
 
+    static final long maxFileSize = 5 * 1024 * 1024;
+    static final long maxRequestSize = 5 * 1024 * 1024;
 
-    public static ServletRegistrationBean createDefaultInversionServlet(Engine engine) {
+
+//    @Bean
+//    public MultipartConfigElement buildMultipartConfig() {
+//        MultipartConfigFactory mcf = new MultipartConfigFactory();
+//
+//        //spring.servlet.multipart.max-file-size=1024
+//        //spring.servlet.multipart.max-request-size=1024
+//
+//        DataSize maxFile = DataSize.parse(Config.getString("spring.servlet.multipart.max-file-size", maxFileSize + ""));
+//        DataSize reqReq = DataSize.parse(Config.getString("spring.servlet.multipart.max-request-size", maxRequestSize + ""));
+//
+//        mcf.setMaxFileSize(maxFile);
+//        mcf.setMaxRequestSize(reqReq);
+//
+//        MultipartConfigElement mce = mcf.createMultipartConfig();
+//
+//        System.out.println(mce.getMaxFileSize());
+//        return mce;
+//    }
+
+//    @Bean
+//    public CommonsMultipartResolver multipartResolver(){
+//        CommonsMultipartResolver resolver = new CommonsMultipartResolver();
+//        resolver.setMaxUploadSize(5242880); // set the size limit
+//        return resolver;
+//    }
+
+
+    @Bean
+    public ServletRegistrationBean buildEngineServlet(@Autowired Engine engine) {
         EngineServlet servlet = new EngineServlet();
         servlet.setEngine(engine);
 
         String                                 servletMapping = buildServletMapping(engine);
         ServletRegistrationBean<EngineServlet> bean           = new ServletRegistrationBean<>(servlet, servletMapping);
 
+        //bean.setMultipartConfig(multipartConfig);
+
         bean.setLoadOnStartup(1);
         return bean;
+    }
+
+    @Bean
+    public ConfigurableServletWebServerFactory buildWebServerFactory() {
+        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
+        tomcat.addContextCustomizers(context -> context.setAllowCasualMultipartParsing(true));
+
+        tomcat.addConnectorCustomizers(connector -> {
+//            AbstractHttp11Protocol httpProtocol = (AbstractHttp11Protocol) connector.getProtocolHandler();
+//            httpProtocol.setCompressibleMimeType("text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json");
+//            httpProtocol.setCompression("1024");//compresses responses over 1KB.
+
+            connector.setMaxPostSize(1024);
+        });
+
+
+
+
+        return tomcat;
     }
 
     /**
@@ -78,30 +136,6 @@ public class InversionServletConfig {
         return (parts.size() > 0 ? ("/" + new Path(parts)) : "") + "/*";
     }
 
-    public static ConfigurableServletWebServerFactory createDefaultServletContainer() {
-        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
-        tomcat.addContextCustomizers(context -> context.setAllowCasualMultipartParsing(true));
 
-        tomcat.addConnectorCustomizers(connector -> {
-            AbstractHttp11Protocol httpProtocol = (AbstractHttp11Protocol) connector.getProtocolHandler();
-            httpProtocol.setCompressibleMimeType("text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json");
-            httpProtocol.setCompression("1024");//compresses responses over 1KB.
-        });
-
-
-        return tomcat;
-    }
-
-    @Bean
-    public ServletRegistrationBean inversionServlet(@Autowired Engine engine) {
-        //System.out.println("ServletRegistrationBean.inversionServlet(engine" + System.identityHashCode(engine) + ")");
-        return createDefaultInversionServlet(engine);
-    }
-
-    @Bean
-    public ConfigurableServletWebServerFactory servletContainer() {
-        //System.out.println("ConfigurableServletWebServerFactory.servletContainer()");
-        return createDefaultServletContainer();
-    }
 
 }

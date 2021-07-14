@@ -20,7 +20,7 @@ import io.inversion.*;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 
-public class HALAction extends Action<HALAction> {
+public class HALAction extends HATEOASAction<HALAction> {
 
     public void run(Request req, Response res) throws ApiException {
 
@@ -81,7 +81,7 @@ public class HALAction extends Action<HALAction> {
 
                         //-- unwrap a root response for a single resource
                         if (req.getResourceKey() != null && req.getRelationshipKey() == null) {
-                            JSArray array = res.getData();
+                            JSArray array = res.getStream();
                             if (array != null && array.size() == 1 && array.get(0) instanceof JSNode) {
                                 json = array.getNode(0);
                                 res.withJson(json);
@@ -122,7 +122,7 @@ public class HALAction extends Action<HALAction> {
                 JSNode links = new JSNode();
                 node.putFirst("_links", links);
                 for (Relationship rel : req.getCollection().getRelationships()) {
-                    String link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
+                    String link = Chain.buildLink(coll, resourceKey, rel.getName());
                     links.put(rel.getName(), new JSNode("href", link));
                 }
                 Object href = node.get("href");

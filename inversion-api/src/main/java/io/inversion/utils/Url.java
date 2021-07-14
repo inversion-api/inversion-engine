@@ -74,6 +74,9 @@ public class Url {
      * @param url url string
      */
     public Url(String url) {
+
+        String origionalUrl = url;
+
         String path;
 
         if (url.indexOf(":/") > 0 && !url.contains("://"))
@@ -138,14 +141,14 @@ public class Url {
             }
 
             if (path.contains("//") || url.contains("./") || url.contains(".."))
-                throw ApiException.new400BadRequest("Your requested URL '{}' is malformed.", url);
+                throw ApiException.new400BadRequest("Your requested URL '{}' is malformed.", origionalUrl);
 
             if (!Utils.empty(path))
                 this.path = new Path(path);
 
         } catch (Exception ex) {
             if (!(ex instanceof ApiException))
-                ex = ApiException.new500InternalServerError(ex);
+                ex = ApiException.new400BadRequest("Your requested URL '{}' is malformed.", origionalUrl);
             throw (ApiException) ex;
         }
         finally{
@@ -291,7 +294,7 @@ public class Url {
     }
 
     public Path getPath() {
-        return path;
+        return new Path(path);
     }
 
     public Url withPath(Path path) {

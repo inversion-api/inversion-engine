@@ -104,7 +104,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         if(excludeOn != null)
             withExcludeOn(excludeOn);
 
-        if (getAllIncludePaths().size() == 0 && getAllExcludePaths().size() == 0) {
+        if (includeMatchers.size() == 0 && excludeMatchers.size() == 0) {
             withIncludeOn(getDefaultIncludeMatch());
         }
     }
@@ -186,7 +186,17 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return null;
     }
 
+    public List<String> getAllIncludeMethods(){
+        checkLazyConfig();
+        Set methods = new LinkedHashSet();
+        for (RuleMatcher includer : includeMatchers) {
+             methods.addAll(includer.methods);
+        }
+        return new ArrayList(methods);
+    }
+
     public List<Path> getAllIncludePaths() {
+        checkLazyConfig();
         Set paths = new LinkedHashSet();
         for (RuleMatcher includer : includeMatchers) {
             paths.addAll(includer.paths);
@@ -195,6 +205,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     public List<Path> getAllExcludePaths() {
+        checkLazyConfig();
         Set paths = new LinkedHashSet();
         for (RuleMatcher excluder : excludeMatchers) {
             paths.addAll(excluder.paths);
@@ -203,6 +214,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     public List<RuleMatcher> getIncludeMatchers() {
+        checkLazyConfig();
         return new ArrayList(includeMatchers);
     }
 
@@ -257,6 +269,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     public List<RuleMatcher> getExcludeMatchers() {
+        checkLazyConfig();
         return new ArrayList(excludeMatchers);
     }
 
@@ -370,6 +383,8 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
 
         protected final Set<String> methods = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         protected final List<Path>  paths   = new ArrayList<>();
+
+        public RuleMatcher(){}
 
         public RuleMatcher(String methods, String... paths) {
             this(methods, asPathsList(paths));

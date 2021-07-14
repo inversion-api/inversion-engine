@@ -122,7 +122,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         json = res.getJson();
 
         assertEquals(5, json.find("meta.pageSize"));
-        assertEquals(5, res.getData().length());
+        assertEquals(5, res.getStream().length());
     }
 
     @Test
@@ -141,7 +141,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
         res = engine.get(url("orders?limit=2&sort=-orderid"));
         res.dump();
-        assertEquals(2, res.getData().length());
+        assertEquals(2, res.getStream().length());
 
         href = res.findString("data.0.href");
         assertTrue(href.indexOf("/orders/10272") > 0);
@@ -161,7 +161,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         assertEquals(1, res.findNode("data.0").size());
 
         List<String> hrefs = new ArrayList<>();
-        res.getData().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
+        res.getStream().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
         //makes sure they are all unqique
         Set uniqueHrefs = new HashSet(hrefs);
@@ -189,7 +189,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
             assertEquals(next.lastIndexOf("limit"), next.indexOf("limit"), "There should be only one limit param");
             assertEquals(next.lastIndexOf("after"), next.indexOf("after"), "There should be only one after param");
 
-            if (res.getData().size() == 0)
+            if (res.getStream().size() == 0)
                 break;
 
             //makes sure the indexing is correct
@@ -213,13 +213,13 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
             }
             alreadyFound.add(found);
 
-            total += res.getData().length();
+            total += res.getStream().length();
             pages += 1;
 
             next = res.getNext();
 
             if (next != null) {
-                assertEquals(3, res.getData().length());
+                assertEquals(3, res.getStream().length());
                 assertEquals(3, res.find("meta.pageSize"));
             }
         } while (pages < 200 && next != null);
@@ -234,7 +234,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         Response res;
         res = engine.get(url("orders?eq(orderid,10257)"));
         res.dump();
-        assertEquals(1, res.getData().size());
+        assertEquals(1, res.getStream().size());
         assertEquals(res.findString("data.0.orderid"), "10257");
     }
 
@@ -261,15 +261,15 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         Response res;
         res = engine.get(url("employees?w(city,ondo)")).assertOk();
 
-        assertEquals(4, res.getData().length());
-        for (Object obj : res.getData()) {
+        assertEquals(4, res.getStream().length());
+        for (Object obj : res.getStream()) {
             assertTrue(((JSNode) obj).getString("city").contains("ondo"));
         }
 
         //--the *s should not be necessary
         res = engine.get(url("employees?w(city,*ondo*)")).assertOk();
-        assertEquals(4, res.getData().length());
-        for (Object obj : res.getData()) {
+        assertEquals(4, res.getStream().length());
+        for (Object obj : res.getStream()) {
             assertTrue(((JSNode) obj).getString("city").contains("ondo"));
         }
 
@@ -298,7 +298,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         Response res;
         res = engine.get(url("orders?limit=5&sw(customerId,VI)")).assertOk();
 
-        JSArray data = res.getData();
+        JSArray data = res.getStream();
         assertTrue(data.length() > 0);
         for (Object o : data) {
             assertTrue(((JSNode) o).getString("customerid").startsWith("VI"));
@@ -321,7 +321,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         Response res;
         res = engine.get(url("orders?ew(shipname,Chevalier)"));
 
-        JSArray data = res.getData();
+        JSArray data = res.getStream();
         assertEquals(data.size(), 1);
         for (Object o : data) {
             assertTrue(((JSNode) o).getString("shipname").endsWith("Chevalier"));
@@ -329,7 +329,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
         //check that the leading * is not doubled
         res = engine.get(url("orders?ew(shipname,*Chevalier)"));
-        data = res.getData();
+        data = res.getStream();
         assertEquals(data.size(), 1);
         for (Object o : data) {
             assertTrue(((JSNode) o).getString("shipname").endsWith("Chevalier"));
@@ -362,8 +362,8 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
     @Test
     public void testN02() throws Exception {
         Engine engine = engine();
-        assertTrue(engine.get(url("orders?limit=5&nn(shipcountry)")).assertOk().getData().size() > 0);
-        assertEquals(engine.get(url("orders?limit=5&n(shipcountry)")).assertOk().getData().size(), 0);
+        assertTrue(engine.get(url("orders?limit=5&nn(shipcountry)")).assertOk().getStream().size() > 0);
+        assertEquals(engine.get(url("orders?limit=5&n(shipcountry)")).assertOk().getStream().size(), 0);
     }
 
     @Test
@@ -375,7 +375,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         res.dump();
         assertEquals(15, res.getFoundRows());
 
-        for (JSNode result : res.getData().asNodeList()) {
+        for (JSNode result : res.getStream().asNodeList()) {
             assertTrue(Utils.empty(result.getString("shipregion")));
         }
     }
@@ -406,7 +406,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         res.dump();
         assertEquals(10, res.getFoundRows());
 
-        for (JSNode result : res.getData().asNodeList()) {
+        for (JSNode result : res.getStream().asNodeList()) {
             assertFalse(Utils.empty(result.getString("shipregion")));
         }
     }
@@ -417,7 +417,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         Response res;
         res = engine.get(url("orders?in(orderid,10249,10258,10252)"));
         res.dump();
-        JSArray      data = res.getData();
+        JSArray      data = res.getStream();
         List<String> list = Arrays.asList("10249", "10258", "10252");
         assertEquals(3, data.length());
         for (Object obj : data) {
@@ -432,7 +432,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
 
         Set ids = new HashSet(Utils.explode(",", "10249,10258,10252"));
         assertEquals(res.getFoundRows(), 22);
-        for (Object obj : res.getData()) {
+        for (Object obj : res.getStream()) {
             assertFalse(ids.contains(((JSNode) obj).find("orderId").toString()));
         }
     }
@@ -447,7 +447,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         res.dump();
         assertEquals(1, res.getFoundRows());
 
-        for (JSNode node : res.getData().asNodeList()) {
+        for (JSNode node : res.getStream().asNodeList()) {
             float val = Float.parseFloat(node.getString("freight"));
             assertTrue(val < 3.25);
         }
@@ -461,7 +461,7 @@ public abstract class AbstractDbGetActionIntegTest extends AbstractDbActionInteg
         res = engine.get(url("orders?le(freight,3.2500)"));
         assertEquals(2, res.getFoundRows());
 
-        JSArray data = res.getData();
+        JSArray data = res.getStream();
         for (Object o : data) {
             float val = Float.parseFloat(((JSNode) o).getString("freight"));
             if (val > 3.25f) {

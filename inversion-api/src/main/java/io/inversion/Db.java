@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 /**
  * An adapter to an underlying data source.
  * <p>
- * The goal of the Db abstraction is to allow Actions like RestGet/Put/Post/Patch/DeleteAction to apply the same REST CRUD operations agnostically across multiple backend data storage engines.
+ * The goal of the Db abstraction is to allow Actions like DbGet/Put/Post/Patch/DeleteAction to apply the same REST CRUD operations agnostically across multiple backend data storage engines.
  * <p>
  * The primary job of a Db subclass is to:
  * <ol>
@@ -464,6 +464,39 @@ public abstract class Db<T extends Db> {
             buildCollections();
             buildRelationships();
         }
+        deconflictNames();
+    }
+
+    /**
+     * Changes any property.jsonName that conflicts with a relationship name
+     */
+    protected void deconflictNames(){
+        for(Collection coll : getCollections()){
+            for(Relationship rel : coll.getRelationships()){
+                String relName = rel.getName();
+                Property conflict = coll.getPropertyByJsonName(relName);
+                if(conflict != null){
+                    String newName = relName;
+                    Property pk = conflict.getPk();
+                    if(pk != null){
+                        newName += Utils.capitalize(pk.getJsonName());
+                    }
+                    else{
+                        newName += "Id";
+                    }
+
+                    for(int i=0; i<100; i++){
+                        String tempName = newName + (i==0 ? "" : i);
+                        if(coll.getPropertyByJsonName(tempName) != null){
+                            newName = tempName;
+                            break;
+                        }
+                    }
+                    //System.out.println("changing conflicting property name " + coll.getName() + "." + relName + " to " + newName);
+                    conflict.withJsonName(newName);
+                }
+            }
+        }
     }
 
     /**
@@ -492,14 +525,29 @@ public abstract class Db<T extends Db> {
                     pluralName += "s";
 
                 coll.withName(pluralName);
-                coll.withSingularDispalyName(capitalize(singularName));
-                coll.withPluralDisplayName(capitalize(pluralName));
+                coll.withSingularDispalyName(Utils.capitalize(singularName));
+                coll.withPluralDisplayName(Utils.capitalize(pluralName));
             }
 
             for (Property prop : coll.getProperties()) {
                 if (prop.getColumnName().equals(prop.getJsonName())) {
                     //-- json name has not already been specifically customized
+
                     String prettyName = beautifyName(prop.getColumnName());
+
+//                    if(prop.getPk() != null) {
+//                        String pkCol = prop.getPk().getColumnName();
+//                        pkCol = capitalize(pkCol);
+//                        prettyName += pkCol;
+//
+//                        for (int i = -0; i < 100; i++) {
+//                            String finalName = prettyName + (i == 0 ? "" : i);
+//                            if (coll.getPropertyByJsonName(finalName) != null) {
+//                                prettyName = finalName;
+//                                break;
+//                            }
+//                        }
+//                    }
                     prop.withJsonName(prettyName);
                 }
             }
@@ -525,11 +573,6 @@ public abstract class Db<T extends Db> {
         if(!(str.toLowerCase().endsWith("s")))
             str = Pluralizer.plural(str);
 
-        return str;
-    }
-
-    protected String capitalize(String str){
-        str =Character.toUpperCase(str.charAt(0)) + (str.length() > 0 ? str.substring(1, str.length()) : "");
         return str;
     }
 
@@ -608,7 +651,8 @@ public abstract class Db<T extends Db> {
     }
 
     /**
-     * Attempts to camelCase and pluralize the table name to make it an attractive REST collection name.
+     * Attempts to camelCase the table name to make it an attractive REST collection name.  If <code>includeTables</code>
+     * contains tableName as a key, the value from <code>includeTables</code> is returned as is.
      *
      * @param tableName the name of an underlying datasource table to be turned into a pretty REST collection name
      * @return a camelCased and pluralized version of tableName
@@ -619,9 +663,6 @@ public abstract class Db<T extends Db> {
             return includeTables.get(tableName);
 
         String collectionName = beautifyName(tableName);
-
-        //if (!(collectionName.endsWith("s") || collectionName.endsWith("S")))
-        //    collectionName = Pluralizer.plural(collectionName);
 
         return collectionName;
     }
@@ -936,11 +977,13 @@ public abstract class Db<T extends Db> {
      *
      * TODO: this should lazy init off a string config property
      */
-    public T withIncludeTables(String includeTables) {
-        for (String pair : Utils.explode(",", includeTables)) {
-            String tableName      = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
-            String collectionName = pair.indexOf('|') < 0 ? pair : pair.substring(pair.indexOf("|") + 1);
-            withIncludeTable(tableName, collectionName);
+    public T withIncludeTables(String... includeTables) {
+        for(String includeTable : includeTables) {
+            for (String pair : Utils.explode(",", includeTable)) {
+                String tableName      = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
+                String collectionName = pair.indexOf('|') < 0 ? pair : pair.substring(pair.indexOf("|") + 1);
+                withIncludeTable(tableName, collectionName);
+            }
         }
         return (T) this;
     }

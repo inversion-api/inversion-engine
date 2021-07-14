@@ -129,6 +129,9 @@ public class Collection extends Rule<Collection> implements Serializable {
             }
         }
 
+        RuleMatcher matcher = new RuleMatcher();
+        matcher.withPaths(new Path(collection + "/" + resource + "/"));
+
         return new RuleMatcher(null, new Path(collection + "/" + resource + "/" + relationship + "/*"));
     }
 
@@ -528,28 +531,7 @@ public class Collection extends Rule<Collection> implements Serializable {
         return this;
     }
 
-    /**
-     * Fluent utility method to construct a Relationship and associated Indexes.
-     *
-     * @param parentCollection  the parent collection of the relationship being created
-     * @param childPropertyName name of the json property that will hold this relationship reference
-     * @param childFkProps      names of the existing Properties that make up the foreign key
-     * @return this
-     * @see #withManyToOneRelationship(Collection, String, Property...)
-     */
-    public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, String... childFkProps) {
-        Property[] properties = new Property[childFkProps.length];
-        for (int i = 0; i < childFkProps.length; i++) {
-            Property prop = getProperty(childFkProps[i]);
 
-            if (prop == null)
-                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", getName(), childFkProps[i]);
-
-            properties[i] = prop;
-        }
-
-        return withManyToOneRelationship(parentCollection, childPropertyName, properties);
-    }
 
     /**
      * Fluent utility method to construct a Relationship and associated Indexes.
@@ -557,57 +539,40 @@ public class Collection extends Rule<Collection> implements Serializable {
      * In addition to the new Relationship a new foreign key Index will be created from <code>childFkProps</code>
      * to <code>parentCollection</code>'s primary Index.
      *
+     * @param thisCollectionsRelationshipJsonPropertyName what to call this relationship in the json representation of this Collection's resources.
      * @param parentCollection  the related parent Collection
-     * @param childPropertyName what to call this relationship in the json representation of this Collection's resources.
-     * @param childFkProps      the Collections Properties that make up the foreign key
+     * @param thisCollectionsForeignKeyProps      the Collections Properties that make up the foreign key
      * @return this
      */
-    public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, Property... childFkProps) {
+    public Collection withManyToOneRelationship(String thisCollectionsRelationshipJsonPropertyName, Collection parentCollection, String... thisCollectionsForeignKeyProps) {
 
-        if (childFkProps == null || childFkProps.length == 0)
+        if (thisCollectionsForeignKeyProps == null || thisCollectionsForeignKeyProps.length == 0)
             throw ApiException.new500InternalServerError("A relationship must include at least one childFkProp");
 
-        Index fkIdx = new Index(this.getName() + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
-        withIndexes(fkIdx);
-
-        withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, this, parentCollection, fkIdx, null));
-
-        Index primaryIdx = parentCollection.getPrimaryIndex();
-        if (primaryIdx != null && childFkProps.length == primaryIdx.size()) {
-            for (int i = 0; i < childFkProps.length; i++) {
-                childFkProps[i].withPk(primaryIdx.getProperty(i));
-            }
-        }
-
-        return this;
-    }
-
-    /**
-     * Fluent utility method to construct a Relationship and associated Indexes.
-     * <p>
-     * This is a convenience overload of withOneToManyRelationship(String, Collection, String, Property...) to be used
-     * when code wiring Apis and you don't want to lookup references to the actual Property objects.
-     * </p>
-     *
-     * @param parentPropertyName the name of the json property for the parent that references the child
-     * @param childCollection    the target child collection
-     * @param childPropertyName  the name of hte json property for the child that references the parent
-     * @param childFkProps       names of the existing Properties that make up the foreign key
-     * @return this
-     * @see #withOneToManyRelationship(String, Collection, String, Property...)
-     */
-    public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, String... childFkProps) {
-        Property[] properties = new Property[childFkProps.length];
-        for (int i = 0; i < childFkProps.length; i++) {
-            Property prop = childCollection.getProperty(childFkProps[i]);
+        Property[] properties = new Property[thisCollectionsForeignKeyProps.length];
+        for (int i = 0; i < thisCollectionsForeignKeyProps.length; i++) {
+            Property prop = getProperty(thisCollectionsForeignKeyProps[i]);
 
             if (prop == null)
-                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", childCollection.getName(), childFkProps[i]);
+                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", getName(), properties[i]);
 
             properties[i] = prop;
         }
 
-        return withOneToManyRelationship(parentPropertyName, childCollection, childPropertyName, properties);
+
+        Index fkIdx = new Index(this.getName() + "_" + Arrays.asList(thisCollectionsForeignKeyProps), "FOREIGN_KEY", false, properties);
+        withIndexes(fkIdx);
+
+        withRelationship(new Relationship(thisCollectionsRelationshipJsonPropertyName, Relationship.REL_MANY_TO_ONE, this, parentCollection, fkIdx, null));
+
+        Index primaryIdx = parentCollection.getPrimaryIndex();
+        if (primaryIdx != null && thisCollectionsForeignKeyProps.length == primaryIdx.size()) {
+            for (int i = 0; i < thisCollectionsForeignKeyProps.length; i++) {
+                properties[i].withPk(primaryIdx.getProperty(i));
+            }
+        }
+
+        return this;
     }
 
     /**
@@ -616,28 +581,92 @@ public class Collection extends Rule<Collection> implements Serializable {
      * In addition to the new Relationship a new foreign key Index will be created from <code>childFkProps</code>
      * to this Collection's primary Index.
      *
-     * @param parentPropertyName the name of the json property for the parent that references the child
+     * @param thisCollectionsRelationshipJsonPropertyName the name of the json property for the parent that references the child
      * @param childCollection    the target child collection
-     * @param childPropertyName  the name of hte json property for the child that references the parent
-     * @param childFkProps       Properties that make up the foreign key
+     * @param childCollectionsForeignKeyProps       Properties that make up the foreign key
      * @return this
      */
-    public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps) {
-        Index fkIdx = new Index(childCollection.getName() + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
+    public Collection withOneToManyRelationship(String thisCollectionsRelationshipJsonPropertyName, Collection childCollection, String... childCollectionsForeignKeyProps) {
+
+        if (childCollectionsForeignKeyProps == null || childCollectionsForeignKeyProps.length == 0)
+            throw ApiException.new500InternalServerError("A relationship must include at least one childFkProp");
+
+        Property[] properties = new Property[childCollectionsForeignKeyProps.length];
+        for (int i = 0; i < childCollectionsForeignKeyProps.length; i++) {
+            Property prop = childCollection.getProperty(childCollectionsForeignKeyProps[i]);
+
+            if (prop == null)
+                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", childCollection.getName(), properties[i]);
+
+            properties[i] = prop;
+        }
+
+
+        Index fkIdx = new Index(childCollection.getName() + "_" + Arrays.asList(properties), "FOREIGN_KEY", false, properties);
         childCollection.withIndexes(fkIdx);
 
-        withRelationship(new Relationship(parentPropertyName, Relationship.REL_ONE_TO_MANY, this, childCollection, fkIdx, null));
-        childCollection.withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, childCollection, this, fkIdx, null));
+        withRelationship(new Relationship(thisCollectionsRelationshipJsonPropertyName, Relationship.REL_ONE_TO_MANY, this, childCollection, fkIdx, null));
+        //childCollection.withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, childCollection, this, fkIdx, null));
 
         Index primaryIdx = getPrimaryIndex();
-        if (primaryIdx != null && childFkProps.length == primaryIdx.size()) {
-            for (int i = 0; i < childFkProps.length; i++) {
-                childFkProps[i].withPk(primaryIdx.getProperty(i));
+        if (primaryIdx != null && properties.length == primaryIdx.size()) {
+            for (int i = 0; i < properties.length; i++) {
+                properties[i].withPk(primaryIdx.getProperty(i));
             }
         }
 
         return this;
     }
+
+//    /**
+//     * Fluent utility method to construct a Relationship and associated Indexes.
+//     * <p>
+//     * This is a convenience overload of withOneToManyRelationship(String, Collection, String, Property...) to be used
+//     * when code wiring Apis and you don't want to lookup references to the actual Property objects.
+//     * </p>
+//     *
+//     * @param parentPropertyName the name of the json property for the parent that references the child
+//     * @param childCollection    the target child collection
+//     * @param childFkProps       names of the existing Properties that make up the foreign key
+//     * @return this
+//     * @see #withOneToManyRelationship(String, Collection, Property...)
+//     */
+//    public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String... childFkProps) {
+//        Property[] properties = new Property[childFkProps.length];
+//        for (int i = 0; i < childFkProps.length; i++) {
+//            Property prop = childCollection.getProperty(childFkProps[i]);
+//
+//            if (prop == null)
+//                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", childCollection.getName(), childFkProps[i]);
+//
+//            properties[i] = prop;
+//        }
+//
+//        return withOneToManyRelationship(parentPropertyName, childCollection, properties);
+//    }
+//    /**
+//     * Fluent utility method to construct a Relationship and associated Indexes.
+//     *
+//     * @param parentCollection  the parent collection of the relationship being created
+//     * @param childPropertyName name of the json property that will hold this relationship reference
+//     * @param childFkProps      names of the existing Properties that make up the foreign key
+//     * @return this
+//     * @see #withManyToOneRelationship(String, Collection, Property...)
+//     */
+//    public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, String... childFkProps) {
+//        Property[] properties = new Property[childFkProps.length];
+//        for (int i = 0; i < childFkProps.length; i++) {
+//            Property prop = getProperty(childFkProps[i]);
+//
+//            if (prop == null)
+//                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", getName(), childFkProps[i]);
+//
+//            properties[i] = prop;
+//        }
+//
+//        return withManyToOneRelationship(childPropertyName, parentCollection, properties);
+//    }
+
 
     /**
      * @param nameOrAlias the name or alias to check for

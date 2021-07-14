@@ -16,9 +16,11 @@
  */
 package io.inversion.utils;
 
+import io.inversion.Api;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,6 +28,40 @@ import static org.junit.jupiter.api.Assertions.*;
 public class PathTest {
 
 
+    @Test
+    public void getSubPaths(){
+
+        Path path = new Path("part1/{var1}/part2/[optional1]/{something}/[optional2]/{var2}/*");
+        List<Path> paths = path.getSubPaths();
+        System.out.println(paths);
+        assertTrue(paths.size() == 3);
+        assertEquals("part1/{var1}/part2", paths.get(0).toString());
+        assertEquals("part1/{var1}/part2/optional1/{something}", paths.get(1).toString());
+        assertEquals("part1/{var1}/part2/optional1/{something}/optional2/{var2}/*", paths.get(2).toString());
+
+
+        paths = new Path("/*").getSubPaths();
+        System.out.println(paths);
+        assertTrue(paths.size() == 1);
+        assertEquals("*", paths.get(0).toString());
+    }
+
+    @Test
+    public void add_errors_when_wildcard_is_not_the_last_segment(){
+        try{
+            new Path("asd/*/sdf");
+            fail();
+        }catch(Exception ex){
+            System.out.println(ex.getMessage());
+        }
+        try{
+            Path p = new Path("asd/*");
+            p.add("*");
+            fail();
+        }catch(Exception ex){
+            System.out.println(ex.getMessage());
+        }
+    }
 
     @Test
     public void extract_stopsOnWildcard() {

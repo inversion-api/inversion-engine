@@ -345,7 +345,10 @@ public class EngineTest {
         Api api1 = new Api("test")//
                 .withAction(new MockAction("mock1"))//
                 .withEndpoint(new Endpoint("GET", "[{_collection:collection1}]/*").withName("ep1"))//
-                .withEndpoint(new Endpoint("GET", "[{_collection:collection2}]/*").withName("ep2"));
+                .withEndpoint(new Endpoint("GET", "[{_collection:collection2}]/*").withName("ep2"))
+                .withCollection(new Collection("collectionA"))
+                .withCollection(new Collection("collection2"))
+                .withCollection(new Collection("collection1"));
 
 
         //String endpointName, String endpointPath, String collectionKey, String resourceKey, String subCollectionKey, Api... apis) {

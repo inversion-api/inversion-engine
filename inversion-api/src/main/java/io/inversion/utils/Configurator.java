@@ -431,7 +431,7 @@ public class Configurator {
             if(name == null){
                 Field nameField = Utils.getField("name", object.getClass());
                 if (nameField != null) {
-                    name = nameField.get(object) + "";
+                    name = nameField.get(object);
                 }
             }
 
@@ -924,7 +924,7 @@ public class Configurator {
         List<String> keys = Decoder.sort(properties.keySet());
 
         log.debug("-- START: " + title + " ----------------------------------------------");
-        System.out.println("-- START: " + title + " ----------------------------------------------");
+        //System.out.println("-- START: " + title + " ----------------------------------------------");
         for (String key : keys) {
 
             if(key.startsWith("_anonymous_"))
@@ -936,10 +936,10 @@ public class Configurator {
                 continue;
 
             log.debug("   > " + maskOutput(key, value));
-            System.out.println("   > " + maskOutput(key, value));
+            //System.out.println("   > " + maskOutput(key, value));
         }
         log.debug("-- END: " + title + " ----------------------------------------------");
-        System.out.println("-- END: " + title + " ----------------------------------------------");
+        //System.out.println("-- END: " + title + " ----------------------------------------------");
 
     }
 

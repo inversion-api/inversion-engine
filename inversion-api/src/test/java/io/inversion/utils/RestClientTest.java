@@ -102,11 +102,11 @@ public class RestClientTest {
                 .withIncludeForwardHeaders("header1", "header2", "HEADER3", "Header4");
 
         Engine  engine         = new Engine();
-        Request inboundRequest = new Request("GET", "http://localhost:8080/path?param1=a&param2=b", null, Utils.addToMap(new ArrayListValuedHashMap(), "header1", "header1Val", "header2", "header2Val", "header3", "header3Val", "headerX", "headerXVal"), -1);
+        Request inboundRequest = new Request("GET", "http://localhost:8080/path?param1=a&param2=b", null, Utils.addToMap(new ArrayListValuedHashMap(), "header1", "header1Val", "header2", "header2Val", "header3", "header3Val", "headerX", "headerXVal"));
         Chain.push(engine, inboundRequest, new Response());
         try {
             client.withForcedHeader("header3", "forcedHeader3Val");
-            FutureResponse resp = client.call("GET", "somepath", null, null, -1, Utils.addToMap(new ArrayListValuedHashMap(), "header2", "header2ChildRequestVal", "header3", "header3ChildRequestVal", "header4", "header4ChildRequestVal"));
+            FutureResponse resp = client.call("GET", "somepath", null, null, Utils.addToMap(new ArrayListValuedHashMap(), "header2", "header2ChildRequestVal", "header3", "header3ChildRequestVal", "header4", "header4ChildRequestVal"));
 
             //resp.get
 

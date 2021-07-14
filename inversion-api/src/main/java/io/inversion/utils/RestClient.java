@@ -31,6 +31,7 @@ import org.apache.http.client.methods.*;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -39,10 +40,7 @@ import org.apache.http.ssl.SSLContextBuilder;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -57,7 +55,6 @@ import java.util.zip.GZIPOutputStream;
  * <ul>
  *  <li>request response listeners that operate on all requests/responses.  See RestClient.withRequestListener()/.withResponseListener()</li>
  *  <li>fluent asynchronous response handler api on FutureResponse for response specific handling.  See FutureResponse.onResponse()/onSuccess()/onFailure()
- *  <li>automatic retry support
  *  <li>header forwarding w/ whitelists and blacklists
  *  <li>url query string param forwarding w/ whitelist and blacklists
  *  <li>lazy runtime host url construction through lookup of "{RestClient.name}.url" in the environment
@@ -215,6 +212,13 @@ public class RestClient {
     protected int        compressionMinSize = 1024;
 
     /**
+     * Responses over this size will be written to a temp file that will be deleted
+     * when the Response inputStream is closed (or Response is finalized which closes the stream)
+     */
+    protected long maxMemoryBuffer = 100 * 1024;
+
+
+    /**
      * The thread pool executor used to make asynchronous requests.  The Executor will expand to
      * <code>threadsMax</code> worker threads.
      */
@@ -226,32 +230,9 @@ public class RestClient {
      * A value &lt; 1 will cause all tasks to execute synchronously on the calling thread meaning
      * the FutureResponse will always be complete upon return.
      * <p>
-     * The default value is 5.
+     * The default value is 0.
      */
     protected int threadsMax = 5;
-
-    /**
-     * The default maximum number of times to retry a request
-     * <p>
-     * The default value is zero meaning failed requests will not be retried
-     */
-    protected int        retryMax           = 0;
-
-    /**
-     * The length of time before the first retry.
-     * <p>
-     * Incremental retries receive progressively more of a timeout up to <code>retryTimeoutMax</code>.
-     *
-     * @see #computeTimeout(Request, Response)
-     */
-    protected int        retryTimeoutMin    = 10;
-
-    /**
-     * The maximum amount of time to wait before a single retry.
-     *
-     * @see #computeTimeout(Request, Response)
-     */
-    protected int        retryTimeoutMax    = 1000;
 
     /**
      * Parameter for default HttpClient configuration
@@ -260,7 +241,7 @@ public class RestClient {
      *
      * @see org.apache.http.client.config.RequestConfig.Builder#setSocketTimeout(int)
      */
-    protected int        socketTimeout      = 30000;
+    protected int socketTimeout = 30000;
 
     /**
      * Parameter for default HttpClient configuration
@@ -269,7 +250,7 @@ public class RestClient {
      *
      * @see org.apache.http.client.config.RequestConfig.Builder#setConnectTimeout(int)
      */
-    protected int        connectTimeout     = 30000;
+    protected int connectTimeout = 30000;
 
     /**
      * Parameter for default HttpClient configuration
@@ -278,32 +259,58 @@ public class RestClient {
      *
      * @see org.apache.http.client.config.RequestConfig.Builder#setConnectionRequestTimeout(int)
      */
-    protected int        requestTimeout     = 30000;
+    protected int connectionRequestTimeout = 30000;
+
 
     /**
-     * The underlying HttpClient use for all network comms.
+     * Parameter for default HttpClient configuration
+     * <p>
+     * Default value is 10
+     *
+     * @see org.apache.http.impl.client.HttpClientBuilder#setMaxConnPerRoute(int)
      */
+    public int maxConPerRoute = 10;
+
+    /**
+     * Parameter for default HttpClient configuration
+     * <p>
+     * Default value is 50ms
+     *
+     * @see org.apache.http.impl.client.HttpClientBuilder#setMaxConnTotal(int)
+     */
+    public int maxConTotal = 50;
+
+
+    /**
+     * Parameter for default HttpClient configuration
+     *
+     * @see org.apache.http.impl.client.HttpClientBuilder#evictExpiredConnections()
+     */
+    public boolean evictExpiredConnections = true;
+
+    /**
+     * Parameter for default HttpClient configuration
+     *
+     * @see org.apache.http.impl.client.HttpClientBuilder#evictIdleConnections(long, TimeUnit)
+     */
+    public int evictIdleConnectionsAfterTimeMillis = -1;
+
+    protected HttpClientBuilder httpClientBuilder = null;
+
     protected HttpClient httpClient         = null;
 
-
-    /**
-     * The timer used it trigger retries.
-     */
-    Timer timer = null;
-
-    public RestClient() {
-
-    }
+    public RestClient() {}
 
     /**
      * @param name the prefix used to look up property values from the environment if they have not already been wired
      */
     public RestClient(String name) {
+        this();
         withName(name);
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @return a FutureResponse that will asynchronously resolve to a Response
@@ -313,79 +320,79 @@ public class RestClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @param queryString           additional query string params in name=value@amp;name2=value2 style
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
     public FutureResponse get(String fullUrlOrRelativePath, String queryString) {
-        return call("GET", fullUrlOrRelativePath, Utils.parseQueryString(queryString), null, this.retryMax, null);
+        return call("GET", fullUrlOrRelativePath, Utils.parseQueryString(queryString), null, null);
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @param params                query strings passed in as a map
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
     public FutureResponse get(String fullUrlOrRelativePath, Map<String, String> params) {
-        return call("GET", fullUrlOrRelativePath, params, null, this.retryMax, null);
+        return call("GET", fullUrlOrRelativePath, params, null, null);
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath     may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @param queryStringNameValuePairs additional query string name/value pairs
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
     public FutureResponse get(String fullUrlOrRelativePath, String... queryStringNameValuePairs) {
-        return call("GET", fullUrlOrRelativePath, Utils.addToMap(new HashMap<>(), queryStringNameValuePairs), null, this.retryMax, null);
+        return call("GET", fullUrlOrRelativePath, Utils.addToMap(new HashMap<>(), queryStringNameValuePairs), null, null);
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a POST request.
+     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a POST request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @param body                  the optional JSON to post
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
     public FutureResponse post(String fullUrlOrRelativePath, JSNode body) {
-        return call("POST", fullUrlOrRelativePath, null, body, this.retryMax, null);
+        return call("POST", fullUrlOrRelativePath, null, body, null);
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a PUT request.
+     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a PUT request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @param body                  the optional JSON to put
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
     public FutureResponse put(String fullUrlOrRelativePath, JSNode body) {
-        return call("PUT", fullUrlOrRelativePath, null, body, this.retryMax, null);
+        return call("PUT", fullUrlOrRelativePath, null, body, null);
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a PATCH request.
+     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a PATCH request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @param body                  the optional JSON patch
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
     public FutureResponse patch(String fullUrlOrRelativePath, JSNode body) {
-        return call("PATCH", fullUrlOrRelativePath, null, body, this.retryMax, null);
+        return call("PATCH", fullUrlOrRelativePath, null, body, null);
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, int, ArrayListValuedHashMap)} to perform a DELETE request.
+     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a DELETE request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
     public FutureResponse delete(String fullUrlOrRelativePath) {
-        return call("DELETE", fullUrlOrRelativePath, null, null, this.retryMax, null);
+        return call("DELETE", fullUrlOrRelativePath, null, null, null);
     }
 
     /**
@@ -395,12 +402,11 @@ public class RestClient {
      * @param fullUrlOrRelativePath optional may be a full url or only additional relative path parts if the {@link #url} property if set, may contain a query string
      * @param params                optional additional query string params that will overwrite any that may be on url as composed from {@link #buildUrl(String)}
      * @param body                  optional json body
-     * @param retryMax              how many times the client should retry if the Request is not successful, if less than zero then this.retriesMax is used
      * @param headers               headers that will always be sent regardless of {@link #includeForwardHeaders}, {@link #excludeForwardHeaders} but may be overwritten by {@link #forcedHeaders}
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
-    public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, int retryMax, ArrayListValuedHashMap<String, String> headers) {
-        Request request = buildRequest(method, fullUrlOrRelativePath, params, body, headers, retryMax);
+    public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, ArrayListValuedHashMap<String, String> headers) {
+        Request request = buildRequest(method, fullUrlOrRelativePath, params, body, headers);
         return call(request);
     }
 
@@ -433,10 +439,9 @@ public class RestClient {
      * @param params                - query params to pass
      * @param body                  - the request body to pass
      * @param headers               - request headers to pass
-     * @param retryMax              - the number of times to retry this call if it fails.
      * @return the configure request
      */
-    public Request buildRequest(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, ArrayListValuedHashMap<String, String> headers, int retryMax) {
+    public Request buildRequest(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, ArrayListValuedHashMap<String, String> headers) {
 
         String url         = buildUrl(fullUrlOrRelativePath);
         String queryString = StringUtils.substringAfter(url, "?");
@@ -451,7 +456,7 @@ public class RestClient {
             params = newParams;
         }
 
-        Request request = new Request(method, url, (body == null ? null : body.toString()), params, headers, retryMax > -1 ? retryMax : this.retryMax);
+        Request request = new Request(method, url, (body == null ? null : body.toString()), params, headers);
 
         if (forwardHeaders) {
             Chain chain = Chain.first();//gets the root chain
@@ -502,14 +507,8 @@ public class RestClient {
 
             public void run() {
                 Response response = doRequest(request);
-                if (shouldRetry(request, response)) {
-                    request.incrementRetryCount();
-                    long timeout = computeTimeout(request, response);
-                    submitLater(this, timeout);
-                } else {
-                    response.withEndAt(System.currentTimeMillis());
-                    setResponse(response);
-                }
+                response.withEndAt(System.currentTimeMillis());
+                setResponse(response);
             }
         };
 
@@ -562,12 +561,13 @@ public class RestClient {
     }
 
     Response doRequest0(Request request) {
+
         String          m        = request.getMethod();
         HttpRequestBase req      = null;
-        File            tempFile = null;
 
         String   url      = request.getUrl().toString();
         Response response = new Response(url);
+        response.withJson(null);
         response.withRequest(request);
 
         for (RequestListener l : requestListeners) {
@@ -597,13 +597,7 @@ public class RestClient {
             } else if ("get".equalsIgnoreCase(m)) {
                 req = new HttpGet(url);
 
-                if (request.getRetryFile() != null && request.getRetryFile().length() > 0) {
-                    long range = request.getRetryFile().length();
-                    request.getHeaders().remove("Range");
-                    request.getHeaders().put("Range", "bytes=" + range + "-");
 
-                    log.debug("RANGE REQUEST HEADER ** " + range);
-                }
             } else if ("delete".equalsIgnoreCase(m)) {
                 if (request.getBody() != null) {
                     req = new HttpDeleteWithBody(url);
@@ -643,9 +637,6 @@ public class RestClient {
                 req.setHeader("Accept-Encoding", "gzip");
             }
 
-            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(socketTimeout).setConnectTimeout(connectTimeout).setConnectionRequestTimeout(requestTimeout).build();
-            req.setConfig(requestConfig);
-
             hr = h.execute(req);
 
             response.withStatusMesg(hr.getStatusLine().toString());
@@ -658,54 +649,21 @@ public class RestClient {
                 response.withHeader(header.getName(), header.getValue());
             }
 
-            log.debug("RESPONSE CODE ** " + response.getStatusCode() + "   (" + response.getStatus() + ")");
-            log.debug("CONTENT RANGE RESPONSE HEADER ** " + response.getHeader("Content-Range"));
+            HttpEntity e = hr.getEntity();
+            if (e != null) {
+                InputStream  is         = e.getContent();
+                StreamBuffer tempBuffer = new StreamBuffer();
+                tempBuffer.withBufferSize(getMaxMemoryBuffer());
+                Utils.pipe(is, tempBuffer);
+                response.withData(tempBuffer);
 
-            Url    u        = new Url(url);
-            String fileName = u.getFile();
-            if (fileName == null)
-                fileName = Utils.slugify(u.toString());
-
-            boolean skip = false;
-            if (response.getStatusCode() == 404 //no amount of retries will make this request not found
-                    || response.getStatusCode() == 204)//this status code indicates "no content" so we are done.
-            {
-                skip = true;
-            }
-            // if we have a retry file and it's length matches the Content-Range header's start and the Content-Range header's unit's are bytes use the existing file
-            else if (request.getRetryFile() != null //
-                    && request.getRetryFile().length() == response.getContentRangeStart() //
-                    && "bytes".equalsIgnoreCase(response.getContentRangeUnit())) {
-                tempFile = request.getRetryFile();
-                log.debug("## Using existing file .. " + tempFile);
-            } else if (response.getStatusCode() == 206) {
-                // status code is 206 Partial Content, but we don't want to use the existing file for some reason, so abort this and force it to fail
-                throw new Exception("Partial content without valid values, aborting this request");
-            } else {
-                if (fileName.length() < 3) {
-                    // if fileName is only 2 characters long, createTempFile will blow up
-                    fileName += "_ext";
-                }
-
-                tempFile = Utils.createTempFile(fileName);
-                tempFile.deleteOnExit();
-                log.debug("## Creating temp file .. " + tempFile);
-            }
-
-            HttpEntity e;
-            if (!skip && (e = hr.getEntity()) != null) {
-                // stream to the temp file with append set to true (this is crucial for resumable downloads)
-                InputStream is = e.getContent();
-                Utils.pipe(is, new FileOutputStream(tempFile, true));
-
-                response.withFile(tempFile);
-
-                if (response.getContentRangeSize() > 0 && tempFile.length() > response.getContentRangeSize()) {
-                    // Something is wrong.. The server is saying the file should be X, but the actual file is larger than X, abort this
-                    throw new Exception("Downloaded file is larger than the server says it should be, aborting this request");
+                long expectedLength = e.getContentLength();
+                if(expectedLength > 0 && tempBuffer.getLength() != expectedLength){
+                    throw new ApiException("Content-Length header does not match received payload size.");
                 }
             }
         } catch (Exception ex) {
+            ex.printStackTrace();
             response.withError(ex);
             response.withStatus(Status.SC_500_INTERNAL_SERVER_ERROR);
         } finally {
@@ -739,126 +697,12 @@ public class RestClient {
         return this;
     }
 
-    /**
-     * Computes an incremental retry backoff time between retryTimeoutMin and retryTimeoutMax.
-     * <p>
-     * You can override this to provide your own timeout policy.
-     *
-     * @param request  the Request being made
-     * @param response the Response being computed
-     * @return the number of milliseconds to wait before retrying the Request
-     */
-    protected long computeTimeout(Request request, Response response) {
-        long timeout = (retryTimeoutMin * request.getRetryCount() * request.getRetryCount()) + (int) (retryTimeoutMin * Math.random() * request.getRetryCount());
-        if (retryTimeoutMax > 0 && timeout > retryTimeoutMax)
-            timeout = retryTimeoutMax;
-
-        return timeout;
-    }
-
-    /**
-     * Determines if the Request should be retried.
-     * <p>
-     * You can override this to provide your own retry policy.
-     * <p>
-     * The default algorithm will only retry if the Request is not successful due to a network error and the current request.retryCount is less than reqest.retryMax.
-     * <p>
-     *
-     * @param request  the Request being made
-     * @param response the Response being computed
-     * @return true if this request should be retried
-     * @see #isNetworkException(Throwable)
-     */
-    protected boolean shouldRetry(Request request, Response response) {
-        return response != null && //
-                !response.isSuccess() //
-                && request.getRetryCount() < request.getRetryMax() //
-                && isNetworkException(response.getError());
-    }
-
-    boolean isNetworkException(Throwable ex) {
-        if (ex == null)
-            return false;
-
-        return
-                ex instanceof java.net.ConnectException //
-                        || ex instanceof java.net.SocketTimeoutException //
-                        //|| ex instanceof org.apache.http.conn.HttpHostConnectException //redundant to java.net.ConnectionException
-                        || ex instanceof org.apache.http.conn.ConnectTimeoutException //
-                        || ex instanceof org.apache.http.NoHttpResponseException //
-                //|| ex instanceof java.net.NoRouteToHostException //
-                //|| ex instanceof java.net.UnknownHostException //
-                ;
-    }
-
     synchronized void submit(FutureResponse future) {
         getExecutor().submit(future);
     }
 
-    synchronized void submitLater(final FutureResponse future, long delay) {
-        if (timer == null) {
-            timer = new Timer();
-        }
 
-        timer.schedule(new TimerTask() {
 
-            @Override
-            public void run() {
-                submit(future);
-            }
-        }, delay);
-
-    }
-
-    /**
-     * Factory method for building an HttpClient if one was not configured via withHttpClient.
-     * <p>
-     * The default HttpClient constructed here basically SSL cert and hostname verification assuming that you will be calling clients you control.
-     * <p>
-     * If you need to adopt a tighter security posture just override this method or call {@link #withHttpClient(HttpClient)} to supply your own HttpClient and security configuration.
-     * <p>
-     * Use of this method is wrapped by getHttpClient() which controls concurrency so this method should not be called more than once per instance if
-     * an error is not thrown.
-     *
-     * @return an HttpClient that can be use to make concurrent asynchronous requests.
-     * @throws Exception if HttpClient construction fails
-     * @see <a href="http://literatejava.com/networks/ignore-ssl-certificate-errors-apache-httpclient-4-4/">Ignore SSL Certificate Errors</a>
-     */
-    protected HttpClient buildHttpClient() throws Exception {
-        if (httpClient == null) {
-            HttpClientBuilder b = HttpClientBuilder.create();
-
-            // setup a Trust Strategy that allows all certificates.
-            //
-            SSLContext sslContext = new SSLContextBuilder().loadTrustMaterial(null, (arg0, arg1) -> true).build();
-            b.setSslcontext(sslContext);
-
-            // don't check Hostnames, either.
-            //      -- use SSLConnectionSocketFactory.getDefaultHostnameVerifier(), if you don't want to weaken
-            HostnameVerifier hostnameVerifier = SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
-
-            // here's the special part:
-            //      -- need to create an SSL Socket Factory, to use our weakened "trust strategy";
-            //      -- and create a Registry, to register it.
-            //
-            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext, hostnameVerifier);
-            //Registry<ConnectionSocketFactory> socketFactoryRegistry = ;
-
-            // now, we create connection-manager using our Registry.
-            //      -- allows multi-threaded use
-            PoolingHttpClientConnectionManager connMgr = new PoolingHttpClientConnectionManager(RegistryBuilder.<ConnectionSocketFactory>create().register("http", PlainConnectionSocketFactory.getSocketFactory()).register("https", sslSocketFactory).build());
-
-            b.setConnectionManager(connMgr);
-
-            RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(socketTimeout).setConnectTimeout(connectTimeout).setConnectionRequestTimeout(requestTimeout).build();
-            b.setDefaultRequestConfig(requestConfig);
-
-            // finally, build the HttpClient;
-            //      -- done!
-            httpClient = b.build();
-        }
-        return httpClient;
-    }
 
     /**
      * Constructs the url for the RestClient to call.
@@ -979,12 +823,9 @@ public class RestClient {
         return this;
     }
 
-    public int getRetryMax() {
-        return retryMax;
-    }
 
-    public RestClient withRetryMax(int retryMax) {
-        this.retryMax = retryMax;
+    public RestClient withHttpClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
         return this;
     }
 
@@ -1006,17 +847,48 @@ public class RestClient {
         return this;
     }
 
-    public int getRequestTimeout() {
-        return requestTimeout;
+    public int getConnectionRequestTimeout() {
+        return connectionRequestTimeout;
     }
 
-    public RestClient withRequestTimeout(int requestTimeout) {
-        this.requestTimeout = requestTimeout;
+    public RestClient withConnectionRequestTimeout(int connectionRequestTimeout) {
+        this.connectionRequestTimeout = connectionRequestTimeout;
         return this;
     }
 
-    public RestClient withHttpClient(HttpClient httpClient) {
-        this.httpClient = httpClient;
+    public int getMaxConPerRoute() {
+        return maxConPerRoute;
+    }
+
+    public RestClient withMaxConPerRoute(int maxConPerRoute) {
+        this.maxConPerRoute = maxConPerRoute;
+        return this;
+    }
+
+    public int getMaxConTotal() {
+        return maxConTotal;
+    }
+
+    public RestClient withMaxConTotal(int maxConTotal) {
+        this.maxConTotal = maxConTotal;
+        return this;
+    }
+
+    public boolean isEvictExpiredConnections() {
+        return evictExpiredConnections;
+    }
+
+    public RestClient withEvictExpiredConnections(boolean evictExpiredConnections) {
+        this.evictExpiredConnections = evictExpiredConnections;
+        return this;
+    }
+
+    public int getEvictIdleConnectionsAfterTimeMillis() {
+        return evictIdleConnectionsAfterTimeMillis;
+    }
+
+    public RestClient withEvictIdleConnectionsAfterTimeMillis(int evictIdleConnectionsAfterTimeMillis) {
+        this.evictIdleConnectionsAfterTimeMillis = evictIdleConnectionsAfterTimeMillis;
         return this;
     }
 
@@ -1025,7 +897,7 @@ public class RestClient {
             synchronized (this) {
                 if (httpClient == null) {
                     try {
-                        httpClient = buildHttpClient();
+                        httpClient = buildHttpClient(getHttpClientBuilder());
                     } catch (Exception ex) {
                         Utils.rethrow(ex);
                     }
@@ -1033,6 +905,52 @@ public class RestClient {
             }
         }
         return httpClient;
+    }
+
+    protected synchronized HttpClient buildHttpClient(HttpClientBuilder builder) throws Exception {
+        return builder.build();
+    }
+
+    public RestClient withHttpClientBuilder(HttpClientBuilder httpClientBuilder) {
+        this.httpClientBuilder = httpClientBuilder;
+        return this;
+    }
+
+    public HttpClientBuilder getHttpClientBuilder() {
+        if (httpClientBuilder == null) {
+            synchronized (this) {
+                if (httpClientBuilder == null) {
+                        httpClientBuilder = buildDefaultHttpClientBuilder();
+                }
+            }
+        }
+        return httpClientBuilder;
+    }
+
+
+    public synchronized HttpClientBuilder buildDefaultHttpClientBuilder(){
+
+        HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+
+        httpClientBuilder.setMaxConnTotal(maxConTotal);
+        httpClientBuilder.setMaxConnPerRoute(maxConPerRoute);
+        if(evictExpiredConnections)
+            httpClientBuilder.evictExpiredConnections();
+
+        if(evictIdleConnectionsAfterTimeMillis > 0)
+            httpClientBuilder.evictIdleConnections(evictIdleConnectionsAfterTimeMillis, TimeUnit.MILLISECONDS);
+
+        RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(socketTimeout).setConnectTimeout(connectTimeout).setConnectionRequestTimeout(connectionRequestTimeout).build();
+        httpClientBuilder.setDefaultRequestConfig(requestConfig);
+
+        return httpClientBuilder;
+    }
+
+
+
+    public RestClient withExecutor(Executor executor) {
+        this.executor = executor;
+        return this;
     }
 
     /**
@@ -1049,11 +967,6 @@ public class RestClient {
         return executor;
     }
 
-    public RestClient withExecutor(Executor executor) {
-        this.executor = executor;
-        return this;
-    }
-
     /**
      * Build an executor if one was not wired in.
      * <p>
@@ -1063,7 +976,7 @@ public class RestClient {
      *
      * @return a default new Executor.
      */
-    protected Executor buildExecutor() {
+    protected synchronized Executor buildExecutor() {
         return new Executor().withThreadsMax(threadsMax);
     }
 
@@ -1169,21 +1082,12 @@ public class RestClient {
         return this;
     }
 
-    public int getRetryTimeoutMin() {
-        return retryTimeoutMin;
+    public long getMaxMemoryBuffer() {
+        return maxMemoryBuffer;
     }
 
-    public RestClient withRetryTimeoutMin(int retryTimeoutMin) {
-        this.retryTimeoutMin = retryTimeoutMin;
-        return this;
-    }
-
-    public int getRetryTimeoutMax() {
-        return retryTimeoutMax;
-    }
-
-    public RestClient getRetryTimeoutMax(int retryTimeoutMax) {
-        this.retryTimeoutMax = retryTimeoutMax;
+    public RestClient withMaxMemoryBuffer(long maxMemoryBuffer) {
+        this.maxMemoryBuffer = maxMemoryBuffer;
         return this;
     }
 

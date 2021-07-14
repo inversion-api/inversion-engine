@@ -115,7 +115,7 @@ public class Engine extends Rule<Engine> {
             if (!Config.hasConfiguration()) {
                 Config.loadConfiguration(getConfigPath(), getConfigProfile());
             }
-            new Configurator().configure(this, Config.getConfiguration());
+            //new Configurator().configure(this, Config.getConfiguration());
 
             started = true;
 
@@ -136,28 +136,43 @@ public class Engine extends Rule<Engine> {
                 System.out.println("\r\n--------------------------------------------");
                 System.out.println("API             " + api);
 
-                for (Endpoint e : api.getEndpoints()) {
-                    System.out.println("  - ENDPOINT:   " + e);
+                List<Operation> operations = api.getOperations();
+                Collections.sort(operations);
+                for(Operation op : operations){
+
+                    String method = op.method;
+                    while(method.length() < 6)
+                        method += " ";
+
+                    System.out.println(method + " : " + op.name + " - " + op.displayPath + " - " + op.params);
                 }
 
-                List<String> collectionDebugs = new ArrayList<>();
-                for (Collection c : api.getCollections()) {
-                    if (c.getDb() != null && c.getDb().getEndpointPath() != null)
-                        collectionDebugs.add(c.getDb().getEndpointPath() + c.getName());
-                    else
-                        collectionDebugs.add(c.getName());
-                }
-                Collections.sort(collectionDebugs);
-                for (String coll : collectionDebugs) {
-                    System.out.println("  - COLLECTION: " + coll);
-                }
+//                for (Endpoint e : api.getEndpoints()) {
+//                    System.out.println("  - ENDPOINT:   " + e);
+//                }
+//
+//                List<String> collectionDebugs = new ArrayList<>();
+//                for (Collection c : api.getCollections()) {
+//                    if (c.getDb() != null && c.getDb().getEndpointPath() != null)
+//                        collectionDebugs.add(c.getDb().getEndpointPath() + c.getName());
+//                    else
+//                        collectionDebugs.add(c.getName());
+//                }
+//                Collections.sort(collectionDebugs);
+//                for (String coll : collectionDebugs) {
+//                    System.out.println("  - COLLECTION: " + coll);
+//                }
             }
             //-- end debug output
+
 
             return this;
         } finally {
             starting = false;
         }
+
+
+
     }
 
     /**
@@ -450,9 +465,18 @@ public class Engine extends Rule<Engine> {
 
             Url url = req.getUrl();
 
+            Path urlPath = url.getPath();
+            for(int i=0; i < urlPath.size(); i++){
+                if(urlPath.isVar(i) || urlPath.isWildcard(i))
+                    throw ApiException.new400BadRequest("URL {} is malformed.", url);
+            }
+
             if (url.toString().contains("/favicon.ico")) {
                 //-- browsers being a pain in the rear
-                throw ApiException.new404NotFound("The requested resource 'favicon.ico' could not be found.", req.getUrl().getOriginal());
+                //throw ApiException.new404NotFound("The requested resource 'favicon.ico' could not be found.", req.getUrl().getOriginal());
+                res.withStatus(Status.SC_404_NOT_FOUND);
+                res.withJson(null);
+                return chain;
             }
 
             String xfp = req.getHeader("X-Forwarded-Proto");
@@ -463,6 +487,12 @@ public class Engine extends Rule<Engine> {
 
                 if (xfh != null)
                     url.withHost(xfh);
+            }
+
+
+            if(!matches(req.getMethod(), req.getUrl().getPath())){
+                log.error("A request url {} was incorrectly routed to an Engine that does not support the given context path.  The request will be rejected but this is probably a server configuration error.", url);
+                throw ApiException.new400BadRequest("The requested URL has an unsupported context path.");
             }
 
 
@@ -517,7 +547,11 @@ public class Engine extends Rule<Engine> {
                         buff.append(e.toString()).append(" | ");
                 }
 
-                throw ApiException.new404NotFound("No Endpoint found matching '{}:{}' Valid endpoints are: {}", req.getMethod(), url, buff.toString());
+                String orig = url.getOriginal();
+                System.out.println(orig);
+
+
+                throw ApiException.new404NotFound("No Endpoint found matching '{}:{}' Valid endpoints are: {}", req.getMethod(), url.getOriginal(), buff.toString());
             }
 
             List<ActionMatch> actions = req.getActionMatches();
@@ -586,101 +620,59 @@ public class Engine extends Rule<Engine> {
     }
 
     public void matchRequest(Request req){
-        String method = req.getMethod();
 
-        Path                parts      = new Path(req.getUrl().getPath());
+        Path                reqPath      = req.getUrl().getPath();
         Map<String, String> pathParams = new HashMap<>();
 
-        Path containerPath = match(method, parts);
+        for(Api api : apis){
+            for(Operation op : api.getOperations()){
 
-        if (containerPath == null)
-            throw ApiException.new400BadRequest("Somehow a request was routed to your Engine with an unsupported containerPath. This is a configuration error.");
+                if(op.matches(req)){
+                    req.withOperation(op);
 
-        if (containerPath != null)
-            containerPath.extract(pathParams, parts);
-
-        Path afterApiPath      = null;
-        Path afterEndpointPath = null;
-
-        for (Api api : apis) {
-            Path apiPath = api.match(method, parts);
-
-            if (apiPath != null) {
-                Path apiMatchPath = new Path(apiPath);
-                apiPath = apiPath.extract(pathParams, parts);
-                req.withApi(api, apiPath, apiMatchPath);
-
-                afterApiPath = new Path(parts);
-
-                for (Endpoint endpoint : api.getEndpoints()) {
-                    //-- endpoints marked as internal can not be directly called by external
-                    //-- clients, they can only be called by a recursive call to Engine.service
-                    if (Chain.getDepth() < 2 && endpoint.isInternal())
-                        continue;
-
-                    Path endpointPath = endpoint.match(req.getMethod(), parts);
-
-                    if (endpointPath != null) {
-                        Path endpointMatchPath = new Path(endpointPath);
-                        endpointPath = endpointPath.extract(pathParams, parts);
-                        req.withEndpoint(endpoint, endpointPath, endpointMatchPath);
-
-                        afterEndpointPath = new Path(parts);
-
-                        for (Collection collection : api.getCollections()) {
-                            Db db = collection.getDb();
-                            if (db != null && db.getEndpointPath() != null && !db.getEndpointPath().matches(endpointPath))
-                                continue;
-
-                            Path collectionPath = collection.match(method, parts);
-                            if (collectionPath != null) {
-                                Path collectionMatchPath = new Path(collectionPath);
-                                collectionPath = collectionPath.extract(pathParams, parts, true);
-                                req.withCollection(collection, collectionPath, collectionMatchPath);
-
-                                if (db != null && db.getEndpointPath() != null)
-                                    db.getEndpointPath().extract(pathParams, afterApiPath, true);
-
-                                break;
-                            }
+                    for(Parameter param : op.getParams().values()){
+                        if("query".equalsIgnoreCase(param.getIn())) {
+                            String name  = param.getKey();
+                            String value = reqPath.get(param.getIndex());
+                            pathParams.put(name, value);
                         }
-                        break;
                     }
+                    req.withPathParams(pathParams);
+
+                    String method = req.getMethod();
+                    Path path = req.getPath();
+                    Path subpath = req.getSubpath();
+
+                    //this will get all actions specifically configured on the endpoint
+                    List<ActionMatch> actions = new ArrayList<>();
+
+                    for (Action action : req.getEndpoint().getActions()) {
+                        Path actionPath = action.match(method, subpath);
+                        if (actionPath != null) {
+                            actions.add(new ActionMatch(actionPath, new Path(subpath), action));
+                        }
+                    }
+
+                    //this matches for actions that can run across multiple endpoints.
+                    //this might be something like an authorization or logging action
+                    //that acts like a filter
+                    for (Action action : req.getApi().getActions()) {
+                        Path actionPath = action.match(method, path);
+                        if (actionPath != null) {
+                            actions.add(new ActionMatch(actionPath, new Path(path), action));
+                        }
+                    }
+
+                    Collections.sort(actions);
+                    req.withActionMatches(actions);
+
+                    return;
                 }
-                break;
             }
-        }
-
-        req.withPathParams(pathParams);
-
-        //---------------------------------
-
-        if(req.getEndpoint() != null) {
-
-            //this will get all actions specifically configured on the endpoint
-            List<ActionMatch> actions = new ArrayList<>();
-
-            for (Action action : req.getEndpoint().getActions()) {
-                Path actionPath = action.match(method, afterEndpointPath);
-                if (actionPath != null) {
-                    actions.add(new ActionMatch(actionPath, new Path(afterEndpointPath), action));
-                }
-            }
-
-            //this matches for actions that can run across multiple endpoints.
-            //this might be something like an authorization or logging action
-            //that acts like a filter
-            for (Action action : req.getApi().getActions()) {
-                Path actionPath = action.match(method, afterApiPath);
-                if (actionPath != null) {
-                    actions.add(new ActionMatch(actionPath, new Path(afterApiPath), action));
-                }
-            }
-
-            Collections.sort(actions);
-            req.withActionMatches(actions);
         }
     }
+
+
 
     /**
      * This is specifically pulled out so you can mock Engine invocations
@@ -755,6 +747,8 @@ public class Engine extends Rule<Engine> {
     }
 
     public synchronized Api getApi(String apiName) {
+        if(apiName == null)
+            return null;
         //only one api will have a name version pair so return the first one.
         for (Api api : apis) {
             if (apiName.equalsIgnoreCase(api.getName()))
@@ -779,12 +773,12 @@ public class Engine extends Rule<Engine> {
         }
 
         if (existingApi != api && isStarted())
-            api.startup();
+            api.startup(this);
 
         apis = newList;
 
         if (existingApi != null && existingApi != api) {
-            existingApi.shutdown();
+            existingApi.shutdown(this);
         }
 
         return this;
@@ -793,14 +787,14 @@ public class Engine extends Rule<Engine> {
     protected void startupApi(Api api) {
         if (started) {
             try {
-                api.startup();
+                api.startup(this);
             } catch (Exception ex) {
                 log.warn("Error starting api '" + api.getName() + "'", ex);
             }
 
             for (EngineListener listener : listeners) {
                 try {
-                    listener.onStartup(api);
+                    listener.onStartup(this, api);
                 } catch (Exception ex) {
                     log.warn("Error starting api '" + api.getName() + "'", ex);
                 }
@@ -823,19 +817,18 @@ public class Engine extends Rule<Engine> {
     protected void shutdownApi(Api api) {
         if (api.isStarted()) {
             try {
-                api.shutdown();
+                api.shutdown(this);
             } catch (Exception ex) {
                 log.warn("Error shutting down api '" + api.getName() + "'", ex);
             }
 
             for (EngineListener listener : listeners) {
                 try {
-                    listener.onShutdown(api);
+                    listener.onShutdown(this, api);
                 } catch (Exception ex) {
                     log.warn("Error shutting down api '" + api.getName() + "'", ex);
                 }
             }
-
         }
     }
 
@@ -913,7 +906,7 @@ public class Engine extends Rule<Engine> {
 
     protected static void exclude(Request req, Response res) {
 
-        JSArray data = res.getData();
+        JSArray data = res.getStream();
         if(data == null)
             return;
 

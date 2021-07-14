@@ -34,31 +34,15 @@ public class Request implements JSNode.JSAccessor {
     protected long startAt = System.currentTimeMillis();
     protected long endAt = -1;
 
-    protected Chain chain = null;
-
     protected String                                 referrer   = null;
     protected String                                 remoteAddr = null;
     protected ArrayListValuedHashMap<String, String> headers    = new ArrayListValuedHashMap<>();
 
+    protected Engine engine  = null;
+    protected Chain chain = null;
     protected Url    url    = null;
     protected String method = null;
-
-    protected Engine engine  = null;
-
-    protected Path     containerPath = null;
-    protected Path     containerMatchPath = null;
-
-    protected Api    api         = null;
-    protected Path   apiPath     = null;
-    protected Path   apiMatchPath = null;
-
-    protected Endpoint endpoint     = null;
-    protected Path     endpointPath = null;
-    protected Path     endpointMatchPath = null;
-
-    protected Collection collection     = null;
-    protected Path       collectionPath = null;
-    protected Path       collectionMatchPath = null;
+    protected Operation operation = null;
 
     protected List<Chain.ActionMatch> actionMatches = new ArrayList();
 
@@ -68,10 +52,6 @@ public class Request implements JSNode.JSAccessor {
 
     protected Uploader uploader = null;
 
-    protected int retryMax = 0;
-    int  retryCount = 0;
-    File retryFile;
-
     boolean explain = false;
 
     public Request() {
@@ -79,7 +59,7 @@ public class Request implements JSNode.JSAccessor {
     }
 
     public Request(String method, String url) {
-        this(method, url, null, null, -1);
+        this(method, url, null, null);
     }
 
     public Request(String method, String url, String body) {
@@ -96,26 +76,11 @@ public class Request implements JSNode.JSAccessor {
             withBody(body.toString());
     }
 
-    public Request(String method, String url, Map<String, String> headers, Map<String, String> params, String body) {
-        withMethod(method);
-        withUrl(url);
-        withBody(body);
-
-        if (headers != null) {
-            for (String key : headers.keySet())
-                withHeader(key, headers.get(key));
-        }
-
-        if (params != null) {
-            this.url.withParams(params);
-        }
+    public Request(String method, String url, String body, ArrayListValuedHashMap<String, String> headers) {
+        this(method, url, body, null, headers);
     }
 
-    public Request(String method, String url, String body, ArrayListValuedHashMap<String, String> headers, int retryAttempts) {
-        this(method, url, body, null, headers, retryAttempts);
-    }
-
-    public Request(String method, String url, String body, Map<String, String> params, ArrayListValuedHashMap<String, String> headers, int retryMax) {
+    public Request(String method, String url, String body, Map<String, String> params, ArrayListValuedHashMap<String, String> headers) {
         withMethod(method);
         withUrl(url);
         withBody(body);
@@ -126,9 +91,6 @@ public class Request implements JSNode.JSAccessor {
 
         if (headers != null && headers.size() > 0)
             this.headers = new ArrayListValuedHashMap<>(headers);
-
-        if (retryMax > -1)
-            this.retryMax = retryMax;
     }
 
     public Engine getEngine() {
@@ -141,8 +103,6 @@ public class Request implements JSNode.JSAccessor {
     }
 
     public Request withUrl(String url) {
-        if(url == null)
-            System.out.println("asdf");
         Url u = new Url(url);
 
         String key = u.findKey("explain");
@@ -173,6 +133,13 @@ public class Request implements JSNode.JSAccessor {
         return this;
     }
 
+    public long getDuration(){
+        if(endAt < 1)
+            return System.currentTimeMillis() - startAt;
+        else
+            return endAt - startAt;
+    }
+
     public Request withMethod(String method) {
         this.method = method;
         return this;
@@ -189,55 +156,55 @@ public class Request implements JSNode.JSAccessor {
     }
 
     public Collection getCollection() {
-        return collection;
+        return operation.getCollection();
     }
 
-    /**
-     * @param collectionKeys the name of the collection to check for
-     * @return true if any of the <code>collectionKeys</code> case insensitive match <code>collectoinKey</code>
-     */
-    public boolean hasCollectionKey(String... collectionKeys) {
-        String collectionKey = getCollectionKey();
-        if (collectionKey != null) {
-            for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++) {
-                String key = collectionKeys[i];
-                if (key != null && key.equalsIgnoreCase(collectionKey)) {
-                    return true;
-                }
-            }
-        }
+//    /**
+//     * @param collectionKeys the name of the collection to check for
+//     * @return true if any of the <code>collectionKeys</code> case insensitive match <code>collectoinKey</code>
+//     */
+//    public boolean hasCollectionKey(String... collectionKeys) {
+//        String collectionKey = getCollectionKey();
+//        if (collectionKey != null) {
+//            for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++) {
+//                String key = collectionKeys[i];
+//                if (key != null && key.equalsIgnoreCase(collectionKey)) {
+//                    return true;
+//                }
+//            }
+//        }
+//
+//        return false;
+//    }
 
-        return false;
-    }
+//    public Request withContainerPath(Path containerPath, Path containerPathMatch){
+//        this.containerPath = containerPath;
+//        this.containerMatchPath = containerPathMatch;
+//        return this;
+//    }
+//
+//    public Request withCollection(Collection collection) {
+//        this.collection = collection;
+//        return this;
+//    }
 
-    public Request withContainerPath(Path containerPath, Path containerPathMatch){
-        this.containerPath = containerPath;
-        this.containerMatchPath = containerPathMatch;
-        return this;
-    }
-
-    public Request withCollection(Collection collection) {
-        this.collection = collection;
-        return this;
-    }
-
-    public Request withCollection(Collection collection, Path collectionPath, Path collectionMatchPath) {
-        this.collection = collection;
-        this.collectionPath = collectionPath;
-        this.collectionMatchPath = collectionMatchPath;
-        return this;
-    }
+//    public Request withCollection(Collection collection, Path collectionPath, Path collectionMatchPath) {
+//        this.collection = collection;
+//        this.collectionPath = collectionPath;
+//        this.collectionMatchPath = collectionMatchPath;
+//        return this;
+//    }
 
     public Endpoint getEndpoint() {
-        return endpoint;
+        return operation == null ? null : operation.getEndpoint();
     }
 
-    public Request withEndpoint(Endpoint endpoint, Path endpointPath, Path endpointMatchPath) {
-        this.endpoint = endpoint;
-        this.endpointPath = endpointPath;
-        this.endpointMatchPath = endpointMatchPath;
-        return this;
-    }
+//    public Request withEndpoint(Endpoint endpoint, Path endpointPath, Path endpointMatchPath) {
+//        this.endpoint = endpoint;
+//        this.endpointPath = endpointPath;
+//        this.endpointMatchPath = endpointMatchPath;
+//        return this;
+//    }
 
     public Request withActionMatches(List<Chain.ActionMatch> actionMatches){
         this.actionMatches.addAll(actionMatches);
@@ -414,7 +381,7 @@ public class Request implements JSNode.JSAccessor {
     }
 
     public Api getApi() {
-        return api;
+        return operation == null ? null : operation.getApi();
     }
 
     public Chain getChain() {
@@ -434,23 +401,42 @@ public class Request implements JSNode.JSAccessor {
      * @return the request path with the apiPath subtracted from the beginning
      */
     public Path getPath() {
-        Path path = url.getPath();
 
-        int startIdx = apiPath == null ? 0 : apiPath.size();
-        path = path.subpath(startIdx, path.size());
+        Path path = url.getPath();
+        Path apiPathMatch = operation.getApiMatchPath();
+        for(int i=0;i<apiPathMatch.size() && !apiPathMatch.isOptional(i) && !apiPathMatch.isWildcard(i); i++)
+            path.remove(0);
 
         return path;
     }
 
+
     public Path getSubpath() {
         Path subpath = getPath();
-        Path ep      = this.endpointPath;
-
-        int startIdx = ep == null ? 0 : ep.size();
-
-        subpath = subpath.subpath(startIdx, subpath.size());
-
+        Path epPathMatch = operation.getEpMatchPath();
+        for(int i=0;i<epPathMatch.size() && !epPathMatch.isOptional(i) && !epPathMatch.isWildcard(i); i++)
+            subpath.remove(0);
         return subpath;
+    }
+
+    public Path getApiPath(){
+        int length = 0;
+        Path path = url.getPath();
+        Path apiPathMatch = operation.getApiMatchPath();
+        for(int i=0;i<apiPathMatch.size() && !apiPathMatch.isOptional(i) && !apiPathMatch.isWildcard(i); i++)
+            length += 1;
+
+        return path.subpath(0, length);
+    }
+
+    public Path getEndpointPath(){
+        int length = 0;
+        Path epPathMatch = operation.getEpMatchPath();
+        for(int i=0;i<epPathMatch.size() && !epPathMatch.isOptional(i) && !epPathMatch.isWildcard(i); i++)
+            length += 1;
+
+        Path path = getPath();
+        return path.subpath(0, length);
     }
 
     /**
@@ -472,44 +458,29 @@ public class Request implements JSNode.JSAccessor {
     }
 
     public Relationship getRelationship(){
-        if(collection != null && getRelationshipKey() != null)
-            return collection.getRelationship(getRelationshipKey());
-        return null;
+        return operation.getRelationship();
     }
 
-    public Request withApi(Api api, Path apiPath, Path apiMatchPath) {
-        this.api = api;
-        this.apiPath = apiPath;
-        this.apiMatchPath = apiMatchPath;
-        return this;
-    }
-
+//    public Request withApi(Api api, Path apiPath, Path apiMatchPath) {
+//        this.api = api;
+//        this.apiPath = apiPath;
+//        this.apiMatchPath = apiMatchPath;
+//        return this;
+//    }
+//
     public String getApiUrl() {
-        return url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + apiPath;
+        return url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + getApiPath();
     }
 
-    public Path getApiPath() {
-        return apiPath;
+
+
+    public Operation getOperation() {
+        return operation;
     }
 
-    public Path getEndpointPath() {
-        return endpointPath;
-    }
-
-    public Path getApiMatchPath() {
-        return apiMatchPath;
-    }
-
-    public Path getEndpointMatchPath() {
-        return endpointMatchPath;
-    }
-
-    public Path getCollectionPath() {
-        return collectionPath;
-    }
-
-    public Path getCollectionMatchPath() {
-        return collectionMatchPath;
+    public Request withOperation(Operation operation) {
+        this.operation = operation;
+        return this;
     }
 
     public String getRemoteAddr() {
@@ -547,43 +518,7 @@ public class Request implements JSNode.JSAccessor {
         return this;
     }
 
-    public Validation validate(String propOrJsonPath) {
-        return validate(propOrJsonPath, null);
-    }
 
-    public Validation validate(String propOrJsonPath, String customErrorMessage) {
-        return new Validation(this, propOrJsonPath, customErrorMessage);
-    }
-
-    public boolean isLocalRequest() {
-        String url = getUrl().toString();
-        return chain != null && !(url.startsWith("http:") || url.startsWith("https://"));
-    }
-
-    public int getRetryMax() {
-        return retryMax;
-    }
-
-    public Request withRetryMax(int retryMax) {
-        this.retryMax = retryMax;
-        return this;
-    }
-
-    public int getRetryCount() {
-        return retryCount;
-    }
-
-    public void incrementRetryCount() {
-        this.retryCount++;
-    }
-
-    public File getRetryFile() {
-        return retryFile;
-    }
-
-    public void setRetryFile(File retryFile) {
-        this.retryFile = retryFile;
-    }
 
     public List<Upload> getUploads() {
         return uploader.getUploads();
@@ -672,6 +607,14 @@ public class Request implements JSNode.JSAccessor {
             this.inputStream = inputStream;
         }
 
+    }
+
+    public Validation validate(String propOrJsonPath) {
+        return validate(propOrJsonPath, null);
+    }
+
+    public Validation validate(String propOrJsonPath, String customErrorMessage) {
+        return new Validation(this, propOrJsonPath, customErrorMessage);
     }
 
     /**

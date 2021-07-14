@@ -16,8 +16,10 @@
  */
 package io.inversion;
 
-import java.util.ArrayList;
-import java.util.List;
+import io.inversion.utils.Path;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+
+import java.util.*;
 
 /**
  * A single Endpoint, bundling one or more Path match relative Actions, is selected to service a Request.
@@ -50,6 +52,184 @@ public class Endpoint extends Rule<Endpoint> {
                 withAction(action);
         }
     }
+
+
+    ArrayListValuedHashMap<String, Path> getOperationPaths(Api api, Path apiPath) {
+        ArrayListValuedHashMap<String, Path> opPaths = new ArrayListValuedHashMap<>();
+
+//        ArrayListValuedHashMap<String, Path> mergedPaths = new ArrayListValuedHashMap();
+//        for (Action action : actions) {
+//            ArrayListValuedHashMap<String, Path> actionPaths = action.getOperationPaths(api);
+//            mergePaths(mergedPaths, actionPaths);
+//        }
+
+
+        Map<Action, ArrayListValuedHashMap<String, Path>> actionOpPaths = new HashMap();
+
+        for (Action action : actions) {
+            ArrayListValuedHashMap<String, Path> paths = action.getOperationPaths(api);
+            actionOpPaths.put(action, paths);
+        }
+
+
+        for (Rule.RuleMatcher epMatcher : getIncludeMatchers()) {
+            for (String method : epMatcher.getMethods()) {
+                List<Path> paths = epMatcher.getPaths();
+                for (Path path : paths) {
+
+                    Path actionMatchPath = path.getOptionalSuffix();
+
+                    System.out.println(path + " - " + actionMatchPath);
+
+                    List<Path> mergedPaths = new ArrayList();
+                    boolean    hasMatches  = false;
+                    for (Action action : actions) {
+                        if (action.matches(method, actionMatchPath)) {
+                            List<Path> actionPaths = actionOpPaths.get(action).get(method);
+                            mergePaths(mergedPaths, actionPaths);
+                            hasMatches = true;
+                        }
+                    }
+
+                    if (hasMatches) {
+                        Path opPath = new Path(path.getRequiredPrefix());
+                        if (opPath.size() > 0 && opPath.endsWithWildcard())
+                            opPath.removeTrailingWildcard();
+
+                        if (mergedPaths.size() > 0) {
+                            for (Path actionPath : mergedPaths) {
+                                opPaths.put(method, new Path(opPath).add(actionPath.toString()));
+                            }
+                        } else {
+
+                            List<Path> subPaths = path.getSubPaths();
+                            for(int i=0; i<subPaths.size(); i++){
+                                Path sp = subPaths.get(i);
+                                if(i == subPaths.size()-1){
+                                    if(path.endsWithWildcard() && !sp.endsWithWildcard())
+                                        sp.add("*");
+                                }
+                                opPaths.put(method, sp);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return opPaths;
+
+    }
+
+    /**
+     * DbAction gives
+     * /books
+     * /books/${bookId}
+     * /books/${bookId}/author
+     * <p>
+     * /authors
+     * /authors/${authorId}
+     * /authors/${authorId}/books
+     * <p>
+     * Something else gives:
+     * /${planes}/bob/sue
+     * <p>
+     * Something else gives:
+     * /*
+     * <p>
+     * Something else gives:
+     * <p>
+     * a/{asd}
+     * a/{zxcvzxc}
+     * {asdf}/b
+     */
+    static void mergePaths(List<Path> mPaths, List<Path> aPaths) {
+
+        for (Path aPath : aPaths) {
+
+            boolean exists = false;
+            for (int m= 0; m<mPaths.size(); m++){
+
+                Path mPath = mPaths.get(m);
+                if (aPath == mPath)
+                    continue;
+
+                for (int i = 0; i < aPath.size(); i++) {
+
+                    if (i >= mPath.size()) {
+                        break;
+                    }
+
+                    //the old rule consumes the new one  a/b consumes a/*
+                    if(aPath.isWildcard(i) && !mPath.isWildcard(i)){
+                        exists = true;
+                        break;
+                    }
+
+                    //the new rule will consume the old one....a/* consumed by a/b or a/b/c
+                    if(mPath.isWildcard(i)){
+                        mPaths.remove(m);
+                        m--;
+                        break;
+                    }
+
+                    if (!mPath.isVar(i) && aPath.isVar(i))
+                        aPath.set(i, mPath.get(i));
+
+                    if (mPath.isVar(i) && !aPath.isVar(i)){
+                        mPath.set(i, aPath.get(i));
+                    }
+
+                    if (!mPath.isVar(i) && !aPath.isVar(i)) {
+                        if (!mPath.get(i).equalsIgnoreCase(aPath.get(i)))
+                            throw ApiException.new500InternalServerError("Endpoint configuration error.  Actions have incompatible paths.");
+                    }
+
+                    if(aPath.size() == mPath.size() && i==mPath.size()-1)
+                        exists = true;
+                }
+            }
+
+            if (!exists) {
+                mPaths.add(aPath);
+            }
+        }
+
+        //-- removes "a" if "a/*" is in the list.
+        for(int i=0;i<mPaths.size(); i++){
+            for(int j=0;j<mPaths.size(); j++){
+                if(i==j)
+                    continue;
+
+                Path p1 = mPaths.get(i);
+                Path p2 = mPaths.get(j);
+
+                if(p1.size() == p2.size()+1 && p1.endsWithWildcard()){
+                    mPaths.remove(j);
+                    j--;
+                    continue;
+                }
+                if(p2.size() == p1.size()+1 && p2.endsWithWildcard()){
+                    mPaths.remove(i);
+                    i--;
+                    break;
+                }
+            }
+        }
+
+        Collections.sort(mPaths, new Comparator<Path>() {
+            @Override
+            public int compare(Path o1, Path o2) {
+                if(o1.size() < o2.size())
+                    return -1;
+                if(o1.size() > o2.size())
+                    return 1;
+                return o1.toString().compareTo(o2.toString());
+            }
+        });
+
+    }
+
 
     public Endpoint withInternal(boolean internal) {
         this.internal = internal;

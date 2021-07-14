@@ -62,7 +62,7 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 
         JSArray hrefs = new JSArray();
 
-        res.getData().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
+        res.getStream().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
         assertEquals(10, hrefs.size());
 

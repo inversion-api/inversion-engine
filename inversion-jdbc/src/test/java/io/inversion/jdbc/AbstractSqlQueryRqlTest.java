@@ -47,7 +47,7 @@ public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements
         withExpectedResult("as", "SELECT \"orders\".*, \"orders\".\"orderid\" AS \"order_identifier\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]");
         //withExpectedResult("includes", "SELECT \"orders\".\"shipCountry\", \"orders\".\"shipCity\", \"orders\".\"orderId\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]");
           withExpectedResult("includes", "SELECT \"Orders\".\"ShipCountry\", \"Orders\".\"ShipCity\" FROM \"Orders\" ORDER BY \"Orders\".\"ShipCity\" ASC, \"Orders\".\"ShipCountry\" ASC LIMIT 100 OFFSET 0 args=[]");
-        withExpectedResult("distinct", "SELECT DISTINCT \"orders\".\"shipCountry\", \"orders\".\"orderId\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]");
+        withExpectedResult("distinct", "SELECT DISTINCT \"orders\".\"shipCountry\" FROM \"orders\" ORDER BY \"orders\".\"shipCountry\" ASC LIMIT 100 OFFSET 0 args=[]");
         withExpectedResult("count1", "SELECT COUNT(*) FROM \"orders\" args=[]");
         withExpectedResult("count2", "SELECT COUNT(?) FROM \"orders\" args=[1]");
         withExpectedResult("count3", "SELECT COUNT(\"orders\".\"shipRegion\") FROM \"orders\" args=[]");
@@ -57,7 +57,7 @@ public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements
         withExpectedResult("sumIf", "SELECT SUM(CASE WHEN \"orders\".\"shipCountry\" = ? THEN 1 ELSE 0 END) AS \"French Orders\" FROM \"orders\" args=[France]");
         withExpectedResult("min", "SELECT MIN(\"orders\".\"freight\") FROM \"orders\" args=[]");
         withExpectedResult("max", "SELECT MAX(\"orders\".\"freight\") FROM \"orders\" args=[]");
-        withExpectedResult("groupCount", "SELECT \"orders\".\"shipCountry\", COUNT(*) AS \"countryCount\", \"orders\".\"orderId\" FROM \"orders\" GROUP BY \"orders\".\"shipCountry\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 0 args=[]");
+        withExpectedResult("groupCount", "SELECT \"orders\".\"shipCountry\", COUNT(*) AS \"countryCount\" FROM \"orders\" GROUP BY \"orders\".\"shipCountry\" ORDER BY \"orders\".\"shipCountry\" ASC LIMIT 100 OFFSET 0 args=[]");
         withExpectedResult("offset", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 3 args=[]");
         withExpectedResult("limit", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 7 OFFSET 0 args=[]");
         withExpectedResult("page", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 7 OFFSET 14 args=[]");

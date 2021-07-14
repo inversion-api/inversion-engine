@@ -17,11 +17,13 @@
 package io.inversion.openapi.v3;
 
 import io.inversion.Api;
+import io.inversion.Collection;
 import io.inversion.Endpoint;
 import io.inversion.Parameter;
 import io.inversion.action.db.DbAction;
 import io.inversion.action.misc.FileAction;
 import io.inversion.action.hateoas.HALAction;
+import io.inversion.action.misc.MockAction;
 import io.inversion.action.security.AuthAction;
 import io.inversion.action.security.schemes.ApiKeyScheme;
 import io.inversion.action.security.schemes.BearerScheme;
@@ -42,10 +44,17 @@ public class OpenAPIActionTest {
                         JdbcDb.class.getResource("northwind-h2.ddl").toString()))
                 .withEndpoint(new Endpoint("*", "openapi.json,openapi.yaml", new OpenAPIAction()))
                 .withEndpoint(new Endpoint("*", "rapidoc.html", new FileAction()))
-                .withEndpoint(new Endpoint("*", "*", new HALAction(), //
-                        new AuthAction().withAuthScheme(new BearerScheme().withDescription("this is a JWT."))
-                                        .withAuthScheme(new ApiKeyScheme().withParameter(new Parameter("username", "username", "query", false))
-                                                .withParameter(new Parameter("password", "password", "query", false))), new DbAction()))
+
+//                .withEndpoint(new Endpoint("*", "auth.json", new FileAction()))
+//                .withEndpoint(new Endpoint("*", "test/*", new HALAction(), new MockAction()))
+//                .withCollection(new Collection().withName("auths").withSchemaRef("http://localhost:8080/northwind/v1/us/auth.json").withProperty("id", "number").withIndex("pk", "primary", true, "id"));
+
+                .withEndpoint(new Endpoint("*", "*", new HALAction() //
+                        //,new AuthAction().withAuthScheme(new BearerScheme().withDescription("this is a JWT."))
+                        //                .withAuthScheme(new ApiKeyScheme().withParameter(new Parameter("username", "username", "query", false))
+                        //                        .withParameter(new Parameter("password", "password", "query", false)))//
+                        , new DbAction()))
+
         ;
         return api;
     }

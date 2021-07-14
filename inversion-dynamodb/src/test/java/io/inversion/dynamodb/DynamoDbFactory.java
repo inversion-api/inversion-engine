@@ -153,14 +153,14 @@ public class DynamoDbFactory {
 
                 res = h2Engine.get(next);
                 res.assertOk();
-                if (res.getData().size() == 0)
+                if (res.getStream().size() == 0)
                     break;
 
                 pages += 1;
                 next = res.getNext();
 
                 //-- now post to DynamoDb
-                for (Object o : res.getData()) {
+                for (Object o : res.getStream()) {
                     total += 1;
                     JSNode js = (JSNode) o;
 

@@ -180,7 +180,10 @@ public class Path {
      *
      * @param parts path parts to add
      */
-    public void add(String parts) {
+    public Path add(String parts) {
+
+        String debug = this.size() == 0 ? parts : Utils.implode("/", this.toString(), parts);
+
         if (!Utils.empty(parts)) {
             for (String part : Utils.explode("/", parts)) {
 
@@ -197,21 +200,44 @@ public class Path {
                 else if(part.startsWith("$"))
                     part = parts.substring(1);
 
-                if(part.startsWith("{") && !part.endsWith("}"))
-                    part += "}";
+                boolean isVar = part.startsWith("{");
+                if(isVar){
+                    part = part.substring(1);
+                    if(part.endsWith("}"))
+                        part = part.substring(0, part.length() -1);
+                }
+
+                if(!isVar && part.contains(":"))
+                    throw new ApiException("Invalid path segment '{}'.  A ':' can only be used in a Path if the segment is a variable wrapped in curly brackets.", parts);
+
+                boolean isRegx = part.contains(":");
+                if(isRegx){
+                    String name = part.substring(0, part.indexOf(":"));
+                    String regex = part.substring(part.indexOf(":"));
+                    if(name.contains("[") || name.contains("{") || name.contains("]") || name.contains("}"))
+                        throw new ApiException("Invalid path segment '{}'.", parts);
+                }
+
+                if(isVar)
+                    part = "{" + part + "}";
 
                 if(isOptional)
                     part = "[" + part + "]";
+
+                if(size() > 0 && isWildcard(size()-1))
+                    throw new ApiException("Invalid path '{}'.  Wildcards can only be used as the last segment in a path.", debug);
 
                 this.parts.add(part);
                 lc.add(part.toLowerCase());
             }
         }
+        return this;
     }
 
-    public void set(int index, String part){
+    public Path set(int index, String part){
         parts.set(index, part);
         lc.set(index, part.toLowerCase());
+        return this;
     }
 
     public Path chop(){
@@ -233,6 +259,27 @@ public class Path {
             return parts.remove(index);
         }
         return null;
+    }
+
+    /**
+     * @return true if this Path ended in a "*" which was removed, false if this Path does not end in a "*"
+     */
+    public boolean removeTrailingWildcard(){
+        if(size() > 0 && isWildcard(size() -1)){
+            remove(size() -1);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return true if this Path ends with a "*"
+     */
+    public boolean endsWithWildcard(){
+        if(size() > 0 && isWildcard(size() -1)){
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -316,6 +363,13 @@ public class Path {
      */
     public boolean isWildcard(int index) {
         return "*".equals(get(index));
+    }
+
+    /**
+     * @return true if this path equals "*"
+     */
+    public boolean isWildcard(){
+        return size() == 1 && endsWithWildcard();
     }
 
     /**
@@ -411,8 +465,9 @@ public class Path {
         return matches(new Path(toMatch));
     }
 
+
     /**
-     * Checks if this Path is as case insensitive match, including any optional rules, wildcards, and regexes to <code>concretePath</code>.
+     * Checks if this Path is a case insensitive match, including any optional rules, wildcards, and regexes to <code>concretePath</code>.
      * <p>
      * As the name implies <code>concretePath</code> is considered to be a literal path not containing optionals, wildcards, and regexes.
      * <p>
@@ -429,49 +484,165 @@ public class Path {
      * <p>
      * All regexes are compiled with Pattern.CASE_INSENSITIVE.
      *
-     * @param concretePath the path to match against
+     * @param toMatch the path to match against
      * @return true if this path matches <code>concretePath</code>
      */
-    public boolean matches(Path concretePath) {
-        Path matchedPath = new Path();
+    public boolean matches(Path toMatch) {
 
-        if (size() < concretePath.size() && !"*".equals(last())) {
-            return false;
-        }
+        int len = Math.max(size(), toMatch.size());
+        Path a = this;
+        Path b = toMatch;
 
-        for (int i = 0; i < size(); i++) {
-            String myPart = get(i);
+        boolean aOptional = false;
+        boolean bOptional = false;
+        for(int i=0; i<len; i++){
+            String aVal = a.get(i);
+            String bVal = b.get(i);
 
-            if (i == size() - 1 && myPart.equals("*"))
+            if("*".equals(aVal) || "*".equals(bVal))
                 return true;
 
-            boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
+            aOptional = aOptional || (aVal != null && aVal.startsWith("["));
+            bOptional = bOptional || (bVal != null && bVal.startsWith("["));
 
-            if (i == concretePath.size()) {
-                return optional;
-            }
+            if(aVal == null || bVal == null)
+                return aOptional || bOptional;
 
-            if (optional)
-                myPart = myPart.substring(1, myPart.length() - 1);
-
-            String theirPart = concretePath.get(i);
-            matchedPath.add(theirPart);
-
-            if(isVar(i)) {
-                String regex = getRegex(i);
+            if(a.isVar(i) && b.isVar(i)){
+                continue;
+            }else if(a.isVar(i)){
+                String regex = a.getRegex(i);
                 if (regex != null) {
+                    String value = b.get(i);
+                    value = !value.startsWith("[") ? value : value.substring(1, value.length()-1);
                     Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-                    if (!pattern.matcher(theirPart).matches()) {
+                    if(!pattern.matcher(value).matches())
                         return false;
-                    }
                 }
-            } else if (!myPart.equalsIgnoreCase(theirPart)) {
-                return false;
+            }
+            else if(b.isVar(i)){
+                String regex = b.getRegex(i);
+                if (regex != null) {
+                    String value = a.get(i);
+                    value = !value.startsWith("[") ? value : value.substring(1, value.length()-1);
+                    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+                    if(!pattern.matcher(value).matches())
+                        return false;
+                }
+            }
+            else{
+                aVal = !aVal.startsWith("[") ? aVal : aVal.substring(1, aVal.length()-1);
+                bVal = !bVal.startsWith("[") ? bVal : bVal.substring(1, bVal.length()-1);
+                if(!aVal.equalsIgnoreCase(bVal))
+                    return false;
             }
         }
-
         return true;
+//
+//
+//
+//
+//
+//
+//        if (size() < toMatch.size() && !"*".equals(last())) {
+//            return false;
+//        }
+//
+//        for(int i=0; i<size(); i++){
+//            if(isWildcard(i))
+//                return true;
+//
+//            if(i == toMatch.size() -1 && toMatch.isWildcard(i))
+//                return true;
+//
+//            if(isVar(i) && toMatch.isVar(i)){
+//                continue;
+//            }
+//
+//            if(isVar(i)){
+//                String value = toMatch.get(i);
+//                String regex = getRegex(i);
+//                if (regex != null) {
+//                    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+//                    if(!pattern.matcher(value).matches())
+//                        return false;
+//                }
+//            }else if(toMatch.isVar(i)){
+//                String value = get(i);
+//                String regex = toMatch.getRegex(i);
+//                if (regex != null) {
+//                    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+//                    if(!pattern.matcher(value).matches())
+//                        return false;
+//                }
+//            }
+//            else{
+//                if(!lc.get(i).equalsIgnoreCase(toMatch.lc.get(i)))
+//                    return false;
+//            }
+//        }
+//        return true;
+//
+//
+
+
+
+
+//        if (size() < toMatch.size() && !"*".equals(last())) {
+//            return false;
+//        }
+//
+//        for (int i = 0; i < size(); i++) {
+//            String myPart = get(i);
+//
+//            if (i == size() - 1 && myPart.equals("*"))
+//                return true;
+//
+//            boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
+//
+//            if (i == toMatch.size()) {
+//                return optional;
+//            }
+//
+//            if (optional)
+//                myPart = myPart.substring(1, myPart.length() - 1);
+//
+//            String theirPart = toMatch.get(i);
+//            matchedPath.add(theirPart);
+//
+//            if(isVar(i)) {
+//                String regex = getRegex(i);
+//                if (regex != null) {
+//                    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+//                    if (!pattern.matcher(theirPart).matches()) {
+//                        return false;
+//                    }
+//                }
+//            } else if (!myPart.equalsIgnoreCase(theirPart)) {
+//                return false;
+//            }
+//        }
+//
+//        return true;
     }
+//
+//    public boolean matchesPattern(Path pattern){
+//
+//        for(int i=0; i<size(); i++){
+//            if(isWildcard(i))
+//                return true;
+//
+//            if(i == pattern.size() -1 && pattern.isWildcard(i))
+//                return true;
+//
+//            if(isVar(i) || pattern.isVar(i))
+//                continue;
+//
+//            if(!get(i).equalsIgnoreCase(pattern.get(i)))
+//                return false;
+//        }
+//        return true;
+//    }
 
     /**
      * Convenience overloading of {@link #extract(Map, Path, boolean)} with <code>greedy = true</code>.
@@ -596,4 +767,67 @@ public class Path {
         }
         return true;
     }
+
+    /**
+     * Creates a list of all subpaths breaking before each optional segment
+     * Ex:
+     * <pre>
+     *     a/b[c]/d/[e]/*
+     * </pre>
+     * Becomes:
+     * <pre>
+     *     a/b
+     *     a/b/c/d
+     *     a/b/c/d/e/*
+     * </pre>
+     *
+     *
+     * @return a list of all valid paths
+     */
+    public List<Path> getSubPaths(){
+        List<Path> paths = new ArrayList();
+        Path subpath = new Path();
+
+        for (int i = 0; i < size(); i++) {
+            boolean optional = false;
+            String part = get(i);
+            if(part.startsWith("[")){
+                optional = true;
+                part = part.substring(1, part.length()-1);
+            }
+
+            if(optional){
+                paths.add(new Path(subpath));
+            }
+            subpath.add(part);
+
+            if(isWildcard(i))
+                break;
+        }
+        paths.add(new Path(subpath));
+
+        return paths;
+    }
+
+    public Path getOptionalSuffix(){
+        Path optional = new Path(this);
+        for(int i=0; i<optional.size(); i++){
+            if(optional.isOptional(i) || optional.isWildcard(i))
+                break;
+            optional.remove(i);
+            i -=1;
+        }
+        return optional;
+    }
+
+    public Path getRequiredPrefix(){
+        Path required = new Path();
+        for(int i=0; i<size(); i++){
+            if(isOptional(i))
+                break;
+            required.add(get(i));
+        }
+        return required;
+    }
+
 }

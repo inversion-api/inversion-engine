@@ -9,3 +9,10 @@ dependencies {
 	
 
 }
+
+
+task run(type:JavaExec) {
+	main = "io.inversion.utils.TestUploads"
+	classpath = sourceSets.main.runtimeClasspath
+	systemProperties System.getProperties()
+}

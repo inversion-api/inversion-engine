@@ -50,7 +50,7 @@ public class SqlServerRqlUnitTest extends AbstractSqlQueryRqlTest {
         withExpectedResult("not", "SELECT \"orders\".* FROM \"orders\" WHERE NOT ((\"orders\".\"shipCity\" = ? OR \"orders\".\"shipCity\" = ?)) ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[Reims, Charleroi]");
         withExpectedResult("as", "SELECT \"orders\".*, \"orders\".\"orderid\" AS \"order_identifier\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
         withExpectedResult("includes", "SELECT \"orders\".\"shipCountry\", \"orders\".\"shipCity\" FROM \"orders\" ORDER BY \"orders\".\"shipCity\" ASC, \"orders\".\"shipCountry\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
-        withExpectedResult("distinct", "SELECT DISTINCT \"orders\".\"shipCountry\", \"orders\".\"orderId\" FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
+        withExpectedResult("distinct", "SELECT DISTINCT \"orders\".\"shipCountry\" FROM \"orders\" ORDER BY \"orders\".\"shipCountry\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
         //      .withResult("count1", "");
         //      .withResult("count2", "");
         //      .withResult("count3", "");
@@ -60,7 +60,7 @@ public class SqlServerRqlUnitTest extends AbstractSqlQueryRqlTest {
         //      .withResult("sumIf", "");
         //      .withResult("min", "");
         //      .withResult("max", "");
-        withExpectedResult("groupCount", "SELECT \"orders\".\"shipCountry\", COUNT(*) AS \"countryCount\", \"orders\".\"orderId\" FROM \"orders\" GROUP BY \"orders\".\"shipCountry\" ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
+        withExpectedResult("groupCount", "SELECT \"orders\".\"shipCountry\", COUNT(*) AS \"countryCount\" FROM \"orders\" GROUP BY \"orders\".\"shipCountry\" ORDER BY \"orders\".\"shipCountry\" ASC OFFSET 0 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
         withExpectedResult("offset", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC OFFSET 3 ROWS FETCH NEXT 100 ROWS ONLY args=[]");
         withExpectedResult("limit", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC OFFSET 0 ROWS FETCH NEXT 7 ROWS ONLY args=[]");
         withExpectedResult("page", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC OFFSET 14 ROWS FETCH NEXT 7 ROWS ONLY args=[]");

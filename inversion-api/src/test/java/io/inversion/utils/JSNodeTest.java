@@ -20,11 +20,49 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.Test;
 
+import javax.sound.midi.Soundbank;
+import java.io.BufferedInputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JSNodeTest {
+
+//    @Test
+//    public void testStreamingParser(){
+//        JSNode objectParsed = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("orders.json")));
+//        JSNode streamParsed = JSNode.parseJsonStreaming(Utils.read(getClass().getResourceAsStream("orders.json")));
+//
+//        String str1 = objectParsed.toString();
+//        String str2 = streamParsed.toString();
+//        assertEquals(str1, str2);
+//    }
+//
+
+
+    public static void main(String[] ars)throws Exception{
+        long start1 = Utils.time();
+        List parsed = new ArrayList();
+        for(int i=0;i<1000; i++){
+            parsed.add(JSNode.parseJson(new BufferedInputStream(JSNodeTest.class.getResourceAsStream("orders.json"))));
+        }
+        long end1 = Utils.time();
+//        long start2 = Utils.time();
+//
+//        for(int i=0;i<1000; i++){
+//            JSNode objectParsed = JSNode.parseJsonNode(json);
+//
+//            System.out.println(i);
+//        }
+//        long end2 = Utils.time();
+//
+//        System.out.println(end1 - start1);
+//        System.out.println(end2 - start2);
+//        System.out.println((end2-start2) / (end1 - start1));
+    }
+
 
     @Test
     public void testIdentityRef(){
@@ -37,7 +75,6 @@ public class JSNodeTest {
         System.out.println(str);
 
         assertTrue(str.indexOf("$ref")> 0);
-
 
         parent = new JSNode("1", abc1, "2", abc2);
         str = parent.toString();

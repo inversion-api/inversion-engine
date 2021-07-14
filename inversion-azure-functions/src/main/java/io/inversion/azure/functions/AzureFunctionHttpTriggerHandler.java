@@ -25,6 +25,7 @@ import io.inversion.Api;
 import io.inversion.Engine;
 import io.inversion.Request;
 import io.inversion.Response;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.util.List;
 import java.util.Optional;
@@ -75,35 +76,41 @@ public class AzureFunctionHttpTriggerHandler {
 
         String body = request.getBody().isPresent() ? request.getBody().get() : null;
 
-        Request req = new Request(method, url, request.getHeaders(), request.getQueryParameters(), body);
+        ArrayListValuedHashMap headers = new ArrayListValuedHashMap();
+        headers.putAll(request.getHeaders());
+
+        Request req = new Request(method, url, body, request.getQueryParameters(), headers);
         return req;
     }
 
     protected HttpResponseMessage buildHttpResponseMessage(HttpRequestMessage<Optional<String>> azReq, Request req, Response res) throws Exception {
-        Builder builder = azReq.createResponseBuilder(HttpStatus.valueOf(res.getStatusCode()));
+//        Builder builder = azReq.createResponseBuilder(HttpStatus.valueOf(res.getStatusCode()));
+//
+//        asdasdf
+//        for (String key : res.getHeaders().keySet()) {
+//            List          values = res.getHeaders().get(key);
+//            StringBuilder buff   = new StringBuilder();
+//            for (int i = 0; i < values.size(); i++) {
+//                buff.append(values.get(i));
+//                if (i < values.size() - 1)
+//                    buff.append(",");
+//            }
+//            builder.header(key, buff.toString());
+//            res.debug(key + " " + buff);
+//        }
+//        if ("OPTIONS".equals(req.getMethod())) {
+//            //
+//        } else {
+//            String contentType = res.getContentType();
+//            builder.header("Content-Type", contentType);
+//
+//            String output = res.getOutput();
+//            builder.body(output);
+//        }
+//
+//        return builder.build();
 
-        for (String key : res.getHeaders().keySet()) {
-            List          values = res.getHeaders().get(key);
-            StringBuilder buff   = new StringBuilder();
-            for (int i = 0; i < values.size(); i++) {
-                buff.append(values.get(i));
-                if (i < values.size() - 1)
-                    buff.append(",");
-            }
-            builder.header(key, buff.toString());
-            res.debug(key + " " + buff);
-        }
-        if ("OPTIONS".equals(req.getMethod())) {
-            //
-        } else {
-            String contentType = res.getContentType();
-            builder.header("Content-Type", contentType);
-
-            String output = res.getOutput();
-            builder.body(output);
-        }
-
-        return builder.build();
+        return null;
     }
 
     /**

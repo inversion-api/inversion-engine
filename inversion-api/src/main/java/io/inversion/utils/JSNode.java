@@ -16,19 +16,18 @@
  */
 package io.inversion.utils;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.exc.InputCoercionException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.zjsonpatch.JsonDiff;
 import com.flipkart.zjsonpatch.JsonPatch;
 import io.inversion.ApiException;
-import io.inversion.Property;
-import org.apache.commons.lang3.tuple.Pair;
+import netscape.javascript.JSObject;
 import org.apache.commons.lang3.tuple.Triple;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -63,6 +62,9 @@ import java.util.stream.Stream;
  * @see <a href="https://github.com/flipkart-incubator/zjsonpatch">JSONPatch</a>
  */
 public class JSNode implements Map<String, Object> {
+
+    static JsonFactory parserFactory = new JsonFactory();
+
     /**
      * Maps the lower case JSProperty.name to the property for case
      * insensitive lookup with the ability to preserve the original
@@ -109,116 +111,146 @@ public class JSNode implements Map<String, Object> {
      */
     public static Object parseJson(String json) {
         try {
-            ObjectMapper mapper   = new ObjectMapper();
-            JsonNode     rootNode = mapper.readValue(json, JsonNode.class);
+            JsonParser  parser       = parserFactory.createParser(json.getBytes());
+            return parseJson(parser, null);
 
-            Object parsed = JSNode.mapJsonNode(rootNode, "#", new HashMap());
-
-            return parsed;
-        } catch (Exception ex) {
-            String msg = "Error parsing JSON:" + ex.getMessage();
-
-            if (!(ex instanceof JsonParseException)) {
-                msg += "\r\nSource:" + json;
-            }
-
-            throw new RuntimeException("400 Bad Request: '" + msg + "'");
+        } catch (Exception e) {
+            throw ApiException.new400BadRequest("Invalid JSON.", e);
         }
     }
 
-    public static interface JSNodeVisitor{
+    public static Object parseJson(InputStream json) {
+        try {
+            JsonParser  parser       = parserFactory.createParser(json);
+            return parseJson(parser, null);
+
+        } catch (Exception e) {
+            throw ApiException.new400BadRequest("Invalid JSON.");
+        }
+    }
+
+    static JSNode parseJson(JsonParser parser, JSNode node) throws Exception {
+        JsonToken token;
+        String    name  = null;
+        boolean isArray = node != null && node.isArray();
+        while ((token = parser.nextToken()) != JsonToken.END_OBJECT) {
+            switch (token) {
+                case START_OBJECT:
+                    JSNode childNode = parseJson(parser, new JSNode());
+                    if(node == null)
+                        return childNode;
+                    if(isArray)
+                        ((JSArray)node).add(childNode);
+                    else
+                        node.put(name, childNode);
+                    break;
+                case END_OBJECT:
+                    return node;
+                case START_ARRAY:
+                    JSNode childArr = parseJson(parser, new JSArray());
+                    if(node == null)
+                        return childArr;
+                    if(isArray)
+                        ((JSArray)node).add(childArr);
+                    else
+                        node.put(name, childArr);
+                    break;
+                case END_ARRAY:
+                    return (JSArray)node;
+                case FIELD_NAME:
+                    name = parser.getCurrentName();
+                    break;
+                case VALUE_EMBEDDED_OBJECT:
+                    break;
+                case VALUE_STRING:
+                    if(isArray)
+                        ((JSArray)node).add(parser.getValueAsString());
+                    else
+                        node.put(name, parser.getValueAsString());
+                    break;
+                case VALUE_NUMBER_INT:
+                    try{
+                        if(isArray)
+                            ((JSArray)node).add(parser.getValueAsInt());
+                        else
+                            node.put(name, parser.getValueAsInt());
+                        break;
+                    }
+                    catch(InputCoercionException ex){
+                        if(isArray)
+                            ((JSArray)node).add(parser.getValueAsLong());
+                        else
+                            node.put(name, parser.getValueAsLong());
+                        break;
+                    }
+
+                case VALUE_NUMBER_FLOAT:
+                    if(isArray)
+                        ((JSArray)node).add(parser.getValueAsDouble());
+                    else
+                        node.put(name, parser.getValueAsDouble());
+                    break;
+                case VALUE_TRUE:
+                    if(isArray)
+                        ((JSArray)node).add(true);
+                    else
+                        node.put(name, true);
+                    break;
+                case VALUE_FALSE:
+                    if(isArray)
+                        ((JSArray)node).add(false);
+                    else
+                        node.put(name, false);
+                    break;
+                case VALUE_NULL:
+                    if(isArray)
+                        ((JSArray)node).add(null);
+                    else
+                        node.put(name, null);
+                    break;
+
+                default:
+                    throw new ApiException("Unknown token {}", token);
+            }
+        }
+        return node;
+    }
+
+
+    public interface JSNodeVisitor {
         boolean visit(JSNode node, String key, Object value, Stack<Triple<JSNode, String, Object>> path);
     }
 
-    public void visit(JSNodeVisitor visitor){
+    public void visit(JSNodeVisitor visitor) {
         visit(visitor, this, new Stack<>(), new IdentityHashMap<>());
     }
 
-    void visit(JSNodeVisitor visitor, JSNode node, Stack<Triple<JSNode, String, Object>> path, IdentityHashMap<JSNode, JSNode> visited){
+    void visit(JSNodeVisitor visitor, JSNode node, Stack<Triple<JSNode, String, Object>> path, IdentityHashMap<JSNode, JSNode> visited) {
 
-        if(visited.containsKey(node))
+        if (visited.containsKey(node))
             return;
         visited.put(node, node);
 
         List<JSProperty> props = node.getProperties();
-        for(int i=0; i<props.size(); i++){
-            JSProperty prop = props.get(i);
-            String name = prop.getName();
-            Object value = prop.getValue();
+        for (int i = 0; i < props.size(); i++) {
+            JSProperty prop  = props.get(i);
+            String     name  = prop.getName();
+            Object     value = prop.getValue();
 
             Triple triple = Triple.of(node, name, value);
             path.push(triple);
             try {
-                if(visitor.visit(node, name, value, path)){
-                    if(value instanceof JSNode){
-                        visit(visitor, (JSNode)value, path, visited);
+                if (visitor.visit(node, name, value, path)) {
+                    if (value instanceof JSNode) {
+                        visit(visitor, (JSNode) value, path, visited);
                     }
                 }
-            }
-            finally {
+            } finally {
                 path.pop();
             }
         }
     }
 
-
-    static Object mapJsonNode(JsonNode json, String path, Map<String, JSNode> visited) {
-        if (json == null)
-            return null;
-
-        if (json.isNull())
-            return null;
-
-        if (json.isValueNode()) {
-            if (json.isNumber())
-                return json.numberValue();
-
-            if (json.isBoolean())
-                return json.booleanValue();
-
-            return json.asText();
-        }
-
-        if (json.isArray()) {
-            JSArray retVal = new JSArray();
-            visited.put(path, retVal);
-
-            int i=0;
-            for (JsonNode child : json) {
-                retVal.add(mapJsonNode(child, (path + "[" + i + "]"), visited));
-                i++;
-            }
-
-            return retVal;
-        } else if (json.isObject()) {
-
-//            JsonNode refNode = json.get("$ref");
-//            if(refNode != null){
-//                String ref = refNode.asText();
-//                JSNode refTarget = visited.get(ref);
-//                if(refTarget == null) {
-//                    throw new ApiException("JSON $ref invalid {}", ref);
-//                }
-//
-//                return refTarget;
-//            }
-//            else
-                {
-                JSNode retVal = new JSNode();
-                visited.put(path, retVal);
-
-                Iterator<String> it = json.fieldNames();
-                while (it.hasNext()) {
-                    String   field = it.next();
-                    JsonNode value = json.get(field);
-                    retVal.put(field, mapJsonNode(value, path + "/" + field, visited));
-                }
-                return retVal;
-            }
-        }
-
-        throw new ApiException("Unparseable json {}", json);
-    }
 
     /**
      * Utility overloading of {@link #parseJson(String)} to cast the return as a JSNode
@@ -262,9 +294,9 @@ public class JSNode implements Map<String, Object> {
     static void writeNode(JSNode node, JsonGenerator json, IdentityHashMap<Object, String> visited, boolean lowercaseNames, String path) throws Exception {
 
         if (visited.containsKey(node)) {
-                json.writeStartObject();
-                json.writeStringField("$ref", visited.get(node));
-                json.writeEndObject();
+            json.writeStartObject();
+            json.writeStringField("$ref", visited.get(node));
+            json.writeEndObject();
             return;
         }
 
@@ -280,9 +312,9 @@ public class JSNode implements Map<String, Object> {
         //json.writeStringField("$id", path);
 
         for (String key : node.keySet()) {
-            JSProperty p = node.getProperty(key);
-            String name  = lowercaseNames ? p.getName().toLowerCase() : p.getName();
-            Object value = p.getValue();
+            JSProperty p     = node.getProperty(key);
+            String     name  = lowercaseNames ? p.getName().toLowerCase() : p.getName();
+            Object     value = p.getValue();
 
             if (value == null) {
                 json.writeNullField(name);
@@ -290,7 +322,7 @@ public class JSNode implements Map<String, Object> {
                 json.writeFieldName(name);
                 writeNode((JSNode) value, json, visited, lowercaseNames, path + "/" + name);
             } else if (value instanceof String) {
-                if(value.equals("null"))
+                if (value.equals("null"))
                     json.writeNullField(name);
                 else
                     json.writeStringField(name, (String) value);
@@ -327,7 +359,7 @@ public class JSNode implements Map<String, Object> {
         json.writeStartArray();
         List values = array.asList();
 
-        for (int i=0; i<values.size(); i++) {
+        for (int i = 0; i < values.size(); i++) {
             Object value = values.get(i);
             if (value == null) {
                 json.writeNull();
@@ -335,7 +367,7 @@ public class JSNode implements Map<String, Object> {
                 writeNode((JSNode) value, json, visited, lowercaseNames, path + "[" + i + "]");
             } else {
                 if (value instanceof String) {
-                    if(value.equals("null"))
+                    if (value.equals("null"))
                         json.writeNull();
                     else
                         json.writeString(value.toString());
@@ -388,9 +420,9 @@ public class JSNode implements Map<String, Object> {
      * @return a dot based path expression
      */
     static String fromJsonPointer(String jsonPointer) {
-        if (jsonPointer.charAt(0) == '#'){
+        if (jsonPointer.charAt(0) == '#') {
             jsonPointer = jsonPointer.substring(1);
-            if(jsonPointer.charAt(0) == '/')
+            if (jsonPointer.charAt(0) == '/')
                 jsonPointer = jsonPointer.substring(1);
         }
 
@@ -534,12 +566,12 @@ public class JSNode implements Map<String, Object> {
         //-- you can visit a path more than once trying different parts of the search path
         //-- but you can only visit a node once for any given permutation of the path.
         String pathStr = path.toString();
-        Set old = visited.get(pathStr);
-        if(old == null){
+        Set    old     = visited.get(pathStr);
+        if (old == null) {
             old = new HashSet();
             visited.put(pathStr, old);
         }
-        if(old.contains(this))
+        if (old.contains(this))
             return collected;
         old.add(this);
         //-- end infinite recursion protection
@@ -678,20 +710,18 @@ public class JSNode implements Map<String, Object> {
                         }
                     }
                 }
-            }
-            else
-            {
+            } else {
                 //-- $..book[(@.length-1)] -> @_length-1
                 //-- $..book[-1:] -> -1:
                 //-- $..book[0,1] -> 0,1
                 //-- $..book[:2] -> :2
-                if(isArray()) {
+                if (isArray()) {
 
-                    int length = ((JSArray)this).length();
+                    int length = ((JSArray) this).length();
 
                     List found = new ArrayList();
                     if (expr.startsWith("(@_length-")) {
-                        int index = Integer.parseInt(expr.substring(expr.indexOf("-") + 1, expr.length()-1).trim());
+                        int index = Integer.parseInt(expr.substring(expr.indexOf("-") + 1, expr.length() - 1).trim());
                         if (length - index > 0) {
                             found.add(get(length - index));
                         }
@@ -702,26 +732,25 @@ public class JSNode implements Map<String, Object> {
                         }
                     } else if (expr.endsWith(":")) {
                         int idx = Integer.parseInt(expr.substring(0, expr.length() - 1).trim()) * -1;
-                        if(idx <= length)
+                        if (idx <= length)
                             found.add(get(length - idx));
                     } else {
-                        try{
+                        try {
 
-                        int start = Integer.parseInt(expr.substring(0, expr.indexOf(":")).trim());
-                        int end   = Integer.parseInt(expr.substring(expr.indexOf(":") + 1).trim());
-                        for (int i = start; i <= end && i < length; i++){
-                            found.add(get(i));
-                        }}
-                        catch(Exception ex){
+                            int start = Integer.parseInt(expr.substring(0, expr.indexOf(":")).trim());
+                            int end   = Integer.parseInt(expr.substring(expr.indexOf(":") + 1).trim());
+                            for (int i = start; i <= end && i < length; i++) {
+                                found.add(get(i));
+                            }
+                        } catch (Exception ex) {
                             System.out.println(expr);
                             ex.printStackTrace();
                         }
                     }
-                    if(found.size() > 0) {
-                        if(path.size() > 1) {
+                    if (found.size() > 0) {
+                        if (path.size() > 1) {
                             List<String> nextPath = path.subList(1, path.size());
-                        }
-                        else {
+                        } else {
                             collected.addAll(found);
                         }
                     }
@@ -1165,7 +1194,7 @@ public class JSNode implements Map<String, Object> {
      * @param names the keys to remove
      * @return the first non null value for <code>names</code>
      */
-    public Object removeAll(String... names){
+    public Object removeAll(String... names) {
         Object first = null;
 
         for (String name : names) {
@@ -1597,7 +1626,7 @@ public class JSNode implements Map<String, Object> {
         }
     }
 
-    public interface JSAccessor{
+    public interface JSAccessor {
 
         JSNode getJson();
 
@@ -1606,51 +1635,51 @@ public class JSNode implements Map<String, Object> {
         }
 
         default JSArray findAll(String pathExpression) {
-            if(getJson() == null)
+            if (getJson() == null)
                 return new JSArray();
 
             return getJson().findAll(pathExpression, -1);
         }
 
         default JSNode findNode(String path) {
-            if(getJson() == null)
+            if (getJson() == null)
                 return null;
 
             return getJson().findNode(path);
         }
 
         default JSArray findArray(String path) {
-            if(getJson() == null)
+            if (getJson() == null)
                 return null;
             return getJson().findArray(path);
         }
 
         default String findString(String path) {
-            if(getJson() == null)
+            if (getJson() == null)
                 return null;
             return getJson().findString(path);
         }
 
         default int findInt(String path) {
-            if(getJson() == null)
+            if (getJson() == null)
                 return -1;
             return getJson().findInt(path);
         }
 
         default Long findLong(String path) {
-            if(getJson() == null)
+            if (getJson() == null)
                 return -1l;
             return getJson().findLong(path);
         }
 
         default Double findDouble(String path) {
-            if(getJson() == null)
+            if (getJson() == null)
                 return -1d;
             return getJson().findDouble(path);
         }
 
         default boolean findBoolean(String path) {
-            if(getJson() == null)
+            if (getJson() == null)
                 return false;
             return getJson().findBoolean(path);
         }

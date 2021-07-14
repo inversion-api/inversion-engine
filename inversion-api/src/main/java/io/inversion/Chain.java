@@ -25,16 +25,16 @@ public class Chain {
 
     public static final Set<String> APPEND_PARAMS = Collections.unmodifiableSet(Utils.add(new HashSet(), "include", "exclude", "collapse"));
 
-    static          ThreadLocal<Stack<Chain>>          chainLocal = new ThreadLocal<>();
+    static          ThreadLocal<Stack<Chain>>          chainLocal         = new ThreadLocal<>();
     protected final Engine                             engine;
-    protected final List<ActionMatch>                  actions    = new ArrayList<>();
+    protected final List<ActionMatch>                  actions            = new ArrayList<>();
     protected final Request                            request;
     protected final Response                           response;
-    protected final CaseInsensitiveMap<String, Object> vars       = new CaseInsensitiveMap<>();
-    protected       int                                next       = 0;
-    protected       boolean                            canceled   = false;
-    protected       User                               user       = null;
-    protected       Chain                              parent     = null;
+    protected final CaseInsensitiveMap<String, Object> vars               = new CaseInsensitiveMap<>();
+    protected       int                                next               = 0;
+    protected       boolean                            canceled           = false;
+    protected       User                               user               = null;
+    protected       Chain                              parent             = null;
     protected       Set<String>                        pathParamsToRemove = new HashSet();
 
     private Chain(Engine engine, Request req, Response res) {
@@ -60,7 +60,7 @@ public class Chain {
         return get().size();
     }
 
-    public static boolean isRoot(){
+    public static boolean isRoot() {
         Stack<Chain> stack = get();
         return stack.isEmpty() || stack.size() == 1;
     }
@@ -122,7 +122,7 @@ public class Chain {
 
     public static void debug(String format, Object... args) {
 
-        if(format == null || format.trim().length() == 0)
+        if (format == null || format.trim().length() == 0)
             return;
 
         Stack<Chain> stack = get();
@@ -140,122 +140,151 @@ public class Chain {
         root.response.debug(format, args);
     }
 
-    public static String buildLink(JSNode fromHere, Relationship toHere){
+    public static String buildLink(JSNode fromHere, Relationship toHere) {
         String link = null;
         if (toHere.isManyToOne()) {
             String fkval = null;
             if (toHere.getRelated().getPrimaryIndex().size() != toHere.getFkIndex1().size() && toHere.getFkIndex1().size() == 1) {
+                fkval = toHere.getCollection().encodeKeyFromJsonNames(fromHere, toHere.getFkIndex1());
+            } else {
                 //this value is already an encoded resourceKey
                 Object obj = fromHere.get(toHere.getFk1Col1().getJsonName());
                 if (obj != null)
                     fkval = obj.toString();
-            } else {
-                fkval = toHere.getCollection().encodeKeyFromJsonNames(fromHere, toHere.getFkIndex1());
             }
 
             if (fkval != null) {
-                link = Chain.buildLink(toHere.getRelated(), fkval, null);
+                link = Chain.buildLink(toHere.getRelated(), fkval);
             }
         } else {
             //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
             String resourceKey = toHere.getCollection().encodeKeyFromJsonNames(fromHere);
-            link = Chain.buildLink(toHere.getCollection(), resourceKey, toHere.getName());
+            link = Chain.buildLink(toHere.getCollection(), resourceKey);
         }
         return link;
     }
 
     public static String buildLink(Collection collection) {
-        return buildLink(collection, null, null);
+        return buildLink(collection, null);
     }
 
-    public static String buildLink(Collection collection, Object resourceKey, String subCollectionKey) {
-        Request req = top().getRequest();
+    public static String buildLink(Collection collection, String resourceKey) {
+        return buildLink(collection, resourceKey, null);
+    }
 
-        String collectionKey = collection.getName();
+    public static String buildLink(Collection collection, String resourceKey, String relationshipKey) {
 
-        if (req.getCollection() == collection)
-            collectionKey = req.getCollectionKey();
+        Request req       = top().getRequest();
+        Request linkedReq = req.getApi().getLinker().buildRequest(req, null, null, collection, resourceKey, relationshipKey, null);
+        if (linkedReq == null)
+            throw ApiException.new400BadRequest("Unable to find a valid operation.");
 
-        StringBuilder url = new StringBuilder(Utils.empty(req.getApiUrl()) ? "" : req.getApiUrl());
+        Url url = linkedReq.getUrl();
+        String str = url.toString();
+        System.out.println(str);
+        return str;
 
-        if (!Utils.endsWith(url, "/"))
-            url.append("/");
-
-        if (req.getCollection() != null && (collection == req.getCollection() || collection.getDb() == req.getCollection().getDb()))//
-        {
-            //going after the same collection...so must be going after the same endpoint
-            //so get the endpoint path from the current request and ame sure it is on the url.
-
-            Path epp = req.getEndpointPath();
-
-            if (epp != null && epp.size() > 0) {
-                url.append(epp).append("/");
-            }
-        } else if (collection.getDb().getEndpointPath() != null) {
-            Path epP = collection.getDb().getEndpointPath();
-
-            for (int i = 0; i < epP.size(); i++) {
-                if (epP.isWildcard(i))
-                    break;
-
-                if (epP.isVar(i)) {
-                    String value;
-                    String name = epP.getVarName(i);
-                    switch (name.toLowerCase()) {
-                        case "_collection":
-                            value = collection.getName();
-                            break;
-                        case "_resource":
-                            value = resourceKey + "";
-                            break;
-                        case "_relationship":
-                            value = subCollectionKey;
-                            break;
-                        default:
-                            value = req.getUrl().getParam(name);
-                    }
-                    if (value == null)
-                        throw ApiException.new500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
-
-                    url.append(epP.get(i)).append("/");
-                } else {
-                    url.append(epP.get(i)).append("/");
-                }
-            }
-
-            url.append(collection.getDb().getEndpointPath()).append("/");
-        }
-
-        if (!Utils.empty(collectionKey)) {
-            if (!Utils.endsWith(url, "/"))
-                url.append("/");
-
-            url.append(collectionKey);
-        }
-
-        if (!Utils.empty(resourceKey))
-            url.append("/").append(resourceKey.toString());
-
-        if (!Utils.empty(subCollectionKey))
-            url.append("/").append(subCollectionKey);
-
-        if (req.getApi().getUrl() != null && !Utils.startsWith(url, req.getApi().getUrl())) {
-            String newUrl = req.getApi().getUrl();
-            while (newUrl.endsWith("/"))
-                newUrl = newUrl.substring(0, newUrl.length() - 1);
-
-            url = new StringBuilder(newUrl).append(url.substring(url.indexOf("/", 8)));
-        }
-
-        if (req.getApi() != null) {
-            if (Utils.empty(req.getApi().getUrl())) {
-                String proto = req.getHeader("x-forwarded-proto");
-                if (!Utils.empty(proto)) {
-                    url = new StringBuilder(proto).append(url.substring(url.indexOf(":")));
-                }
-            }
-        }
-        return new Url(url.toString()).toString();
+//        Request req = top().getRequest();
+//
+//
+//        if(subCollectionKey != null)
+//        Operation op = req.getApi().findOperation(req, null, null, resourceKey, relationship
+//
+//
+//        Request req = top().getRequest();
+//
+//        String collectionKey = collection.getName();
+//
+//        if (req.getCollection() == collection)
+//            collectionKey = req.getCollectionKey();
+//
+//        StringBuilder url = new StringBuilder(Utils.empty(req.getApiUrl()) ? "" : req.getApiUrl());
+//
+//        if (!Utils.endsWith(url, "/"))
+//            url.append("/");
+//
+//        if (req.getCollection() != null && (collection == req.getCollection() || collection.getDb() == req.getCollection().getDb()))//
+//        {
+//            //going after the same collection...so must be going after the same endpoint
+//            //so get the endpoint path from the current request and ame sure it is on the url.
+//
+//            Path epp = req.getEndpointPath();
+//
+//            if (epp != null && epp.size() > 0) {
+//                url.append(epp).append("/");
+//            }
+//        } else if (collection.getDb().getEndpointPath() != null) {
+//            Path epP = collection.getDb().getEndpointPath();
+//
+//            for (int i = 0; i < epP.size(); i++) {
+//                if (epP.isWildcard(i))
+//                    break;
+//
+//                if (epP.isVar(i)) {
+//                    String value;
+//                    String name = epP.getVarName(i);
+//                    switch (name.toLowerCase()) {
+//                        case "_collection":
+//                            value = collection.getName();
+//                            break;
+//                        case "_resource":
+//                            value = resourceKey + "";
+//                            break;
+//                        case "_relationship":
+//                            value = subCollectionKey;
+//                            break;
+//                        default:
+//                            value = req.getUrl().getParam(name);
+//                    }
+//                    if (value == null)
+//                        throw ApiException.new500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
+//
+//                    url.append(epP.get(i)).append("/");
+//                } else {
+//                    url.append(epP.get(i)).append("/");
+//                }
+//            }
+//
+//            url.append(collection.getDb().getEndpointPath()).append("/");
+//        }
+//
+//        if (!Utils.empty(collectionKey)) {
+//            if (!Utils.endsWith(url, "/"))
+//                url.append("/");
+//
+//            url.append(collectionKey);
+//        }
+//
+//        if (!Utils.empty(resourceKey)){
+//            if (!Utils.endsWith(url, "/"))
+//                url.append("/");
+//            url.append(resourceKey.toString());
+//        }
+//
+//
+//        if (!Utils.empty(subCollectionKey)){
+//            if (!Utils.endsWith(url, "/"))
+//                url.append("/");
+//            url.append(subCollectionKey);
+//        }
+//
+//        if (req.getApi().getUrl() != null && !Utils.startsWith(url, req.getApi().getUrl())) {
+//            String newUrl = req.getApi().getUrl();
+//            while (newUrl.endsWith("/"))
+//                newUrl = newUrl.substring(0, newUrl.length() - 1);
+//
+//            url = new StringBuilder(newUrl).append(url.substring(url.indexOf("/", 8)));
+//        }
+//
+//        if (req.getApi() != null) {
+//            if (Utils.empty(req.getApi().getUrl())) {
+//                String proto = req.getHeader("x-forwarded-proto");
+//                if (!Utils.empty(proto)) {
+//                    url = new StringBuilder(proto).append(url.substring(url.indexOf(":")));
+//                }
+//            }
+//        }
+//        return new Url(url.toString()).toString();
     }
 
     public Chain withUser(User user) {
@@ -312,27 +341,27 @@ public class Chain {
     public void go() throws ApiException {
         boolean root = next == 0;
         try {
-            if(root)
+            if (root)
                 applyRuleParams(getRequest().getUrl(), getEngine(), getApi(), getEndpoint());
 
             while (next()) {
                 //-- intentionally empty
             }
-        }
-        finally{
-            if(root) {
+        } finally {
+            if (root) {
                 JSNode json = response.getJson();
                 filterPathParams(json);
-                }
             }
+        }
     }
 
     /**
      * Recursively removes any url path params that appear as properties in the json
+     *
      * @param json the json node to clean
      * @return this
      */
-    public Chain filterPathParams(JSNode json){
+    public Chain filterPathParams(JSNode json) {
         if (json != null && request.pathParams.size() > 0) {
             json.streamAll()
                     .filter(node -> node instanceof JSNode && !(node instanceof JSArray))
@@ -344,12 +373,10 @@ public class Chain {
     }
 
 
-
-
-    public Chain doNext(Action... newActions){
-        for(int i=0; newActions != null && i<newActions.length; i++){
+    public Chain doNext(Action... newActions) {
+        for (int i = 0; newActions != null && i < newActions.length; i++) {
             Action action = newActions[i];
-            if(action == null)
+            if (action == null)
                 continue;
             ActionMatch am = new ActionMatch(new Path("*"), new Path("*"), action);
             actions.add(next + i, am);
@@ -357,13 +384,13 @@ public class Chain {
         return this;
     }
 
-    public Chain skipNext(){
-        next +=1;
+    public Chain skipNext() {
+        next += 1;
         return this;
     }
 
     public Action getNext() {
-        if(hasNext())
+        if (hasNext())
             return actions.get(next).action;
         return null;
     }
@@ -404,16 +431,16 @@ public class Chain {
     }
 
 
-    public Chain applyRuleParams(Url url, Rule... rules){
-        for(Rule rule : rules){
+    public Chain applyRuleParams(Url url, Rule... rules) {
+        for (Rule rule : rules) {
             String query = rule.getQuery();
-            if(query != null){
+            if (query != null) {
                 Url temp = new Url("http://127.0.0.1?" + query);
-                for(String name : temp.getParams().keySet()){
+                for (String name : temp.getParams().keySet()) {
                     String value = temp.getParam(name);
-                    if(APPEND_PARAMS.contains(name.toLowerCase())){
+                    if (APPEND_PARAMS.contains(name.toLowerCase())) {
                         String previous = url.getParam(name);
-                        if(previous != null)
+                        if (previous != null)
                             value = value + "," + previous;
                     }
                     url.withParam(name, value);

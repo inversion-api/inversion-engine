@@ -86,7 +86,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res.dump();
         assertEquals(26, res.find("meta.foundRows"));
 
-        assertEquals(10273, res.getData().getNode(25).getInt("orderId"));
+        assertEquals(10273, res.getStream().getNode(25).getInt("orderId"));
     }
 
     @Test
@@ -137,7 +137,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
 
         res = engine.get(url("territories/30346?expands=region"));
         res.dump();
-        JSNode updated30346 = res.getData();
+        JSNode updated30346 = res.getStream();
 
         assertEquals(5, res.findInt("data.0.regionId"));
         assertEquals(5, res.findInt("data.0.region.regionId"));
@@ -240,7 +240,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         //-- make sure the new employee was POSTED
         res = engine.get(url("employees/99999991?expands=reportsTo,territories,territories.region"));
         res.dump();
-        assertEquals(1, res.getData().size());
+        assertEquals(1, res.getStream().size());
         assertTrue(res.findString("data.0.href").contains("/99999991"));
         assertTrue(res.findString("data.0.reportsTo.href").contains("employees/5"));
         assertEquals(res.findString("data.0.territories.0.TerritoryID"), "30346");

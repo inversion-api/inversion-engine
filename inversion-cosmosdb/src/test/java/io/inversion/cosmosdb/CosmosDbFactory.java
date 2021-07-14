@@ -78,7 +78,7 @@ public class CosmosDbFactory {
             //Set<Object> orderIds = new HashSet<>();
             Set<Object> customerIds = new HashSet<>();
 
-            for (JSNode order : res.getData().asNodeList()) {
+            for (JSNode order : res.getStream().asNodeList()) {
                 cleanSourceNode("orders", order);
 
                 //orderIds.add(order.get("orderid"));
@@ -86,13 +86,13 @@ public class CosmosDbFactory {
 
                 res = srcEngine.get("/northwind/source/orderDetails?orderId=" + order.get("orderid"));
 
-                for (JSNode details : res.getData().asNodeList()) {
+                for (JSNode details : res.getStream().asNodeList()) {
                     cleanSourceNode("orderDetails", details);
                     details.remove("employees");
                     details.remove("order");
                     details.remove("orderid");
                 }
-                order.put("orderDetails", res.getData());
+                order.put("orderDetails", res.getStream());
                 dstEngine.post("/northwind/cosmosdb/orders", order).assertOk();
             }
 
@@ -106,13 +106,13 @@ public class CosmosDbFactory {
 
             String getCustomers = "/northwind/source/customers?in(customerid," + Utils.implode(",", customerIds) + ")";
             res = srcEngine.get(getCustomers).assertOk();
-            for (JSNode customer : res.getData().asNodeList()) {
+            for (JSNode customer : res.getStream().asNodeList()) {
                 cleanSourceNode("customers", customer);
                 dstEngine.post("/northwind/cosmosdb/customers", customer).assertOk();
             }
 
             res = srcEngine.get("/northwind/source/employees").assertOk();
-            for (JSNode employee : res.getData().asNodeList()) {
+            for (JSNode employee : res.getStream().asNodeList()) {
                 employee.remove("employees");
                 cleanSourceNode("employees", employee);
                 dstEngine.post("/northwind/cosmosdb/employees", employee).assertOk();
@@ -163,10 +163,10 @@ public class CosmosDbFactory {
 
             res = e.get(url).assertOk();
 
-            if (res.getData().size() == 0)
+            if (res.getStream().size() == 0)
                 break;
 
-            for (JSNode order : res.getData().asNodeList()) {
+            for (JSNode order : res.getStream().asNodeList()) {
                 res = e.delete(order.getString("href"));
                 res.assertOk();
             }

@@ -16,7 +16,9 @@
  */
 package io.inversion;
 
+import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.lang.reflect.Method;
 
@@ -58,6 +60,21 @@ public class Action<A extends Action> extends Rule<A> {
      */
     public Action(String methods, String paths) {
         withIncludeOn(methods, paths);
+    }
+
+
+    ArrayListValuedHashMap<String, Path> getOperationPaths(Api api) {
+        ArrayListValuedHashMap<String, Path> paths = new ArrayListValuedHashMap<>();
+        for (RuleMatcher matcher : getIncludeMatchers()){
+            for(String method : matcher.getMethods()){
+                for(Path path : matcher.getPaths()){
+                    for(Path subpath : path.getSubPaths()){
+                        paths.put(method, subpath);
+                    }
+                }
+            }
+        }
+        return paths;
     }
 
     /**

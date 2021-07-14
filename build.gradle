@@ -48,7 +48,7 @@
 
 buildscript {
     repositories {
-		//jcenter()
+		jcenter()
 		maven { url 'https://repo1.maven.org/maven2'}
     }
 
@@ -129,11 +129,12 @@ subprojects {
     apply plugin: 'com.jfrog.bintray'
 	apply plugin: 'com.jfrog.artifactory'
     
-    sourceCompatibility = 1.8
-	targetCompatibility = 1.8
+    sourceCompatibility = 1.13
+	targetCompatibility = 1.13
 	
 	repositories {
-		//jcenter()
+		jcenter()
+		mavenCentral()
 		maven { url 'https://repo1.maven.org/maven2'}
 		maven { url 'https://jitpack.io' }
 	}
@@ -253,6 +254,8 @@ subprojects {
         publications(publishing.publications.mavenJava)
     }
 }
+
+
 
 
 //artifactoryPublish.skip=true
