@@ -53,14 +53,14 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4"
+        //classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4"
         
         //WARNING artifactory plugin 4.13.0 was the lastest as of 1/8/20
         //but artifactoryPublish was hanging, never completing.  Downgrading
         //seemed to fix the problem
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.10.0"
+        //classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.10.0"
         
-        classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
+        //classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
     }
     
 //    configurations.classpath {
@@ -74,12 +74,15 @@ buildscript {
 plugins {
   id "java-library"
   id "maven-publish"
+  id "signing"
+  id("io.github.gradle-nexus.publish-plugin") version "1.0.0"
 }
-apply plugin: 'nebula-aggregate-javadocs'
+//apply plugin: 'nebula-aggregate-javadocs'
 
-def bintrayUser = System.getProperty("bintray.user")
-def bintrayKey = System.getProperty("bintray.key")
-def buildNumber = System.getProperty("build.number")
+//def bintrayUser = System.getProperty("bintray.user")
+//def bintrayKey = System.getProperty("bintray.key")
+//def buildNumber = System.getProperty("build.number")
+
 
 
 /**
@@ -91,13 +94,13 @@ def buildNumber = System.getProperty("build.number")
  * where they can be checked into github and served up from
  * github pages.
  */ 
-task allJavadocs {
-    dependsOn 'aggregateJavadocs'
-    doLast {
-    	ant.delete(dir: 'docs/javadoc/')
-        ant.move(file: 'build/docs/javadoc/', tofile: 'docs/javadoc/')
-    }
-}
+//task allJavadocs {
+//    dependsOn 'aggregateJavadocs'
+//    doLast {
+//    	ant.delete(dir: 'docs/javadoc/')
+//        ant.move(file: 'build/docs/javadoc/', tofile: 'docs/javadoc/')
+//    }
+//}
 
 tasks.withType(Javadoc) { 
 	failOnError false
@@ -105,9 +108,10 @@ tasks.withType(Javadoc) {
  }
 	 
 //regenerate javadocs after a build	
-build.finalizedBy(allJavadocs)
+//build.finalizedBy(allJavadocs)
 	
 allprojects {
+	apply plugin: 'signing'
 	group = 'io.inversion'
 	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
 	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")
@@ -122,37 +126,60 @@ allprojects {
 	    
 }
 
+nexusPublishing {
+	repositories {
+		sonatype()
+	}
+}
+
 subprojects {
-	
+
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
-    apply plugin: 'com.jfrog.bintray'
-	apply plugin: 'com.jfrog.artifactory'
-    
+	apply plugin: 'signing'
+	//apply plugin: 'io.github.gradle-nexus.publish-plugin'
+
     sourceCompatibility = 1.8
 	targetCompatibility = 1.8
-	
+
 	repositories {
 		//jcenter()
 		maven { url 'https://repo1.maven.org/maven2'}
 		maven { url 'https://jitpack.io' }
 	}
 
-	dependencies {
-		testCompile 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
+	signing {
+		//sign configurations.archives
+		sign publishing.publications
+
+		def signingKeyId = findProperty("signingKeyId")
+		def signingKey = rootProject.file('codesigning.asc').text.trim();
+		def signingPassword = findProperty("signingPassword")
+		useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+		//sign stuffZip
 	}
-	
-	task sourcesJar(type: Jar) {
-	    from sourceSets.main.allJava
-	    archiveClassifier = 'sources'
+
+	dependencies {
+		testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
 	}
 	
 	javadoc.failOnError = false
 	task javadocJar(type: Jar) {
-	    from javadoc
-	    archiveClassifier = 'javadoc'
+		classifier = 'javadoc'
+		from javadoc
 	}
-	
+
+	task sourcesJar(type: Jar) {
+		classifier = 'sources'
+//		from sourceSets.main.allSource
+		from sourceSets.main.allJava
+	}
+
+	artifacts {
+		archives javadocJar, sourcesJar
+	}
+
+
 	//keeps integration test that require access to external systems
 	//from running as part of the standard CICD pipeline build
 	//run intergration tests via:  ./gradlew test -Dtest.profile=integration 
@@ -168,15 +195,14 @@ subprojects {
 	}
 
 	//causes a new ${subpoject}/pom.xml file to be generated after each build
-	gradle.buildFinished { buildResult ->
-  		tasks.generatePomFileForMavenJavaPublication.doGenerate()
-	}
-	project.getGradle().getTaskGraph().whenReady {
-	    tasks.withType(GenerateMavenPom.class) {
-	        destination = file("$buildDir/../pom.xml")
-	    }
-	}
-	
+//	gradle.buildFinished { buildResult ->
+//  		tasks.generatePomFileForMavenJavaPublication.doGenerate()
+//	}
+//	project.getGradle().getTaskGraph().whenReady {
+//	    tasks.withType(GenerateMavenPom.class) {
+//	        destination = file("$buildDir/../pom.xml")
+//	    }
+//	}
 
 	
 	publishing {
@@ -211,74 +237,19 @@ subprojects {
 	                }
 	                developers {
 	                    developer {
-	                        id = 'inversion'
-	                        name = 'Rocket Partners'
-	                        email = 'hello@rocketpartners.io'
+	                        name = 'Wells Burke'
+	                        email = 'wells@inversion.io'
+							organization = 'inversion.io'
+							organizationUrl = 'https://inversion.io'
 	                    }
 	                }
 	                scm {
-	                    connection = 'https://github.com/inversion-api/inversion-engine.git'
-	                    developerConnection = 'https://github.com/inversion-api/inversion-engine.git'
-	                    url = 'https://inversion.io'
+	                    connection = 'scm:git:git://github.com/inversion-api/inversion-engine.git'
+	                    developerConnection = 'scm:git:ssh://github.com:inversion-api/inversion-engine.git'
+	                    url = 'https://github.com/inversion-api/inversion-engine/'
 	                }
 	            }
 	        }
 	    }
 	}
-
-	bintray {
-		user = bintrayUser
-		key = bintrayKey
-		publications = ['mavenJava']
-	    publish = true
-		pkg {
-			repo = 'repo'
-			name = project.name
-			licenses = ['Apache-2.0']
-			websiteUrl = 'http://inversion.io'
-	        issueTrackerUrl = 'https://github.com/inversion-api/inversion-engine/issues'
-	 		vcsUrl = 'https://github.com/inversion-api/inversion-engine.git'
-
-	        licenses = ['Apache-2.0']
-	        labels = ['rest', 'api', 'mysql', 'postgress', 'mssql', 'dynamodb', 'cosmosdb', 'elasticsearch', 'nosql']
-
-			version {
-				name = project.version
-				released  = new Date()
-			}
-		}
-	}
-
-	artifactoryPublish {
-        publications(publishing.publications.mavenJava)
-    }
 }
-
-
-//artifactoryPublish.skip=true
-//
-//
-//artifactory {
-//    contextUrl = 'https://oss.jfrog.org'
-//    publish {
-//        repository {
-//            repoKey = 'oss-snapshot-local'
-//            username = bintrayUser
-//            password = bintrayKey
-//        }
-//        defaults {
-//            publications('mavenJava')
-//            publishArtifacts = true
-//            publishPom = true
-//            properties = [
-//                    'build.number': buildNumber,
-//                    'build.name': project.name
-//            ]
-//        }
-//    }
-//    resolve {
-//        repoKey = 'jcenter'
-//    }
-//    clientConfig.info.setBuildNumber(buildNumber)
-//    clientConfig.info.setBuildName(project.name)
-//}
