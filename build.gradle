@@ -152,9 +152,9 @@ subprojects {
 		//sign configurations.archives
 		sign publishing.publications
 
-		def signingKeyId = findProperty("signingKeyId")
-		def signingKey = rootProject.file('codesigning.asc').text.trim();
-		def signingPassword = findProperty("signingPassword")
+		//def signingKeyId = findProperty("signingKeyId")
+		//def signingKey = rootProject.file('codesigning.asc').text.trim();
+		//def signingPassword = findProperty("signingPassword")
 		useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
 		//sign stuffZip
 	}
