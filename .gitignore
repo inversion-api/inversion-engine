@@ -41,3 +41,4 @@ inversion.properties.merged
 inversion99.properties
 northwind.mv.db
 northwind.trace.db
+/codesigning.asc
