@@ -79,11 +79,6 @@ plugins {
 }
 //apply plugin: 'nebula-aggregate-javadocs'
 
-//def bintrayUser = System.getProperty("bintray.user")
-//def bintrayKey = System.getProperty("bintray.key")
-//def buildNumber = System.getProperty("build.number")
-
-
 
 /**
  * The gradle-aggregate-javadocs-plugin generates a combined
@@ -111,7 +106,7 @@ tasks.withType(Javadoc) {
 //build.finalizedBy(allJavadocs)
 	
 allprojects {
-	apply plugin: 'signing'
+	//apply plugin: 'signing'
 	group = 'io.inversion'
 	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
 	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")
@@ -137,7 +132,6 @@ subprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
 	apply plugin: 'signing'
-	//apply plugin: 'io.github.gradle-nexus.publish-plugin'
 
     sourceCompatibility = 1.8
 	targetCompatibility = 1.8
@@ -149,13 +143,13 @@ subprojects {
 	}
 
 	signing {
-		//sign configurations.archives
-		sign publishing.publications
+		sign configurations.archives
+		//sign publishing.publications
 
 		//def signingKeyId = findProperty("signingKeyId")
 		//def signingKey = rootProject.file('codesigning.asc').text.trim();
 		//def signingPassword = findProperty("signingPassword")
-		useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+		//useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
 		//sign stuffZip
 	}
 

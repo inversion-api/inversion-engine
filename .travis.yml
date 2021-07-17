@@ -12,9 +12,9 @@ stages:
 jobs:
   include:
   - stage: build
-    script: "./gradlew -Dsigning.keyId=$ORG_GRADLE_PROJECT_signingKeyId -Dsigning.password=\"$ORG_GRADLE_PROJECT_signingPassword\" -Dsigning.secretKeyRingFile=codesigning.asc --stacktrace build"
+    script: "./gradlew -Dsigning.keyId=$ORG_GRADLE_PROJECT_signingKeyId -Dsigning.password=\"$ORG_GRADLE_PROJECT_signingPassword\" -Dsigning.secretKeyRingFile=/home/travis/.gnupg/secring.gpg --stacktrace build"
 - stage: release
-    script: "./gradlew -Dsigning.keyId=$ORG_GRADLE_PROJECT_signingKeyId -Dsigning.password=\"$ORG_GRADLE_PROJECT_signingPassword\" -Dsigning.secretKeyRingFile=codesigning.asc --stacktrace publishToSonatype"
+    script: "./gradlew -Dsigning.keyId=$ORG_GRADLE_PROJECT_signingKeyId -Dsigning.password=\"$ORG_GRADLE_PROJECT_signingPassword\" -Dsigning.secretKeyRingFile=/home/travis/.gnupg/secring.gpg --stacktrace publishToSonatype"
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
@@ -32,4 +32,5 @@ env:
   - secure: gKonnfscRCNZ0Y9C8c2W68UM3Gwb8CG/FoDzffN6YsMscq239/QkgTmOicVnjjbNiT4/UWzMpjn2bLNhXb66eBErzTilxGqcsD00O2rcDmmWaH4SwkGlLRh/CYseFBixHBkp6s4EnZinMeOAlphAZQVIz9PWjPhHG5Olq15RP1YV2oAVp9KTA3tHKB0AeszlgKrsMkZiUQ8sVON5fgLt1hWnE9xh1mtrkgo8dLEnohi9pneEZkbHK4J3r8Ea19tyr4HS5ljwJqV4rSWGo5XRYLMvQbNYMqR6KLkhG0A4ETtFqQ8GzxwZKN534DHxAGUJYbPhWqBYh4hVa8vLErDOCK7ujhETtaRXeX2FoY7aNBEdC7o90f9JgDRqin4j0zR0SO3iub0c9aaLE6b+Nmas/x15bTc38/YFsB8u0Q+nCP3IOFlQ1nucH+z4RgPnV386epL8bNiq0KGTy+XABr5GlhKOHYGrcTbfuUPNzScpikwu4u74wL8T2PnNtCp8mujhwC5/1azMpkO+EVhuwLXJEI4ilHkwb8qhRY+K+MB/M3MX3ncDIZ6XlX6dXkHWTWNaYOZNQZse3lSqeGixBQEEA+dPfnjlReJfKVc1JMxS2CIWIb8MGDjjpwpeQW3IG0Q+ixb3mmJ+jBEZIyssGUpuJEGsKNf2Ud+XERIc/EB5rhM=
   - secure: wTDosaRo4gZzDvci5Q4FeGtIyYNrQL2ZyXbpeO/Z4+ORfKssdD5dr8ykxR1jVOhdaeNpIgqMZGWYjxlAsL3GpRwn8hZESCi0a5oBt4TnunlmUVJRacXVokhNoAoAyRfUgtSIzmm/ZqryHhd9j6xHHjjTNCQ58sOLoYa+hdvugfAUZvsWW9Pbq/H7uY8GJZ4lSrksSbSFlD5zquxW2cSkBQmyVTtTmWyRA+mN2qlV2SQ5plcKiQZfLEusLvkboXTWw8IQ+mHZkR5y7VWWxVkrvFTrLjSeh5qNRgEc0cjPrZicE18vnldNm1JJwm/4fEKJ/0oMIsTJubVBafNLS3mSqzqqmLEObdlDVeqm3GkaArNlgl7RQnxeXoG3H3SS37LYrFB9KceATAf2DKhwKjd0lONBrFBCjYbNU3IvenrQ7WvrL8Z9AAWzaHIfB1JmneNofAEfG5pVdOs426pwzfvsvgpSQ7Q25JAlhbxTMzZobmA5ayVVUsV5qMCa+GK3xrZcPs1Q8ue1RyXwprVvnAGhr5ph80MMiUyhGaDfaSFg+f7mgkhWRGkJAbxiKUsekWVo17gNZ71pnZOTRauRlno6vwDXEtVvQcQqiq7bwhmXEzVRF5vXr3epiSWBJmjNOhCMya9jVUDRZiMdvojRnZOHp0YqRKwUAp/dQhbfKqscYtU=
 before_install:
-- openssl aes-256-cbc -K $encrypted_81c98acad902_key -iv $encrypted_81c98acad902_iv -in codesigning.asc.enc -out codesigning.asc -d
+- openssl aes-256-cbc -K $encrypted_81c98acad902_key -iv $encrypted_81c98acad902_iv -in cd/codesigning.asc.enc -out cd/codesigning.asc -d
+- gpg --fast-import cd/codesigning.asc
