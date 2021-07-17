@@ -13,9 +13,9 @@ stages:
 jobs:
   include:
     - stage: build
-      script: "./gradlew build"
+      script: "./gradlew -Dsigning.keyId=$ORG_GRADLE_PROJECT_signingKeyId -Dsigning.password=\"$ORG_GRADLE_PROJECT_signingPassword\" -Dsigning.secretKeyRingFile=/home/travis/.gnupg/secring.gpg --stacktrace build"
     - stage: release
-      script: "./gradlew publishToSonatype --refresh-dependencies --stacktrace"
+      script: "./gradlew -Dsigning.keyId=$ORG_GRADLE_PROJECT_signingKeyId -Dsigning.password=\"$ORG_GRADLE_PROJECT_signingPassword\" -Dsigning.secretKeyRingFile=/home/travis/.gnupg/secring.gpg --stacktrace publishToSonatype"
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
