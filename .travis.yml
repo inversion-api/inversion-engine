@@ -15,7 +15,7 @@ jobs:
   - stage: build
     script: "./gradlew build"
   - stage: release
-    script: "./gradlew publishToSonatype --refresh-dependencies"
+    script: "./gradlew publishToSonatype --refresh-dependencies --stacktrace"
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
