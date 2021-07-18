@@ -4,35 +4,33 @@ os: linux
 dist: trusty
 jdk: openjdk8
 stages:
-  - name: build
-  - name: snapshot
-    if: branch = master AND type IN (push)
-  - name: release
-    if: "(branch = release-0.7.x OR branch = release-0.8.x OR branch = release-0.9.x)
+- name: build
+- name: snapshot
+  if: branch = master AND type IN (push)
+- name: release
+  if: "(branch = release-0.7.x OR branch = release-0.8.x OR branch = release-0.9.x)
     AND type IN (push)"
 jobs:
   include:
-    - stage: build
-      script: "./gradlew -Dsigning.keyId=$ORG_GRADLE_PROJECT_signingKeyId -Dsigning.password=\"$ORG_GRADLE_PROJECT_signingPassword\" -Dsigning.secretKeyRingFile=/home/travis/.gnupg/secring.gpg --stacktrace build"
-    - stage: release
-      script: "./gradlew -Dsigning.keyId=$ORG_GRADLE_PROJECT_signingKeyId -Dsigning.password=\"$ORG_GRADLE_PROJECT_signingPassword\" -Dsigning.secretKeyRingFile=/home/travis/.gnupg/secring.gpg --stacktrace publishToSonatype"
+  - stage: build
+    script: ./gradlew --stacktrace build
+  - stage: release
+    script: ./gradlew --stacktrace publishToSonatype
 before_cache:
-  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
-    - "$HOME/.gradle/caches/"
-    - "$HOME/.gradle/wrapper/"
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
 env:
   global:
-  - secure: U5vbl+2+enSsWk+HSSBizBARIPUh4CbgI5imRw7amN5F2T0aWJZsu/EK61UOT6kTFlCUxnFXPBVJ276f4tIe23bTiyUB/xVH4B27nU8IXPfCV/pbq+qesFs4Md3MXuQst56R4vj4X+LKFT/wWDC/3piBRGQmaU9LKxIIyiFiyYocqNUnY3PXvFP5Zoi9LQdv+mKKY28QFc1a4+gTeodkRDyq2e50ddf1uGyVgsizHLMWFXaj/RVJmGNsqWehOloGP6898HcX1SsemwOvASOPwP3EVNxuW8bt0Nmbq3oojO1oYa5Vl48+SVu480v5BskjDxvIGwIMU0h0Bjsjtihygb4HR+bJDECiLfRzlu656r0U90JqbVwq1KhJ6NAw1SIdJ9lyYi7aK3A6m6pOTMb8S7SelLB2FXcnVf165fRiO8Zhq5ao2aueXo/+w0+lWzKg0Wh3V2GXtayA/U2uNEaEnKygIDU+Nqp4KVmFCDwMmau13QMq8HX2W7r0YzmhTG5BZToCqYNRZL88eVy+int/e62v+XpyxjMmyAa/fYBjPHSy0GSfGimThSE4TCfnGzqienkL58Kmqq49xJ6sifK+taKbAwCZ4gcs1q2AePAwfKypFxXQkE6v2FY4hXb4vUSKknc4Wzgksd56Bfza+N+y8MIBVqFqLVfs7RLCrJDnX8E=
-  - secure: EuoAoZRZf3GaLjP2hwbhC/916oBJdxAUtd5+uvmI80zLKjfmja4pdSQ/EjSl+YDwQo+YuNVwgICmA1p4i8OSGYjzznjga5M5FJiSZ+M0g4SAKlLd+PacbX94vaPn1Rrf6k7g4q3Ulf+fLU6+kQLMBjJ1zbp8xa9LDuZiEn7DCASAMklSE6/4vVJq7mUgJyKC5kJBoydkb2tBPliXwCPeYgUPsFDV/0F2h0gIukgWepfnTh2x4jhLw7ldvNFEiN7fUnFp11Jir+8M1Il2bDt0oD0ranrTahaHr+xQ0eGxqvFCGDU5A3L4Jgz5JVoOoO3k7RaZIsEuZhZiZyRGmmP8NDx4LabDR+BJ9u7SnK/uYE4RCOldsrU4mzvStp3NtXySpWgQPjZuyUsQczdSNk46Xx9e2Gon8IjUWsTxN9nPLNbOj1YdRoMcIMnez2SAv4e/itxUVBkyd7pSbqZcRsLQaPpjuR6HKAg0VOdruFHCPMOlJFn+Lg3z0cFyDO5TuHbM4Vsgu5ZwY8eBBlPvdVJ3IwwsGvdu8AyDJ9hHGK/wrQzpsKPShUu9iKPA49fe0qI0ALa7DtG1n5s9MctNcK+izAD9j0W1cdtlAXsNSafmF5wP1Q2IFZN/u0tFqF91OWAb3g2ijQIbkE27ITdeT+o4dP39NJgCUNWptalLUjr4H3Y=
   - secure: YbDXh34oInSVySvrit4bZHyLQA9iKZn6y2Z4FtlRyoYHXmPh95cF9y6T7fBCV81v9/xXe9Hn6Qcwf1d4fCtvqohegQEga1Ig0OKnAKV2loX3mxHZ0O6SBmTCt0GhPWR5HggVskfEqnUNNq1lsZhWJL2WpS4Y7UXe+Gsba58UCJXO/PksoAejThB+8JjPhZ45cr6iP85YTkn177EKrP3XRvSIkBiGdeIc22hfVNRHfgKuF1LaTW94iAT6dxo31G1d0/KKO9JYPedvfQpAY6jlNPFP2yd+4fox1w9GcTDmNY7ACclDTMEsp5+V6scrzBBeVgjSvNWQH9DFTOSjR2PBQXE3WjOuLKguHzNCxz2fI8Sia6j+6TsWmI3QmbLnMkJdPse4u/0skw5GG2xd2+yHBygBqcP+39p88XFzacLtLd+CkPPNr8ssTrQt4g5v+7YH225/yT1V6LKUorh3/cLRkwew+2Mstr2i8vD9BEs23fRlI/cZUtIqk/Uu1NUA9L0GrGPdligKIE71ssJtyCSP05NRp3nczERaf4BfD+eBLEiQABgAzlowxb2A1DQ6Mr7rgm8DPIVVWYcQlJOb8x+mFOEtTboTSv12w9VVPtRl1Z8pebNOva4kWbRikQl9BdqpJhhMA6FZDfw8uaupoRvb7+/r+KGqW8WkE+tUW+QTHPE=
   - secure: XhHV8fAFIDNeLW7wvfLhJcHJvLmzXBbzRFT+5VLFY4gip+rfsncJeWm7TPkt9gBzg+zmsaEnmM4j4lrBrTijDINgauZq136D+DklLlSVuijOnvNl4EHuNNsbiJvtw9EvLU2F6giUu5Hj37j/jnreVDHHU7CocY8JMgIjPzFiSoCbg2AuJ1hB/NannInzY+ou1EhHBAcrYW4Zav+Kf4sL8Del8WLtOagYP6VhjGWqFG5ZCXtDZF87zyKQNVj9uvKfsZAVV0q4lyhYG6quvwgtvIQhAYLiRRw7I1UA2Cu1Bp2D7YiG485FFmGUZS6Ek++XTTqMxROCf/6Qbjs8S258XIynd5DGZImQT17jmGFk0/ZPumiFvLMIcYXsgsj7liLZsGetgTzHppfBGE17//EDFgVy47LeRd8nWTQJmqGH+4IgdQOa6+9F1l9Th430ZzaufuX6X/hEjdq4xOBZoP/IBFyUufHmY/9DL2l4ni1K0f0K7lKoO1tkvh9EeSSHEvyvvmiLhszzEObMGzcB8oB8akmWJB7QwUJMpx95ZebvztzcLV9QmqP7l5/kDrStnFtq134SHtn8ybWm8rK0si4ptr2uH+7lROnuyAo1yARrKU8PGliRSpINmcNSMW+313ZMGPICrHrKmQK4dpWPJyJa/JXD7O3h8RUNYh/PQ6e8kQo=
-  - secure: Um+FL5lf2GluL+3M5RgzITFa69h2xhnTQZZYl98A/2Lb+LsQnFyvUZFUl+fUS40Kk9ZOt7szD9rl5nFwwMSwVE7/79ryPMZpCWXVPctxwxTZ9fp+uds9QRFEi1ELU8ua9Nx8j5+RF1+C+BUM1+9wQB5atX5+e3/SZrZ36qzOBT9OqyL6gtgGvTmvBvkSk4TuHGpIncxq+nSCYSI7tgcj9tcd66GTnd7hpfgj9NfjZpedEJa94wpeMWLJ5TJoy+wUZkWiaURW5I3dCRPkiFXsTPC5Fz1c1bGcMouyGA+gud6buXzpRKCspKmC95RwsAdNAf2++PFz68sV46S1QEeaqtRyhuheYC+z7mhRfulp/fioC2of8eatYsI/5Gdp/OTcpISOVIiwn2a/XX16LKY7kwbbO74TFcwqcEFUi2lSpVDHtA3iS1Em/jH/aa+FJlRG5zSKU3tPCVkprVuvFxbnV61X3gWPh3keOPpQDylAM1x+US3UthMbpKGKvtoBFs3vqgJBhpEKehhPaeJZ8o711xnpivXDdmPV9kYdxoL7LGCh8VdSnqCd+ZxQVEMJh2Z5m45LplpAuQiR+MEeuCjWw0kDZ0gsxZ80vViwLl+e5cIwnAi9mgncIPVkeoMkJa9v0BbUJcq1Ja3O7s3Bd1rfVtrGe+/u3k3DIrvXCF1Wxjk=
-  - secure: gKonnfscRCNZ0Y9C8c2W68UM3Gwb8CG/FoDzffN6YsMscq239/QkgTmOicVnjjbNiT4/UWzMpjn2bLNhXb66eBErzTilxGqcsD00O2rcDmmWaH4SwkGlLRh/CYseFBixHBkp6s4EnZinMeOAlphAZQVIz9PWjPhHG5Olq15RP1YV2oAVp9KTA3tHKB0AeszlgKrsMkZiUQ8sVON5fgLt1hWnE9xh1mtrkgo8dLEnohi9pneEZkbHK4J3r8Ea19tyr4HS5ljwJqV4rSWGo5XRYLMvQbNYMqR6KLkhG0A4ETtFqQ8GzxwZKN534DHxAGUJYbPhWqBYh4hVa8vLErDOCK7ujhETtaRXeX2FoY7aNBEdC7o90f9JgDRqin4j0zR0SO3iub0c9aaLE6b+Nmas/x15bTc38/YFsB8u0Q+nCP3IOFlQ1nucH+z4RgPnV386epL8bNiq0KGTy+XABr5GlhKOHYGrcTbfuUPNzScpikwu4u74wL8T2PnNtCp8mujhwC5/1azMpkO+EVhuwLXJEI4ilHkwb8qhRY+K+MB/M3MX3ncDIZ6XlX6dXkHWTWNaYOZNQZse3lSqeGixBQEEA+dPfnjlReJfKVc1JMxS2CIWIb8MGDjjpwpeQW3IG0Q+ixb3mmJ+jBEZIyssGUpuJEGsKNf2Ud+XERIc/EB5rhM=
-  - secure: wTDosaRo4gZzDvci5Q4FeGtIyYNrQL2ZyXbpeO/Z4+ORfKssdD5dr8ykxR1jVOhdaeNpIgqMZGWYjxlAsL3GpRwn8hZESCi0a5oBt4TnunlmUVJRacXVokhNoAoAyRfUgtSIzmm/ZqryHhd9j6xHHjjTNCQ58sOLoYa+hdvugfAUZvsWW9Pbq/H7uY8GJZ4lSrksSbSFlD5zquxW2cSkBQmyVTtTmWyRA+mN2qlV2SQ5plcKiQZfLEusLvkboXTWw8IQ+mHZkR5y7VWWxVkrvFTrLjSeh5qNRgEc0cjPrZicE18vnldNm1JJwm/4fEKJ/0oMIsTJubVBafNLS3mSqzqqmLEObdlDVeqm3GkaArNlgl7RQnxeXoG3H3SS37LYrFB9KceATAf2DKhwKjd0lONBrFBCjYbNU3IvenrQ7WvrL8Z9AAWzaHIfB1JmneNofAEfG5pVdOs426pwzfvsvgpSQ7Q25JAlhbxTMzZobmA5ayVVUsV5qMCa+GK3xrZcPs1Q8ue1RyXwprVvnAGhr5ph80MMiUyhGaDfaSFg+f7mgkhWRGkJAbxiKUsekWVo17gNZ71pnZOTRauRlno6vwDXEtVvQcQqiq7bwhmXEzVRF5vXr3epiSWBJmjNOhCMya9jVUDRZiMdvojRnZOHp0YqRKwUAp/dQhbfKqscYtU=
 before_install:
-  - openssl aes-256-cbc -K $encrypted_81c98acad902_key -iv $encrypted_81c98acad902_iv
-    -in cd/codesigning.asc.enc -out cd/codesigning.asc -d
-  - gpg --fast-import cd/codesigning.asc
+- openssl aes-256-cbc -K $encrypted_2fc2577d012c_key -iv $encrypted_2fc2577d012c_iv
+  -in cd/gradle.properties.enc -out /home/travis/.gradle/gradle.properties -d
+- openssl aes-256-cbc -K $encrypted_81c98acad902_key -iv $encrypted_81c98acad902_iv
+  -in cd/codesigning.asc.enc -out cd/codesigning.asc -d
+- gpg --fast-import cd/codesigning.asc
+- export USER_HOME=$HOME
