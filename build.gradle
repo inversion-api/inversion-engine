@@ -49,7 +49,8 @@
 buildscript {
     repositories {
 		//jcenter()
-		maven { url 'https://repo1.maven.org/maven2'}
+		//maven { url 'https://repo1.maven.org/maven2'}
+		mavenCentral()
     }
 
     dependencies {
@@ -137,20 +138,13 @@ subprojects {
 	targetCompatibility = 1.8
 
 	repositories {
-		//jcenter()
-		maven { url 'https://repo1.maven.org/maven2'}
-		maven { url 'https://jitpack.io' }
+		mavenCentral()
+		//maven { url 'https://repo1.maven.org/maven2'}
+		//maven { url 'https://jitpack.io' }
 	}
 
 	signing {
-		sign configurations.archives
-		//sign publishing.publications
-
-		//def signingKeyId = findProperty("signingKeyId")
-		//def signingKey = rootProject.file('codesigning.asc').text.trim();
-		//def signingPassword = findProperty("signingPassword")
-		//useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
-		//sign stuffZip
+		sign publishing.publications
 	}
 
 	dependencies {
@@ -165,8 +159,8 @@ subprojects {
 
 	task sourcesJar(type: Jar) {
 		classifier = 'sources'
-//		from sourceSets.main.allSource
-		from sourceSets.main.allJava
+		from sourceSets.main.allSource
+		//from sourceSets.main.allJava
 	}
 
 	artifacts {

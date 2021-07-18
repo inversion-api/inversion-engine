@@ -13,9 +13,9 @@ stages:
 jobs:
   include:
   - stage: build
-    script: ./gradlew --stacktrace build
+    script: "./gradlew --stacktrace build"
   - stage: release
-    script: ./gradlew --stacktrace publishToSonatype
+    script: "./gradlew --stacktrace publishToSonatype"
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
@@ -29,7 +29,7 @@ env:
   - secure: XhHV8fAFIDNeLW7wvfLhJcHJvLmzXBbzRFT+5VLFY4gip+rfsncJeWm7TPkt9gBzg+zmsaEnmM4j4lrBrTijDINgauZq136D+DklLlSVuijOnvNl4EHuNNsbiJvtw9EvLU2F6giUu5Hj37j/jnreVDHHU7CocY8JMgIjPzFiSoCbg2AuJ1hB/NannInzY+ou1EhHBAcrYW4Zav+Kf4sL8Del8WLtOagYP6VhjGWqFG5ZCXtDZF87zyKQNVj9uvKfsZAVV0q4lyhYG6quvwgtvIQhAYLiRRw7I1UA2Cu1Bp2D7YiG485FFmGUZS6Ek++XTTqMxROCf/6Qbjs8S258XIynd5DGZImQT17jmGFk0/ZPumiFvLMIcYXsgsj7liLZsGetgTzHppfBGE17//EDFgVy47LeRd8nWTQJmqGH+4IgdQOa6+9F1l9Th430ZzaufuX6X/hEjdq4xOBZoP/IBFyUufHmY/9DL2l4ni1K0f0K7lKoO1tkvh9EeSSHEvyvvmiLhszzEObMGzcB8oB8akmWJB7QwUJMpx95ZebvztzcLV9QmqP7l5/kDrStnFtq134SHtn8ybWm8rK0si4ptr2uH+7lROnuyAo1yARrKU8PGliRSpINmcNSMW+313ZMGPICrHrKmQK4dpWPJyJa/JXD7O3h8RUNYh/PQ6e8kQo=
 before_install:
 - openssl aes-256-cbc -K $encrypted_2fc2577d012c_key -iv $encrypted_2fc2577d012c_iv
-  -in cd/gradle.properties.enc -out /home/travis/.gradle/gradle.properties -d
+  -in cd/gradle.properties.enc -out cd/gradle.properties -d
 - openssl aes-256-cbc -K $encrypted_81c98acad902_key -iv $encrypted_81c98acad902_iv
   -in cd/codesigning.asc.enc -out cd/codesigning.asc -d
 - gpg --fast-import cd/codesigning.asc

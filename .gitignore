@@ -42,3 +42,4 @@ inversion99.properties
 northwind.mv.db
 northwind.trace.db
 codesigning.asc
+/cd/gradle.properties
