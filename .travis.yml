@@ -15,7 +15,7 @@ jobs:
   - stage: build
     script: "./gradlew --stacktrace build"
   - stage: release
-    script: "./gradlew --stacktrace -DsonatypeUsername=inversion -DsonatypePassword=$SONATYPE_PASSWORD publishToSonatype"
+    script: "./gradlew --stacktrace -DsonatypeUsername=inversion -DsonatypePassword=$SONATYPE_PASSWORD publishToSonatype closeAndReleaseSonatypeStagingRepository"
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
