@@ -246,6 +246,13 @@ public class Url {
         return toQueryString(params.asMap());
     }
 
+    /**
+     * @deprecated replaced by {@link #getQueryString()}
+     */
+    public String getQuery(){
+        return getQueryString();
+    }
+
     public String getHost() {
         return host;
     }

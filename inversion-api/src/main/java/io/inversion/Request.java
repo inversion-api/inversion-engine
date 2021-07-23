@@ -430,8 +430,32 @@ public class Request {
         return url.getParam(RESOURCE_KEY);
     }
 
+    /**
+     * @deprecated  Replaced by {@link #getResourceKey()}
+     */
+    @Deprecated
+    public String getEntityKey() {
+        return getResourceKey();
+    }
+
     public String getRelationshipKey() {
         return url.getParam(RELATIONSHIP_KEY);
+    }
+
+    /**
+     * @deprecated  Replaced by {@link #getRelationshipKey()}
+     */
+    @Deprecated
+    public String getSubCollectionKey(){
+        return getRelationshipKey();
+    }
+
+    /**
+     * @deprecated  Replaced by {@link Url#getParams()}
+     */
+    @Deprecated
+    public Map<String, String> getParams(){
+        return url.getParams();
     }
 
     public Request withApi(Api api, Path apiPath, Path apiMatchPath) {
