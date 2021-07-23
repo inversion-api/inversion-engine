@@ -431,7 +431,7 @@ public class Configurator {
 
             if (name == null) {
                 try {
-                    name = Utils.getProperty("name", o);
+                    name = Utils.getBeanProperty("name", o);
                 } catch (Throwable ex) {
                     System.err.println("Unable to determine name for bean: " + o);
                 }

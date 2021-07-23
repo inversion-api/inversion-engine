@@ -1073,6 +1073,14 @@ public class RestClient {
         return this;
     }
 
+    /**
+     * @deprecated  Replaced by {@link #getIncludeForwardHeaders()}
+     */
+    public RestClient withWhitelistedHeaders(String... headerKeys) {
+        return withIncludeForwardHeaders(headerKeys);
+    }
+
+
     public RestClient removeIncludeForwardHeader(String headerKey) {
         if (headerKey != null)
             includeForwardHeaders.remove(headerKey);

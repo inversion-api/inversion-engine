@@ -1,75 +1,30 @@
 /**
- * This is a gradle multi project build that works with Travis CI to publish:
+ * This is a gradle multi project build that works with Travis CI to publish
+ * release branch commits to mavenCentral.
  *
- *   - Github master branch commits as snapshot builds to oss.jfrog.org 
- *     (aka OJO found @ https://oss.jfrog.org/artifactory/oss-snapshot-local/)
- *       
- *   - Github release-x.x.x branch commits as releases to the inversion
- *     bintray repo which syncs with jcenter
- *           
- * We are using two different repos because at the time of writing, bintray 
- * did not accept snapshots and OJO is their specific solution to hosting snapshots.  
- * 
- * Both the bintray and artifactory plugins have had varing support for
- * different gradle versions and gradle multi project builds specifically.  
- * Most of the OJO examples around the web are for single projects what
- * works for bintray in mutli projects does not work exactly the same way for
- * artifactory.
+ * You can browse published artifacts here: https://repo1.maven.org/maven2/io/inversion/inversion-api/
  *
- * Repos:
- *  - Bintray  - https://dl.bintray.com/inversion/repo/io/inversion/
- *             - https://bintray.com/inversion/repo
- *
- *  - OJO Repo - https://oss.jfrog.org/artifactory/oss-snapshot-local/io/inversion/
- *             - https://oss.jfrog.org/artifactory/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/io/inversion/
- * 
- *  - JCenter mirror - https://jcenter.bintray.com/io/inversion/
- *
- * Projects that want to pull both releases and snapshot dependencies should include the
- * following repos in their gradle config:
- *    
- *  repositories {
- *		jcenter()
- *		maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local' }
- *   }
+ * This script has two additional "tricks" which are to
+ *  - combine javadocs for all projects into /docs so that the combine javadocs can be easily
+ *    browsed on GitHub Pages here: https://inversion-api.github.io/inversion-engine/javadoc
+ *  - After each build a pom.xml is exported to each subproject root dir to help with GitHub analytics
  *
  * The following examples/articles were super helpful in figuring all fo this out
- *   - https://github.com/jfrog/project-examples/blob/master/gradle-examples/gradle-example-multi-repos/build.gradle
- *   - https://github.com/bintray/bintray-examples/tree/master/gradle-multi-example
- *   - https://github.com/bintray/bintray-examples/tree/master/gradle-bintray-plugin-examples
- *   - https://reflectoring.io/guide-publishing-to-bintray-with-gradle/
- *   - https://reflectoring.io/bintray-jcenter-maven-central/
- *   - https://reflectoring.io/fully-automated-open-source-release-chain/
- *   - https://reflectoring.io/spring-boot-gradle-multi-module/
- *   - https://github.com/jfrog/build-info/issues/145
- *   - https://stackoverflow.com/questions/35851251/gradle-artifactory-plugin-how-to-publish-artifacts-from-multiple-modules-in-a
+ *   - https://central.sonatype.org/publish/publish-guide/
+ *   - https://blackdoor.github.io/blog/maven-cd/
+ *   - https://github.com/gradle-nexus/publish-plugin/
+ *   - https://docs.gradle.org/current/userguide/signing_plugin.html
  *
  */
 
 buildscript {
     repositories {
-		//jcenter()
-		//maven { url 'https://repo1.maven.org/maven2'}
 		mavenCentral()
     }
 
     dependencies {
-        //classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4"
-        
-        //WARNING artifactory plugin 4.13.0 was the lastest as of 1/8/20
-        //but artifactoryPublish was hanging, never completing.  Downgrading
-        //seemed to fix the problem
-        //classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.10.0"
-        
-        //classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
+        classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
     }
-    
-//    configurations.classpath {
-//        resolutionStrategy {
-//            cacheDynamicVersionsFor 0, 'seconds'
-//            cacheChangingModulesFor 0, 'seconds'
-//        }
-//    }
 }
 
 plugins {
@@ -78,7 +33,7 @@ plugins {
   id "signing"
   id("io.github.gradle-nexus.publish-plugin") version "1.0.0"
 }
-//apply plugin: 'nebula-aggregate-javadocs'
+apply plugin: 'nebula-aggregate-javadocs'
 
 
 /**
@@ -90,13 +45,13 @@ plugins {
  * where they can be checked into github and served up from
  * github pages.
  */ 
-//task allJavadocs {
-//    dependsOn 'aggregateJavadocs'
-//    doLast {
-//    	ant.delete(dir: 'docs/javadoc/')
-//        ant.move(file: 'build/docs/javadoc/', tofile: 'docs/javadoc/')
-//    }
-//}
+task allJavadocs {
+    dependsOn 'aggregateJavadocs'
+    doLast {
+    	ant.delete(dir: 'docs/javadoc/')
+        ant.move(file: 'build/docs/javadoc/', tofile: 'docs/javadoc/')
+    }
+}
 
 tasks.withType(Javadoc) { 
 	failOnError false
@@ -104,18 +59,17 @@ tasks.withType(Javadoc) {
  }
 	 
 //regenerate javadocs after a build	
-//build.finalizedBy(allJavadocs)
+build.finalizedBy(allJavadocs)
 	
 allprojects {
-	//apply plugin: 'signing'
+
 	group = 'io.inversion'
 	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
 	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")
 	
 	//required for generating comprehensive javadocs with
 	//gradle-aggregate-javadocs-plugin and not failing on error
-	
-	tasks.withType(Javadoc) { 
+	tasks.withType(Javadoc) {
 		failOnError false
 		options.bottom = "Copyright &#169; ${java.time.Year.now()} <a href=\"http://rocketpartners.io\">Rocket Partners, LLC</a>. All rights reserved."
 	 }
@@ -139,12 +93,9 @@ subprojects {
 
 	repositories {
 		mavenCentral()
-		//maven { url 'https://repo1.maven.org/maven2'}
-		//maven { url 'https://jitpack.io' }
 	}
 
 	signing {
-		sign configurations.archives
 		sign publishing.publications
 	}
 
@@ -161,7 +112,6 @@ subprojects {
 	task sourcesJar(type: Jar) {
 		classifier = 'sources'
 		from sourceSets.main.allSource
-		//from sourceSets.main.allJava
 	}
 
 	artifacts {
@@ -184,14 +134,14 @@ subprojects {
 	}
 
 	//causes a new ${subpoject}/pom.xml file to be generated after each build
-//	gradle.buildFinished { buildResult ->
-//  		tasks.generatePomFileForMavenJavaPublication.doGenerate()
-//	}
-//	project.getGradle().getTaskGraph().whenReady {
-//	    tasks.withType(GenerateMavenPom.class) {
-//	        destination = file("$buildDir/../pom.xml")
-//	    }
-//	}
+	gradle.buildFinished { buildResult ->
+  		tasks.generatePomFileForMavenJavaPublication.doGenerate()
+	}
+	project.getGradle().getTaskGraph().whenReady {
+	    tasks.withType(GenerateMavenPom.class) {
+	        destination = file("$buildDir/../pom.xml")
+	    }
+	}
 
 	
 	publishing {

@@ -56,6 +56,17 @@ public class User {
         withPermissions(permissions);
     }
 
+    /**
+     * @deprecated  Replaced by url mapped parameters such as host://myApi/{tenant}/endpoint
+     * @return the "tenant" url parameter
+     */
+    @Deprecated
+    public String getTenantCode(){
+       if(Chain.peek() != null)
+           return Chain.peek().getRequest().getUrl().getParam("tenant");
+       return null;
+    }
+
     public String getUsername() {
         return username;
     }
