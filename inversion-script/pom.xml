@@ -42,19 +42,19 @@
     <dependency>
       <groupId>net.jodah</groupId>
       <artifactId>expiringmap</artifactId>
-      <version>0.5.9</version>
+      <version>0.5.10</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.graalvm.js</groupId>
       <artifactId>js-scriptengine</artifactId>
-      <version>20.2.0</version>
+      <version>21.2.0</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.velocity</groupId>
       <artifactId>velocity-engine-core</artifactId>
-      <version>2.2</version>
+      <version>2.3</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

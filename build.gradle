@@ -19,19 +19,22 @@
 
 buildscript {
     repositories {
-		mavenCentral()
+        mavenCentral()
     }
 
     dependencies {
-        classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
+        classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:3.0.1'
     }
 }
 
 plugins {
-  id "java-library"
-  id "maven-publish"
-  id "signing"
-  id("io.github.gradle-nexus.publish-plugin") version "1.0.0"
+    id "java-library"
+    id "maven-publish"
+    id "signing"
+	//-- publishes to OSSRH and on to mavenCentral
+    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+	//-- provides the "dependencyUpdates" task that reports available updates for your dependencies
+    id "com.github.ben-manes.versions" version "0.39.0"
 }
 apply plugin: 'nebula-aggregate-javadocs'
 
@@ -44,151 +47,151 @@ apply plugin: 'nebula-aggregate-javadocs'
  * will generate the combined docs and put them into /docs/javadoc
  * where they can be checked into github and served up from
  * github pages.
- */ 
+ */
 task allJavadocs {
     dependsOn 'aggregateJavadocs'
     doLast {
-    	ant.delete(dir: 'docs/javadoc/')
+        ant.delete(dir: 'docs/javadoc/')
         ant.move(file: 'build/docs/javadoc/', tofile: 'docs/javadoc/')
     }
 }
 
-tasks.withType(Javadoc) { 
-	failOnError false
-	title = "Inversion Cloud API Engine - " + project.version
- }
-	 
+tasks.withType(Javadoc) {
+    failOnError false
+    title = "Inversion Cloud API Engine - " + project.version
+}
+
 //regenerate javadocs after a build	
 build.finalizedBy(allJavadocs)
-	
+
 allprojects {
 
-	group = 'io.inversion'
-	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
-	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")
-	
-	//required for generating comprehensive javadocs with
-	//gradle-aggregate-javadocs-plugin and not failing on error
-	tasks.withType(Javadoc) {
-		failOnError false
-		options.bottom = "Copyright &#169; ${java.time.Year.now()} <a href=\"http://rocketpartners.io\">Rocket Partners, LLC</a>. All rights reserved."
-	 }
-	    
+    group = 'io.inversion'
+    def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
+    project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")
+
+    //required for generating comprehensive javadocs with
+    //gradle-aggregate-javadocs-plugin and not failing on error
+    tasks.withType(Javadoc) {
+        failOnError false
+        options.bottom = "Copyright &#169; ${java.time.Year.now()} <a href=\"http://rocketpartners.io\">Rocket Partners, LLC</a>. All rights reserved."
+    }
+
 }
 
 nexusPublishing {
-	repositories {
-		sonatype()
-	}
+    repositories {
+        sonatype()
+    }
 }
 
 subprojects {
 
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
-	apply plugin: 'signing'
+    apply plugin: 'signing'
 
     sourceCompatibility = 1.8
-	targetCompatibility = 1.8
+    targetCompatibility = 1.8
 
-	repositories {
-		mavenCentral()
-	}
+    repositories {
+        mavenCentral()
+    }
 
-	signing {
-		sign publishing.publications
-	}
+    signing {
+        sign publishing.publications
+    }
 
-	dependencies {
-		testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
-	}
-	
-	javadoc.failOnError = false
-	task javadocJar(type: Jar) {
-		classifier = 'javadoc'
-		from javadoc
-	}
+    dependencies {
+        testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
+    }
 
-	task sourcesJar(type: Jar) {
-		classifier = 'sources'
-		from sourceSets.main.allSource
-	}
+    javadoc.failOnError = false
+    task javadocJar(type: Jar) {
+        classifier = 'javadoc'
+        from javadoc
+    }
 
-	artifacts {
-		archives javadocJar, sourcesJar
-	}
+    task sourcesJar(type: Jar) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    artifacts {
+        archives javadocJar, sourcesJar
+    }
 
 
-	//keeps integration test that require access to external systems
-	//from running as part of the standard CICD pipeline build
-	//run intergration tests via:  ./gradlew test -Dtest.profile=integration 
-	test {
-		useJUnitPlatform()
-  		if (System.properties['test.profile'] != 'integration') {
-    		exclude '**/*IntegTest*'
-  		}
-		testLogging {
-			outputs.upToDateWhen {false}
-			showStandardStreams = true
-		}
-	}
+    //keeps integration test that require access to external systems
+    //from running as part of the standard CICD pipeline build
+    //run intergration tests via:  ./gradlew test -Dtest.profile=integration
+    test {
+        useJUnitPlatform()
+        if (System.properties['test.profile'] != 'integration') {
+            exclude '**/*IntegTest*'
+        }
+        testLogging {
+            outputs.upToDateWhen { false }
+            showStandardStreams = true
+        }
+    }
 
-	//causes a new ${subpoject}/pom.xml file to be generated after each build
-	gradle.buildFinished { buildResult ->
-  		tasks.generatePomFileForMavenJavaPublication.doGenerate()
-	}
-	project.getGradle().getTaskGraph().whenReady {
-	    tasks.withType(GenerateMavenPom.class) {
-	        destination = file("$buildDir/../pom.xml")
-	    }
-	}
+    //causes a new ${subpoject}/pom.xml file to be generated after each build
+    gradle.buildFinished { buildResult ->
+        tasks.generatePomFileForMavenJavaPublication.doGenerate()
+    }
+    project.getGradle().getTaskGraph().whenReady {
+        tasks.withType(GenerateMavenPom.class) {
+            destination = file("$buildDir/../pom.xml")
+        }
+    }
 
-	
-	publishing {
-	    publications {
-	        mavenJava(MavenPublication) {
-	            artifactId = project.name
-	            from components.java
-	            artifact sourcesJar
-	            artifact javadocJar
-	            
-	            //-- the following will generate poms with resolved dependencies
-	            //-- instead of potentially dynamic dependencies declared in the gradle build
-	            //-- https://docs.gradle.org/current/userguide/publishing_maven.html
-	            versionMapping {
-	                usage('java-api') {
-	                    fromResolutionOf('runtimeClasspath')
-	                }
-	                usage('java-runtime') {
-	                    fromResolutionResult()
-	                }
-	            }
 
-	            pom {
-	                name = project.name
-	                description = 'Inversion Cloud API Engine'
-	                url = 'https://inversion.io'
-	                licenses {
-	                    license {
-	                        name = 'The Apache License, Version 2.0'
-	                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
-	                    }
-	                }
-	                developers {
-	                    developer {
-	                        name = 'Wells Burke'
-	                        email = 'wells@inversion.io'
-							organization = 'inversion.io'
-							organizationUrl = 'https://inversion.io'
-	                    }
-	                }
-	                scm {
-	                    connection = 'scm:git:git://github.com/inversion-api/inversion-engine.git'
-	                    developerConnection = 'scm:git:ssh://github.com:inversion-api/inversion-engine.git'
-	                    url = 'https://github.com/inversion-api/inversion-engine/'
-	                }
-	            }
-	        }
-	    }
-	}
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                artifactId = project.name
+                from components.java
+                artifact sourcesJar
+                artifact javadocJar
+
+                //-- the following will generate poms with resolved dependencies
+                //-- instead of potentially dynamic dependencies declared in the gradle build
+                //-- https://docs.gradle.org/current/userguide/publishing_maven.html
+                versionMapping {
+                    usage('java-api') {
+                        fromResolutionOf('runtimeClasspath')
+                    }
+                    usage('java-runtime') {
+                        fromResolutionResult()
+                    }
+                }
+
+                pom {
+                    name = project.name
+                    description = 'Inversion Cloud API Engine'
+                    url = 'https://inversion.io'
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            name = 'Wells Burke'
+                            email = 'wells@inversion.io'
+                            organization = 'inversion.io'
+                            organizationUrl = 'https://inversion.io'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git://github.com/inversion-api/inversion-engine.git'
+                        developerConnection = 'scm:git:ssh://github.com:inversion-api/inversion-engine.git'
+                        url = 'https://github.com/inversion-api/inversion-engine/'
+                    }
+                }
+            }
+        }
+    }
 }

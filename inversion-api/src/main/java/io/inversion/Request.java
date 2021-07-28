@@ -458,6 +458,24 @@ public class Request {
         return url.getParams();
     }
 
+    /**
+     * @deprecated  Replaced by {@link Url#getParam(String)}
+     */
+    @Deprecated
+    public String getParam(String name)
+    {
+        return url.getParam(name);
+    }
+
+    /**
+     * @deprecated  Replaced by {@link Url#getQueryString()}
+     */
+    @Deprecated
+    public String getQuery()
+    {
+        return url.getQuery();
+    }
+
     public Request withApi(Api api, Path apiPath, Path apiMatchPath) {
         this.api = api;
         this.apiPath = apiPath;

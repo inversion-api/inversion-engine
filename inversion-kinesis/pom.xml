@@ -42,7 +42,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-kinesis</artifactId>
-      <version>1.11.901</version>
+      <version>1.12.31</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

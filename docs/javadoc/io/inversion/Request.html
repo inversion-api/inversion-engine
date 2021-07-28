@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":42,"i18":10,"i19":10,"i20":10,"i21":10,"i22":42,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":42,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":42,"i18":10,"i19":10,"i20":10,"i21":10,"i22":42,"i23":42,"i24":10,"i25":42,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":42,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":10,"i70":10,"i71":10,"i72":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"],32:["t6","Deprecated Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -425,6 +425,14 @@ extends java.lang.Object</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getMethod--">getMethod</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i22" class="altColor">
+<td class="colFirst"><code>java.lang.String</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getParam-java.lang.String-">getParam</a></span>(java.lang.String&nbsp;name)</code>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
+<div class="block"><span class="deprecationComment">Replaced by <a href="../../io/inversion/utils/Url.html#getParam-java.lang.String-"><code>Url.getParam(String)</code></a></span></div>
+</div>
+</td>
+</tr>
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>java.util.Map&lt;java.lang.String,java.lang.String&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getParams--">getParams</a></span>()</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
@@ -432,43 +440,51 @@ extends java.lang.Object</pre>
 </div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getPath--">getPath</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i24" class="altColor">
-<td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getReferrer--">getReferrer</a></span>()</code>&nbsp;</td>
-</tr>
 <tr id="i25" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getRelationshipKey--">getRelationshipKey</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getQuery--">getQuery</a></span>()</code>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
+<div class="block"><span class="deprecationComment">Replaced by <a href="../../io/inversion/utils/Url.html#getQueryString--"><code>Url.getQueryString()</code></a></span></div>
+</div>
+</td>
 </tr>
 <tr id="i26" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getRemoteAddr--">getRemoteAddr</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getReferrer--">getReferrer</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i27" class="rowColor">
 <td class="colFirst"><code>java.lang.String</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getResourceKey--">getResourceKey</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getRelationshipKey--">getRelationshipKey</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i28" class="altColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getRetryCount--">getRetryCount</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>java.lang.String</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getRemoteAddr--">getRemoteAddr</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i29" class="rowColor">
-<td class="colFirst"><code>java.io.File</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getRetryFile--">getRetryFile</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>java.lang.String</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getResourceKey--">getResourceKey</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i30" class="altColor">
 <td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getRetryMax--">getRetryMax</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getRetryCount--">getRetryCount</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i31" class="rowColor">
+<td class="colFirst"><code>java.io.File</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getRetryFile--">getRetryFile</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i32" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getRetryMax--">getRetryMax</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getStartAt--">getStartAt</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>java.lang.String</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getSubCollectionKey--">getSubCollectionKey</a></span>()</code>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;
@@ -476,164 +492,164 @@ extends java.lang.Object</pre>
 </div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getSubpath--">getSubpath</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.Uploader.html" title="interface in io.inversion">Request.Uploader</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getUploader--">getUploader</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>java.util.List&lt;<a href="../../io/inversion/Request.Upload.html" title="class in io.inversion">Request.Upload</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getUploads--">getUploads</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/utils/Url.html" title="class in io.inversion.utils">Url</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#getUrl--">getUrl</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#hasCollectionKey-java.lang.String...-">hasCollectionKey</a></span>(java.lang.String...&nbsp;collectionKeys)</code>&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#incrementRetryCount--">incrementRetryCount</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#isDebug--">isDebug</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#isDelete--">isDelete</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#isExplain--">isExplain</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#isGet--">isGet</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#isLocalRequest--">isLocalRequest</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#isMethod-java.lang.String...-">isMethod</a></span>(java.lang.String...&nbsp;methods)</code>&nbsp;</td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#isPatch--">isPatch</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#isPost--">isPost</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#isPut--">isPut</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#removeHeader-java.lang.String-">removeHeader</a></span>(java.lang.String&nbsp;key)</code>&nbsp;</td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#setRetryFile-java.io.File-">setRetryFile</a></span>(java.io.File&nbsp;retryFile)</code>&nbsp;</td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i52" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#validate-java.lang.String-">validate</a></span>(java.lang.String&nbsp;propOrJsonPath)</code>&nbsp;</td>
 </tr>
-<tr id="i51" class="rowColor">
+<tr id="i53" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.Validation.html" title="class in io.inversion">Request.Validation</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#validate-java.lang.String-java.lang.String-">validate</a></span>(java.lang.String&nbsp;propOrJsonPath,
         java.lang.String&nbsp;customErrorMessage)</code>&nbsp;</td>
 </tr>
-<tr id="i52" class="altColor">
+<tr id="i54" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withApi-io.inversion.Api-io.inversion.utils.Path-io.inversion.utils.Path-">withApi</a></span>(<a href="../../io/inversion/Api.html" title="class in io.inversion">Api</a>&nbsp;api,
        <a href="../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a>&nbsp;apiPath,
        <a href="../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a>&nbsp;apiMatchPath)</code>&nbsp;</td>
 </tr>
-<tr id="i53" class="rowColor">
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withBody-java.lang.String-">withBody</a></span>(java.lang.String&nbsp;body)</code>&nbsp;</td>
 </tr>
-<tr id="i54" class="altColor">
+<tr id="i56" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withChain-io.inversion.Chain-">withChain</a></span>(<a href="../../io/inversion/Chain.html" title="class in io.inversion">Chain</a>&nbsp;chain)</code>&nbsp;</td>
 </tr>
-<tr id="i55" class="rowColor">
+<tr id="i57" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withCollection-io.inversion.Collection-">withCollection</a></span>(<a href="../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection)</code>&nbsp;</td>
 </tr>
-<tr id="i56" class="altColor">
+<tr id="i58" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withCollection-io.inversion.Collection-io.inversion.utils.Path-io.inversion.utils.Path-">withCollection</a></span>(<a href="../../io/inversion/Collection.html" title="class in io.inversion">Collection</a>&nbsp;collection,
               <a href="../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a>&nbsp;collectionPath,
               <a href="../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a>&nbsp;collectionMatchPath)</code>&nbsp;</td>
 </tr>
-<tr id="i57" class="rowColor">
+<tr id="i59" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withEndAt-long-">withEndAt</a></span>(long&nbsp;endAt)</code>&nbsp;</td>
 </tr>
-<tr id="i58" class="altColor">
+<tr id="i60" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withEndpoint-io.inversion.Endpoint-io.inversion.utils.Path-io.inversion.utils.Path-">withEndpoint</a></span>(<a href="../../io/inversion/Endpoint.html" title="class in io.inversion">Endpoint</a>&nbsp;endpoint,
             <a href="../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a>&nbsp;endpointPath,
             <a href="../../io/inversion/utils/Path.html" title="class in io.inversion.utils">Path</a>&nbsp;endpointMatchPath)</code>&nbsp;</td>
 </tr>
-<tr id="i59" class="rowColor">
+<tr id="i61" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withEngine-io.inversion.Engine-">withEngine</a></span>(<a href="../../io/inversion/Engine.html" title="class in io.inversion">Engine</a>&nbsp;service)</code>&nbsp;</td>
 </tr>
-<tr id="i60" class="altColor">
+<tr id="i62" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withExplain-boolean-">withExplain</a></span>(boolean&nbsp;explain)</code>&nbsp;</td>
 </tr>
-<tr id="i61" class="rowColor">
+<tr id="i63" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withHeader-java.lang.String-java.lang.String-">withHeader</a></span>(java.lang.String&nbsp;key,
           java.lang.String&nbsp;value)</code>&nbsp;</td>
 </tr>
-<tr id="i62" class="altColor">
+<tr id="i64" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withHeaders-java.util.Map-">withHeaders</a></span>(java.util.Map&lt;java.lang.String,java.lang.String&gt;&nbsp;headers)</code>&nbsp;</td>
 </tr>
-<tr id="i63" class="rowColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withHeaders-java.lang.String-java.lang.String-">withHeaders</a></span>(java.lang.String&nbsp;key,
            java.lang.String&nbsp;value)</code>&nbsp;</td>
 </tr>
-<tr id="i64" class="altColor">
+<tr id="i66" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withJson-io.inversion.utils.JSNode-">withJson</a></span>(<a href="../../io/inversion/utils/JSNode.html" title="class in io.inversion.utils">JSNode</a>&nbsp;json)</code>&nbsp;</td>
 </tr>
-<tr id="i65" class="rowColor">
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withMethod-java.lang.String-">withMethod</a></span>(java.lang.String&nbsp;method)</code>&nbsp;</td>
 </tr>
-<tr id="i66" class="altColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withRemoteAddr-java.lang.String-">withRemoteAddr</a></span>(java.lang.String&nbsp;remoteAddr)</code>&nbsp;</td>
 </tr>
-<tr id="i67" class="rowColor">
+<tr id="i69" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withRetryMax-int-">withRetryMax</a></span>(int&nbsp;retryMax)</code>&nbsp;</td>
 </tr>
-<tr id="i68" class="altColor">
+<tr id="i70" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withStartAt-long-">withStartAt</a></span>(long&nbsp;startAt)</code>&nbsp;</td>
 </tr>
-<tr id="i69" class="rowColor">
+<tr id="i71" class="rowColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withUploader-io.inversion.Request.Uploader-">withUploader</a></span>(<a href="../../io/inversion/Request.Uploader.html" title="interface in io.inversion">Request.Uploader</a>&nbsp;uploader)</code>&nbsp;</td>
 </tr>
-<tr id="i70" class="altColor">
+<tr id="i72" class="altColor">
 <td class="colFirst"><code><a href="../../io/inversion/Request.html" title="class in io.inversion">Request</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../io/inversion/Request.html#withUrl-java.lang.String-">withUrl</a></span>(java.lang.String&nbsp;url)</code>&nbsp;</td>
 </tr>
@@ -1482,6 +1498,28 @@ public&nbsp;java.lang.String&nbsp;getSubCollectionKey()</pre>
 <pre>@Deprecated
 public&nbsp;java.util.Map&lt;java.lang.String,java.lang.String&gt;&nbsp;getParams()</pre>
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;<span class="deprecationComment">Replaced by <a href="../../io/inversion/utils/Url.html#getParams--"><code>Url.getParams()</code></a></span></div>
+</li>
+</ul>
+<a name="getParam-java.lang.String-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getParam</h4>
+<pre>@Deprecated
+public&nbsp;java.lang.String&nbsp;getParam(java.lang.String&nbsp;name)</pre>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;<span class="deprecationComment">Replaced by <a href="../../io/inversion/utils/Url.html#getParam-java.lang.String-"><code>Url.getParam(String)</code></a></span></div>
+</li>
+</ul>
+<a name="getQuery--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getQuery</h4>
+<pre>@Deprecated
+public&nbsp;java.lang.String&nbsp;getQuery()</pre>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;<span class="deprecationComment">Replaced by <a href="../../io/inversion/utils/Url.html#getQueryString--"><code>Url.getQueryString()</code></a></span></div>
 </li>
 </ul>
 <a name="withApi-io.inversion.Api-io.inversion.utils.Path-io.inversion.utils.Path-">

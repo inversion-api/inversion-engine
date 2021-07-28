@@ -81,6 +81,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
    
 ## Features and Benefits
  * Deploy a secure JSON REST API against your back end database in five minutes without any coding.
+ * All APIs are automatically documented in OAS 3.0.3 (Swagger)  
  * Support for MySql, PostgreSQL, Microsoft SqlServer, AWS DynamoDb, ElasticSearch, Azure CommosDb, S3, Redis and many more.
  * Makes structured relational database backed APIs as frictionless as working with an unstructured document store dbs.
  * Database tables are automatically exposed as REST collections endpoints.
@@ -89,13 +90,14 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
  * Smart pagination and ordering with a consistent document envelope.
  * Powerful Resource Query Language (RQL) lets you select the exact resources you are looking for.
  * For complex nested document PUT/POSTS, all resources are "upserted" with new or updated foreign key dependencies updated first and relationships resolved automatically.  You can compose a rich client side JSON model mixing existing and new resources and PUT/POST the entire object in one request.
- * SQL Injection proof through the use of prepared statements instead of dynamic sql.
+ * SQL Injection proof through the use of prepared statements instead of dynamic SQL.
  * Permission and role based declarative security model.
  * Always CORS cross site enabled.
  * Expose multiple back ends databases in a single API.
  * Designed to support single and multi-tenant API usage patterns.
  * "Explain" mode shows you exactly what the back end is doing including all SQL statements run.
  * Configured via drop dead simple properties files or directly in Java code.
+ * If you are a Java / Spring Boot developer, Inversion can work natively within your Spring Boot application to add extensive capabilities but not interfering with custom Spring Boot code or configuration.
 
 
 
@@ -142,8 +144,7 @@ in your project pull release or snapshot builds.  Here is a gradle config exampl
 
 ```
    repositories {
- 		jcenter()
- 		maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local' }
+ 		mavenCentral()
     }
     
     dependencies {
