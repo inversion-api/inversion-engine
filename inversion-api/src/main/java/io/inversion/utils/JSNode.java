@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.zjsonpatch.JsonDiff;
 import com.flipkart.zjsonpatch.JsonPatch;
 import io.inversion.ApiException;
-import netscape.javascript.JSObject;
 import org.apache.commons.lang3.tuple.Triple;
 
 import java.io.ByteArrayOutputStream;

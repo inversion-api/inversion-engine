@@ -21,6 +21,9 @@ import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Actions perform some work when matched to a Request and potentially contribute to the content of the Response.
@@ -63,16 +66,25 @@ public class Action<A extends Action> extends Rule<A> {
     }
 
 
-    ArrayListValuedHashMap<String, Path> getOperationPaths(Api api) {
-        ArrayListValuedHashMap<String, Path> paths = new ArrayListValuedHashMap<>();
-        for (RuleMatcher matcher : getIncludeMatchers()){
-            for(String method : matcher.getMethods()){
-                for(Path path : matcher.getPaths()){
-                    for(Path subpath : path.getSubPaths()){
-                        paths.put(method, subpath);
-                    }
+
+    protected void buildOperation(Operation op){
+        String method = op.getMethod();
+        Path epPath = op.getEpMatchPath();
+
+        Path aPath = match(method, epPath);
+        if(aPath != null){
+            for(int i=0; i<aPath.size(); i++){
+                if(aPath.isVar(i)){
+
                 }
             }
+        }
+    }
+
+    protected List<Path> getOperationPaths(Api api, Endpoint ep, String method, Path epPath) {
+        List<Path> paths = new ArrayList();
+        if(matches(method, epPath)){
+            paths.add(epPath);
         }
         return paths;
     }

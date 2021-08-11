@@ -17,6 +17,7 @@
 package io.inversion;
 
 import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.util.*;
@@ -53,73 +54,116 @@ public class Endpoint extends Rule<Endpoint> {
         }
     }
 
+    Operation buildOperation(Api api, String method, Path apiPath, Path epPath, List<Action> apiActions){
 
-    ArrayListValuedHashMap<String, Path> getOperationPaths(Api api, Path apiPath) {
-        ArrayListValuedHashMap<String, Path> opPaths = new ArrayListValuedHashMap<>();
+        List<Action> actions = new ArrayList(this.actions);
+        actions.addAll(apiActions);
 
-//        ArrayListValuedHashMap<String, Path> mergedPaths = new ArrayListValuedHashMap();
-//        for (Action action : actions) {
-//            ArrayListValuedHashMap<String, Path> actionPaths = action.getOperationPaths(api);
-//            mergePaths(mergedPaths, actionPaths);
-//        }
+        Collections.sort(actions);
 
+        Operation op = new Operation();
 
-        Map<Action, ArrayListValuedHashMap<String, Path>> actionOpPaths = new HashMap();
+        op.withApi(api);
+        op.withEndpoint(this);
+        op.withMethod(method);
+        op.withApiMatchPath(apiPath);
+        op.withEpMatchPath(epPath);
 
-        for (Action action : actions) {
-            ArrayListValuedHashMap<String, Path> paths = action.getOperationPaths(api);
-            actionOpPaths.put(action, paths);
+        for(Action action : actions){
+            action.buildOperation(op);
         }
 
+        return op;
+    }
 
+
+    List<Path> getOperationPaths(Api api, String method) {
+        List<Path> mergedPaths = new ArrayList();
         for (Rule.RuleMatcher epMatcher : getIncludeMatchers()) {
-            for (String method : epMatcher.getMethods()) {
-                List<Path> paths = epMatcher.getPaths();
-                for (Path path : paths) {
-
-                    Path actionMatchPath = path.getOptionalSuffix();
-
-                    System.out.println(path + " - " + actionMatchPath);
-
-                    List<Path> mergedPaths = new ArrayList();
-                    boolean    hasMatches  = false;
-                    for (Action action : actions) {
-                        if (action.matches(method, actionMatchPath)) {
-                            List<Path> actionPaths = actionOpPaths.get(action).get(method);
+            if(epMatcher.hasMethod(method)){
+                boolean added = false;
+                for(Path epPath : epMatcher.getPaths()){
+                    for(Action action : actions){
+                        Path epPathCopy = new Path(epPath);
+                        List<Path> actionPaths = action.getOperationPaths(api, this, method, epPathCopy);
+                        if(mergedPaths != null && mergedPaths.size() > 0){
                             mergePaths(mergedPaths, actionPaths);
-                            hasMatches = true;
-                        }
-                    }
-
-                    if (hasMatches) {
-                        Path opPath = new Path(path.getRequiredPrefix());
-                        if (opPath.size() > 0 && opPath.endsWithWildcard())
-                            opPath.removeTrailingWildcard();
-
-                        if (mergedPaths.size() > 0) {
-                            for (Path actionPath : mergedPaths) {
-                                opPaths.put(method, new Path(opPath).add(actionPath.toString()));
-                            }
-                        } else {
-
-                            List<Path> subPaths = path.getSubPaths();
-                            for(int i=0; i<subPaths.size(); i++){
-                                Path sp = subPaths.get(i);
-                                if(i == subPaths.size()-1){
-                                    if(path.endsWithWildcard() && !sp.endsWithWildcard())
-                                        sp.add("*");
-                                }
-                                opPaths.put(method, sp);
-                            }
                         }
                     }
                 }
             }
         }
-
-        return opPaths;
-
+        return mergedPaths;
     }
+
+
+
+//    ArrayListValuedHashMap<String, Path> getOperationPaths(Api api, Path apiPath) {
+//        ArrayListValuedHashMap<String, Path> opPaths = new ArrayListValuedHashMap<>();
+//
+////        ArrayListValuedHashMap<String, Path> mergedPaths = new ArrayListValuedHashMap();
+////        for (Action action : actions) {
+////            ArrayListValuedHashMap<String, Path> actionPaths = action.getOperationPaths(api);
+////            mergePaths(mergedPaths, actionPaths);
+////        }
+//
+//
+//        Map<Action, ArrayListValuedHashMap<String, Path>> actionOpPaths = new HashMap();
+//
+//        for (Action action : actions) {
+//            ArrayListValuedHashMap<String, Path> paths = action.getOperationPaths(api);
+//            actionOpPaths.put(action, paths);
+//        }
+//
+//
+//        for (Rule.RuleMatcher epMatcher : getIncludeMatchers()) {
+//            for (String method : epMatcher.getMethods()) {
+//                List<Path> paths = epMatcher.getPaths();
+//                for (Path path : paths) {
+//
+//                    Path actionMatchPath = path.getOptionalSuffix();
+//
+//                    System.out.println(path + " - " + actionMatchPath);
+//
+//                    List<Path> mergedPaths = new ArrayList();
+//                    boolean    hasMatches  = false;
+//                    for (Action action : actions) {
+//                        if (action.matches(method, actionMatchPath)) {
+//                            List<Path> actionPaths = actionOpPaths.get(action).get(method);
+//                            mergePaths(mergedPaths, actionPaths);
+//                            hasMatches = true;
+//                        }
+//                    }
+//
+//                    if (hasMatches) {
+//                        Path opPath = new Path(path.getRequiredPrefix());
+//                        if (opPath.size() > 0 && opPath.endsWithWildcard())
+//                            opPath.removeTrailingWildcard();
+//
+//                        if (mergedPaths.size() > 0) {
+//                            for (Path actionPath : mergedPaths) {
+//                                opPaths.put(method, new Path(opPath).add(actionPath.toString()));
+//                            }
+//                        } else {
+//
+//                            List<Path> subPaths = path.getSubPaths();
+//                            for(int i=0; i<subPaths.size(); i++){
+//                                Path sp = subPaths.get(i);
+//                                if(i == subPaths.size()-1){
+//                                    if(path.endsWithWildcard() && !sp.endsWithWildcard())
+//                                        sp.add("*");
+//                                }
+//                                opPaths.put(method, sp);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        return opPaths;
+//
+//    }
 
     /**
      * DbAction gives

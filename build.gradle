@@ -129,8 +129,8 @@ subprojects {
     apply plugin: 'com.jfrog.bintray'
 	apply plugin: 'com.jfrog.artifactory'
     
-    sourceCompatibility = 1.13
-	targetCompatibility = 1.13
+    sourceCompatibility = 1.8
+	targetCompatibility = 1.8
 	
 	repositories {
 		jcenter()

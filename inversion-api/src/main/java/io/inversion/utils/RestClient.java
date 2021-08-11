@@ -66,8 +66,8 @@ import java.util.zip.GZIPOutputStream;
  * <b>Intercepting and transforming requests and responses examples:</b>
  * <pre>
  *
- *      RestClient client = new RestClient().withRequestListener(req -> return new Response())//-- edit the request or return your own response to short circuits the remote call
- *                                          .withResponseListener(res -> res.setStatus(200))//-- edit anything you want about the response
+ *      RestClient client = new RestClient().withRequestListener(req -&gt; return new Response())//-- edit the request or return your own response to short circuits the remote call
+ *                                          .withResponseListener(res -&gt; res.setStatus(200))//-- edit anything you want about the response
  *
  *      //-- you can also override "doRequest" to control everything before and after the actual HttpClient call.
  *      client = new RestClient("myservice")

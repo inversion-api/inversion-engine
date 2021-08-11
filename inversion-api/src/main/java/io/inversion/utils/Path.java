@@ -92,7 +92,7 @@ public class Path {
      * @param path the Path to be cloned
      */
     public Path(Path path) {
-        copy(path);
+        copyFrom(path);
     }
 
     /**
@@ -119,12 +119,23 @@ public class Path {
         this(parts.toArray(new String[0]));
     }
 
-    public Path copy(Path path){
+    public Path copyFrom(Path path){
         parts.clear();
         lc.clear();
         parts.addAll(path.parts);
         lc.addAll(path.lc);
         return this;
+    }
+
+    /**
+     * Return a new path that is an exactly copy of this one.
+     * @return
+     */
+    public Path copy(){
+        Path copy = new Path();
+        copy.parts.addAll(parts);
+        copy.lc.addAll(lc);
+        return copy;
     }
 
     /**

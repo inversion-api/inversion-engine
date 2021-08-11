@@ -503,6 +503,35 @@ public class Api extends Rule<Api> {
         return operations;
     }
 
+    List<Operation> generateCandidateOperations2() {
+        List<Operation> operations = new ArrayList();
+
+        ArrayListValuedHashMap<String, Path> paths = new ArrayListValuedHashMap<>();
+        for (Rule.RuleMatcher apiMatcher : getIncludeMatchers()) {
+            for (Path apiPath : apiMatcher.getPaths()) {
+                for(String method : apiMatcher.getMethods()){
+                    for(Endpoint endpoint : getEndpoints()){
+                        List<Path> epPaths = endpoint.getOperationPaths(this, method);
+                        for(Path epPath : epPaths){
+                            List<Action> apiActions = new ArrayList();
+                            for(Action action : apiActions){
+                                if(action.matches(method, epPath)){
+                                    apiActions.add(action);
+                                }
+                            }
+                            Operation op = endpoint.buildOperation(this, method, apiPath, epPath, apiActions);
+                            operations.add(op);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        return operations;
+    }
+
+
     List<Operation> generateCandidateOperations() {
         List<Operation> operations = new ArrayList();
 

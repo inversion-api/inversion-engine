@@ -20,10 +20,7 @@ import io.inversion.Collection;
 import io.inversion.*;
 import io.inversion.rql.Page;
 import io.inversion.rql.Term;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Url;
-import io.inversion.utils.Utils;
+import io.inversion.utils.*;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
@@ -36,6 +33,61 @@ public class DbGetAction extends Action<DbGetAction> {
 
     protected int maxRows = 100;
 
+    protected List<Path> getOperationPaths(Api api, Endpoint ep, String method, Path epPath) {
+        List<Path> paths = new ArrayList();
+
+        if(!matches(method, epPath)){
+            return paths;
+        }
+
+        for(Collection collection : api.getCollections()){
+            if(collection.matches(method, epPath)){
+
+                String collectionKey = collection.getName();
+                String resourceKey = null;
+
+                Index pk = collection.getPrimaryIndex();
+                if (pk != null && pk.size() == 1) {
+                    resourceKey = pk.getJsonName(0);
+                } else {
+                    resourceKey = collection.getName() + "Id";
+                    for (int j = 0; j < 10; j++) {
+                        if (collection.getProperty(resourceKey) == null)
+                            break;
+                        resourceKey = "_" + resourceKey;
+                    }
+                }
+                resourceKey = "{" + resourceKey + "}";
+
+
+                Path copy = epPath.copy();
+                for(int i=0; i< copy.size(); i++){
+                    if(Request.COLLECTION_KEY.equalsIgnoreCase(copy.get(i))){
+                        copy.set(i, collection.getName());
+                    }
+                    if(Request.RESOURCE_KEY.equalsIgnoreCase(copy.get(i))){
+                        copy.set(i, resourceKey);
+                    }
+                }
+
+                if(!epPath.hasAllVars(Request.RELATIONSHIP_KEY)){
+                    paths.add(copy);
+                }
+                else{
+                    for(Relationship rel : collection.getRelationships()){
+                        Path relCopy = copy.copy();
+                        for(int i=0; i<relCopy.size(); i++){
+                            if(Request.RELATIONSHIP_KEY.equalsIgnoreCase(relCopy.get(i))){
+                                relCopy.set(i, rel.getName());
+                            }
+                        }
+                        paths.add(relCopy);
+                    }
+                }
+            }
+        }
+        return paths;
+    }
 
     protected static String getForeignKey(Relationship rel, JSNode node) {
         Index idx = rel.getFkIndex1();
