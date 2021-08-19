@@ -169,7 +169,7 @@ public class CosmosDb extends Db<CosmosDb> {
                         else
                             index.getColumnNames().forEach(colName -> {
                                 if(Utils.empty(row.get(colName)))
-                                log.info("INVERSION ROW MAP KEY [{}] is EMPTY", colName);
+                                log.warn("INVERSION ROW MAP KEY [{}] is EMPTY", colName);
                             });
                     }
                     throw ApiException.new400BadRequest("Your record does not contain the required key fields.");
