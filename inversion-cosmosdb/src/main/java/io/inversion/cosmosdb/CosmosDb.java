@@ -156,22 +156,20 @@ public class CosmosDb extends Db<CosmosDb> {
                     Index index = collection.getPrimaryIndex();
                     if(index == null) {
                         log.warn("INVERSION UNABLE TO DETERMINE PRIMARY INDEX");
-                        collection.getIndexes().forEach(cIndex -> {
-                            log.info("    {}", cIndex.toString());
-                        });
                     }
                     else {
                         // this is the second potential problem, where we found the index but couldn't construct it
                         // either it's the wrong index being chosen, or the row, by the time it gets here, doesn't
                         // have the data required to construct the thing
-                        log.info("INVERSION USING INDEX [{]]", index.toString());
+                        log.info("INVERSION USING INDEX [{}]", index);
                         if(row == null)
                             log.warn("BUT THE ROW IS NULL!");
                         else if(row.size() == 0)
                             log.warn("BUT THE ROW IS EMPTY!");
                         else
                             index.getColumnNames().forEach(colName -> {
-                                log.info("INVERSION ROW MAP KEY [{}], VALUE [{}]", colName, row.get(colName));
+                                if(Utils.empty(row.get(colName)))
+                                log.info("INVERSION ROW MAP KEY [{}] is EMPTY", colName);
                             });
                     }
                     throw ApiException.new400BadRequest("Your record does not contain the required key fields.");
