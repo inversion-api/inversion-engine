@@ -451,7 +451,7 @@ public class Collection extends Rule<Collection> implements Serializable {
             if (!index.isUnique())
                 continue;
 
-            if (index.size() == 0)
+            if (index.size() == 1)
                 return index;
 
             if (found == null) {
