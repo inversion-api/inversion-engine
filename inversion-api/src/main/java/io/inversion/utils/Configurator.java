@@ -24,7 +24,7 @@ import org.apache.commons.configuration2.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
+import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
@@ -150,8 +150,12 @@ public class Configurator {
 
             //-- this is a shortcut bootstrapping options for
             //-- apis configured primarily through configuration
-            if (primaryDecoder.findBeans(Api.class).size() == 0)
-                primaryDecoder.namesToObjects.put("api", new Api());
+            if (primaryDecoder.findBeans(Api.class).size() == 0){
+                Api api = new Api();
+                api.withDbs(primaryDecoder.findBeans(Db.class));
+                primaryDecoder.namesToObjects.put("api", api);
+            }
+
 
             for (Api api : (List<Api>) primaryDecoder.findBeans(Api.class))
                 if (!engine.getApis().contains(api))
@@ -191,7 +195,7 @@ public class Configurator {
             Encoder secondaryEncoder = new Encoder();
             secondaryEncoder.encode(engine);
 
-            dump("re-encoded properties after db startup", secondaryEncoder.props);
+            dump("re-encoded properties after db startup", secondaryEncoder.props, "./configurator.properties");
 
             //-- reverse the encoder bean-to-name map to be used for decoding
             beans = new HashMap(secondaryEncoder.namesToObjects);
@@ -211,16 +215,16 @@ public class Configurator {
 
             dump("properties applied on second decoding after db startup", secondaryDecoder.applied);
 
-//            log.info("-- applied configuration properties ---------------------------");
-//            Map<String, String> applied = new HashMap(primaryDecoder.applied);
-//            applied.putAll(seconderyDecoder.applied);
-//
-//            for (String key : Decoder.sort(applied.keySet())) {
-//                String value = applied.get(key);
-//
-//                log.info("   > " + maskOutput(key, value));
-//            }
-//            log.info("-- end applied configuration properties -----------------------");
+            log.info("-- applied configuration properties ---------------------------");
+            Map<String, String> applied = new HashMap(primaryDecoder.applied);
+            applied.putAll(secondaryDecoder.applied);
+
+            for (String key : Decoder.sort(applied.keySet())) {
+                String value = applied.get(key);
+
+                log.info("   > " + maskOutput(key, value));
+            }
+            log.info("-- end applied configuration properties -----------------------");
 
 
         } catch (Exception e) {
@@ -270,7 +274,6 @@ public class Configurator {
 
         String encode0(Object object) throws Exception {
             try {
-
                 if (object == null)
                     return null;
 
@@ -299,7 +302,8 @@ public class Configurator {
 
                             try {
                                 Object defaultValue = field.get(clean);
-                                String encodedDefault = new Encoder().encode(defaultValue);
+                                //String encodedDefault = new Encoder().encode(defaultValue);
+                                String encodedDefault = encode0(defaultValue);
                                 defaults.put(object.getClass(), field.getName(), encodedDefault);
                             } catch (Exception ex) {
                                 log.debug("Unable to determine default value for {}: ", field, ex);
@@ -791,13 +795,13 @@ public class Configurator {
             return null;
         }
 
-        public List findBeans(Class type) {
+        public <T> List<T> findBeans(Class<T> type) {
             List matches = new ArrayList<>();
             for (Object bean : namesToObjects.values()) {
                 if (type.isAssignableFrom(bean.getClass()))
                     matches.add(bean);
             }
-            return matches;
+            return (List<T>)matches;
         }
 
         protected Object cast0(String str) {
@@ -920,27 +924,52 @@ public class Configurator {
     }
 
     static void dump(String title, Map<String, String>  properties) {
+        dump(title, properties, null);
+    }
 
-        List<String> keys = Decoder.sort(properties.keySet());
+    static void dump(String title, Map<String, String>  properties, String outputFilePath) {
 
-        log.debug("-- START: " + title + " ----------------------------------------------");
-        //System.out.println("-- START: " + title + " ----------------------------------------------");
-        for (String key : keys) {
+        try {
+            PrintStream fileOut = null;
+            if (outputFilePath != null){
+                File file = new File(outputFilePath);
+                System.out.println(file.getCanonicalPath());
+                fileOut = new PrintStream(new FileOutputStream(file));
+            }
 
-            if(key.startsWith("_anonymous_"))
-                continue;
 
-            String value = properties.get(key);
+            List<String> keys = Decoder.sort(properties.keySet());
 
-            if(value != null && value.startsWith("_anonymous_"))
-                continue;
+            log.debug("-- START: " + title + " ----------------------------------------------");
+            //System.out.println("-- START: " + title + " ----------------------------------------------");
+            for (String key : keys) {
 
-            log.debug("   > " + maskOutput(key, value));
-            //System.out.println("   > " + maskOutput(key, value));
+                if (key.startsWith("_anonymous_"))
+                    continue;
+
+                String value = properties.get(key);
+
+                if (value != null && value.startsWith("_anonymous_"))
+                    continue;
+
+                if (fileOut != null)
+                    fileOut.println(key + " = " + value);
+
+                log.debug("   > " + maskOutput(key, value));
+                //System.out.println("   > " + maskOutput(key, value));
+            }
+            log.debug("-- END: " + title + " ----------------------------------------------");
+            //System.out.println("-- END: " + title + " ----------------------------------------------");
+
+            if(fileOut!=null){
+                fileOut.flush();
+                fileOut.close();
+            }
+
         }
-        log.debug("-- END: " + title + " ----------------------------------------------");
-        //System.out.println("-- END: " + title + " ----------------------------------------------");
-
+        catch(Exception ex){
+            Utils.rethrow(ex);
+        }
     }
 
     static String maskOutput(String key, String value)

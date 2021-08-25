@@ -53,9 +53,13 @@ public class Linker {
                 mustMatch.put(Request.RELATIONSHIP_KEY, relationshipKey);
         }
 
-        for (Operation op : api.getOperations()) {
+        for (Operation op : req.getEngine().getOperations()) {
 
-            Path path = new Path(op.getOperationMatchPath());
+
+            if(op.getApi() != req.getApi())
+                continue;
+
+            Path path = new Path(op.getOperationPath());
             System.out.println(path);
 
             if (function != null && !function.equalsIgnoreCase(op.getFunction()))

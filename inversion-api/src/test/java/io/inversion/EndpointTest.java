@@ -89,7 +89,7 @@ public class EndpointTest {
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
 //        }
-//        assertEquals("[some/path]", paths.get("GET").toString());
+//        assertEquals("[some/path/*]", paths.get("GET").toString());
 //    }
 //
 //    @Test
@@ -103,7 +103,7 @@ public class EndpointTest {
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
 //        }
-//        assertEquals("[a, a/b]", paths.get("GET").toString());
+//        assertEquals("[a, a/b/*]", paths.get("GET").toString());
 //    }
 //
 //
@@ -203,7 +203,30 @@ public class EndpointTest {
 //        if(!thrown)
 //            fail("An error should have been thrown because the paths are incompatible");
 //    }
+
+//    @Test
+//    public void test_getOperationPaths_db_collection_paths() {
+//        Api      api = new Api();
+//        Endpoint ep = new Endpoint().withIncludeOn("GET", "/*");
+//        DbAction a1 = new DbAction().withIncludeOn("GET", "a/b/c");
+//        Db db = new Db();
+//        db.withCollection(new Collection())
 //
+//        ep.withActions(a1, a2);
+//        boolean thrown = false;
+//        try {
+//            ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//        }
+//        catch(ApiException ex){
+//            thrown = true;
+//        }
+//        if(!thrown)
+//            fail("An error should have been thrown because the paths are incompatible");
+//    }
+
+
+
+
 //    @Test
 //    public void test_getOperationPaths_emptyActionPaths() {
 //        Api      api = new Api();

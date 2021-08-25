@@ -52,7 +52,10 @@ import java.util.regex.Pattern;
  * TODO: check on test cases related to hasName and path matching
  * TODO: need tests for resource keys with commas
  */
-public class Collection extends Rule<Collection> implements Serializable {
+public class Collection implements Serializable {
+
+    protected String name = null;
+
     /**
      * Additional names that should cause this Collection to match to a Request.
      * <p>
@@ -105,35 +108,35 @@ public class Collection extends Rule<Collection> implements Serializable {
         withTableName(defaultName);
     }
 
-    /**
-     * @return the default collection match rule: "{_collection:" + getName() + "}/[:_resource]/[:_relationship]/*"
-     * @see Request#COLLECTION_KEY
-     * @see Request#RESOURCE_KEY
-     * @see Request#RELATIONSHIP_KEY
-     */
-    @Override
-    protected RuleMatcher getDefaultIncludeMatch() {
-
-        String collection = "{" + Request.COLLECTION_KEY + ":" + getName() + "}";
-        String resource = "[:" + Request.RESOURCE_KEY + "]";
-        String relationship = "[:" + Request.RELATIONSHIP_KEY + "]";
-
-        Index pk =  getPrimaryIndex();
-        if(pk != null) {
-            if (pk.size() == 1) {
-                String regex = pk.getProperty(0).getRegex();
-                if (regex != null) {
-                    regex += "(," + regex + ")*";//-- this is here to add support for comma separated lists of entity keys
-                    resource = "[{" + Request.RESOURCE_KEY + ":" + regex + "}]";
-                }
-            }
-        }
-
-        RuleMatcher matcher = new RuleMatcher();
-        matcher.withPaths(new Path(collection + "/" + resource + "/"));
-
-        return new RuleMatcher(null, new Path(collection + "/" + resource + "/" + relationship + "/*"));
-    }
+//    /**
+//     * @return the default collection match rule: "{_collection:" + getName() + "}/[:_resource]/[:_relationship]/*"
+//     * @see Request#COLLECTION_KEY
+//     * @see Request#RESOURCE_KEY
+//     * @see Request#RELATIONSHIP_KEY
+//     */
+//    @Override
+//    protected RuleMatcher getDefaultIncludeMatch() {
+//
+//        String collection = "{" + Request.COLLECTION_KEY + ":" + getName() + "}";
+//        String resource = "[:" + Request.RESOURCE_KEY + "]";
+//        String relationship = "[:" + Request.RELATIONSHIP_KEY + "]";
+//
+//        Index pk =  getPrimaryIndex();
+//        if(pk != null) {
+//            if (pk.size() == 1) {
+//                String regex = pk.getProperty(0).getRegex();
+//                if (regex != null) {
+//                    regex += "(," + regex + ")*";//-- this is here to add support for comma separated lists of entity keys
+//                    resource = "[{" + Request.RESOURCE_KEY + ":" + regex + "}]";
+//                }
+//            }
+//        }
+//
+//        RuleMatcher matcher = new RuleMatcher();
+//        matcher.withPaths(new Path(collection + "/" + resource + "/"));
+//
+//        return new RuleMatcher(null, new Path(collection + "/" + resource + "/" + relationship + "/*"));
+//    }
 
     /**
      * Returns true if all columns are foreign keys.
@@ -271,11 +274,15 @@ public class Collection extends Rule<Collection> implements Serializable {
     /**
      * @return the name of the Collection defaulting to <code>tableName</code> if <code>name</code> is null.
      */
-    @Override
     public String getName() {
         return name != null ? name : tableName;
     }
 
+
+    public Collection withName(String name) {
+        this.name = name;
+        return this;
+    }
 
     public Collection withSingularDispalyName(String singularName){
         this.singularDisplayName = singularName;

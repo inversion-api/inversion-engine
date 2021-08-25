@@ -344,6 +344,14 @@ public class Path {
         return o.toString().equals(toString());
     }
 
+    public static String unwrapOptional(String part){
+        while(part.startsWith("["))
+            part = part.substring(1);
+        while(part.endsWith("]"))
+            part = part.substring(0, part.length()-1);
+        return part;
+    }
+
     /**
      * Creates a new sub Path.
      *
@@ -464,6 +472,18 @@ public class Path {
             return part.startsWith("[") && part.endsWith("]");
         }
         return false;
+    }
+
+    public void setOptional(int index, boolean optional){
+        if(index < size()){
+            String part = get(index);
+            part = unwrapOptional(part);
+
+            if(optional){
+                part = "[" + part + "]";
+            }
+            set(index, part);
+        }
     }
 
     /**
@@ -839,6 +859,64 @@ public class Path {
             required.add(get(i));
         }
         return required;
+    }
+
+    public static Path joinPaths(Path inLeftPath, Path inRightPath) {
+
+        Path    leftPath     = new Path(inLeftPath);
+        Path    rightPath    = new Path(inRightPath);
+        String  leftPart     = null;
+        String  rightPart    = null;
+        Path    joined       = new Path();
+        boolean leftOptional = false;
+        while (leftPath.size() > 0) {
+            leftPart = leftPath.get(0);
+
+            if (!leftPath.isOptional(0) && !leftPath.isWildcard(0))
+                joined.add(leftPart);
+
+            if (leftPath.isOptional(0) || leftPath.isWildcard(0))
+                leftOptional = true;
+
+            if (!leftOptional)
+                leftPath.remove(0);
+            else
+                break;
+        }
+
+        while (leftPath.size() > 0 && rightPath.size() > 0) {
+            leftPart = leftPath.get(0);
+            rightPart = rightPath.get(0);
+
+            if (leftPath.isWildcard(0))
+                joined.add(rightPart);
+            else if (rightPath.isWildcard())
+                joined.add(leftPart);
+            else if (leftPath.isVar(0) && rightPath.isVar(0)) {
+                joined.add(rightPart);
+            } else if (!leftPath.isVar(0) && !rightPath.isVar(0)) {
+                String leftVal  = Path.unwrapOptional(leftPath.get(0));
+                String rightVal = Path.unwrapOptional(rightPath.get(0));
+                if (!leftVal.equalsIgnoreCase(rightVal))
+                    return null;
+                joined.add(rightVal);
+            } else if (!rightPath.isVar(0)) {
+                joined.add(rightPart);
+            } else {
+                joined.add(leftPart);
+            }
+
+            leftPath.remove(0);
+            rightPath.remove(0);
+        }
+
+        while (leftPath.size() > 0)
+            joined.add(leftPath.remove(0));
+
+        while (rightPath.size() > 0)
+            joined.add(rightPath.remove(0));
+
+        return joined;
     }
 
 }

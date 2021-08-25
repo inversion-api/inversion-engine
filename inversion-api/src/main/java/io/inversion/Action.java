@@ -57,6 +57,11 @@ public class Action<A extends Action> extends Rule<A> {
 
     }
 
+    public void buildOperation(Operation operation){
+
+    }
+
+
     /**
      * @param methods a comma separated list of http methods to match
      * @param paths a comma separated list of url paths to match
@@ -65,29 +70,6 @@ public class Action<A extends Action> extends Rule<A> {
         withIncludeOn(methods, paths);
     }
 
-
-
-    protected void buildOperation(Operation op){
-        String method = op.getMethod();
-        Path epPath = op.getEpMatchPath();
-
-        Path aPath = match(method, epPath);
-        if(aPath != null){
-            for(int i=0; i<aPath.size(); i++){
-                if(aPath.isVar(i)){
-
-                }
-            }
-        }
-    }
-
-    protected List<Path> getOperationPaths(Api api, Endpoint ep, String method, Path epPath) {
-        List<Path> paths = new ArrayList();
-        if(matches(method, epPath)){
-            paths.add(epPath);
-        }
-        return paths;
-    }
 
     /**
      * Override this method with your custom business logic or override one of the

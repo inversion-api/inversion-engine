@@ -31,19 +31,35 @@ public class PathTest {
     @Test
     public void getSubPaths(){
 
-        Path path = new Path("part1/{var1}/part2/[optional1]/{something}/[optional2]/{var2}/*");
-        List<Path> paths = path.getSubPaths();
+        Path path = null;
+        List<Path> paths = null;
+
+//        path = new Path("part1/{var1}/part2/[optional1]/{something}/[optional2]/{var2}/*");
+//        paths = path.getSubPaths();
+//        System.out.println(paths);
+//        assertTrue(paths.size() == 3);
+//        assertEquals("part1/{var1}/part2", paths.get(0).toString());
+//        assertEquals("part1/{var1}/part2/optional1/{something}", paths.get(1).toString());
+//        assertEquals("part1/{var1}/part2/optional1/{something}/optional2/{var2}/*", paths.get(2).toString());
+//
+//
+//        paths = new Path("/*").getSubPaths();
+//        System.out.println(paths);
+//        assertTrue(paths.size() == 1);
+//        assertEquals("*", paths.get(0).toString());
+
+        path = new Path("api/endpoint/[collection]/[resource]/[relationship]/*");
+        paths = path.getSubPaths();
         System.out.println(paths);
-        assertTrue(paths.size() == 3);
-        assertEquals("part1/{var1}/part2", paths.get(0).toString());
-        assertEquals("part1/{var1}/part2/optional1/{something}", paths.get(1).toString());
-        assertEquals("part1/{var1}/part2/optional1/{something}/optional2/{var2}/*", paths.get(2).toString());
+        assertTrue(paths.size() == 4);
+        assertEquals("api/endpoint", paths.get(0).toString());
+        assertEquals("api/endpoint/collection", paths.get(1).toString());
+        assertEquals("api/endpoint/collection/resource", paths.get(2).toString());
+        assertEquals("api/endpoint/collection/resource/relationship/*", paths.get(3).toString());
 
 
-        paths = new Path("/*").getSubPaths();
-        System.out.println(paths);
-        assertTrue(paths.size() == 1);
-        assertEquals("*", paths.get(0).toString());
+
+
     }
 
     @Test

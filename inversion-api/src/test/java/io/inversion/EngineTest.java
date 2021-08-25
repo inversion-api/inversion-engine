@@ -29,6 +29,27 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class EngineTest {
 
+
+    @Test
+    public void test_simple_request() {
+        Engine engine = new Engine().withIncludeOn("GET", "*");
+        Api api = new Api().withIncludeOn("GET", "*");
+        Endpoint ep1 = new Endpoint().withIncludeOn("GET", "[{_collection}]/[{_resource}]/[{_relationship}]");
+
+        MockAction dbA = new MockAction();
+        dbA.withIncludeOn("GET", "books/[{bookId}]/[{author}]");
+        dbA.withIncludeOn("GET", "author/[{authorId}]/[{books}]");
+
+        ep1.withAction(dbA);
+        api.withEndpoint(ep1);
+        engine.withApi(api);
+
+        Response res = engine.get("books/123");
+        res.dump();
+        System.out.println("--------------");
+    }
+
+
     public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis) {
         assertEndpointMatch(method, url, statusCode, null, null, null, null, null, apis);
     }

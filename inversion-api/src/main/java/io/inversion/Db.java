@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  *  <li>then translate the results back from the Db columnName based data into the approperiate jsonName version for external consumption.
  * </ol>
  */
-public abstract class Db<T extends Db> {
+public abstract class Db<T extends Db> extends Rule<T>{
 
     /**
      * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves
@@ -82,10 +82,7 @@ public abstract class Db<T extends Db> {
      * reflection required.  For example, you may want to put specific Property and Relationship structure on top of an unstructured JSON document store.
      */
     protected       boolean  bootstrap    = true;
-    /**
-     * The name of his Db used for "name.property" style autowiring.
-     */
-    protected       String   name         = null;
+
     /**
      * A property that can be used to disambiguate different backends supported by a single subclass.
      * <p>
@@ -934,6 +931,15 @@ public abstract class Db<T extends Db> {
             return collection.getPropertyByColumnName(columnName);
 
         return null;
+    }
+
+    public Collection getCollection(String collectionOrTableName) {
+        for (Collection c : collections) {
+            if (c.getName().equalsIgnoreCase(collectionOrTableName))
+                return c;
+        }
+
+        return getCollectionByTableName(collectionOrTableName);
     }
 
     public Collection getCollectionByTableName(String tableName) {

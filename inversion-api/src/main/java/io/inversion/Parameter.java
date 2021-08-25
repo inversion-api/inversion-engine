@@ -40,6 +40,13 @@ public class Parameter {
 
     }
 
+    public Parameter(String key, int index){
+        withIn("path");
+        withKey(key);
+        withIndex(index);
+        withRequired(true);
+    }
+
     public Parameter(String name, String key, String in, boolean required){
         withName(name);
         withKey(key);

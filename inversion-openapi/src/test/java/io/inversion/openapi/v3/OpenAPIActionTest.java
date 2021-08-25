@@ -33,6 +33,9 @@ import io.inversion.spring.main.InversionMain;
 public class OpenAPIActionTest {
 
     static Api buildApi() {
+
+
+        Log log =
         Api api = new Api().withName("northwind")
                 .withIncludeOn("northwind/v1/:tenant/*")
                 .withDb(new JdbcDb("h2", //
