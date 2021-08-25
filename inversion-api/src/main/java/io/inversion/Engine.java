@@ -1031,7 +1031,34 @@ public class Engine extends Rule<Engine> {
                     operations.add(op);
             }
         }
+
+
+        deduplicateOperationNames(operations);
+
         return operations;
+    }
+
+    void deduplicateOperationNames(List<Operation> operations) {
+        for(Api api : apis){
+            List<Operation> apiOps = new ArrayList<>();
+            for(Operation op : operations){
+                if(op.getApi() == api)
+                    apiOps.add(op);
+            }
+
+            ArrayListValuedHashMap<String, Operation> map = new ArrayListValuedHashMap<>();
+            apiOps.forEach(op -> map.put(op.getName(), op));
+
+            for (String operationName : map.keySet()) {
+                List<Operation> values = map.get(operationName);
+                if (values.size() > 1) {
+                    for (int i = 0; i < values.size(); i++) {
+                        String name = values.get(i).getName() + (i + 1);
+                        values.get(i).withName(name);
+                    }
+                }
+            }
+        }
     }
 
     Operation buildOperation(String method, Path requestPath) {
@@ -1050,7 +1077,7 @@ public class Engine extends Rule<Engine> {
 
         offset = addParams(op, engineMatch, requestPath, offset, true);
 
-        for (Api api : apis) {
+        for (Api api : getApis()) {
             Path apiMatch = api.match(method, requestPath);
             if (apiMatch == null)
                 continue;
@@ -1166,8 +1193,6 @@ public class Engine extends Rule<Engine> {
         ArrayListValuedHashMap<String, Path> raw      = enumeratePaths();
         ArrayListValuedHashMap<String, Path> filtered = new ArrayListValuedHashMap<String, Path>();
         for (String method : raw.keySet()) {
-            //List<Path> paths = expandOptionalsAndFilterDuplicates(raw.get(method));
-            //paths = Endpoint.mergePaths(new ArrayList(), paths);
             List<Path> paths = raw.get(method);
             filtered.putAll(method, paths);
         }
@@ -1438,8 +1463,15 @@ public class Engine extends Rule<Engine> {
             }
         }
 
+         for (int i = 0; i < op.operationPath.size(); i++) {
+            if (op.getOperationPath().isVar(i))
+                name += "By" + Utils.capitalize(op.getOperationPath().getVarName(i));
+        }
+
         return name;
     }
+
+
 
 
 }
