@@ -18,6 +18,9 @@
 package io.inversion.utils;
 
 import io.inversion.*;
+import io.inversion.config.Config;
+import io.inversion.config.Context;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
@@ -28,18 +31,9 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.*;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.socket.PlainConnectionSocketFactory;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.ssl.SSLContextBuilder;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
 import java.io.*;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -131,7 +125,7 @@ public class RestClient {
     /**
      * The RestClient name that will be used for property decoding.
      *
-     * @see Configurator
+     * @see Context
      */
     protected       String                   name              = null;
 
@@ -655,7 +649,7 @@ public class RestClient {
                 StreamBuffer tempBuffer = new StreamBuffer();
                 tempBuffer.withBufferSize(getMaxMemoryBuffer());
                 Utils.pipe(is, tempBuffer);
-                response.withData(tempBuffer);
+                response.withStream(tempBuffer);
 
                 long expectedLength = e.getContentLength();
                 if(expectedLength > 0 && tempBuffer.getLength() != expectedLength){
@@ -733,7 +727,7 @@ public class RestClient {
             url = url != null ? url : "";
 
             //-- generally "Config.getString(getName() + ".url")" should be redundant because the prop should
-            //-- have been set during wiring by the Configurator. This is here so RestClient can be used outside
+            //-- have been set during wiring by the Wirer. This is here so RestClient can be used outside
             //-- of a running Engine...like in test and such...or just generally as a utility.
             String prefix = this.url != null ? this.url : Config.getString(getName() + ".url");
             if (!Utils.empty(prefix)) {
@@ -762,7 +756,10 @@ public class RestClient {
         if (url.endsWith("/"))
             url = url.substring(0, url.length() - 1);
 
-        return protocol + ":" + url;
+        if(!Utils.empty(protocol))
+            return protocol + ":" + url;
+        else
+            return url;
     }
 
     public RestClient withUrl(String url) {

@@ -25,8 +25,8 @@ public class MockActionA extends Action<MockActionA> {
     }
 
 
-    public MockActionA(String methods, String includePaths) {
-        withIncludeOn(methods, includePaths);
+    public MockActionA(String ruleMatcherSpec) {
+        withIncludeOn(ruleMatcherSpec);
     }
 
     @Override

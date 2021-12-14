@@ -1,13 +1,14 @@
 dependencies {
 
+    api project(':inversion-context')
+
     api group: "javax.servlet", name: "javax.servlet-api", version: "${servletApiVersion}"
     api group: "javax.xml.bind", name: "jaxb-api", version: "${javaxJaxbVersion}"
     api group: "org.slf4j", name: "slf4j-api", version: "${slf4jVersion}"
     api group: "ch.qos.logback", name: "logback-classic", version: "${logbackVersion}"
 
-    api group: "org.apache.commons", name: "commons-configuration2", version: "${commonsConfiguration2Version}"
     api group: "commons-beanutils", name: "commons-beanutils", version: "${commonsBeanUtilsVersion}"
-    api group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
+
     api group: "org.apache.commons", name: "commons-lang3", version: "${commonsLang3Version}"
     api group: "org.apache.commons", name: "commons-csv", version: "${commonsCsvVersion}"
     api group: "org.apache.commons", name: "commons-text", version: "${commonsTextVersion}"
@@ -27,5 +28,13 @@ dependencies {
 
     //Generate strings matching a regex
     api group: "com.github.curious-odd-man", name: "rgxgen", version: "1.3"
+
+    api group: "io.swagger.core.v3", name: "swagger-models", version: "${swaggerModelsVersion}"
+    api group: "io.swagger.core.v3", name: "swagger-core", version: "${swaggerCoreVersion}"
+    api group: "io.swagger.parser.v3", name: "swagger-parser", version: "${swaggerParserVersion}"
+
+
+
+
 
 }

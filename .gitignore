@@ -37,7 +37,7 @@ logs
 out
 gen
 
-
+configurator.properties
 inversion.properties.merged
 inversion99.properties
 northwind.mv.db

@@ -19,7 +19,7 @@ package io.inversion.jdbc;
 import io.inversion.ApiException;
 import io.inversion.utils.Rows;
 import io.inversion.utils.Rows.Row;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.*;
@@ -42,6 +42,15 @@ public class JdbcUtils {
         for (int i = 0; i < ILLEGALS_REGX.length; i++) {
             ILLEGALS[i] = Pattern.compile("\\W*" + ILLEGALS_REGX[i] + "\\W+", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         }
+    }
+
+
+    public interface SqlListener {
+        void onError(String method, String sql, Object args, Exception ex);
+
+        void beforeStmt(String method, String sql, Object args);
+
+        void afterStmt(String method, String sql, Object args, Exception ex, Object result);
     }
 
     public static String getDbType(Connection conn) {
@@ -995,12 +1004,5 @@ public class JdbcUtils {
         }
     }
 
-    public interface SqlListener {
-        void onError(String method, String sql, Object args, Exception ex);
-
-        void beforeStmt(String method, String sql, Object args);
-
-        void afterStmt(String method, String sql, Object args, Exception ex, Object result);
-    }
 
 }

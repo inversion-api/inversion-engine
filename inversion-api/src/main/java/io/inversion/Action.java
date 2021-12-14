@@ -16,13 +16,10 @@
  */
 package io.inversion;
 
-import io.inversion.utils.Path;
-import io.inversion.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.Task;
+import ioi.inversion.utils.Utils;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -53,21 +50,20 @@ import java.util.List;
  * if you want to segregate your business logic by HTTP method.
  */
 public class Action<A extends Action> extends Rule<A> {
+
+    boolean decoration = false;
+
     public Action() {
 
     }
 
-    public void buildOperation(Operation operation){
+    public void hook_enumerateOps(Task taskChain, List<Op> ops){
 
     }
 
 
-    /**
-     * @param methods a comma separated list of http methods to match
-     * @param paths a comma separated list of url paths to match
-     */
-    public Action(String methods, String paths) {
-        withIncludeOn(methods, paths);
+    public Action(String ruleMatcherSpec) {
+        withIncludeOn(ruleMatcherSpec);
     }
 
 
@@ -174,5 +170,14 @@ public class Action<A extends Action> extends Rule<A> {
      */
     public void doDelete(Request req, Response res) throws ApiException {
 
+    }
+
+    public boolean isDecoration() {
+        return decoration;
+    }
+
+    public A withDecoration(boolean decoration) {
+        this.decoration = decoration;
+        return (A)this;
     }
 }

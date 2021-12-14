@@ -20,6 +20,7 @@ import io.inversion.ApiException;
 import io.inversion.Chain;
 import io.inversion.Request;
 import io.inversion.Response;
+import ioi.inversion.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,9 +76,10 @@ import java.util.regex.Pattern;
  * @see io.inversion.Rule#withExcludeOn
  */
 
-public class Path {
+public class Path implements Comparable<Path> {
     List<String> parts = new ArrayList<>();
     List<String> lc    = new ArrayList<>();
+
 
     /**
      * Creates an empty Path
@@ -119,7 +121,93 @@ public class Path {
         this(parts.toArray(new String[0]));
     }
 
-    public Path copyFrom(Path path){
+    public static List<Path> expandOptionals(List<Path> paths) {
+        List<Path> allPaths = new ArrayList();
+        for (Path path : paths)
+            allPaths.addAll(path.getSubPaths());
+        return allPaths;
+    }
+
+    public static List<Path> filterDuplicates(List<Path> paths) {
+        List<Path> allPaths = new ArrayList();
+        for (Path path : paths)
+            allPaths.addAll(path.getSubPaths());
+
+        for (int i = 0; i < allPaths.size(); i++) {
+            for (int j = i + 1; j < allPaths.size(); j++) {
+                Path p1 = allPaths.get(i);
+                Path p2 = allPaths.get(j);
+
+                if (p1.size() != p2.size())
+                    continue;
+
+                boolean same = true;
+
+                for (int k = 0; same && k < p1.size(); k++) {
+                    if (p1.isVar(k) && p2.isVar(k))
+                        continue;
+                    else if (p1.isWildcard(k) && p2.isWildcard(k))
+                        continue;
+                    else {
+                        String part1 = p1.get(k);
+                        String part2 = p2.get(k);
+                        if (!part1.equalsIgnoreCase(part2)) {
+                            same = false;
+                        }
+                    }
+                }
+                if (same) {
+                    allPaths.remove(j);
+                    j -= 1;
+                }
+            }
+        }
+
+        return allPaths;
+    }
+
+    public static List<Path> materializeTrivialRegexes(List<Path> paths) {
+        List<Path> fixed = new ArrayList<>();
+        for (int j = 0; j < paths.size(); j++) {
+            Path p = paths.get(j);
+
+            boolean swapped = false;
+            for (int i = 0; i < p.size(); i++) {
+                String regex = p.getRegex(i);
+                if (regex != null) {
+                    boolean      allSimple = true;
+                    List<String> parts     = Utils.split(regex, '|');
+                    for (String s : parts) {
+                        if (Utils.isRegex(s)) {
+                            allSimple = false;
+                            break;
+                        }
+                    }
+                    if (allSimple) {
+                        swapped = true;
+                        paths.remove(j);
+                        j--;
+                        List<Path> updated = new ArrayList<>();
+                        for (String part : parts) {
+                            Path copy = p.copy();
+                            copy.set(i, part);
+                            updated.add(copy);
+                        }
+                        paths.addAll(j + 1, updated);
+                        break;
+                    } else {
+                        p.set(i, p.getVarName(i));
+                    }
+                }
+            }
+            if (!swapped)
+                fixed.add(p);
+        }
+        return fixed;
+    }
+
+
+    public Path copyFrom(Path path) {
         parts.clear();
         lc.clear();
         parts.addAll(path.parts);
@@ -129,9 +217,10 @@ public class Path {
 
     /**
      * Return a new path that is an exactly copy of this one.
+     *
      * @return
      */
-    public Path copy(){
+    public Path copy() {
         Path copy = new Path();
         copy.parts.addAll(parts);
         copy.lc.addAll(lc);
@@ -199,43 +288,45 @@ public class Path {
             for (String part : Utils.explode("/", parts)) {
 
                 boolean isOptional = part.startsWith("[");
-                if(isOptional){
+                if (isOptional) {
                     part = part.substring(1);
-                    if(part.endsWith("]"))
-                        part = part.substring(0, part.length() -1);
+                    if (part.endsWith("]"))
+                        part = part.substring(0, part.length() - 1);
                     part = part.trim();
                 }
 
-                if(part.startsWith(":"))
-                    part = "{" + part.substring(1) + "}";
-                else if(part.startsWith("$"))
-                    part = parts.substring(1);
+                //-- don't accumulate additional "*"
+                if ("*".equals(part) && endsWithWildcard())
+                    continue;//
+
+                if (part.startsWith(":") || part.startsWith("$"))
+                    throw ApiException.new500InternalServerError("A path part may not start with a ':' or '$'.");
 
                 boolean isVar = part.startsWith("{");
-                if(isVar){
+                if (isVar) {
                     part = part.substring(1);
-                    if(part.endsWith("}"))
-                        part = part.substring(0, part.length() -1);
+                    if (part.endsWith("}"))
+                        part = part.substring(0, part.length() - 1);
                 }
 
-                if(!isVar && part.contains(":"))
-                    throw new ApiException("Invalid path segment '{}'.  A ':' can only be used in a Path if the segment is a variable wrapped in curly brackets.", parts);
+                //if(!isVar && part.contains(":"))
+                //    throw new ApiException("Invalid path segment '{}'.  A ':' can only be used in a Path if the segment is a variable wrapped in curly brackets.", parts);
 
-                boolean isRegx = part.contains(":");
-                if(isRegx){
-                    String name = part.substring(0, part.indexOf(":"));
+                boolean isRegx = isVar && part.contains(":");
+                if (isRegx) {
+                    String name  = part.substring(0, part.indexOf(":"));
                     String regex = part.substring(part.indexOf(":"));
-                    if(name.contains("[") || name.contains("{") || name.contains("]") || name.contains("}"))
+                    if (name.contains("[") || name.contains("{") || name.contains("]") || name.contains("}"))
                         throw new ApiException("Invalid path segment '{}'.", parts);
                 }
 
-                if(isVar)
+                if (isVar)
                     part = "{" + part + "}";
 
-                if(isOptional)
+                if (isOptional)
                     part = "[" + part + "]";
 
-                if(size() > 0 && isWildcard(size()-1))
+                if (size() > 0 && isWildcard(size() - 1))
                     throw new ApiException("Invalid path '{}'.  Wildcards can only be used as the last segment in a path.", debug);
 
                 this.parts.add(part);
@@ -245,15 +336,15 @@ public class Path {
         return this;
     }
 
-    public Path set(int index, String part){
+    public Path set(int index, String part) {
         parts.set(index, part);
         lc.set(index, part.toLowerCase());
         return this;
     }
 
-    public Path chop(){
-        if(size() > 0){
-            return subpath(0, size()-1);
+    public Path chop() {
+        if (size() > 0) {
+            return subpath(0, size() - 1);
         }
         return this;
     }
@@ -275,9 +366,9 @@ public class Path {
     /**
      * @return true if this Path ended in a "*" which was removed, false if this Path does not end in a "*"
      */
-    public boolean removeTrailingWildcard(){
-        if(size() > 0 && isWildcard(size() -1)){
-            remove(size() -1);
+    public boolean removeTrailingWildcard() {
+        if (size() > 0 && isWildcard(size() - 1)) {
+            remove(size() - 1);
             return true;
         }
         return false;
@@ -286,8 +377,8 @@ public class Path {
     /**
      * @return true if this Path ends with a "*"
      */
-    public boolean endsWithWildcard(){
-        if(size() > 0 && isWildcard(size() -1)){
+    public boolean endsWithWildcard() {
+        if (size() > 0 && isWildcard(size() - 1)) {
             return true;
         }
         return false;
@@ -326,29 +417,36 @@ public class Path {
         return Utils.implode("/", parts);
     }
 
-    public int hashCode(){
-        return toString().hashCode();
+    public int hashCode() {
+        return toString().toLowerCase().hashCode();
     }
+
+    @Override
+    public int compareTo(Path o) {
+        if(o == null)
+            return 1;
+        return toString().toLowerCase().compareTo(o.toString().toLowerCase());
+    }
+
 
     /**
      * @return true of the objects string representations match
      */
     public boolean equals(Object o) {
-
         if (o == null)
             return false;
 
         if (!(o instanceof Path))
             return false;
 
-        return o.toString().equals(toString());
+        return toString().equalsIgnoreCase(o.toString());
     }
 
-    public static String unwrapOptional(String part){
-        while(part.startsWith("["))
+    public static String unwrapOptional(String part) {
+        while (part.startsWith("["))
             part = part.substring(1);
-        while(part.endsWith("]"))
-            part = part.substring(0, part.length()-1);
+        while (part.endsWith("]"))
+            part = part.substring(0, part.length() - 1);
         return part;
     }
 
@@ -381,13 +479,17 @@ public class Path {
      * @return true if the path part at <code>index</code>
      */
     public boolean isWildcard(int index) {
-        return "*".equals(get(index));
+        return isWildcard(get(index));
+    }
+
+    public static boolean isWildcard(String part){
+        return "*".equals(part);
     }
 
     /**
      * @return true if this path equals "*"
      */
-    public boolean isWildcard(){
+    public boolean isWildcard() {
         return size() == 1 && endsWithWildcard();
     }
 
@@ -399,6 +501,10 @@ public class Path {
      */
     public boolean isVar(int index) {
         String part = get(index);
+        return isVar(part);
+    }
+
+    public static boolean isVar(String part) {
         if (part != null) {
             if (part.startsWith("["))
                 part = part.substring(1).trim();
@@ -436,7 +542,7 @@ public class Path {
             if (part.startsWith("["))
                 part = part.substring(1, part.length() - 1);
 
-            if(part.startsWith("{")) {
+            if (part.startsWith("{")) {
                 int colon = part.indexOf(":");
                 if (colon > 0)
                     return part.substring(1, colon).trim();
@@ -448,12 +554,15 @@ public class Path {
     }
 
     //TODO DOCUMENT ME
-    public String getRegex(int index)
-    {
+    public String getRegex(int index) {
         String part = get(index);
+        return getRegex(part);
+    }
+
+    public static String getRegex(String part) {
         int colon = part.indexOf(":");
         if (colon > 0)
-            return part.substring(colon +1, part.lastIndexOf("}")).trim();
+            return part.substring(colon + 1, part.lastIndexOf("}")).trim();
 
         return null;
     }
@@ -468,18 +577,22 @@ public class Path {
      */
     public boolean isOptional(int index) {
         String part = get(index);
+        return isOptional(part);
+    }
+
+    public static boolean isOptional(String part){
         if (part != null) {
             return part.startsWith("[") && part.endsWith("]");
         }
         return false;
     }
 
-    public void setOptional(int index, boolean optional){
-        if(index < size()){
+    public void setOptional(int index, boolean optional) {
+        if (index < size()) {
             String part = get(index);
             part = unwrapOptional(part);
 
-            if(optional){
+            if (optional) {
                 part = "[" + part + "]";
             }
             set(index, part);
@@ -519,161 +632,61 @@ public class Path {
      * @return true if this path matches <code>concretePath</code>
      */
     public boolean matches(Path toMatch) {
+        return matches(toMatch, false);
+    }
 
-        int len = Math.max(size(), toMatch.size());
-        Path a = this;
-        Path b = toMatch;
+    public boolean matches(Path toMatch, boolean bidirectional) {
+
+        int  len = Math.max(size(), toMatch.size());
+        Path a   = this;
+        Path b   = toMatch;
 
         boolean aOptional = false;
         boolean bOptional = false;
-        for(int i=0; i<len; i++){
+        for (int i = 0; i < len; i++) {
             String aVal = a.get(i);
             String bVal = b.get(i);
 
-            if("*".equals(aVal) || "*".equals(bVal))
+            if ("*".equals(aVal) || "*".equals(bVal))
                 return true;
 
             aOptional = aOptional || (aVal != null && aVal.startsWith("["));
             bOptional = bOptional || (bVal != null && bVal.startsWith("["));
 
-            if(aVal == null || bVal == null)
+            if (aVal == null || bVal == null)
                 return aOptional || bOptional;
 
-            if(a.isVar(i) && b.isVar(i)){
+            if (a.isVar(i) && b.isVar(i)) {
                 continue;
-            }else if(a.isVar(i)){
+            } else if (a.isVar(i)) {
                 String regex = a.getRegex(i);
                 if (regex != null) {
                     String value = b.get(i);
-                    value = !value.startsWith("[") ? value : value.substring(1, value.length()-1);
+                    value = !value.startsWith("[") ? value : value.substring(1, value.length() - 1);
                     Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-                    if(!pattern.matcher(value).matches())
+                    if (!pattern.matcher(value).matches())
                         return false;
                 }
-            }
-            else if(b.isVar(i)){
+            } else if (bidirectional && b.isVar(i)) {
                 String regex = b.getRegex(i);
                 if (regex != null) {
                     String value = a.get(i);
-                    value = !value.startsWith("[") ? value : value.substring(1, value.length()-1);
+                    value = !value.startsWith("[") ? value : value.substring(1, value.length() - 1);
                     Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-                    if(!pattern.matcher(value).matches())
+                    if (!pattern.matcher(value).matches())
                         return false;
                 }
-            }
-            else{
-                aVal = !aVal.startsWith("[") ? aVal : aVal.substring(1, aVal.length()-1);
-                bVal = !bVal.startsWith("[") ? bVal : bVal.substring(1, bVal.length()-1);
-                if(!aVal.equalsIgnoreCase(bVal))
+            } else {
+                aVal = !aVal.startsWith("[") ? aVal : aVal.substring(1, aVal.length() - 1);
+                bVal = !bVal.startsWith("[") ? bVal : bVal.substring(1, bVal.length() - 1);
+                if (!aVal.equalsIgnoreCase(bVal))
                     return false;
             }
         }
         return true;
-//
-//
-//
-//
-//
-//
-//        if (size() < toMatch.size() && !"*".equals(last())) {
-//            return false;
-//        }
-//
-//        for(int i=0; i<size(); i++){
-//            if(isWildcard(i))
-//                return true;
-//
-//            if(i == toMatch.size() -1 && toMatch.isWildcard(i))
-//                return true;
-//
-//            if(isVar(i) && toMatch.isVar(i)){
-//                continue;
-//            }
-//
-//            if(isVar(i)){
-//                String value = toMatch.get(i);
-//                String regex = getRegex(i);
-//                if (regex != null) {
-//                    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-//                    if(!pattern.matcher(value).matches())
-//                        return false;
-//                }
-//            }else if(toMatch.isVar(i)){
-//                String value = get(i);
-//                String regex = toMatch.getRegex(i);
-//                if (regex != null) {
-//                    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-//                    if(!pattern.matcher(value).matches())
-//                        return false;
-//                }
-//            }
-//            else{
-//                if(!lc.get(i).equalsIgnoreCase(toMatch.lc.get(i)))
-//                    return false;
-//            }
-//        }
-//        return true;
-//
-//
-
-
-
-
-//        if (size() < toMatch.size() && !"*".equals(last())) {
-//            return false;
-//        }
-//
-//        for (int i = 0; i < size(); i++) {
-//            String myPart = get(i);
-//
-//            if (i == size() - 1 && myPart.equals("*"))
-//                return true;
-//
-//            boolean optional = myPart.startsWith("[") && myPart.endsWith("]");
-//
-//            if (i == toMatch.size()) {
-//                return optional;
-//            }
-//
-//            if (optional)
-//                myPart = myPart.substring(1, myPart.length() - 1);
-//
-//            String theirPart = toMatch.get(i);
-//            matchedPath.add(theirPart);
-//
-//            if(isVar(i)) {
-//                String regex = getRegex(i);
-//                if (regex != null) {
-//                    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-//                    if (!pattern.matcher(theirPart).matches()) {
-//                        return false;
-//                    }
-//                }
-//            } else if (!myPart.equalsIgnoreCase(theirPart)) {
-//                return false;
-//            }
-//        }
-//
-//        return true;
     }
-//
-//    public boolean matchesPattern(Path pattern){
-//
-//        for(int i=0; i<size(); i++){
-//            if(isWildcard(i))
-//                return true;
-//
-//            if(i == pattern.size() -1 && pattern.isWildcard(i))
-//                return true;
-//
-//            if(isVar(i) || pattern.isVar(i))
-//                continue;
-//
-//            if(!get(i).equalsIgnoreCase(pattern.get(i)))
-//                return false;
-//        }
-//        return true;
-//    }
+
+
 
     /**
      * Convenience overloading of {@link #extract(Map, Path, boolean)} with <code>greedy = true</code>.
@@ -757,10 +770,10 @@ public class Path {
                 theirPart = matchingConcretePath.get(nextOptional++);
             }
 
-            if(isVar(i)){
-                String name = getVarName(i);
+            if (isVar(i)) {
+                String name  = getVarName(i);
                 String regex = getRegex(i);
-                if(regex != null){
+                if (regex != null) {
                     Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
                     if (!pattern.matcher(theirPart).matches()) {
                         throw ApiException.new500InternalServerError("Attempting to extract values from an unmatched path: '{}', '{}'", this, matchingConcretePath.toString());
@@ -799,6 +812,17 @@ public class Path {
         return true;
     }
 
+    public boolean hasAnyVars(String... vars) {
+        for (int i = 0; i < vars.length; i++) {
+            for (int j = 0; j < size(); j++) {
+                if (vars[i].toString().equalsIgnoreCase(getVarName(j))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * Creates a list of all subpaths breaking before each optional segment
      * Ex:
@@ -812,27 +836,26 @@ public class Path {
      *     a/b/c/d/e/*
      * </pre>
      *
-     *
      * @return a list of all valid paths
      */
-    public List<Path> getSubPaths(){
-        List<Path> paths = new ArrayList();
-        Path subpath = new Path();
+    public List<Path> getSubPaths() {
+        List<Path> paths   = new ArrayList();
+        Path       subpath = new Path();
 
         for (int i = 0; i < size(); i++) {
             boolean optional = false;
-            String part = get(i);
-            if(part.startsWith("[")){
+            String  part     = get(i);
+            if (part.startsWith("[")) {
                 optional = true;
-                part = part.substring(1, part.length()-1);
+                part = part.substring(1, part.length() - 1);
             }
 
-            if(optional){
+            if (optional) {
                 paths.add(new Path(subpath));
             }
             subpath.add(part);
 
-            if(isWildcard(i))
+            if (isWildcard(i))
                 break;
         }
         paths.add(new Path(subpath));
@@ -840,28 +863,8 @@ public class Path {
         return paths;
     }
 
-    public Path getOptionalSuffix(){
-        Path optional = new Path(this);
-        for(int i=0; i<optional.size(); i++){
-            if(optional.isOptional(i) || optional.isWildcard(i))
-                break;
-            optional.remove(i);
-            i -=1;
-        }
-        return optional;
-    }
 
-    public Path getRequiredPrefix(){
-        Path required = new Path();
-        for(int i=0; i<size(); i++){
-            if(isOptional(i))
-                break;
-            required.add(get(i));
-        }
-        return required;
-    }
-
-    public static Path joinPaths(Path inLeftPath, Path inRightPath) {
+    public static Path joinPaths(Path inLeftPath, Path inRightPath, boolean relative) {
 
         Path    leftPath     = new Path(inLeftPath);
         Path    rightPath    = new Path(inRightPath);
@@ -869,7 +872,8 @@ public class Path {
         String  rightPart    = null;
         Path    joined       = new Path();
         boolean leftOptional = false;
-        while (leftPath.size() > 0) {
+
+        while (relative && leftPath.size() > 0) {
             leftPart = leftPath.get(0);
 
             if (!leftPath.isOptional(0) && !leftPath.isWildcard(0))
@@ -918,5 +922,110 @@ public class Path {
 
         return joined;
     }
+
+    public static List<Path> mergePaths(List<Path> mPaths, List<Path> aPaths) {
+
+        for (Path aPath : aPaths) {
+
+            boolean exists = false;
+            for (int m = 0; m < mPaths.size(); m++) {
+
+                Path mPath = mPaths.get(m);
+                if (aPath == mPath)
+                    continue;
+
+                if (!compatible(aPath, mPath))
+                    continue;
+
+                for (int i = 0; i < aPath.size(); i++) {
+
+                    if (i >= mPath.size()) {
+                        break;
+                    }
+
+                    //the old rule consumes the new one  a/b consumes a/*
+                    if (aPath.isWildcard(i) && !mPath.isWildcard(i)) {
+                        exists = true;
+                        break;
+                    }
+
+                    //the new rule will consume the old one....a/* consumed by a/b or a/b/c
+                    if (mPath.isWildcard(i)) {
+                        mPaths.remove(m);
+                        m--;
+                        break;
+                    }
+
+                    if (!mPath.isVar(i) && aPath.isVar(i))
+                        aPath.set(i, mPath.get(i));
+
+                    if (mPath.isVar(i) && !aPath.isVar(i)) {
+                        mPath.set(i, aPath.get(i));
+                    }
+
+//                    if (!mPath.isVar(i) && !aPath.isVar(i)) {
+//                        if (!mPath.get(i).equalsIgnoreCase(aPath.get(i)))
+//                            throw ApiException.new500InternalServerError("Endpoint configuration error.  Actions have incompatible paths.");
+//                    }
+
+
+                    if (aPath.size() == mPath.size() && i == mPath.size() - 1)
+                        exists = true;
+                }
+            }
+
+            if (!exists) {
+                mPaths.add(aPath);
+            }
+        }
+
+        //-- removes "a" if "a/*" is in the list.
+        for (int i = 0; i < mPaths.size(); i++) {
+            for (int j = 0; j < mPaths.size(); j++) {
+                if (i == j)
+                    continue;
+
+                Path p1 = mPaths.get(i);
+                Path p2 = mPaths.get(j);
+
+                if (p1.size() == p2.size() + 1 && p1.endsWithWildcard()) {
+                    mPaths.remove(j);
+                    j--;
+                    continue;
+                }
+                if (p2.size() == p1.size() + 1 && p2.endsWithWildcard()) {
+                    mPaths.remove(i);
+                    i--;
+                    break;
+                }
+            }
+        }
+
+        return mPaths;
+    }
+
+
+    public static boolean compatible(Path a, Path b) {
+        for (int i = 0; i < a.size(); i++) {
+            if (a.isWildcard(i))
+                return true;
+            if (i < b.size() && b.isWildcard(i))
+                return true;
+
+            if (i >= b.size())
+                return false;
+
+            if (!a.isVar(i) && !b.isVar(i)) {
+                String sA = a.get(i);
+                String sB = b.get(i);
+                sA = unwrapOptional(sA);
+                sB = unwrapOptional(sB);
+                if (!sA.equalsIgnoreCase(sB))
+                    return false;
+            }
+        }
+        return true;
+    }
+
 
 }

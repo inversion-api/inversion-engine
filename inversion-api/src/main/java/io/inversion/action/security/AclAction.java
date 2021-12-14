@@ -33,23 +33,23 @@ import java.util.List;
 public class AclAction extends Action<AclAction> {
     protected final List<AclRule> aclRules = new ArrayList<>();
 
-    public AclAction orRequireAllPerms(String httpMethods, String includePaths, String permission1, String... permissionsN) {
-        withAclRules(AclRule.requireAllPerms(httpMethods, includePaths, permission1, permissionsN));
+    public AclAction orRequireAllPerms(String ruleMatcherSpec, String permission1, String... permissionsN) {
+        withAclRules(AclRule.requireAllPerms(ruleMatcherSpec, permission1, permissionsN));
         return this;
     }
 
-    public AclAction orRequireOnePerm(String httpMethods, String includePaths, String permission1, String... permissionsN) {
-        withAclRules(AclRule.requireOnePerm(httpMethods, includePaths, permission1, permissionsN));
+    public AclAction orRequireOnePerm(String ruleMatcherSpec, String permission1, String... permissionsN) {
+        withAclRules(AclRule.requireOnePerm(ruleMatcherSpec, permission1, permissionsN));
         return this;
     }
 
-    public AclAction orRequireAllRoles(String httpMethods, String includePaths, String role1, String... rolesN) {
-        withAclRules(AclRule.requireAllRoles(httpMethods, includePaths, role1, rolesN));
+    public AclAction orRequireAllRoles(String ruleMatcherSpec, String role1, String... rolesN) {
+        withAclRules(AclRule.requireAllRoles(ruleMatcherSpec, role1, rolesN));
         return this;
     }
 
-    public AclAction orRequireOneRole(String httpMethods, String includePaths, String role1, String... rolesN) {
-        withAclRules(AclRule.requireOneRole(httpMethods, includePaths, role1, rolesN));
+    public AclAction orRequireOneRole(String ruleMatcherSpec, String role1, String... rolesN) {
+        withAclRules(AclRule.requireOneRole(ruleMatcherSpec, role1, rolesN));
         return this;
     }
 
@@ -71,7 +71,7 @@ public class AclAction extends Action<AclAction> {
     @Override
     public void run(Request req, Response resp) throws ApiException {
 
-        log.debug("Request Path: " + req.getPath());
+        log.debug("Request Path: " + req.getUrl().getPath());
         boolean allowed = false;
 
         for (AclRule aclRule : aclRules) {

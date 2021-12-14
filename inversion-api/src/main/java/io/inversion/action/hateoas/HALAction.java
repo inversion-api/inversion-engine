@@ -19,8 +19,86 @@ package io.inversion.action.hateoas;
 import io.inversion.*;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
+import io.inversion.utils.Task;
+import ioi.inversion.utils.Utils;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.Schema;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class HALAction extends HATEOASAction<HALAction> {
+
+
+
+    public void hook_documentOp(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
+        docChain.go();
+        HALAction.super.hook_documentOp(docChain, openApi, ops, op, schemas);
+        updateResponseSchema(docChain, openApi, ops, op, schemas);
+    }
+
+
+    public String updateResponseSchema(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
+
+        String schemaName = super.documentResponseSchema(docChain, openApi, ops, op, schemas);
+
+        Op.OpFunction function = op.getFunction();
+        if (!Utils.in(function, Op.OpFunction.GET, Op.OpFunction.FIND, Op.OpFunction.RELATED))
+            return schemaName;
+
+        Schema              schema     = openApi.getComponents().getSchemas().get(schemaName);
+
+        if(schema == null)
+            return null;
+
+        Map<String, Schema> properties = schema.getProperties();
+        Schema              links      = properties.get("_links");
+        if (links == null) {
+            links = new Schema();
+            properties.put("_links", links);
+            links.addProperties("self", newHrefSchema());
+
+            Collection coll = op.getRelationship() != null ? op.getRelationship().getRelated() : op.getCollection();
+            if (Utils.in(function, Op.OpFunction.GET)) {
+
+                if (coll != null) {
+                    for (Relationship rels : coll.getRelationships()) {
+                        String name = rels.getName();
+                        links.addProperties(name, newHrefSchema());
+                    }
+                }
+            } else {
+                links.addProperties("first", newHrefSchema());
+                links.addProperties("prev", newHrefSchema());
+                links.addProperties("next", newHrefSchema());
+                links.addProperties("last", newHrefSchema());
+                links.addProperties("after", newHrefSchema());
+
+                Op getOp = findOp(ops, Op.OpFunction.GET, coll);
+                if(getOp != null){
+                    for(String key : new ArrayList<>(properties.keySet())){
+                        if(!key.equals("_links"))
+                            properties.remove(key);
+                    }
+
+                    String schemaRefName = getOp.getName() + "Response";
+                    Schema refSchema = newComponentRefSchema(schemaRefName);
+
+                    ArraySchema arr = new ArraySchema();
+                    arr.setItems(refSchema);
+                    properties.put("_embedded", arr);
+                }
+
+                schema.addProperties("page", newTypeSchema("number"));
+                schema.addProperties("size", newTypeSchema("number"));
+                schema.addProperties("pages", newTypeSchema("number"));
+                schema.addProperties("total", newTypeSchema("number"));
+            }
+        }
+        return schemaName;
+    }
 
     public void run(Request req, Response res) throws ApiException {
 
@@ -42,7 +120,7 @@ public class HALAction extends HATEOASAction<HALAction> {
 
                         int page  = res.getPageNum();
                         int size  = res.getPageSize();
-                        int pages = res.getPageNum();
+                        int pages = res.getPageCount();
                         int total = res.getFoundRows();
 
                         json.put("page", page);
@@ -115,8 +193,8 @@ public class HALAction extends HATEOASAction<HALAction> {
         if (node.hasProperty("_links"))
             return;
 
-        Collection coll        = req.getCollection();
-        if(coll != null) {
+        Collection coll = req.getCollection();
+        if (coll != null) {
             String resourceKey = coll.encodeKeyFromJsonNames(node);
             if (resourceKey != null) {
                 JSNode links = new JSNode();

@@ -19,7 +19,6 @@ package io.inversion;
 import io.inversion.utils.Path;
 
 import java.util.*;
-import java.util.regex.Pattern;
 
 public class Linker {
 
@@ -39,10 +38,10 @@ public class Linker {
 
         List<Request> matches = new ArrayList();
 
-        if (resourceKey != null || relationshipKey != null || collection != null) {
-            if (mustMatch == null)
-                mustMatch = new LinkedHashMap<>();
+        if (mustMatch == null)
+            mustMatch = new LinkedHashMap<>();
 
+        if (resourceKey != null || relationshipKey != null || collection != null) {
             if (collection != null && !mustMatch.containsKey(Request.COLLECTION_KEY))
                 mustMatch.put(Request.COLLECTION_KEY, collection.getName());
 
@@ -53,17 +52,7 @@ public class Linker {
                 mustMatch.put(Request.RELATIONSHIP_KEY, relationshipKey);
         }
 
-        for (Operation op : req.getEngine().getOperations()) {
-
-
-            if(op.getApi() != req.getApi())
-                continue;
-
-            Path path = new Path(op.getOperationPath());
-            System.out.println(path);
-
-            if (function != null && !function.equalsIgnoreCase(op.getFunction()))
-                continue;
+        for (Op op : req.getApi().getOps()) {
 
             if (method != null && !method.equalsIgnoreCase(op.getMethod()))
                 continue;
@@ -71,127 +60,162 @@ public class Linker {
             if (collection != null && collection != op.getCollection())
                 continue;
 
+            Path path = new Path(op.getPath());
+
+            //find the operation that is fully satisfied with the fewest operation path satisfied "extra" params
 
             boolean match = true;
-            if (mustMatch != null) {
-                for (String key : mustMatch.keySet()) {
-                    String value = mustMatch.get(key);
-                    if (value == null)
-                        throw new ApiException("A path mapped variable may not be null.");
-                    boolean found = false;
-                    for (int i = 0; i < path.size(); i++) {
-                        if (path.isVar(i)) {
-                            List<Parameter> params = op.getParams(i);
-                            for (Parameter param : params) {
-                                if (key.equalsIgnoreCase(param.getKey())) {
-                                    boolean regexMatch = true;
-                                    for (Pattern pattern : param.getPatterns()) {
-                                        if (!pattern.matcher(value).matches()) {
-                                            regexMatch = false;
-                                            break;
-                                        }
-                                    }
-                                    if (regexMatch) {
-                                        path.set(i, value);
-                                        found = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        if (found)
-                            break;
+            Set<String> satisfied = new HashSet<>();
+            for(Param param : op.getParams()){
+                if(Param.In.PATH == param.getIn()){
+                    String key = param.getKey();
+                    String val = mustMatch.get(key);
+                    if(val != null){
+                        satisfied.add(key);
+                        path.set(param.getIndex(), val);
                     }
-                    if (!found) {
+                    else{
                         match = false;
                         break;
                     }
                 }
             }
-            if (!match)
-                continue;
+            if(satisfied.size() < mustMatch.size())
+                match = false;
 
-            //-- now match any remaining unmatched path vars
-            for (int i = 0; i < path.size(); i++) {
-                boolean found = !path.isVar(i);
-                if (!found && req != null) {
-                    List<Parameter> params = op.getParams(i);
-                    for (Parameter param : params) {
-                        String value = req.getUrl().getParam(param.getKey());
-                        if (value != null) {
-                            boolean regexMatch = true;
-                            for (Pattern pattern : param.getPatterns()) {
-                                if (!pattern.matcher(value).matches()) {
-                                    regexMatch = false;
-                                    break;
-                                }
-                            }
-                            if (regexMatch) {
-                                path.set(i, value);
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!found) {
-                        match = false;
-                        break;
-                    }
+            if (match) {
+                Request linkedReq = new Request();
+                linkedReq.withOp(op);
+                String url = "/" + req.getServerPath() + "/" + path.toString();
+
+                if (req != null) {
+                    String host = req.getUrl().getProtocol() + "://" + req.getUrl().getHost() + (req.getUrl().getPort() > 0 ? (":" + req.getUrl().getPort()) : "");
+                    url = host + url;
                 }
-                if (!match)
-                    break;
+                linkedReq.withUrl(url);
+                matches.add(linkedReq);
             }
-            if (!match)
-                continue;
-
-            Request linkedReq = new Request();
-            linkedReq.withOperation(op);
-            String  url       = "/" + path.toString();
-
-            if (req != null) {
-                String host = req.getUrl().getProtocol() + "://" + req.getUrl().getHost() + (req.getUrl().getPort() > 0 ? ":" + req.getUrl().getPort() : "");
-                url = host + url;
-            }
-            linkedReq.withUrl(url);
-            matches.add(linkedReq);
-
         }
-        if (matches.size() > 0) {
-            //-- return the match with the greatest number of satisfied pathParam matches
-            //-- TODO: need test cases
-            if (matches.size() > 1) {
-                Collections.sort(matches, new Comparator<Request>() {
-                    @Override
-                    public int compare(Request o1, Request o2) {
-                        int s1 = o1.getOperation().getPathParamCount();
-                        int s2 = o2.getOperation().getPathParamCount();
-                        return s1 == s2 ? 0 : (s1 > s2 ? 1 : -1);
-                    }
-                });
+//            boolean match = true;
+//            if (mustMatch != null) {
+//                for (String key : mustMatch.keySet()) {
+//                    String value = mustMatch.get(key);
+//                    if (value == null)
+//                        throw new ApiException("A path mapped variable may not be null.");
+//                    boolean found = false;
+//                    for (int i = 0; i < path.size(); i++) {
+//                        if (path.isVar(i)) {
+//                            List<Parameter> params = op.getParams(i);
+//                            for (Parameter param : params) {
+//                                if (key.equalsIgnoreCase(param.getKey())) {
+//                                    boolean regexMatch = true;
+//                                    for (Pattern pattern : param.getPatterns()) {
+//                                        if (!pattern.matcher(value).matches()) {
+//                                            regexMatch = false;
+//                                            break;
+//                                        }
+//                                    }
+//                                    if (regexMatch) {
+//                                        path.set(i, value);
+//                                        found = true;
+//                                        break;
+//                                    }
+//                                }
+//                            }
+//                        }
+//                        if (found)
+//                            break;
+//                    }
+//                    if (!found) {
+//                        match = false;
+//                        break;
+//                    }
+//                }
+//            }
+//            if (!match)
+//                continue;
+//
+//            //-- now match any remaining unmatched path vars
+//            for (int i = 0; i < path.size(); i++) {
+//                boolean found = !path.isVar(i);
+//                if (!found && req != null) {
+//                    List<Parameter> params = op.getParams(i);
+//                    for (Parameter param : params) {
+//                        String value = req.getUrl().getParam(param.getKey());
+//                        if (value != null) {
+//                            boolean regexMatch = true;
+//                            for (Pattern pattern : param.getPatterns()) {
+//                                if (!pattern.matcher(value).matches()) {
+//                                    regexMatch = false;
+//                                    break;
+//                                }
+//                            }
+//                            if (regexMatch) {
+//                                path.set(i, value);
+//                                found = true;
+//                                break;
+//                            }
+//                        }
+//                    }
+//                    if (!found) {
+//                        match = false;
+//                        break;
+//                    }
+//                }
+//                if (!match)
+//                    break;
+//            }
+//            if (!match)
+//                continue;
+//
+//            Request linkedReq = new Request();
+//            linkedReq.withOperation(op);
+//            String  url       = "/" + path.toString();
+//
+//            if (req != null) {
+//                String host = req.getUrl().getProtocol() + "://" + req.getUrl().getHost() + (req.getUrl().getPort() > 0 ? ":" + req.getUrl().getPort() : "");
+//                url = host + url;
+//            }
+//            linkedReq.withUrl(url);
+//            matches.add(linkedReq);
+//
+//        }
+            if (matches.size() > 0) {
+                //-- return the match with the greatest number of satisfied pathParam matches
+                //-- TODO: need test cases
+                if (matches.size() > 1) {
+                    Collections.sort(matches, new Comparator<Request>() {
+                        @Override
+                        public int compare(Request o1, Request o2) {
+                            int s1 = o1.getOp().getPathParamCount();
+                            int s2 = o2.getOp().getPathParamCount();
+                            return s1 == s2 ? 0 : (s1 > s2 ? 1 : -1);
+                        }
+                    });
+                }
+                return matches.get(matches.size() - 1);
             }
-            return matches.get(matches.size() - 1);
+
+            return null;
         }
 
-        return null;
-    }
+        public String getName () {
+            return name;
+        }
 
-    public String getName() {
-        return name;
-    }
+        public Linker withName (String name){
+            this.name = name;
+            return this;
+        }
 
-    public Linker withName(String name) {
-        this.name = name;
-        return this;
-    }
+        public Api getApi () {
+            return api;
+        }
 
-    public Api getApi() {
-        return api;
+        public Linker withApi (Api api){
+            this.api = api;
+            if (api.getLinker() != this)
+                api.withLinker(this);
+            return this;
+        }
     }
-
-    public Linker withApi(Api api) {
-        this.api = api;
-        if (api.getLinker() != this)
-            api.withLinker(this);
-        return this;
-    }
-}

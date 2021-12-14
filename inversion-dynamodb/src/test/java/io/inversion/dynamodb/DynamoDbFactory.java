@@ -28,7 +28,7 @@ import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDbFactory;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -131,12 +131,12 @@ public class DynamoDbFactory {
 
             Api h2Api = new Api("northwind");
             h2Api.withDb(JdbcDbFactory.bootstrapH2("dynamodbtesting" + System.currentTimeMillis()));
-            h2Api.withEndpoint("*", "/*", new DbAction());
+            h2Api.withEndpoint(new DbAction());
             Engine h2Engine = new Engine().withApi(h2Api);
 
             Engine dynamoEngine = new Engine().withApi(new Api("northwind")//
                     .withDb(new NorthwindDynamoDb())//
-                    .withEndpoint("*", "/*", new DbAction()));
+                    .withEndpoint(new DbAction()));
 
             System.out.println();
             System.out.println("RELOADING DYNAMO...");

@@ -5,7 +5,7 @@ Inversion is the fastest way to deliver full featured and secure REST APIs.
 
 With Inversion, you can create an API that connects your app front end directly to your back end data source without any server side programming required.
 
-Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD operations against
+Inversion is not a code generator it is a runtime service that reflectively creates secure best practice JSON REST APIs for CRUD ops against
 multiple back end data sources including Relational Database Systems (RDBMS) such as MySQL, and PostgreSQL, NoSQL systems including Elasticsearch and Amazon's DynamoDB, Azure CosmosDb and many more.
 
 #### Build Status
@@ -47,8 +47,8 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
     - [Property Inclusion / Exclusion](#property-inclusion--exclusion)
     - [Aggregations](#aggregations)
     - [Nested Document Expansion](#nested-document-expansion)
-    - [Reserved Query String Parameters](#reserved-query-string-parameters)
-    - [Restricted and Required Query Parameters](#restricted-and-required-query-parameters)
+    - [Reserved Query String Parameters](#reserved-query-string-params)
+    - [Restricted and Required Query Parameters](#restricted-and-required-query-params)
     - [Miscellaneous](#miscellaneous)
   - [Core Object Model Concepts](#core-object-model-concepts)
     - [Apis](#apis)
@@ -103,11 +103,11 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
 
 With just a few lines of code, [Demo001SqlDbNorthwind.java](https://github.com/inversion-api/inversion-demos/blob/master/src/main/java/io/rocketpartners/demo/demo001/Demo001SqlDbNorthwind.java)
 launches a full featured demo API that exposes SQL database tables as REST collection endpoints.  The demo 
-supports full GET,PUT,POST,DELETE operations with an extensive Resource Query Language (RQL) for GET requests.
+supports full GET,PUT,POST,DELETE ops with an extensive Resource Query Language (RQL) for GET requests.
  
 The demo connects to an in memory H2 SQL database that gets initialized from
 scratch each time the demo is run.  That means you can fully explore
-modifying operations (POST,PUT,PATCH,DELETE) and 'break' whatever you want. When
+modifying ops (POST,PUT,PATCH,DELETE) and 'break' whatever you want. When
 you restart that data will be back in its original demo state.
 
 To run the demo simply clone the GitHub repo, build it with Gradle, then launch the demo app via Gradle.
@@ -281,7 +281,7 @@ A typical configuration, for example, may load:
 * inversion1.properties, inversion2.properties,inversion-dev-1.properties, if ${inversion.profile} has been set to 'dev'
 * OR, inversion.properties, inversion-prod.properties,inversion-prod-1.properties if ${inversion.profile} has been set to 'prod'
 
-A helpful development trick here is to launch Inversion with a JVM parameter '-Dinversion.profile=dev' add something like "inversion99-dev.properties" 
+A helpful development trick here is to launch Inversion with a JVM param '-Dinversion.profile=dev' add something like "inversion99-dev.properties" 
 to your .gitignore and keep any local developement only settings in that file.  That way you won't commit settings you don't want to share 
 and you custom settings will load last trumping any other keys shared with other files. 
 
@@ -322,7 +322,7 @@ JVM system property using the relevant key.  For example you could add '-Ddb.pas
 
 ## Resource Query Language (RQL)
 
-RQL is the set of HTTP query string parameters that allows developers to "slice and dice" the data returned from the API to meet their specific needs.
+RQL is the set of HTTP query string params that allows developers to "slice and dice" the data returned from the API to meet their specific needs.
 
 ### General
  
@@ -466,7 +466,7 @@ Implementing support for a new back end datasource is simply a matter of impleme
 
 ### Collections, Entities, Attributes and Relationships
 
-Collections logically map to Db Tables.  An Resource logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requests to Collections to perform CRUD operations on the underlying Db Tables.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well in a URL or as a JSON property name.
+Collections logically map to Db Tables.  An Resource logically represents a row in the Table.  An Attribute logically represents a Table Column.  Clients send GET/PUT/POST/DELETE requests to Collections to perform CRUD ops on the underlying Db Tables.  Collection and Attribute names can be mapped (or aliased) when the Table name or Column name would not work well in a URL or as a JSON property name.
 
 Example of aliased collection: ``api.collections.db_users.alias=profile`` Notice that the name of the database should be included with the name of the collection in order to set the alias property.
 
@@ -481,7 +481,7 @@ An Action can be set directly on an Endpoint to be 'private' to that endpoint, o
 
 Example [Handlers](https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc/io/rcktapp/api/Handler.html):
  * RestGetAction - Returns a Collection listing matching RQL criteria or can return a single requested Resource from a Db Table.
- * RestPostAction - Intelligently handles both PUT (update) and POST (insert) operations including complex nested documents  
+ * RestPostAction - Intelligently handles both PUT (update) and POST (insert) ops including complex nested documents  
  * RestDeleteDelete - Deletes Collection Entities from the underlying Db Table.
  * AuthAction - Logs a user in and puts a User object in the Request
  * AclAction - Processes AclRules to secure your Endpoints
@@ -503,7 +503,7 @@ be setup (in that order) to protect resources according to configed AclRules.  A
 Endpoints, Actions and AclRules are selected when they can be matched to a request url path.  Each one of these objects contains an "includePaths" and "excludesPaths" configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used to match any arbitrary path ending.  Regular expressions can be used to match specific path requirements.  If a path is both included and excluded, the exclusion will "win" and the path will not be considered a match. 
 Leading and trailing '/' characters are not considered when path matching.
 
-Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-parameters) regex path matching.  A regex-based match component follows the pattern "{optionalParamName:regex}".  If you surround any path part with [] it makes that part and all subsequent
+Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-params) regex path matching.  A regex-based match component follows the pattern "{optionalParamName:regex}".  If you surround any path part with [] it makes that part and all subsequent
 path parts optional.  Regular expression matches can not match across a '/'.
 
 Here are some examples: 
@@ -598,7 +598,7 @@ Ex: ```http://localhost/accountCode/apiCode/tenantCode/[endpoint.path]/collectio
 If the AuthAction is being used, it will enforce that the Url tenantCode matches the logged in users tenantCode (if there is a logged in user).
 
 IMPORTANT: this Url match restriction alone will not prevent access to cross tenant data. To fully
-restrict and require the tenantId and tenantCode query string parameters and JSON body properties
+restrict and require the tenantId and tenantCode query string params and JSON body properties
 with the following configuration:
 
 ```properties
@@ -644,9 +644,9 @@ TODO: add more specific doco here.
 ## Elasticsearch Specifics
 Currently, the following functions are available for use:
 
-* `source=value1,value2,valueN` - MUST be a separate parameter. Limits returned data to only these property values.
+* `source=value1,value2,valueN` - MUST be a separate param. Limits returned data to only these property values.
 * auto-suggest paths should be in the following format: `.../elastic/indexType/suggest?suggestField=value&type=prefix`
-> a `type` auto-suggest parameter can be set to define the type of search.  By default, auto-suggest will do a 'prefix' search.  If no results are found, auto-suggest will then try a wildcard search and return those results.  If you want to limit auto-suggest to one type of search, set `type=prefix` or `type=wildcard`.  While both types are fast, prefix searches are the fastest (~2ms vs ~20ms) 
+> a `type` auto-suggest param can be set to define the type of search.  By default, auto-suggest will do a 'prefix' search.  If no results are found, auto-suggest will then try a wildcard search and return those results.  If you want to limit auto-suggest to one type of search, set `type=prefix` or `type=wildcard`.  While both types are fast, prefix searches are the fastest (~2ms vs ~20ms) 
 * nested searching is allowed simply by specifying the name of the nested field, such as: `player.location.city` would retrieve the nested `location.city` value from a player. 
 
 The index/type will be automatically generated so that only one value needs to be sent.  

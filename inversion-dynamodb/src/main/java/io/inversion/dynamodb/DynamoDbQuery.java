@@ -26,7 +26,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import io.inversion.*;
 import io.inversion.rql.*;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.util.Collections;
 import java.util.HashMap;

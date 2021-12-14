@@ -41,11 +41,11 @@ public class DbPostActionTest {
         child2.put("href", "http://child2");
         child2.put("name", "child2");
 
-        JSNode collapsed = JSNode.parseJsonNode(parent.toString());
+        JSNode collapsed = JSNode.asJSNode(parent.toString());
 
         DbPostAction.collapse(collapsed, false, Collections.singleton("child2"), "");
 
-        JSNode benchmark = JSNode.parseJsonNode(parent.toString());
+        JSNode benchmark = JSNode.asJSNode(parent.toString());
         benchmark.remove("child2");
         benchmark.put("child2", new JSNode("href", "http://child2"));
 
@@ -70,11 +70,11 @@ public class DbPostActionTest {
 
         parent.put("arrChildren", arrChildren);
 
-        JSNode collapsed = JSNode.parseJsonNode(parent.toString());
+        JSNode collapsed = JSNode.asJSNode(parent.toString());
 
         DbPostAction.collapse(collapsed, false, Collections.singleton("arrChildren"), "");
 
-        JSNode benchmark = JSNode.parseJsonNode(parent.toString());
+        JSNode benchmark = JSNode.asJSNode(parent.toString());
         benchmark.remove("arrChildren");
         arrChildren = new JSArray();
         for (int i = 0; i < 5; i++) {
@@ -106,11 +106,11 @@ public class DbPostActionTest {
         child3.put("href", "http://child3");
         child3.put("name", "child3");
 
-        JSNode collapsed = JSNode.parseJsonNode(parent.toString());
+        JSNode collapsed = JSNode.asJSNode(parent.toString());
 
         DbPostAction.collapse(collapsed, false, Collections.singleton("child2.child3"), "");
 
-        JSNode benchmark = JSNode.parseJsonNode(parent.toString());
+        JSNode benchmark = JSNode.asJSNode(parent.toString());
         benchmark.getNode("child2").getNode("child3").remove("name");
 
         assertEquals(collapsed.toString(), benchmark.toString());

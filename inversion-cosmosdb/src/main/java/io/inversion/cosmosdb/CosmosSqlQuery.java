@@ -24,7 +24,7 @@ import io.inversion.rql.Order.Sort;
 import io.inversion.rql.Term;
 import io.inversion.rql.Where;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
 
 import java.util.ArrayList;
@@ -146,7 +146,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
             for (Document doc : queryResults.getQueryIterable()) {
                 String json = doc.toJson();
-                JSNode node = JSNode.parseJsonNode(json);
+                JSNode node = JSNode.asJSNode(json);
 
                 //-- removes all cosmos applied system keys that start with "_"
                 //-- TODO: might want to make this a configuration option and/or
@@ -210,6 +210,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
      *
      * @see <a href="https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-offset-limit">Cosmos Offset and Limit</a>
      */
+    @Override
     protected String printLimitClause(Parts parts, int offset, int limit) {
         if (offset < 0)
             offset = 0;
@@ -217,7 +218,9 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         if (limit <= 0)
             limit = 100;
 
-        return "OFFSET " + offset + " LIMIT " + limit;
+        String clause =  "OFFSET " + offset + " LIMIT " + limit;
+        parts.limit = clause;
+        return clause;
     }
 
     /**

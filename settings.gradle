@@ -1,5 +1,6 @@
 rootProject.name = 'inversion'
 
+include 'inversion-context'
 include 'inversion-api'
 include 'inversion-azure-functions'
 include 'inversion-cosmosdb'

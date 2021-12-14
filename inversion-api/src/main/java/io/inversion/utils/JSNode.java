@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flipkart.zjsonpatch.JsonDiff;
 import com.flipkart.zjsonpatch.JsonPatch;
 import io.inversion.ApiException;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.lang3.tuple.Triple;
 
 import java.io.ByteArrayOutputStream;
@@ -258,7 +259,7 @@ public class JSNode implements Map<String, Object> {
      * @return the result of parsing the json document cast to a JSNode
      * @throws ClassCastException if the result of parsing is not a JSNode
      */
-    public static JSNode parseJsonNode(String json) throws ClassCastException {
+    public static JSNode asJSNode(String json) throws ClassCastException {
         return ((JSNode) JSNode.parseJson(json));
     }
 
@@ -269,8 +270,16 @@ public class JSNode implements Map<String, Object> {
      * @return the result of parsing the json document cast to a JSArray
      * @throws ClassCastException if the result of parsing is not a JSArray
      */
-    public static JSArray parseJsonArray(String json) {
+    public static JSArray asJSArray(String json) {
         return ((JSArray) JSNode.parseJson(json));
+    }
+
+    public static JSArray asJSArray(InputStream in) {
+        return ((JSArray) JSNode.parseJson(in));
+    }
+
+    public static JSNode asJSNode(InputStream in) {
+        return ((JSNode) JSNode.parseJson(in));
     }
 
     static String toJson(JSNode node, boolean pretty, boolean lowercasePropertyNames) {
@@ -821,7 +830,7 @@ public class JSNode implements Map<String, Object> {
         JsonNode patch;
         try {
             patch = JsonDiff.asJson(mapper.readValue(source.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
-            JSArray patchesArray = JSNode.parseJsonArray(patch.toPrettyString());
+            JSArray patchesArray = JSNode.asJSArray(patch.toPrettyString());
             return patchesArray;
         } catch (Exception e) {
             e.printStackTrace();
@@ -851,7 +860,7 @@ public class JSNode implements Map<String, Object> {
 
         try {
             JsonNode target  = JsonPatch.apply(mapper.readValue(patches.toString(), JsonNode.class), mapper.readValue(this.toString(), JsonNode.class));
-            JSNode   patched = JSNode.parseJsonNode(target.toString());
+            JSNode   patched = JSNode.asJSNode(target.toString());
 
             this.properties = patched.properties;
             if (this.isArray()) {
@@ -1247,7 +1256,7 @@ public class JSNode implements Map<String, Object> {
      * @return a deep copy of this node.
      */
     public JSNode copy() {
-        return JSNode.parseJsonNode(toString());
+        return JSNode.asJSNode(toString());
     }
 
     /**

@@ -18,9 +18,11 @@ package io.inversion.action.db;
 
 import io.inversion.Collection;
 import io.inversion.*;
+import io.inversion.action.openapi.OpenAPIWriter;
 import io.inversion.rql.Page;
 import io.inversion.rql.Term;
 import io.inversion.utils.*;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
@@ -29,13 +31,65 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.util.*;
 
-public class DbGetAction extends Action<DbGetAction> {
+public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
 
     protected int maxRows = 100;
 
+    public DbGetAction() {
+        Param expand = new Param();
+        expand.withDescription("An optional comma separated lists of relationship names that should be expanded in the response. You can reference any number of nesting using 'dot' path notation.");
+        expand.withIn(Param.In.QUERY);
+        expand.withKey("expand");
+        withParam(expand);
+
+        Param page = new Param();
+        page.withDescription("The optional value used to compute the 'offset' of the first resource returned as 'offset'='page'*'limit'.  If an 'offset' parameter is also supplied it will be used instead of the 'page' parameter.");
+        page.withKey("page");
+        page.withIn(Param.In.QUERY);
+        withParam(page);
+
+        Param size = new Param();
+        size.withDescription("The optional number of resources to return.  Unless overridden by other configuration the default value is '100'");
+        size.withKey("size");
+        size.withIn(Param.In.QUERY);
+        withParam(size);
+
+        Param sort = new Param();
+        sort.withDescription("An optional comma separated list of json property names use to order the results.  Each property may optionally be prefixed with '-' to specify descending order.");
+        sort.withKey("sort");
+        sort.withIn(Param.In.QUERY);
+        withParam(sort);
+
+        //TODO build a somewhat real example from the collectin attributes
+        //q.setExample("q=eq(jsonPropertyName,value1),in(anotherJsonProperty,value2)");
+        Param  q    = new Param();
+        String desc = "An RQL formatted filter statement that allows you to retrieve only the specific resources you require.  See 'Overview->Querying' for more documentation on available functions and syntax.";
+        q.withDescription(desc);
+        q.withKey("q");
+        q.withIn(Param.In.QUERY);
+        withParam(q);
+    }
+
+    @Override
+    public void hook_configureOpParam(Task task, Op op, Param param){
+        switch (op.getFunction()){
+            case FIND:
+            case RELATED:
+                if(Utils.in(param.getKey().toLowerCase(), "page", "size", "sort", "q"))
+                    op.withParam(param);
+                break;
+        }
+    }
+
+    @Override
+    protected List<RuleMatcher> getDefaultIncludeMatchers() {
+        return Utils.asList(new RuleMatcher("GET", "{" + Request.COLLECTION_KEY + "}/[{" + Request.RESOURCE_KEY + "}]/[{" + Request.RELATIONSHIP_KEY + "}]"));
+    }
+
+
     protected static String getForeignKey(Relationship rel, JSNode node) {
         Index idx = rel.getFkIndex1();
-        if(idx.size() == 1 && node.get(idx.getJsonName(0)) != null)
+        if (idx.size() == 1 && node.get(idx.getJsonName(0)) != null)
             return node.getString(idx.getJsonName(0));
 
         String key = rel.getCollection().encodeKeyFromJsonNames(node, rel.getFkIndex1());
@@ -45,8 +99,8 @@ public class DbGetAction extends Action<DbGetAction> {
 
     protected static String getResourceKey(Collection collection, JSNode node) {
         String key = collection.encodeKeyFromJsonNames(node);
-        if(key == null)
-            throw ApiException.new500InternalServerError("The primary key '{}' could not be constructed from the data provided.", collection.getPrimaryIndex());
+        if (key == null)
+            throw ApiException.new500InternalServerError("The primary key '{}' could not be constructed from the data provided.", collection.getResourceIndex());
         return key;
     }
 
@@ -83,7 +137,6 @@ public class DbGetAction extends Action<DbGetAction> {
     }
 
 
-
     @Override
     public void run(Request req, Response res) throws ApiException {
         if (req.getRelationshipKey() != null) {
@@ -111,7 +164,7 @@ public class DbGetAction extends Action<DbGetAction> {
                 newHref = new StringBuilder(Chain.buildLink(relatedCollection) + "?");
                 Map<String, Object> resourceKeyRow = collection.decodeKeyToJsonNames(req.getResourceKey());
 
-                if (rel.getFkIndex1().size() != collection.getPrimaryIndex().size() //
+                if (rel.getFkIndex1().size() != collection.getResourceIndex().size() //
                         && rel.getFkIndex1().size() == 1)//assume the single fk prop is an encoded resourceKey
                 {
                     String propName = rel.getFk1Col1().getJsonName();
@@ -119,11 +172,11 @@ public class DbGetAction extends Action<DbGetAction> {
                 } else {
                     //TODO: test this change
                     Index fkIdx = rel.getFkIndex1();
-                    Index pkIdx = collection.getPrimaryIndex();
+                    Index pkIdx = collection.getResourceIndex();
 
                     for (int i = 0; i < fkIdx.size(); i++) {
                         Property fk     = fkIdx.getProperty(i);
-                        String pkName = pkIdx.getJsonName(i);
+                        String   pkName = pkIdx.getJsonName(i);
                         Object   pkVal  = resourceKeyRow.get(pkName);
 
                         if (pkVal == null)
@@ -160,15 +213,15 @@ public class DbGetAction extends Action<DbGetAction> {
                 //String query = Utils.substringAfter(url, "?");
 
                 url = Utils.substringBefore(url, "?");
-                if(url.endsWith("/"))
-                    url = url.substring(0, url.length()-1);
+                if (url.endsWith("/"))
+                    url = url.substring(0, url.length() - 1);
 
                 url = url.substring(0, url.lastIndexOf("/"));
 
                 Response tempRes = res.getEngine().get(url).assertOk();
-                JSNode data = tempRes.getStream();
-                if(data instanceof JSArray)
-                    data = (JSNode)((JSArray)data).get(0);
+                JSNode   data    = tempRes.getStream();
+                if (data instanceof JSArray)
+                    data = (JSNode) ((JSArray) data).get(0);
 
                 String link = Chain.buildLink(data, rel);
                 newHref = new StringBuilder(link);
@@ -181,7 +234,7 @@ public class DbGetAction extends Action<DbGetAction> {
 //                    newHref = new StringBuilder(fk);
 //                }
 
-                if(newHref == null)
+                if (newHref == null)
                     throw ApiException.new500InternalServerError("Unable to locate foreign key value for relationship '{}'", rel.getName());
 
 
@@ -189,7 +242,7 @@ public class DbGetAction extends Action<DbGetAction> {
 
             Map<String, String> params = req.getUrl().getParams();
             Utils.filter(params, Request.COLLECTION_KEY, Request.RESOURCE_KEY, Request.RELATIONSHIP_KEY);
-            if(params.size() > 0){
+            if (params.size() > 0) {
                 String queryString = Url.toQueryString(params);
                 if (!newHref.toString().contains("?"))
                     newHref.append("?");
@@ -205,7 +258,7 @@ public class DbGetAction extends Action<DbGetAction> {
             return;
         } else if (req.getCollection() != null && !Utils.empty(req.getResourceKey())) {
             List<String> resourceKeys = Utils.explode(",", req.getResourceKey());
-            Term         term         = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName(), resourceKeys.toArray());
+            Term         term         = Term.term(null, "_key", req.getCollection().getResourceIndex().getName(), resourceKeys.toArray());
             req.getUrl().withParams(term.toString(), null);
         }
 
@@ -282,14 +335,10 @@ public class DbGetAction extends Action<DbGetAction> {
 
             if (db == null) {
                 List<Db> dbs = api.getDbs();
-                if (dbs.size() == 1) {
-                    db = dbs.get(0);
-                } else {
-                    for (Db candidate : dbs) {
-                        if (candidate.getEndpointPath() != null && candidate.getEndpointPath().matches(req.getEndpointPath())) {
-                            db = candidate;
-                            break;
-                        }
+                for (Db candidate : dbs) {
+                    if (candidate.matches(req.getMethod(), req.getPath())) {
+                        db = candidate;
+                        break;
                     }
                 }
             }
@@ -311,8 +360,6 @@ public class DbGetAction extends Action<DbGetAction> {
     }
 
 
-
-
     /**
      * This is more complicated than it seems like it would need to be because
      * it attempts to retrieve all values of a relationship at a time for the whole
@@ -332,9 +379,9 @@ public class DbGetAction extends Action<DbGetAction> {
         if (parentObjs.size() == 0)
             return;
 
-        if (expands == null){
+        if (expands == null) {
             String expandsStr = request.getUrl().getParam("expand");
-            if(expandsStr == null)
+            if (expandsStr == null)
                 return;
 
             expands = new LinkedHashSet(Utils.explode(",", expandsStr));
@@ -377,7 +424,7 @@ public class DbGetAction extends Action<DbGetAction> {
                 List<KeyValue> relatedEks    = null;
 
                 if (rel.isManyToOne()) {
-                    idxToMatch = collection.getPrimaryIndex();
+                    idxToMatch = collection.getResourceIndex();
                     idxToRetrieve = rel.getFkIndex1();
 
                     //NOTE: expands() is only getting the paired up related keys.  For a MANY_TO_ONE
@@ -398,7 +445,7 @@ public class DbGetAction extends Action<DbGetAction> {
                     }
                 } else if (rel.isOneToMany()) {
                     idxToMatch = rel.getFkIndex1();
-                    idxToRetrieve = rel.getRelated().getPrimaryIndex();
+                    idxToRetrieve = rel.getRelated().getResourceIndex();
                 } else if (rel.isManyToMany()) {
                     idxToMatch = rel.getFkIndex1();
                     idxToRetrieve = rel.getFkIndex2();

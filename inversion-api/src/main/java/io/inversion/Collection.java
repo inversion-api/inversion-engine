@@ -17,7 +17,7 @@
 package io.inversion;
 
 import io.inversion.utils.Path;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.text.StringEscapeUtils;
 
@@ -52,9 +52,7 @@ import java.util.regex.Pattern;
  * TODO: check on test cases related to hasName and path matching
  * TODO: need tests for resource keys with commas
  */
-public class Collection implements Serializable {
-
-    protected String name = null;
+public class Collection  extends Rule<Collection>  implements Serializable {
 
     /**
      * Additional names that should cause this Collection to match to a Request.
@@ -108,35 +106,35 @@ public class Collection implements Serializable {
         withTableName(defaultName);
     }
 
-//    /**
-//     * @return the default collection match rule: "{_collection:" + getName() + "}/[:_resource]/[:_relationship]/*"
-//     * @see Request#COLLECTION_KEY
-//     * @see Request#RESOURCE_KEY
-//     * @see Request#RELATIONSHIP_KEY
-//     */
-//    @Override
-//    protected RuleMatcher getDefaultIncludeMatch() {
-//
-//        String collection = "{" + Request.COLLECTION_KEY + ":" + getName() + "}";
-//        String resource = "[:" + Request.RESOURCE_KEY + "]";
-//        String relationship = "[:" + Request.RELATIONSHIP_KEY + "]";
-//
-//        Index pk =  getPrimaryIndex();
-//        if(pk != null) {
-//            if (pk.size() == 1) {
-//                String regex = pk.getProperty(0).getRegex();
-//                if (regex != null) {
-//                    regex += "(," + regex + ")*";//-- this is here to add support for comma separated lists of entity keys
-//                    resource = "[{" + Request.RESOURCE_KEY + ":" + regex + "}]";
-//                }
-//            }
-//        }
-//
-//        RuleMatcher matcher = new RuleMatcher();
-//        matcher.withPaths(new Path(collection + "/" + resource + "/"));
-//
-//        return new RuleMatcher(null, new Path(collection + "/" + resource + "/" + relationship + "/*"));
-//    }
+    /**
+     * @return the default collection match rule: "{_collection:" + getName() + "}/[{_resource}]/[{_relationship}]/*"
+     * @see Request#COLLECTION_KEY
+     * @see Request#RESOURCE_KEY
+     * @see Request#RELATIONSHIP_KEY
+     */
+    @Override
+    protected List<RuleMatcher> getDefaultIncludeMatchers() {
+
+        String collection = "{" + Request.COLLECTION_KEY + ":" + getName() + "}";
+        String resource = "[{" + Request.RESOURCE_KEY + "}]";
+        String relationship = "[{" + Request.RELATIONSHIP_KEY + "}]";
+
+        Index pk =  getResourceIndex();
+        if(pk != null) {
+            if (pk.size() == 1) {
+                String regex = pk.getProperty(0).getRegex();
+                if (regex != null) {
+                    regex += "(," + regex + ")*";//-- this is here to add support for comma separated lists of entity keys
+                    resource = "[{" + Request.RESOURCE_KEY + ":" + regex + "}]";
+                }
+            }
+        }
+
+        //RuleMatcher matcher = new RuleMatcher();
+        //matcher.withPaths(new Path(collection + "/" + resource + "/"));
+
+        return Utils.asList(new RuleMatcher(null, new Path(collection + "/" + resource + "/" + relationship + "/*")));
+    }
 
     /**
      * Returns true if all columns are foreign keys.
@@ -274,15 +272,11 @@ public class Collection implements Serializable {
     /**
      * @return the name of the Collection defaulting to <code>tableName</code> if <code>name</code> is null.
      */
+    @Override
     public String getName() {
         return name != null ? name : tableName;
     }
 
-
-    public Collection withName(String name) {
-        this.name = name;
-        return this;
-    }
 
     public Collection withSingularDispalyName(String singularName){
         this.singularDisplayName = singularName;
@@ -363,12 +357,30 @@ public class Collection implements Serializable {
     }
 
     /**
-     * Finds the first unique Index with the fewest number of Properties.
+     * Finds best index to be used to uniquely identify the resource.
+     * Priority is given to Indexes in this order
+     * <ol>
+     *     <li>Index.TYPE_RESOURCE_KEY</li>
+     *     <li>Index.TYPE_PRIMARY_KEY</li>
+     *     <li>The first unique index found in iteration order with size = 1</li>
+     *     <li>The unique index with the fewest columns</li>
+     * </ol>
      *
-     * @return the Index that should be treated as the primary key for the Collection
+     * @return the Index that should be treated as the resource key for the Collection
      * @see Index#isUnique()
      */
-    public Index getPrimaryIndex() {
+    public Index getResourceIndex() {
+
+        for (Index index : indexes) {
+            if(Index.TYPE_RESOURCE_KEY.equals(index.type))
+                return index;
+        }
+
+        for (Index index : indexes) {
+            if(Index.TYPE_PRIMARY_KEY.equals(index.type))
+                return index;
+        }
+
         Index found = null;
         for (Index index : indexes) {
             if (!index.isUnique())
@@ -472,6 +484,26 @@ public class Collection implements Serializable {
         return this;
     }
 
+    public Collection withForeignKey(Collection related, String... myProperties){
+        Property[] properties = new Property[myProperties.length];
+        for (int i = 0; i < myProperties.length; i++) {
+            String   propName = myProperties[i];
+            Property prop     = getProperty(propName);
+            if (prop == null) {
+                throw ApiException.new500InternalServerError("Property {} does not exist so it can't be added to the index {}", myProperties[i], name);
+            }
+
+            properties[i] = prop;
+        }
+        Index fk = new Index(null, Index.TYPE_FOREIGN_KEY, false, properties);
+        Index pk = related.getResourceIndex();
+        for(int i=0; i<fk.size(); i++){
+            fk.getProperty(i).withPk(pk.getProperty(i));
+        }
+        withIndexes(fk);
+        return this;
+    }
+
     public void removeIndex(Index index) {
         indexes.remove(index);
     }
@@ -567,12 +599,12 @@ public class Collection implements Serializable {
         }
 
 
-        Index fkIdx = new Index(this.getName() + "_" + Arrays.asList(thisCollectionsForeignKeyProps), "FOREIGN_KEY", false, properties);
+        Index fkIdx = new Index(this.getName() + "_" + Arrays.asList(thisCollectionsForeignKeyProps), Index.TYPE_FOREIGN_KEY, false, properties);
         withIndexes(fkIdx);
 
         withRelationship(new Relationship(thisCollectionsRelationshipJsonPropertyName, Relationship.REL_MANY_TO_ONE, this, parentCollection, fkIdx, null));
 
-        Index primaryIdx = parentCollection.getPrimaryIndex();
+        Index primaryIdx = parentCollection.getResourceIndex();
         if (primaryIdx != null && thisCollectionsForeignKeyProps.length == primaryIdx.size()) {
             for (int i = 0; i < thisCollectionsForeignKeyProps.length; i++) {
                 properties[i].withPk(primaryIdx.getProperty(i));
@@ -609,13 +641,13 @@ public class Collection implements Serializable {
         }
 
 
-        Index fkIdx = new Index(childCollection.getName() + "_" + Arrays.asList(properties), "FOREIGN_KEY", false, properties);
+        Index fkIdx = new Index(childCollection.getName() + "_" + Arrays.asList(properties), Index.TYPE_FOREIGN_KEY, false, properties);
         childCollection.withIndexes(fkIdx);
 
         withRelationship(new Relationship(thisCollectionsRelationshipJsonPropertyName, Relationship.REL_ONE_TO_MANY, this, childCollection, fkIdx, null));
         //childCollection.withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, childCollection, this, fkIdx, null));
 
-        Index primaryIdx = getPrimaryIndex();
+        Index primaryIdx = getResourceIndex();
         if (primaryIdx != null && properties.length == primaryIdx.size()) {
             for (int i = 0; i < properties.length; i++) {
                 properties[i].withPk(primaryIdx.getProperty(i));
@@ -748,7 +780,7 @@ public class Collection implements Serializable {
      * @see #encodeKey(Map, Index, boolean)
      */
     public String encodeKeyFromColumnNames(Map<String, Object> values) {
-        Index index = getPrimaryIndex();
+        Index index = getResourceIndex();
         if (index == null)
             return null;
 
@@ -763,7 +795,7 @@ public class Collection implements Serializable {
      * @see #encodeKey(Map, Index, boolean)
      */
     public String encodeKeyFromJsonNames(Map<String, Object> values) {
-        Index index = getPrimaryIndex();
+        Index index = getResourceIndex();
         if (index == null)
             return null;
 
@@ -859,7 +891,7 @@ public class Collection implements Serializable {
      */
     static String encodeStr(String string) {
         //- . _ ~ ( ) ' ! * : @ , ;
-        Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\:\\,\\;\\*]");
+        Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\,\\;\\*]");
 
         Matcher      m  = p.matcher(string);
         StringBuffer sb = new StringBuffer();
@@ -872,7 +904,8 @@ public class Collection implements Serializable {
             m.appendReplacement(sb, hex.toString());
         }
         m.appendTail(sb);
-        return sb.toString();
+        String encoded = sb.toString();
+        return encoded;
     }
 
 
@@ -898,7 +931,7 @@ public class Collection implements Serializable {
      * @see #encodeKey(Map, Index, boolean)
      */
     public Map<String, Object> decodeKeyToJsonNames(String inKeys) {
-        Index index = getPrimaryIndex();
+        Index index = getResourceIndex();
         if (index == null)
             throw ApiException.new500InternalServerError("Table '{}' does not have a unique index", this.getTableName());
 
@@ -941,7 +974,7 @@ public class Collection implements Serializable {
     }
 
     /**
-     * The reciprocal of {@link #encodeStr(String)} that replaces "\@[0-9a-f]{4}" hex sequences with the unescaped oritional unescaped character.
+     * The reciprocal of {@link #encodeStr(String)} that replaces "\@[0-9a-f]{4}" hex sequences with the unescaped character.
      *
      * @param string the string to decode
      * @return a string with characters escaped to their hex equivalent replaced with the unescaped value.
@@ -957,6 +990,8 @@ public class Collection implements Serializable {
                 String group = m.group();
                 String hex   = group.substring(1);
                 String chars = StringEscapeUtils.unescapeJava("\\u" + hex);
+                if(chars.equals("\\"))
+                        chars = "\\\\";
                 m.appendReplacement(sb, chars);
             }
             m.appendTail(sb);

@@ -29,7 +29,7 @@ public abstract class AuthScheme {
     String barerFormat = "JWT";
     String description = null;
 
-    List<Parameter> parameters = new ArrayList();
+    List<Param> params = new ArrayList();
 
     public abstract User getUser(Request req, Response res) throws ApiException;
 
@@ -69,18 +69,18 @@ public abstract class AuthScheme {
         return this;
     }
 
-    public List<Parameter> getParameters() {
-        return parameters;
+    public List<Param> getParameters() {
+        return params;
     }
 
-    public AuthScheme withParameters(List<Parameter> parameters) {
-        this.parameters = parameters;
+    public AuthScheme withParameters(List<Param> params) {
+        this.params = params;
         return this;
     }
 
-    public AuthScheme withParameter(Parameter parameter) {
-        if(parameter != null && !parameters.contains(parameter))
-            this.parameters.add(parameter);
+    public AuthScheme withParameter(Param param) {
+        if(param != null && !params.contains(param))
+            this.params.add(param);
         return this;
     }
 

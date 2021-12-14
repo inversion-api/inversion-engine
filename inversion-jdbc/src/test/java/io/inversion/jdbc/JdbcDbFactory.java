@@ -3,15 +3,15 @@ package io.inversion.jdbc;
 import io.inversion.Api;
 import io.inversion.action.db.DbAction;
 import io.inversion.spring.main.InversionMain;
-import io.inversion.utils.Config;
-import io.inversion.utils.Utils;
+import io.inversion.config.Config;
+import ioi.inversion.utils.Utils;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 
 public class JdbcDbFactory {
     public static void main(String[] args) {
-        InversionMain.run(new Api("northwind").withEndpoint("*", "*/", new DbAction()).withDb(buildDb("mysql", "northwind-running")));
+        InversionMain.run(new Api("northwind").withEndpoint(new DbAction()).withDb(buildDb("mysql", "northwind-running")));
     }
 
     public static JdbcDb buildDb(String type, String schemaName) {
@@ -51,34 +51,34 @@ public class JdbcDbFactory {
                     "", //
                     ddlUrl);
 
-            //         JdbcDb db = new JdbcDb("h2", //
-            //                                "org.h2.Driver", //
-            //                                "jdbc:h2:mem:" + database + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
-            //                                "sa", //
-            //                                "", //
-            //                                ddlUrl)
-            //            {
-            //
-            //               @Override
-            //               protected void doShutdown()
-            //               {
-            //                  try
-            //                  {
-            //                     Connection conn = getConnection();
-            //                     JdbcUtils.execute(conn, "SHUTDOWN");
-            //                     JdbcConnectionLocal.closeAll();
-            //                  }
-            //                  catch (Exception ex)
-            //                  {
-            //                     //ex.printStackTrace();
-            //                  }
-            //                  finally
-            //                  {
-            //                     super.shutdown();
-            //                  }
-            //
-            //               }
-            //            };
+//                     return new JdbcDb("h2", //
+//                                            "org.h2.Driver", //
+//                                            "jdbc:h2:mem:" + database + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
+//                                            "sa", //
+//                                            "", //
+//                                            ddlUrl)
+//                        {
+//
+//                           @Override
+//                           protected void doShutdown()
+//                           {
+//                              try
+//                              {
+//                                 Connection conn = getConnection();
+//                                 JdbcUtils.execute(conn, "SHUTDOWN");
+//                                 JdbcConnectionLocal.closeAll();
+//                              }
+//                              catch (Exception ex)
+//                              {
+//                                 //ex.printStackTrace();
+//                              }
+//                              finally
+//                              {
+//                                 super.shutdown();
+//                              }
+//
+//                           }
+//                        };
 
         } catch (Exception ex) {
             Utils.rethrow(ex);

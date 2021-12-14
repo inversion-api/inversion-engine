@@ -72,7 +72,7 @@ public class CsvActionTest {
         Map<String, String> params = new HashMap<>();
         params.put("format", "csv");
 
-        action.run(new Request("POST", "/", null, params, null), res);
+        action.run(new Request("POST", "/test", null, params, null), res);
         assertEquals(singleObject, res.getJson());
     }
 
@@ -103,6 +103,6 @@ public class CsvActionTest {
     private Request buildSuccessfulRequest() {
         Map<String, String> params = new HashMap<>();
         params.put("format", "csv");
-        return new Request("GET", "/", null, params, null);
+        return new Request("GET", "/test", null, params, null);
     }
 }

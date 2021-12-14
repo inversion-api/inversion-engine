@@ -19,17 +19,18 @@ package io.inversion.action.db;
 import io.inversion.Collection;
 import io.inversion.*;
 import io.inversion.action.misc.BatchAction;
+import io.inversion.action.openapi.OpenAPIWriter;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.keyvalue.MultiKey;
 import org.apache.commons.collections4.map.MultiKeyMap;
 import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.*;
 
-public class DbPostAction extends BatchAction<DbPostAction> {
+public class DbPostAction extends BatchAction<DbPostAction> implements OpenAPIWriter {
     protected boolean collapseAll = false;
 
     /**
@@ -38,7 +39,10 @@ public class DbPostAction extends BatchAction<DbPostAction> {
     protected boolean strictRest     = false;
     protected boolean getResponse    = true;
 
-
+    @Override
+    protected List<RuleMatcher> getDefaultIncludeMatchers(){
+        return Utils.asList(new RuleMatcher("POST", "{" + Request.COLLECTION_KEY + "}"));
+    }
 
     public static String nextPath(String path, String next) {
         return Utils.empty(path) ? next : path + "." + next;
@@ -152,7 +156,7 @@ public class DbPostAction extends BatchAction<DbPostAction> {
         Set<String> collapses   = collapseStr == null ? new HashSet<>() : Utils.asSet(Utils.explode(",", collapseStr));
 
         if (collapseAll || collapses.size() > 0) {
-            body = JSNode.parseJsonNode(body.toString());
+            body = JSNode.asJSNode(body.toString());
             collapse(body, collapseAll, collapses, "");
         }
 
@@ -348,7 +352,7 @@ public class DbPostAction extends BatchAction<DbPostAction> {
 
                     Map<String, Object> primaryKey = new LinkedHashMap();
 
-                    for(String name : collection.getPrimaryIndex().getJsonNames()){
+                    for(String name : collection.getResourceIndex().getJsonNames()){
                         Object value = node.get(name);
                         if(value == null)
                             throw new ApiException("Primary key field should not be null at this point");
@@ -384,7 +388,7 @@ public class DbPostAction extends BatchAction<DbPostAction> {
                 if (!(node.get(rel.getName()) instanceof JSArray))
                     continue;//-- this property was not passed back in or was not an array of related nodes
 
-                LinkedHashMap<String, Object> foreignKey = buildKey(node, collection.getPrimaryIndex(), rel.getFkIndex1());
+                LinkedHashMap<String, Object> foreignKey = buildKey(node, collection.getResourceIndex(), rel.getFkIndex1());
 
                 //LinkedHashMap foreignKey = extractKey(node, rel.getFkIndex1())
 
@@ -395,11 +399,11 @@ public class DbPostAction extends BatchAction<DbPostAction> {
                 for (int i = 0; childNodes != null && i < childNodes.length(); i++) {
                     JSNode child = (JSNode) childNodes.get(i);
                     if (rel.isOneToMany()) {
-                        LinkedHashMap<String, Object> childKey = buildKey(child, rel.getRelated().getPrimaryIndex());
+                        LinkedHashMap<String, Object> childKey = buildKey(child, rel.getRelated().getResourceIndex());
                         keepRels.get(rel, foreignKey).add(childKey);
                     } else if (rel.isManyToMany()) {
-                        LinkedHashMap<String, Object> nodeFk = buildKey(node, collection.getPrimaryIndex(), rel.getFkIndex1());
-                        LinkedHashMap<String, Object> childFk = buildKey(child, rel.getRelated().getPrimaryIndex(), rel.getFkIndex2());
+                        LinkedHashMap<String, Object> nodeFk = buildKey(node, collection.getResourceIndex(), rel.getFkIndex1());
+                        LinkedHashMap<String, Object> childFk = buildKey(child, rel.getRelated().getResourceIndex(), rel.getFkIndex2());
                         LinkedHashMap<String, Object> linkKey = new LinkedHashMap<>();
                         linkKey.putAll(nodeFk);
                         linkKey.putAll(childFk);
@@ -441,7 +445,7 @@ public class DbPostAction extends BatchAction<DbPostAction> {
             //-- this set will contain the columns we need to update/delete outdated relationships
             Set includesKeys = new HashSet();
             includesKeys.addAll(parentKey.keySet());
-            includesKeys.addAll(rel.getRelated().getPrimaryIndex().getJsonNames());
+            includesKeys.addAll(rel.getRelated().getResourceIndex().getJsonNames());
 
             Term childNot = Term.term(null, "not");
             Term childOr  = Term.term(childNot, "or");

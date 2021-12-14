@@ -17,16 +17,11 @@
 package io.inversion.openapi.v3;
 
 import io.inversion.Api;
-import io.inversion.Collection;
 import io.inversion.Endpoint;
-import io.inversion.Parameter;
 import io.inversion.action.db.DbAction;
-import io.inversion.action.misc.FileAction;
 import io.inversion.action.hateoas.HALAction;
-import io.inversion.action.misc.MockAction;
-import io.inversion.action.security.AuthAction;
-import io.inversion.action.security.schemes.ApiKeyScheme;
-import io.inversion.action.security.schemes.BearerScheme;
+import io.inversion.action.misc.FileAction;
+import io.inversion.action.openapi.OpenAPIAction;
 import io.inversion.jdbc.JdbcDb;
 import io.inversion.spring.main.InversionMain;
 
@@ -34,10 +29,11 @@ public class OpenAPIActionTest {
 
     static Api buildApi() {
 
-
-        Log log =
-        Api api = new Api().withName("northwind")
-                .withIncludeOn("northwind/v1/:tenant/*")
+        Api api = new Api("northwind")
+                .withServers(
+                        "http://127.0.0.1:8080/northwind/{version}/{tenant}/*",
+                        "https://stage.host.com/api/northwind/{tenant}/{version}/*",
+                        "https://{tenant}.northwind.com/api/{version}/*")
                 .withDb(new JdbcDb("h2", //
                         "org.h2.Driver", //
                         //"jdbc:h2:mem:swaggertest;IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
@@ -45,33 +41,26 @@ public class OpenAPIActionTest {
                         "sa", //
                         "", //
                         JdbcDb.class.getResource("northwind-h2.ddl").toString()))
-                .withEndpoint(new Endpoint("*", "openapi.json,openapi.yaml", new OpenAPIAction()))
-                .withEndpoint(new Endpoint("*", "rapidoc.html", new FileAction()))
+                .withEndpoint(new Endpoint("asasd.text", new OpenAPIAction()).withName("ep1"))
+                //.withEndpoint(new Endpoint("GET", "aaaa.text", new OpenAPIAction()))
+                //.withEndpoint(new Endpoint("GET", "bbbb.text", new OpenAPIAction()))
+                //.withEndpoint(new Endpoint("GET", "openapi.json,openapi.yaml", new OpenAPIAction()))
+                //.withEndpoint(new Endpoint("GET", "rapidoc.html", new FileAction()))
 
 //                .withEndpoint(new Endpoint("*", "auth.json", new FileAction()))
 //                .withEndpoint(new Endpoint("*", "test/*", new HALAction(), new MockAction()))
 //                .withCollection(new Collection().withName("auths").withSchemaRef("http://localhost:8080/northwind/v1/us/auth.json").withProperty("id", "number").withIndex("pk", "primary", true, "id"));
 
-                .withEndpoint(new Endpoint("*", "*", new HALAction() //
+                .withEndpoint(new Endpoint("GET"
+                        , new HALAction() //
+                        //,new LinksAction() //
                         //,new AuthAction().withAuthScheme(new BearerScheme().withDescription("this is a JWT."))
                         //                .withAuthScheme(new ApiKeyScheme().withParameter(new Parameter("username", "username", "query", false))
                         //                        .withParameter(new Parameter("password", "password", "query", false)))//
-                        , new DbAction()))
-
-        ;
+                        , new DbAction()).withName("dbEp"));
         return api;
+
     }
-//
-//    static Api buildApi() {
-//        Api api = new Api().withName("ledgerApi")
-//                .withIncludeOn("{programCode}/v1/:tenantCode/ledger/*")//
-//                .withDb(new JdbcDb("ledger"))
-//                .withEndpoint(new Endpoint("*", "openapi.json,openapi.yaml", new OpenAPIAction()))
-//                .withEndpoint(new Endpoint("*", "rapidoc.html", new FileAction()))
-//                .withEndpoint(new Endpoint("*", "*", new HALAction(), new DbAction()))
-//                ;
-//        return api;
-//    }
 
 
     public static void main(String[] args) {

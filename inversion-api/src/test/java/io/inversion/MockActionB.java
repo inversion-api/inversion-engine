@@ -17,8 +17,8 @@
 package io.inversion;
 
 public class MockActionB extends MockActionA {
-    public MockActionB(String methods, String includePaths) {
-        super(methods, includePaths);
+    public MockActionB(String ruleMatcherSpec) {
+        super(ruleMatcherSpec);
     }
 
 }

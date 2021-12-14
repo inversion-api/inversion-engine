@@ -16,10 +16,8 @@
  */
 package io.inversion;
 
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.StreamBuffer;
-import io.inversion.utils.Utils;
+import io.inversion.utils.*;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.io.IOException;
@@ -88,15 +86,25 @@ public class Response implements JSNode.JSAccessor {
         return this;
     }
 
-    public Response withData(StreamBuffer data) {
+    public Response withStream(StreamBuffer stream, String fileName) {
+        withStream(stream);
+        withFileName(fileName);
+        return this;
+    }
+
+    public Response withStream(StreamBuffer stream) {
         this.text = null;
         this.json = null;
-        this.stream = data;
+        this.stream = stream;
         return this;
     }
 
     public JSNode getJson() {
         if (stream != null) {
+
+            if(!MimeTypes.TYPE_APPLICATION_JSON.equalsIgnoreCase(getContentType()))
+                return null;
+
             try {
                 json = (JSNode) JSNode.parseJson(stream.getInputStream());
             } catch (Exception e) {
@@ -225,13 +233,17 @@ public class Response implements JSNode.JSAccessor {
 
         if (Utils.empty(fileName)) {
             try {
-                fileName = new URL(url).getFile();
-                if (Utils.empty(fileName))
-                    fileName = null;
+                String fileName = new URL(url).getFile();
+                withFileName(fileName);
             } catch (Exception ex) {
                 //intentionally blank
             }
         }
+        return this;
+    }
+
+    public Response withFileName(String fileName) {
+        this.fileName = fileName;
         return this;
     }
 
@@ -248,6 +260,10 @@ public class Response implements JSNode.JSAccessor {
 
     public Request getRequest() {
         return request;
+    }
+
+    public Op getOp() {
+        return request != null ? request.getOp() : null;
     }
 
     public Chain getChain() {
@@ -575,8 +591,17 @@ public class Response implements JSNode.JSAccessor {
     public String getContentType() {
         String contentType = getHeader("Content-Type");
         if (contentType == null) {
+
             if (json != null)
-                contentType = "application/json";
+                return MimeTypes.TYPE_APPLICATION_JSON;
+
+            if (fileName != null) {
+                int dot = fileName.lastIndexOf('.');
+                if (dot > 0) {
+                    String ext = fileName.substring(dot + 1);
+                    contentType = MimeTypes.getMimeType(ext);
+                }
+            }
         }
         return contentType;
     }
@@ -665,7 +690,7 @@ public class Response implements JSNode.JSAccessor {
         String message = getText();
         try {
             while (message != null && message.startsWith("{") && message.contains("\\\"message\\\"")) {
-                message = JSNode.parseJsonNode(message).getString("message");
+                message = JSNode.asJSNode(message).getString("message");
             }
         } catch (Exception ex) {
             //igore
@@ -674,7 +699,7 @@ public class Response implements JSNode.JSAccessor {
         if (message != null)
             msg.append(" ").append(message.trim());
 
-        throw new ApiException(statusCode + "", null, msg.toString());
+        throw new ApiException(statusCode + "", (msg != null ? msg.toString() : null));
     }
 
     public Response assertStatus(int... statusCodes) {

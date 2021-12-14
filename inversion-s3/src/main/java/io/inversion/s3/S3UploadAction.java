@@ -25,7 +25,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import io.inversion.*;
 import io.inversion.Request.Upload;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;

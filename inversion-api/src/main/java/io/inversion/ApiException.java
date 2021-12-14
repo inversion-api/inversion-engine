@@ -16,7 +16,7 @@
  */
 package io.inversion;
 
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 public class ApiException extends RuntimeException implements Status {
     protected String status = Status.SC_500_INTERNAL_SERVER_ERROR;

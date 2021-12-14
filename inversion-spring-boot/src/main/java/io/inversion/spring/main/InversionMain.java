@@ -17,9 +17,10 @@
 package io.inversion.spring.main;
 
 import io.inversion.Api;
+import io.inversion.Engine;
 import io.inversion.spring.config.EnableInversion;
 import io.inversion.spring.config.InversionRegistrar;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -37,6 +38,7 @@ import org.springframework.context.ApplicationContext;
 public class InversionMain {
 
     protected static ApplicationContext context = null;
+    protected static Engine             engine  = null;
 
     public static void main(String[] args) {
         run(args, null);
@@ -60,6 +62,8 @@ public class InversionMain {
 
             InversionRegistrar.apis = apis;
             context = SpringApplication.run(InversionMain.class, args);
+
+            engine = (Engine) context.getBean("engine");
         } catch (Throwable e) {
             e = Utils.getCause(e);
             if (Utils.getStackTraceString(e).contains("A child container failed during start")) {
@@ -101,4 +105,13 @@ public class InversionMain {
         return context;
     }
 
+    /**
+     * The Engine will not be populated until after the Spring Boot app starts
+     * and publishes the ApplicationContext
+     *
+     * @return
+     */
+    public static Engine getEngine() {
+        return engine;
+    }
 }

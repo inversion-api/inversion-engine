@@ -367,7 +367,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
     }
 
     public JSNode getJson() {
-        return JSNode.parseJsonNode(getSearchBuilder().toString());
+        return JSNode.asJSNode(getSearchBuilder().toString());
     }
 
     /**

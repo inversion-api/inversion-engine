@@ -20,7 +20,7 @@ import io.inversion.Engine;
 import io.inversion.Response;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.junit.jupiter.api.Test;
 

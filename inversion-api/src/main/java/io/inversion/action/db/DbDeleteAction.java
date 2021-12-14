@@ -18,13 +18,20 @@ package io.inversion.action.db;
 
 import io.inversion.*;
 import io.inversion.Collection;
+import io.inversion.action.openapi.OpenAPIWriter;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Url;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.util.*;
 
-public class DbDeleteAction extends Action<DbDeleteAction> {
+public class DbDeleteAction extends Action<DbDeleteAction> implements OpenAPIWriter {
+
+    @Override
+    protected List<RuleMatcher> getDefaultIncludeMatchers(){
+        return Utils.asList(new RuleMatcher("DELETE", "{" + Request.COLLECTION_KEY + "}/[{" + Request.RESOURCE_KEY + "}]"));
+    }
+
     @Override
     public void run(Request req, Response res) throws ApiException {
         String resourceKey     = req.getResourceKey();
@@ -57,7 +64,7 @@ public class DbDeleteAction extends Action<DbDeleteAction> {
             //-- that need to be deleted and make sure the user has read access to the key
 
             Url query = new Url(url.getOriginal());
-            query.withParam("include", Utils.implode(",", collection.getPrimaryIndex().getJsonNames()));
+            query.withParam("include", Utils.implode(",", collection.getResourceIndex().getJsonNames()));
             String urlStr = query.toString();
             Response res = engine.get(urlStr).assertStatus(200, 404);
 

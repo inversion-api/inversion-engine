@@ -4,8 +4,7 @@ import io.inversion.*;
 import io.inversion.action.db.DbAction;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows.Row;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -66,8 +65,8 @@ public class TestOverloadedDynamicTables {
 
         };
 
-        api = new Api("crm").withIncludeOn(null, "crm/:tenant/[:type]/*") //
-                .withEndpoint("*", "*", new Action() {
+        api = new Api("crm").withIncludeOn("crm/{tenant}/[{type}]/*") //
+                .withEndpoint(new Action() {
                     public void run(Request req, Response res) throws ApiException {
                         //-- requires "type" param and forces to lower case
                         String tenant = req.getUrl().getParam("tenant").toLowerCase();

@@ -28,14 +28,14 @@ public class MockApi {
     public static Api buildMockApi1() {
         return new Api()//
                 .withName("secondApi")//
-                .withEndpoint("GET", "*", new MockAction().withJson(new JSNode("hello_world", "from mock api one")));
+                .withEndpoint("GET", new MockAction().withJson(new JSNode("hello_world", "from mock api one")));
     }
 
     @Bean
     public static Api buildMockApi2() {
         return new Api()//
                 .withName("thirdApi")//
-                .withEndpoint("GET", "*", new MockAction().withJson(new JSNode("hello_world", "from mock api two")));
+                .withEndpoint("GET", new MockAction().withJson(new JSNode("hello_world", "from mock api two")));
     }
 
 }

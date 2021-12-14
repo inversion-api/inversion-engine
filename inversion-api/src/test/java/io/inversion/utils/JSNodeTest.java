@@ -16,15 +16,13 @@
  */
 package io.inversion.utils;
 
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.tuple.Triple;
 import org.junit.jupiter.api.Test;
 
-import javax.sound.midi.Soundbank;
 import java.io.BufferedInputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -94,7 +92,7 @@ public class JSNodeTest {
 
     @Test
     public void testJsonPath1() {
-        final JSNode  doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+        final JSNode  doc = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
         JSArray found1;
         JSArray found2;
 
@@ -254,7 +252,7 @@ public class JSNodeTest {
     @Test
     public void testCollectNodes1() {
         JSArray found;
-        JSNode  doc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testCollectNodes1.json")));
+        JSNode  doc = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testCollectNodes1.json")));
 
         found = doc.findAll("data.*.basket.lineItems.code");
         assertEquals(found.size(), 0);
@@ -279,8 +277,8 @@ public class JSNodeTest {
 
     @Test
     public void testDiff1() {
-        JSNode  doc1    = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff1.1.json")));
-        JSNode  doc2    = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff1.2.json")));
+        JSNode  doc1    = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff1.1.json")));
+        JSNode  doc2    = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff1.2.json")));
         JSArray patches = doc2.diff(doc1);
         doc1.patch(patches);
         assertEquals(doc2.toString(), doc1.toString());
@@ -294,8 +292,8 @@ public class JSNodeTest {
      */
     @Test
     public void testDiff3() {
-        JSNode stateDoc = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff3.1.json")));
-        JSNode apiEvent = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff3.2.json")));
+        JSNode stateDoc = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff3.1.json")));
+        JSNode apiEvent = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff3.2.json")));
 
         JSNode meta = stateDoc.getNode("meta");
         meta.put("events", new JSArray(apiEvent));
@@ -312,7 +310,7 @@ public class JSNodeTest {
             stateDoc.getNode("data").patch(patches);
         }
 
-        stateDoc = JSNode.parseJsonNode(stateDoc.toString());
+        stateDoc = JSNode.asJSNode(stateDoc.toString());
 
         assertEquals("028000003647", stateDoc.findString("data.0.basket.lineItems.1.code"));
         assertEquals("028000003647", stateDoc.findString("meta.events.0.body.basket.lineItems.1.code"));
@@ -321,8 +319,8 @@ public class JSNodeTest {
 
     @Test
     public void testDiff4() {
-        JSNode array1 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff4.1.json")));
-        JSNode array2 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff4.2.json")));
+        JSNode array1 = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff4.1.json")));
+        JSNode array2 = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff4.2.json")));
 
         JSArray patches = array1.diff(array2);
 
@@ -336,8 +334,8 @@ public class JSNodeTest {
      */
     @Test
     public void testDiff5() {
-        JSNode doc1 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff5.1.json")));
-        JSNode doc2 = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testDiff5.2.json")));
+        JSNode doc1 = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff5.1.json")));
+        JSNode doc2 = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff5.2.json")));
 
         JSArray patches = doc2.diff(doc1);
 
@@ -484,13 +482,13 @@ public class JSNodeTest {
 
     @Test
     public void test_find_withJsonPointerAndNodeBody() {
-        JSNode node = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testVisit.json")));
+        JSNode node = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("testVisit.json")));
         Object found = node.find("#/data[0]/territories[0]/region");
         assertNotNull(found);
     }
     @Test
     public void test_find_withJsonPointerAndArrayBody() {
-        JSNode node = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("test_find_withJsonPointerAndArrayBody.json")));
+        JSNode node = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("test_find_withJsonPointerAndArrayBody.json")));
         Object found = node.find("#/[0]/territories[0]/region");
         assertNotNull(found);
     }

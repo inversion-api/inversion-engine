@@ -2,18 +2,7 @@ package io.inversion.utils;
 
 import io.inversion.*;
 import io.inversion.spring.main.InversionMain;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.methods.RequestBuilder;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.HttpMultipartMode;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+import ioi.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -35,7 +24,7 @@ public class RestClientLiveTest {
         final int[] connections = new int[]{0};
         final int[] attempts = new int[]{0};
 
-        InversionMain.run(new Api("testme").withEndpoint("*", "*", new Action() {
+        InversionMain.run(new Api("testme").withEndpoint(new Action() {
 
             public void run(Request req, Response res) throws ApiException {
 
@@ -76,7 +65,7 @@ public class RestClientLiveTest {
         }
         json.put("x", buff.toString());
 
-        InversionMain.run(new Api("testme").withEndpoint("*", "*", new Action() {
+        InversionMain.run(new Api("testme").withEndpoint(new Action() {
 
             public void run(Request req, Response res) throws ApiException {
                 res.withJson(json);
@@ -96,7 +85,7 @@ public class RestClientLiveTest {
         final int[] connections = new int[]{0};
         final int[] attempts = new int[]{0};
 
-        InversionMain.run(new Api("testme").withEndpoint("*", "*", new Action() {
+        InversionMain.run(new Api("testme").withEndpoint(new Action() {
 
             public void run(Request req, Response res) throws ApiException {
 
@@ -128,7 +117,7 @@ public class RestClientLiveTest {
         final int[] connections = new int[]{0};
         final int[] attempts = new int[]{0};
 
-        InversionMain.run(new Api("testme").withEndpoint("*", "*", new Action() {
+        InversionMain.run(new Api("testme").withEndpoint(new Action() {
 
             public void run(Request req, Response res) throws ApiException {
 
@@ -156,7 +145,7 @@ public class RestClientLiveTest {
         final int[] connections = new int[]{0};
         final int[] attempts = new int[]{0};
 
-        InversionMain.run(new Api("testme").withEndpoint("*", "*", new Action() {
+        InversionMain.run(new Api("testme").withEndpoint(new Action() {
 
             public void run(Request req, Response res) throws ApiException {
 
@@ -189,7 +178,7 @@ public class RestClientLiveTest {
     @Test
     public void doRequest0_gzip_requests_are_encoded_correctly() throws Exception {
 
-        InversionMain.run(new Api().withEndpoint("*", "*", new Action() {
+        InversionMain.run(new Api().withEndpoint(new Action() {
 
             public void run(Request req, Response res) throws ApiException {
 
@@ -209,7 +198,7 @@ public class RestClientLiveTest {
     @Test
     public void doRequest0_gzip_responses_are_decoded_correctly() throws Exception {
 
-        InversionMain.run(new Api().withEndpoint("*", "*", new Action() {
+        InversionMain.run(new Api().withEndpoint(new Action() {
 
             public void run(Request req, Response res) throws ApiException {
 
@@ -234,7 +223,7 @@ public class RestClientLiveTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Utils.pipe(new GZIPInputStream(conn.getInputStream()), out);
         String str     = new String(out.toByteArray());
-        JSNode payload = JSNode.parseJsonNode(str);
+        JSNode payload = JSNode.asJSNode(str);
         assertEquals("world", payload.find("data.0.hello"));
 
         //-- now do the test again and the result should be the same

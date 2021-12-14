@@ -124,7 +124,7 @@ public class AzureFunctionHttpTriggerHandler {
      *
      * @param request the request to service
      * @param context the execution context
-     * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Configurator.
+     * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Confg/Wirer.
      * @see #buildApi(HttpRequestMessage, ExecutionContext)
      */
     protected Engine buildEngine(HttpRequestMessage<Optional<String>> request, final ExecutionContext context) {
@@ -144,7 +144,7 @@ public class AzureFunctionHttpTriggerHandler {
      * Optional subclass override hook to supply your own custom wired up Api.
      * <p>
      * If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api
-     * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Confg/Configurator.
+     * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Confg/Wirer.
      *
      * @param request the request to service
      * @param context the execution context

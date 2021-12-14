@@ -16,12 +16,24 @@
  */
 package io.inversion.action.db;
 
+import io.inversion.Request;
+import io.inversion.action.openapi.OpenAPIWriter;
+import ioi.inversion.utils.Utils;
+
+import java.util.List;
+
 /**
  * Delegates all operations to DbPostAction which currently implements all POST/PUT/PATCH methods.
  * <p>
  * Currently this class exists as a potential future compatibility shim and so that people looking at the
  * source code tree before really digging in will not be confused by the superficial lack of a PUT action class.
  */
-public class DbPutAction extends DbPostAction {
+public class DbPutAction extends DbPostAction implements OpenAPIWriter {
+
+    @Override
+    protected List<RuleMatcher> getDefaultIncludeMatchers(){
+        return Utils.asList(new RuleMatcher("PUT", "{" + Request.COLLECTION_KEY + "}/[{" + Request.RESOURCE_KEY + "}]"));
+    }
+
 
 }

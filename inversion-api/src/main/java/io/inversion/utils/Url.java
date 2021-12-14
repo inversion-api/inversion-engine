@@ -19,10 +19,14 @@ package io.inversion.utils;
 import io.inversion.ApiException;
 import io.inversion.rql.RqlParser;
 import io.inversion.rql.Term;
+import ioi.inversion.utils.Utils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Utility class for parsing and working with HTTP(S) URLs.
@@ -69,7 +73,7 @@ public class Url {
     /**
      * Parses <code>url</code> into its protocol, host, port, path and query string param parts.
      * <p>
-     * If <code>url</code> does not start with "http://" or "https://" then "http://localhost/" will be prepended.
+     * If <code>url</code> does not start with "http://" or "https://" then "http://127.0.0.1" will be prepended.
      *
      * @param url url string
      */
@@ -77,16 +81,18 @@ public class Url {
 
         String origionalUrl = url;
 
-        String path;
-
-        if (url.indexOf(":/") > 0 && !url.contains("://"))
-            url = url.replaceAll(":/", "://");
-
-        url = url.replace("&amp;", "&");
-        if (!(url.startsWith("http://") || url.startsWith("https://")))
-            url = "http://127.0.0.1" + (!url.startsWith("/") ? "/" : "") + url;
-
         try {
+
+            //-- start by cleaning leading and trailing slashes
+            while(url.startsWith("/"))
+                url = url.substring(1);
+            while(url.endsWith("/"))
+                url = url.substring(0, url.length()-1);
+
+            if(url.startsWith(":"))//legacy Path syntax could have started with ':' but should not have ended up as a Url.
+                throw new RuntimeException();
+
+            //-- chopping out querystring is easy so start there
             int queryIndex = url.indexOf('?');
             if (queryIndex >= 0) {
                 String query = url.substring(queryIndex + 1);
@@ -94,64 +100,63 @@ public class Url {
                 withQueryString(query);
             }
 
-            int potocolEnd = url.indexOf("://");
-            if (potocolEnd < 0) {
-                path = url;
-            } else {
-                //-- parse a full url
-                protocol = url.substring(0, url.indexOf(':'));
-
-                int hostStart = url.indexOf('/') + 2;
-                int hostEnd   = url.indexOf(':', hostStart);
-
-                //--this is probably a file url like file://c:/
-                //--so don't count this colon
-                //if(hostEnd - hostStart <= 1)
-                //   hostEnd = url.indexOf(':', hostEnd + 1);
-                if (hostEnd < 0 || hostEnd > url.indexOf('/', hostStart)) {
-                    hostEnd = url.indexOf('/', hostStart);
-                }
-                if (hostEnd < 0) {
-                    url += "/";
-                    hostEnd = url.indexOf('/', hostStart);
-                }
-
-                host = url.substring(hostStart, hostEnd);
-
-                String rest = url.substring(hostEnd);
-
-                if (rest.indexOf(':') > -1) {
-                    int nextColon = rest.indexOf(':');
-                    int nextSlash = rest.indexOf('/');
-
-                    if (nextColon < nextSlash) {
-                        String portString = rest.substring(nextColon + 1, nextSlash);
-                        port = Integer.parseInt(portString);
-                        rest = rest.substring(nextSlash);
-                    }
-                }
-
-                path = rest;
+            if(url.startsWith("https:")){
+                protocol = "https";
+                url = url.substring(6);
+            }else if(url.startsWith("http:")){
+                protocol = "http";
+                url = url.substring(5);
+            }
+            else{
+                protocol = "http";
+                url = "127.0.0.1:8080" + (url.length() > 0 ? ("/" + url) : "");
             }
 
-            if (path.length() == 0) {
-                path = "/";
-            } else if (path.charAt(0) != '/') {
-                path = '/' + url;
+            while(url.startsWith("/"))
+                url = url.substring(1);
+            while(url.endsWith("/"))
+                url = url.substring(0, url.length()-1);
+
+            int hostEnd = url.length();
+            int slash = url.indexOf("/");
+            int colon = url.indexOf(":");
+
+            if(colon > -1 && (colon < slash || slash < 0))
+                hostEnd = colon;
+            else if(slash > -1)
+                hostEnd = slash;
+
+            if(hostEnd < 0)
+                hostEnd = url.length();
+            host = url.substring(0, hostEnd);
+            url = url.substring(hostEnd);
+
+            String path = url;
+            if(url.startsWith(":")){
+                int portEnd = url.indexOf("/");
+                if(portEnd < 0)
+                    portEnd = url.length();
+                port = Integer.parseInt(url.substring(1, portEnd));
+                path = url.substring(portEnd);
             }
 
-            if (path.contains("//") || url.contains("./") || url.contains(".."))
-                throw ApiException.new400BadRequest("Your requested URL '{}' is malformed.", origionalUrl);
-
-            if (!Utils.empty(path))
+            if (!Utils.empty(path)) {
+                Path p = new Path(path);
+                for (int i = 0; i < p.size(); i++) {
+                    if (p.isVar(i))
+                        continue;
+                    String part = p.get(i);
+                    if (part.startsWith("."))
+                        throw ApiException.new400BadRequest("Your requested URL '{}' is malformed.", origionalUrl);
+                }
                 this.path = new Path(path);
+            }
 
         } catch (Exception ex) {
             if (!(ex instanceof ApiException))
                 ex = ApiException.new400BadRequest("Your requested URL '{}' is malformed.", origionalUrl);
             throw (ApiException) ex;
-        }
-        finally{
+        } finally {
             this.original = toString();
         }
     }
@@ -204,6 +209,18 @@ public class Url {
         return str;
     }
 
+    public static String encode(String str) {
+        try {
+            str = URLEncoder.encode(str, "UTF-8");
+            str = str.replace("%2C", ",");
+            str = str.replace("%7E", "~");
+            return str;
+        } catch (Exception ex) {
+            throw ApiException.new500InternalServerError(ex);
+        }
+
+    }
+
     /**
      * Generates a string string representation of this url with any query string parameters URL encoded and port number included only if it differs from the standard protocol port.
      *
@@ -226,7 +243,7 @@ public class Url {
                 url = url.substring(0, url.length() - 1);
 
             url += "?";
-            url += toQueryString((Map<String, String>)params.asMap());
+            url += toQueryString((Map<String, String>) params.asMap());
         }
 
         return url;
@@ -263,7 +280,7 @@ public class Url {
         if (params.size() == 0)
             return "";
 
-        return toQueryString((Map<String, String>)params.asMap());
+        return toQueryString((Map<String, String>) params.asMap());
     }
 
     public String getHost() {
@@ -353,13 +370,13 @@ public class Url {
     public Url withParam(String name, String value) {
 
         int paren = name.indexOf("(");
-        if(paren > 0){
+        if (paren > 0) {
             String func = fixLegacyParamName(name.substring(0, paren));
-            if(Utils.in(func, "page", "size", "sort", "include", "exclude", "expand", "collapse")){
+            if (Utils.in(func, "page", "size", "sort", "include", "exclude", "expand", "collapse")) {
                 value = name.substring(paren + 1, name.lastIndexOf(")"));
                 name = func;
             }
-        }else{
+        } else {
             name = fixLegacyParamName(name);
         }
 
@@ -376,21 +393,21 @@ public class Url {
         return this;
     }
 
-    String fixLegacyParamName(String name){
-        switch(name.toLowerCase()){
-            case "pagenum" :
+    String fixLegacyParamName(String name) {
+        switch (name.toLowerCase()) {
+            case "pagenum":
                 return "page";
-            case "limit" :
+            case "limit":
                 return "size";
-            case "order" :
+            case "order":
                 return "sort";
-            case "includes" :
+            case "includes":
                 return "include";
-            case "excludes" :
+            case "excludes":
                 return "exclude";
-            case "expands" :
+            case "expands":
                 return "expand";
-            case "collapses" :
+            case "collapses":
                 return "collapse";
         }
         return name;

@@ -16,24 +16,20 @@
  */
 package io.inversion.spring.config;
 
+import io.inversion.Api;
 import io.inversion.Engine;
 import io.inversion.EngineServlet;
-import io.inversion.utils.Config;
+import io.inversion.Server;
 import io.inversion.utils.Path;
-import org.apache.coyote.http11.AbstractHttp11Protocol;
+
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory;
-import org.springframework.boot.web.servlet.MultipartConfigFactory;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.util.unit.DataSize;
-import org.springframework.web.multipart.commons.CommonsMultipartResolver;
-import org.springframework.web.multipart.support.StandardServletMultipartResolver;
 
-import javax.servlet.MultipartConfigElement;
-import javax.servlet.annotation.MultipartConfig;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +42,6 @@ public class InversionServletConfig {
 
     static final long maxFileSize = 5 * 1024 * 1024;
     static final long maxRequestSize = 5 * 1024 * 1024;
-
 
 //    @Bean
 //    public MultipartConfigElement buildMultipartConfig() {
@@ -76,7 +71,11 @@ public class InversionServletConfig {
 
 
     @Bean
-    public ServletRegistrationBean buildEngineServlet(@Autowired Engine engine) {
+    public ServletRegistrationBean buildEngineServlet(@Autowired Engine engine, @Autowired Api... apis) {
+
+        for(int i=0; apis != null && i < apis.length; i++)
+            engine.withApi(apis[i]);
+
         EngineServlet servlet = new EngineServlet();
         servlet.setEngine(engine);
 
@@ -115,9 +114,19 @@ public class InversionServletConfig {
     public static String buildServletMapping(Engine engine) {
         List<String> parts = new ArrayList<>();
         boolean      done  = false;
+
+        List<Path> allServerPaths = new ArrayList<>();
+        for(Api api : engine.getApis()) {
+            for(Server server : api.getServers()){
+                for(Path path : server.getAllIncludePaths()){
+                    allServerPaths.add(path);
+                }
+            }
+        }
+
         for (int i = 0; i < 100 && !done; i++) {
             String part = null;
-            for (Path path : engine.getAllIncludePaths()) {
+            for (Path path : allServerPaths) {
                 if (part == null)
                     part = path.get(i);
 

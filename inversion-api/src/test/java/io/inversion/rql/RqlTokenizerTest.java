@@ -16,7 +16,7 @@
  */
 package io.inversion.rql;
 
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

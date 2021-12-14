@@ -35,8 +35,8 @@ public class NorthwindApi {
     public static Api buildApi() {
         return new Api().withName("test")
 
-                .withEndpoint("GET", "mock1/*", new MockAction().withJson(new JSNode("hello_world", "from northwind api")))//
-                .withEndpoint("GET", "custom1/*", new Action() {
+                .withEndpoint("mock1/*", new MockAction().withJson(new JSNode("hello_world", "from northwind api")))//
+                .withEndpoint("custom1/*", new Action() {
                     @Override
                     public void doGet(Request req, Response res) {
                         res.data().add("action 1 value");

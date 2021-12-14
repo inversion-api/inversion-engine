@@ -20,7 +20,7 @@ import io.inversion.Api;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDb;
 import io.inversion.spring.main.InversionMain;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 /**
  * This demo launches an API that exposes SQL database tables as REST collection endpoints.
@@ -66,7 +66,7 @@ public class JdbcNorthwindApiDemoMain {
                 //--  northwind.pass=${YOUR_JDBC_PASSWORD}
 
                 //-- the RestAction performs CRUD operations on Db objects.
-                .withEndpoint("GET,POST,PUT,PATCH,DELETE", "/*", new DbAction());
+                .withEndpoint("GET,POST,PUT,PATCH,DELETE,/*", new DbAction());
 
     }
 

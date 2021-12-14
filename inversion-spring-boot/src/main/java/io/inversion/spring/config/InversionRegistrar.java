@@ -19,9 +19,8 @@ package io.inversion.spring.config;
 import io.inversion.Api;
 import io.inversion.ApiException;
 import io.inversion.Engine;
-import io.inversion.utils.Config;
-import io.inversion.utils.Configurator;
-import io.inversion.utils.Utils;
+import io.inversion.config.Config;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
@@ -31,6 +30,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.context.EnvironmentAware;
@@ -45,8 +45,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.StreamSupport;
-
-import static org.springframework.beans.factory.config.AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR;
 
 /**
  * Sets an Engine bean in the spring registry and puts spring application properties into
@@ -64,38 +62,31 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
     BeanFactory beanFactory = null;
     public static Api[] apis = null;
 
-    public InversionRegistrar()
-    {
-        System.out.println("InversionRegistrar()<>");
-    }
-
-
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
 
-        if(apis != null && apis.length > 0) {
-            ConfigurableBeanFactory config = (ConfigurableBeanFactory)beanFactory;
+        if (apis != null && apis.length > 0) {
+            ConfigurableBeanFactory config = (ConfigurableBeanFactory) beanFactory;
             for (Api api : apis) {
                 String name = api.getName();
-                if(name == null)
+                if (name == null)
                     throw new ApiException("Your Api must have a non null 'name' property configured when running your APIs with SpringBoot.");
 
                 config.registerSingleton(name, api);
             }
-        };
-
+        }
+        ;
     }
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
-            GenericBeanDefinition bean = new GenericBeanDefinition();
-            bean.setBeanClass(Engine.class);
-            bean.setAutowireMode(AUTOWIRE_CONSTRUCTOR);
-            //bean.setLazyInit(false);
-            //bean.setInitMethodName("startup");
-            bean.setDestroyMethodName("shutdown");
-            registry.registerBeanDefinition("engine", bean);
+        GenericBeanDefinition bean = new GenericBeanDefinition();
+        bean.setBeanClass(Engine.class);
+        //-- the Apis will be set on the Engine in InversionServletConfig.buildEngineServlet()
+        bean.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_NO);
+        bean.setDestroyMethodName("shutdown");
+        registry.registerBeanDefinition("engine", bean);
     }
 
     /**
@@ -111,8 +102,25 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
     public void setEnvironment(Environment environment) {
 
         this.environment = environment;
-
         setEnvironmentDefaults(environment);
+
+        //-- the Inversion Config.configPath and Config.configProfile could
+        //-- have been set in spring specific config.  This allows Inversion
+        //-- to use those values when loading the default config instead of
+        //-- just searching for the values via getEnvSysProp
+        String configPath = null;
+        String configProfile = null;
+        for(String key : Config.CONFIG_PATH_KEYS){
+            configPath = environment.getProperty(key);
+            if(configPath != null)
+                break;
+        }
+        for(String key : Config.CONFIG_PROFILE_KEYS){
+            configProfile = environment.getProperty(key);
+            if(configProfile != null)
+                break;
+        }
+
 
         PropertiesConfiguration springConfig = new PropertiesConfiguration();
 
@@ -125,18 +133,19 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
                 .filter(prop -> !(prop.contains("credentials") || prop.contains("password")))
                 .forEach(prop -> springConfig.setProperty(prop, environment.getProperty(prop)));
 
-        CompositeConfiguration  inversionConfig      = Config.getConfiguration();
 
-        List<Configuration> toAddBack  = new ArrayList<>();
-        for(int i=0; i<inversionConfig.getNumberOfConfigurations(); i++)
-        {
+        CompositeConfiguration inversionConfig = Config.loadConfiguration(this, configPath, configProfile);
+
+        List<Configuration> toAddBack = new ArrayList<>();
+        for (int i = 0; i < inversionConfig.getNumberOfConfigurations(); i++) {
             Configuration subConfig = inversionConfig.getConfiguration(i);
-            String source = subConfig.getProperty("source") + "";
-            if(!source.equals("null"))
-            {
+            String        source    = subConfig.getProperty(Config.CONFIG_SOURCE_PROP) + "";
+            if (!source.equals("null")) {
                 source = Utils.substringAfter(source, "/");
-                if(source.startsWith("inversion") && source.endsWith(".properties"))
-                {
+                String prefix = Config.CONFIG_FILE_NAME.substring(0, Config.CONFIG_FILE_NAME.indexOf("."));
+                String postfix = Config.CONFIG_FILE_NAME.substring(Config.CONFIG_FILE_NAME.indexOf("."));
+
+                if (source.startsWith(prefix) && source.endsWith(postfix)) {
                     i--;
                     inversionConfig.removeConfiguration(subConfig);
                     toAddBack.add(subConfig);
@@ -145,14 +154,13 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
         }
 
         inversionConfig.addConfigurationFirst(springConfig);
-        for(int i=toAddBack.size()-1; i>=0; i--)
-        {
+        for (int i = toAddBack.size() - 1; i >= 0; i--) {
             Configuration subConfig = toAddBack.get(i);
             inversionConfig.addConfigurationFirst(subConfig);
         }
     }
 
-    protected void setEnvironmentDefaults(Environment env){
+    protected void setEnvironmentDefaults(Environment env) {
 
         log.info("Setting SpringBoot Defaults:");
 
@@ -165,14 +173,13 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
         setEnvironmentDefault(env, "spring.servlet.multipart.max-request-size", "100MB");
     }
 
-    protected void setEnvironmentDefault(Environment env, String prop, String value){
+    protected void setEnvironmentDefault(Environment env, String prop, String value) {
 
         String found = env.getProperty(prop);
-        if(found == null){
+        if (found == null) {
             System.setProperty(prop, value);
             log.info("  - [SETTING]  " + prop + " = " + value);
-        }
-        else{
+        } else {
             log.info("  - [SKIPPING] " + prop + " = " + found);
         }
     }

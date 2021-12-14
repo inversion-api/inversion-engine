@@ -17,11 +17,14 @@
 package io.inversion;
 
 import io.inversion.utils.*;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import java.io.File;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,28 +34,43 @@ public class Request implements JSNode.JSAccessor {
     public static final String RESOURCE_KEY     = "_resource";
     public static final String RELATIONSHIP_KEY = "_relationship";
 
-    protected long startAt = System.currentTimeMillis();
-    protected long endAt = -1;
+    long startAt = System.currentTimeMillis();
+    long endAt   = -1;
 
-    protected String                                 referrer   = null;
-    protected String                                 remoteAddr = null;
-    protected ArrayListValuedHashMap<String, String> headers    = new ArrayListValuedHashMap<>();
+    String                                 referrer   = null;
+    String                                 remoteAddr = null;
+    ArrayListValuedHashMap<String, String> headers    = new ArrayListValuedHashMap<>();
 
-    protected Engine engine  = null;
-    protected Chain chain = null;
-    protected Url    url    = null;
-    protected String method = null;
-    protected Operation operation = null;
+    boolean explain  = false;
+    boolean internal = false;
 
-    protected List<Chain.ActionMatch> actionMatches = new ArrayList();
+    Url        url        = null;
+    String     method     = null;
+    Op     op     = null;
+    Engine engine = null;
+    Server server = null;
+    Api    api    = null;
+    Endpoint   endpoint   = null;
+    Chain      chain      = null;
+    Collection collection = null;
+    Db         db         = null;
 
-    protected Map<String, String> pathParams = new HashMap<>();
-    protected String body = null;
-    protected JSNode json = null;
+    Path serverPath = null;
+    Path operationPath = null;
+    Path endpointPath   = null;
+    Path dbPath         = null;
+    Path collectionPath = null;
+    Path actionPath     = null;
 
-    protected Uploader uploader = null;
+    List<Chain.ActionMatch> actionMatches = new ArrayList();
 
-    boolean explain = false;
+    Map<String, String> pathParams = new HashMap<>();
+
+    String body = null;
+    JSNode json = null;
+
+    Uploader uploader = null;
+
 
     public Request() {
 
@@ -93,15 +111,6 @@ public class Request implements JSNode.JSAccessor {
             this.headers = new ArrayListValuedHashMap<>(headers);
     }
 
-    public Engine getEngine() {
-        return engine;
-    }
-
-    public Request withEngine(Engine service) {
-        this.engine = service;
-        return this;
-    }
-
     public Request withUrl(String url) {
         Url u = new Url(url);
 
@@ -119,22 +128,26 @@ public class Request implements JSNode.JSAccessor {
         return this;
     }
 
-    public long getStartAt(){return startAt;}
+    public long getStartAt() {
+        return startAt;
+    }
 
-    public Request withStartAt(long startAt){
+    public Request withStartAt(long startAt) {
         this.startAt = startAt;
         return this;
     }
 
-    public long getEndAt(){return endAt;}
+    public long getEndAt() {
+        return endAt;
+    }
 
-    public Request withEndAt(long endAt){
+    public Request withEndAt(long endAt) {
         this.endAt = endAt;
         return this;
     }
 
-    public long getDuration(){
-        if(endAt < 1)
+    public long getDuration() {
+        if (endAt < 1)
             return System.currentTimeMillis() - startAt;
         else
             return endAt - startAt;
@@ -155,67 +168,142 @@ public class Request implements JSNode.JSAccessor {
         return this;
     }
 
-    public Collection getCollection() {
-        return operation.getCollection();
+    public Server getServer() {
+        return server;
     }
 
-//    /**
-//     * @param collectionKeys the name of the collection to check for
-//     * @return true if any of the <code>collectionKeys</code> case insensitive match <code>collectoinKey</code>
-//     */
-//    public boolean hasCollectionKey(String... collectionKeys) {
-//        String collectionKey = getCollectionKey();
-//        if (collectionKey != null) {
-//            for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++) {
-//                String key = collectionKeys[i];
-//                if (key != null && key.equalsIgnoreCase(collectionKey)) {
-//                    return true;
-//                }
-//            }
-//        }
-//
-//        return false;
-//    }
+    public Request withServer(Server server) {
+        this.server = server;
+        return this;
+    }
 
-//    public Request withContainerPath(Path containerPath, Path containerPathMatch){
-//        this.containerPath = containerPath;
-//        this.containerMatchPath = containerPathMatch;
-//        return this;
-//    }
-//
-//    public Request withCollection(Collection collection) {
-//        this.collection = collection;
-//        return this;
-//    }
+    public Api getApi() {
+        return api;
+    }
 
-//    public Request withCollection(Collection collection, Path collectionPath, Path collectionMatchPath) {
-//        this.collection = collection;
-//        this.collectionPath = collectionPath;
-//        this.collectionMatchPath = collectionMatchPath;
-//        return this;
-//    }
+    public Request withApi(Api api) {
+        this.api = api;
+        return this;
+    }
+
+    public Engine getEngine() {
+        return engine;
+    }
+
+    public Request withEngine(Engine engine) {
+        this.engine = engine;
+        return this;
+    }
+
+
+    public boolean isInternal() {
+        return internal;
+    }
+
+    public Request withInternal(boolean internal) {
+        this.internal = internal;
+        return this;
+    }
+
+    public Collection getCollection() {
+        return collection;
+    }
+
+    public Request withCollection(Collection collection) {
+        this.collection = collection;
+        return this;
+    }
+
+    public Db getDb() {
+        return db;
+    }
+
+    public Request withDb(Db db) {
+        this.db = db;
+        return this;
+    }
+
+    public Path getDbPath() {
+        return dbPath;
+    }
+
+    public Request withDbPath(Path dbPath) {
+        this.dbPath = dbPath;
+        return this;
+    }
 
     public Endpoint getEndpoint() {
-        return operation == null ? null : operation.getEndpoint();
+        return endpoint;
     }
 
-//    public Request withEndpoint(Endpoint endpoint, Path endpointPath, Path endpointMatchPath) {
-//        this.endpoint = endpoint;
-//        this.endpointPath = endpointPath;
-//        this.endpointMatchPath = endpointMatchPath;
-//        return this;
-//    }
+    public Request withEndpoint(Endpoint endpoint) {
+        this.endpoint = endpoint;
+        return this;
+    }
 
-    public Request withActionMatches(List<Chain.ActionMatch> actionMatches){
+    public Path getServerPath() {
+        return serverPath;
+    }
+
+    public Request withServerPath(Path serverPath) {
+        this.serverPath = serverPath;
+        return this;
+    }
+
+    public Path getOperationPath() {
+        return operationPath;
+    }
+
+    public Request withOperationPath(Path operationPath) {
+        this.operationPath = operationPath;
+        return this;
+    }
+
+    public Path getEndpointPath() {
+        return endpointPath;
+    }
+
+    public Request withEndpointPath(Path endpointPath) {
+        this.endpointPath = endpointPath;
+        return this;
+    }
+
+    public Path getActionPath() {
+        return actionPath;
+    }
+
+    public Request withActionPath(Path actionPath) {
+        this.actionPath = actionPath;
+        return this;
+    }
+
+    public Path getCollectionPath() {
+        return collectionPath;
+    }
+
+    public Request withCollectionPath(Path collectionPath) {
+        this.collectionPath = collectionPath;
+        return this;
+    }
+
+
+
+    public Request withActionMatches(List<Chain.ActionMatch> actionMatches) {
         this.actionMatches.addAll(actionMatches);
         return this;
     }
 
-    public List<Chain.ActionMatch> getActionMatches(){
+    public Request withActionMatch(Chain.ActionMatch actionMatch) {
+        this.actionMatches.add(actionMatch);
+        return this;
+    }
+
+
+    public List<Chain.ActionMatch> getActionMatches() {
         return actionMatches;
     }
 
-    public Request withPathParams(Map<String, String> pathParams){
+    public Request withPathParams(Map<String, String> pathParams) {
         this.pathParams.putAll(pathParams);
 
         pathParams.keySet().forEach(url::clearParams);
@@ -224,15 +312,13 @@ public class Request implements JSNode.JSAccessor {
         return this;
     }
 
-    public Map<String, String> getPathParams(){
+    public Map<String, String> getPathParams() {
         return this.pathParams;
     }
 
     public boolean isDebug() {
         String host = getUrl().getHost().toLowerCase();
-        if("127.0.0.1".equals(host))
-            return true;
-        if("localhost".equals(host))
+        if ("127.0.0.1".equals(host))
             return true;
 
         if (getApi() != null)
@@ -268,7 +354,7 @@ public class Request implements JSNode.JSAccessor {
             return null;
 
         try {
-            json = JSNode.parseJsonNode(body);
+            json = JSNode.asJSNode(body);
         } catch (Exception ex) {
             throw ApiException.new400BadRequest("Unparsable JSON body");
         }
@@ -380,10 +466,6 @@ public class Request implements JSNode.JSAccessor {
             headers.put(key, value);
     }
 
-    public Api getApi() {
-        return operation == null ? null : operation.getApi();
-    }
-
     public Chain getChain() {
         return chain;
     }
@@ -397,47 +479,6 @@ public class Request implements JSNode.JSAccessor {
         return url;
     }
 
-    /**
-     * @return the request path with the apiPath subtracted from the beginning
-     */
-    public Path getPath() {
-
-        Path path = url.getPath();
-        Path apiPathMatch = operation.getApiMatchPath();
-        for(int i=0;i<apiPathMatch.size() && !apiPathMatch.isOptional(i) && !apiPathMatch.isWildcard(i); i++)
-            path.remove(0);
-
-        return path;
-    }
-
-
-    public Path getSubpath() {
-        Path subpath = getPath();
-        Path epPathMatch = operation.getEpMatchPath();
-        for(int i=0;i<epPathMatch.size() && !epPathMatch.isOptional(i) && !epPathMatch.isWildcard(i); i++)
-            subpath.remove(0);
-        return subpath;
-    }
-
-    public Path getApiPath(){
-        int length = 0;
-        Path path = url.getPath();
-        Path apiPathMatch = operation.getApiMatchPath();
-        for(int i=0;i<apiPathMatch.size() && !apiPathMatch.isOptional(i) && !apiPathMatch.isWildcard(i); i++)
-            length += 1;
-
-        return path.subpath(0, length);
-    }
-
-    public Path getEndpointPath(){
-        int length = 0;
-        Path epPathMatch = operation.getEpMatchPath();
-        for(int i=0;i<epPathMatch.size() && !epPathMatch.isOptional(i) && !epPathMatch.isWildcard(i); i++)
-            length += 1;
-
-        Path path = getPath();
-        return path.subpath(0, length);
-    }
 
     /**
      * @return the collectionKey
@@ -457,29 +498,32 @@ public class Request implements JSNode.JSAccessor {
         return url.getParam(RELATIONSHIP_KEY);
     }
 
-    public Relationship getRelationship(){
-        return operation.getRelationship();
+    public Relationship getRelationship() {
+        return op.getRelationship();
     }
 
-//    public Request withApi(Api api, Path apiPath, Path apiMatchPath) {
-//        this.api = api;
-//        this.apiPath = apiPath;
-//        this.apiMatchPath = apiMatchPath;
-//        return this;
-//    }
-//
+    //TODO: should this be here
     public String getApiUrl() {
-        return url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + getApiPath();
+        return url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + getServerPath();
+    }
+
+    //TODO: should this be here
+    public Path getPath() {
+        return new Path(endpointPath.toString(), actionPath.toString());
+    }
+
+    //TODO: should this be here
+    public Path getSubpath() {
+        return actionPath;
     }
 
 
-
-    public Operation getOperation() {
-        return operation;
+    public Op getOp() {
+        return op;
     }
 
-    public Request withOperation(Operation operation) {
-        this.operation = operation;
+    public Request withOp(Op op) {
+        this.op = op;
         return this;
     }
 
@@ -519,7 +563,6 @@ public class Request implements JSNode.JSAccessor {
     }
 
 
-
     public List<Upload> getUploads() {
         return uploader.getUploads();
     }
@@ -527,17 +570,17 @@ public class Request implements JSNode.JSAccessor {
     /**
      * Replaces path parameters with their corresponding request params
      */
-    public String buildPath(String path){
-        StringBuffer buff = new StringBuffer();
-        Pattern p        = Pattern.compile("(\\[?+)\\:([\\w\\-\\_]*)(\\]?+)");
-        Matcher m        = p.matcher(path);
-        boolean optional = false;
+    public String buildPath(String path) {
+        StringBuffer buff     = new StringBuffer();
+        Pattern      p        = Pattern.compile("(\\[?+)\\:([\\w\\-\\_]*)(\\]?+)");
+        Matcher      m        = p.matcher(path);
+        boolean      optional = false;
         while (m.find()) {
             String key   = m.group(2);
             String param = getUrl().getParam(key);
             if (param == null)//replacement value was not there
             {
-                if("[".equals(m.group(1)) && "]".equals(m.group(3))) {
+                if ("[".equals(m.group(1)) && "]".equals(m.group(3))) {
                     optional = true;
                     break;
                 }
@@ -547,7 +590,7 @@ public class Request implements JSNode.JSAccessor {
             String value = Matcher.quoteReplacement(param);
             m.appendReplacement(buff, value);
         }
-        if(!optional)
+        if (!optional)
             m.appendTail(buff);
 
         return buff.toString();
@@ -679,6 +722,13 @@ public class Request implements JSNode.JSAccessor {
                     }
                 }
             }
+
+            return this;
+        }
+
+        public Validation matches(Pattern regex) {
+            if (value == null || !regex.matcher(value.toString()).matches())
+                fail("Field '" + propOrPath + "' does not match the required pattern.");
 
             return this;
         }
@@ -863,7 +913,7 @@ public class Request implements JSNode.JSAccessor {
                 return null;
 
             if (value instanceof String)
-                value = JSNode.parseJsonArray(value.toString());
+                value = JSNode.asJSArray(value.toString());
 
             return ((JSArray) value);
         }

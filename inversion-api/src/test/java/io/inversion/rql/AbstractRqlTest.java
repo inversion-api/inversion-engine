@@ -20,7 +20,7 @@ import io.inversion.AbstractEngineTest;
 import io.inversion.Engine;
 import io.inversion.Response;
 import io.inversion.Results;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;

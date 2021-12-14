@@ -2,6 +2,7 @@ package io.inversion.utils;
 
 import io.inversion.*;
 import io.inversion.utils.RestClient.FutureResponse;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +44,7 @@ public class RestClientTest {
     @Test
     public void buildUrl_variable_replaced() {
 
-        RestClient client = new RestClient().withUrl("http://somehost/:_collection/[:_resource]/[:_relationship]");
+        RestClient client = new RestClient().withUrl("http://somehost/{_collection}/[{_resource}]/[{_relationship}]");
 
 //        try {
 //            Chain.push(null, new Request("GET", "http://myservice?tenant=12345&_collection=books"), null);

@@ -16,7 +16,7 @@
  */
 package io.inversion.action.security;
 
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;

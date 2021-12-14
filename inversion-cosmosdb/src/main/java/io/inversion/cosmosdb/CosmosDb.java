@@ -21,8 +21,7 @@ import io.inversion.Index;
 import io.inversion.*;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -156,7 +155,7 @@ public class CosmosDb extends Db<CosmosDb> {
             }
 
             //-- the only way to achieve a PATCH is to query for the document first.
-            Results existing = doSelect(collection, Utils.asList(Term.term(null, "_key", collection.getPrimaryIndex().getName(), id)));
+            Results existing = doSelect(collection, Utils.asList(Term.term(null, "_key", collection.getResourceIndex().getName(), id)));
             if (existing.size() == 1) {
                 Map<String, Object> existingRow = existing.getRow(0);
                 for (String key : existingRow.keySet()) {

@@ -1,7 +1,6 @@
 package io.inversion;
 
 import io.inversion.utils.Path;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -13,55 +12,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class EndpointTest {
 
 
-    @Test
-    public void test_mergePaths() {
 
-        merge("[a/*]", "a/*", "a");
-        merge("[a/*]", "a", "a/*");
-
-        merge("[a/b]", "a/*", "a/b");
-        merge("[a/b]", "a/b", "a/*");
-        merge("[a, a/b]", "a", "a/b");
-
-        merge("[a, a/b/c]", "a", "a/b/c");
-        merge("[a, a/b/c]", "a/b/c", "a");
-
-
-        merge("[a/b/c]", "a/*", "a/b/c");
-        merge("[a/b/c]", "a/b/c", "a/*");
-
-        merge("[a/b/c/*]", "a/*", "a/b/c/*");
-        merge("[a/b/c/*]", "a/b/c/*", "a/*");
-
-        merge("[a/b, a/b/c]", "a/b", "a/b/c");
-        merge("[a/b]", "a/{asdf}", "a/b");
-        merge("[a/b, a/b/c]", "a/{asdf}", "a/b/c");
-
-
-        merge("[a/b, a/b/c]", "a/b/c", "a/{asdf}");
-
-        merge("[a/b/c]", "a/b/c", "a/{asdf}/*");
-        merge("[a/b, a/b/c/*]", "a/b/c/*", "a/{asdf}");
-
-
-        merge("[1/2/3/4]", "{v1}/{v1}/{v1}/{v1}", "1/{a}/{b}/{c}/", "{a}/2/{b}/{c}/", "{a}/{b}/3/{c}/", "{a}/{b}/{c}/4");
-        merge("[1/2/3/4]", "{v1}/{v1}/{v1}/{v1}", "1/*", "{a}/2/*", "{a}/{b}/3/*", "{a}/{b}/{c}/4");
-
-
-         merge("[1/2/3/4]","{v1}/{v1}/{v1}/{v1}", "1/*", "{a}/2/3/4");
-
-    }
-
-    static void merge(String expected, String... paths) {
-        List<Path> list = new ArrayList<>();
-        for (String p : paths) {
-            list.add(new Path(p));
-        }
-        List<Path> merged = new ArrayList();
-        Endpoint.mergePaths(merged, list);
-        System.out.println("MERGING: " + expected + " vs " + merged + " - " + list);
-        assertEquals(expected, merged.toString());
-    }
 
 
 //    @Test
@@ -231,7 +182,7 @@ public class EndpointTest {
 //    public void test_getOperationPaths_emptyActionPaths() {
 //        Api      api = new Api();
 //        Endpoint ep  = new Endpoint().withIncludeOn("GET", "1/2/3/*");
-//        Action   a1  = new Action<Action>().withIncludeOn("*", "*");
+//        Action   a1  = new Action<Action>();
 //        ep.withActions(a1);
 //        ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        for (String method : paths.keySet()) {

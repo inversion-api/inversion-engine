@@ -18,12 +18,13 @@ package io.inversion;
 
 import io.inversion.rql.RqlParser;
 import io.inversion.rql.Term;
+import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Path;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -92,7 +93,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
     /**
      * Used to differentiate which Collection is being referred by a Request when an Api supports Collections with the same name from different Dbs.
      */
-    protected       Path     endpointPath = null;
+    //protected       Path     endpointPath = null;
     /**
      * When set to true the Db will do everything it can to "work offline" logging commands it would have run but not actually running them.
      */
@@ -105,6 +106,114 @@ public abstract class Db<T extends Db> extends Rule<T>{
 
     public Db(String name) {
         this.name = name;
+    }
+
+    public static Object castJsonInput(String type, Object value) {
+        try {
+            if (value == null)
+                return null;
+
+            if (type == null) {
+                try {
+                    if (!value.toString().contains(".")) {
+                        return Long.parseLong(value.toString());
+                    } else {
+                        return Double.parseDouble(value.toString());
+                    }
+                } catch (Exception ex) {
+                    //must not have been an number
+                }
+                return value.toString();
+            }
+
+            switch (type.toLowerCase()) {
+                case "char":
+                case "nchar":
+                case "clob":
+                    return value.toString().trim();
+                case "s":
+                case "string":
+                case "varchar":
+                case "nvarchar":
+                case "longvarchar":
+                case "longnvarchar":
+                case "json":
+                    return value.toString();
+                case "n":
+                case "number":
+                case "numeric":
+                case "decimal":
+                    if (!value.toString().contains("."))
+                        return Long.parseLong(value.toString());
+                    else
+                        return Double.parseDouble(value.toString());
+
+                case "bool":
+                case "boolean":
+                case "bit": {
+                    if ("1".equals(value))
+                        value = "true";
+                    else if ("0".equals(value))
+                        value = "false";
+
+                    return Boolean.parseBoolean(value.toString());
+                }
+
+                case "tinyint":
+                    return Byte.parseByte(value.toString());
+                case "smallint":
+                    return Short.parseShort(value.toString());
+                case "integer":
+                    return Integer.parseInt(value.toString());
+                case "bigint":
+                    return Long.parseLong(value.toString());
+                case "float":
+                case "real":
+                case "double":
+                    return Double.parseDouble(value.toString());
+                case "datalink":
+                    return new URL(value.toString());
+
+                case "binary":
+                case "varbinary":
+                case "longvarbinary":
+                    throw new UnsupportedOperationException("Binary types are currently unsupported");
+
+                case "date":
+                case "datetime":
+                    return new java.sql.Date(Utils.date(value.toString()).getTime());
+                case "timestamp":
+                    return new java.sql.Timestamp(Utils.date(value.toString()).getTime());
+
+                case "array":
+
+                    if (value instanceof JSArray)
+                        return value;
+                    else
+                        return JSNode.asJSArray(value + "");
+
+                case "object":
+                    if (value instanceof JSNode)
+                        return value;
+                    else {
+                        String json = value.toString().trim();
+                        if (json.length() > 0) {
+                            char c = json.charAt(0);
+                            if (c == '[' || c == '{')
+                                return JSNode.parseJson(value + "");
+                        }
+                        return json;
+                    }
+
+                default:
+                    throw ApiException.new500InternalServerError("Error casting '{}' as type '{}'", value, type);
+            }
+        } catch (Exception ex) {
+            Utils.rethrow(ex);
+            //throw new RuntimeException("Error casting '" + value + "' as type '" + type + "'", ex);
+        }
+
+        return null;
     }
 
     /**
@@ -241,7 +350,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
                 //-- if the users requests eq(includes, href...) you have to replace "href" with the primary index column names
                 for (Term child : term.getTerms()) {
                     if (child.hasToken("href") && collection != null) {
-                        Index pk = collection.getPrimaryIndex();
+                        Index pk = collection.getResourceIndex();
                         if (pk != null) {
                             term.removeTerm(child);
                             for (int i = 0; i < pk.size(); i++) {
@@ -313,16 +422,16 @@ public abstract class Db<T extends Db> extends Rule<T>{
                     //------------------------------------------------
                     // next, if the db returned extra columns that
                     // are not mapped to attributes, just straight copy them
-//                    for (String key : row.keySet()) {
-//                        if (!key.equalsIgnoreCase("href") && !node.containsKey(key)) {
-//                            Object value = row.get(key);
-//                            node.put(key, value);
-//                        }
-//                    }
+                    for (String key : row.keySet()) {
+                        if (!key.equalsIgnoreCase("href") && !node.containsKey(key)) {
+                            Object value = row.get(key);
+                            node.put(key, value);
+                        }
+                    }
 
                     //------------------------------------------------
                     // put any primary key fields at the top of the object
-                    Index idx = collection.getPrimaryIndex();
+                    Index idx = collection.getResourceIndex();
                     if(idx != null){
                         for(int j=idx.size()-1; j>=0; j--){
                             Property prop = idx.getProperty(j);
@@ -435,7 +544,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
 
                 //-- this is an API behavior that we want to be "automatic" that
                 //-- may not be part of the data declaration.
-                Index index = coll.getPrimaryIndex();
+                Index index = coll.getResourceIndex();
                 if(index != null){
                     for(Property property : index.getProperties()){
                         property.withNullable(false);
@@ -592,8 +701,11 @@ public abstract class Db<T extends Db> extends Rule<T>{
                         Index idx1 = indexes.get(i);
                         Index idx2 = indexes.get(j);
 
-                        if (i == j || !idx1.getType().equals("FOREIGN_KEY") || !idx2.getType().equals("FOREIGN_KEY"))
+                        if (i == j || !idx1.getType().equals(Index.TYPE_FOREIGN_KEY))
                             continue;
+
+                         if(!idx2.getType().equals(Index.TYPE_FOREIGN_KEY))
+                             continue;
 
                         Collection resource1 = idx1.getProperty(0).getPk().getCollection();
                         Collection resource2 = idx2.getProperty(0).getPk().getCollection();
@@ -611,7 +723,10 @@ public abstract class Db<T extends Db> extends Rule<T>{
             } else {
                 for (Index fkIdx : coll.getIndexes()) {
                     try {
-                        if (!fkIdx.getType().equals("FOREIGN_KEY") || fkIdx.getProperty(0).getPk() == null)
+                        if (!fkIdx.getType().equals(Index.TYPE_FOREIGN_KEY))
+                            continue;
+
+                        if(fkIdx.getProperty(0).getPk() == null)
                             continue;
 
                         Collection pkResource = fkIdx.getProperty(0).getPk().getCollection();
@@ -674,45 +789,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
      * @see <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Variables">JSON property name</a>
      */
     protected String beautifyName(String name) {
-        //all upper case...U.G.L.Y you ain't got on alibi you UGLY, hay hay you UGLY
-        if (name.toUpperCase().equals(name)) {
-            name = name.toLowerCase();
-        }
-
-        StringBuilder buff = new StringBuilder();
-
-        boolean nextUpper = false;
-        for (int i = 0; i < name.length(); i++) {
-            char next = name.charAt(i);
-            if (next == ' ' || next == '_') {
-                nextUpper = true;
-                continue;
-            }
-
-            if (buff.length() == 0 && //
-                    !(Character.isAlphabetic(next)//
-                            || next == '$'))//OK $ is a valid initial character in a JS identifier but seriously why dude, just why?
-            {
-                next = 'x';
-            }
-
-            if (nextUpper) {
-                next = Character.toUpperCase(next);
-                nextUpper = false;
-            }
-
-            if (buff.length() == 0)
-                next = Character.toLowerCase(next);
-
-            buff.append(next);
-        }
-
-        //-- special case for names like 'orderID'
-        name = buff.toString();
-        if(name.length() > 2 && name.endsWith("ID") && Character.isLowerCase(name.charAt(name.length()-3)))
-            name = name.substring(0, name.length() -2) + "Id";
-
-        return name;
+        return Utils.beautifyName(name);
     }
 
     /**
@@ -796,10 +873,28 @@ public abstract class Db<T extends Db> extends Rule<T>{
      * @param property the property the value is assigned to
      * @param value    the value pulled from the DB
      * @return <code>value</code> cast to <code>Property.type</code>
-     * @see Utils#castDbOutput(String, Object)
      */
     public Object castDbOutput(Property property, Object value) {
-        return Utils.castDbOutput(property != null ? property.getType() : null, value);
+        if (type == null || value == null)
+            return value;
+
+        type = type.toLowerCase();
+
+        if ("json".equalsIgnoreCase(type)) {
+            String json = value.toString().trim();
+            if (json.isEmpty())
+                return new JSNode();
+            return JSNode.parseJson(json);
+        }
+
+        if (Utils.in(type, "char", "nchar", "clob"))
+            value = value.toString().trim();
+
+        if (value instanceof Date && Utils.in(type, "date", "datetime", "timestamp")) {
+            value =Utils.formatIso8601((Date) value);
+        }
+
+        return value;
     }
 
     /**
@@ -808,23 +903,23 @@ public abstract class Db<T extends Db> extends Rule<T>{
      * @param property the property the value is assigned to
      * @param value    the value to cast to the datatype of property
      * @return <code>value</code> cast to <code>Property.type</code>
-     * @see Utils#castJsonInput(String, Object)
+     * @see Db#castJsonInput(String, Object)
      */
     public Object castJsonInput(Property property, Object value) {
-        return Utils.castJsonInput(property != null ? property.getType() : null, value);
+        return castJsonInput(property != null ? property.getType() : null, value);
     }
 
-    /**
-     * Casts value to as type.
-     *
-     * @param type  the type to cast to
-     * @param value the value to cast
-     * @return <code>value</code> cast to <code>type</code>
-     * @see Utils#castJsonInput(String, Object)
-     */
-    public Object castJsonInput(String type, Object value) {
-        return Utils.castJsonInput(type, value);
-    }
+//    /**
+//     * Casts value to as type.
+//     *
+//     * @param type  the type to cast to
+//     * @param value the value to cast
+//     * @return <code>value</code> cast to <code>type</code>
+//     * @see Db#castJsonInput(String, Object)
+//     */
+//    public Object castJsonInput(String type, Object value) {
+//        return castJsonInput(type, value);
+//    }
 
     protected void mapToJsonNames(Collection collection, Term term) {
         if (collection == null)
@@ -1115,14 +1210,14 @@ public abstract class Db<T extends Db> extends Rule<T>{
         return (T) this;
     }
 
-    public Path getEndpointPath() {
-        return endpointPath;
-    }
-
-    public T withEndpointPath(Path endpointPath) {
-        this.endpointPath = endpointPath;
-        return (T) this;
-    }
+//    public Path getEndpointPath() {
+//        return endpointPath;
+//    }
+//
+//    public T withEndpointPath(Path endpointPath) {
+//        this.endpointPath = endpointPath;
+//        return (T) this;
+//    }
 
     public boolean isDryRun() {
         return dryRun;

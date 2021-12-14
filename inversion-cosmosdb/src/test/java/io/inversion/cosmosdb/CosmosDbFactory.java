@@ -20,8 +20,7 @@ import io.inversion.*;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDbFactory;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Path;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -40,7 +39,7 @@ public class CosmosDbFactory {
         final Api api = new Api("northwind");
 
         api.withDb(cosmosdb);
-        api.withEndpoint("GET,PUT,POST,DELETE", "cosmosdb/*", new Action() {
+        api.withEndpoint("GET,PUT,POST,:cosmosdb/*", new Action() {
 
                     public void run(Request req, Response res) throws ApiException {
                         String collectionKey = req.getCollectionKey().toLowerCase();
@@ -60,7 +59,7 @@ public class CosmosDbFactory {
         Engine dstEngine = new Engine(api);
 
         Engine srcEngine = new Engine().withApi(new Api("northwind") //
-                .withEndpoint("*", "source" + "/*", new DbAction())//
+                .withEndpoint("source" + "/*", new DbAction())//
                 .withDb(JdbcDbFactory.bootstrapH2("cosmos_source")));
 
         //if (rebuildCosmos)
@@ -182,7 +181,7 @@ public class CosmosDbFactory {
         @Override
         public void configDb() throws ApiException {
             withDb("inversion-testing-cosmos1");
-            withEndpointPath(new Path("cosmosdb/[:type]/*"));
+            withIncludeOn("cosmosdb/[:type]/*");
 
             Collection customersTbl = new Collection("customers").withTableName("Northwind")//
 
@@ -221,7 +220,7 @@ public class CosmosDbFactory {
                     .withProperty("reportsTo", "number")//
                     .withProperty("salary", "number");
 
-            //         employeesTbl.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "type", "reportsTo");
+            //         employeesTbl.withIndex("fkIdx_Employees_reportsTo", Index.TYPE_FOREIGN_KEY, false, "type", "reportsTo");
             //         employeesTbl.getProperty("type").withPk(employeesTbl.getProperty("type"));
             //         employeesTbl.getProperty("reportsTo").withPk(employeesTbl.getProperty("employeeId"));
 

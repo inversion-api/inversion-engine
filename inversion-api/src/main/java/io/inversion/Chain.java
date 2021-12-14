@@ -17,6 +17,7 @@
 package io.inversion;
 
 import io.inversion.utils.*;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import java.util.*;
@@ -144,7 +145,7 @@ public class Chain {
         String link = null;
         if (toHere.isManyToOne()) {
             String fkval = null;
-            if (toHere.getRelated().getPrimaryIndex().size() != toHere.getFkIndex1().size() && toHere.getFkIndex1().size() == 1) {
+            if (toHere.getRelated().getResourceIndex().size() != toHere.getFkIndex1().size() && toHere.getFkIndex1().size() == 1) {
                 fkval = toHere.getCollection().encodeKeyFromJsonNames(fromHere, toHere.getFkIndex1());
             } else {
                 //this value is already an encoded resourceKey
@@ -174,14 +175,19 @@ public class Chain {
 
     public static String buildLink(Collection collection, String resourceKey, String relationshipKey) {
 
+        if ("orderDetails".equals(relationshipKey))
+            System.out.println("asdf");
         Request req       = top().getRequest();
-        Request linkedReq = req.getApi().getLinker().buildRequest(req, null, null, collection, resourceKey, relationshipKey, null);
-        if (linkedReq == null)
-            throw ApiException.new400BadRequest("Unable to find a valid operation.");
+        Request linkedReq = req.getApi().getLinker().buildRequest(req, null, "GET", collection, resourceKey, relationshipKey, null);
+        //if (linkedReq == null)
+        //    throw ApiException.new400BadRequest("Unable to find a valid operation.");
 
-        Url url = linkedReq.getUrl();
+        if (linkedReq == null)
+            return null;
+
+        Url    url = linkedReq.getUrl();
         String str = url.toString();
-        System.out.println(str);
+        //System.out.println(str);
         return str;
 
 //        Request req = top().getRequest();
@@ -341,16 +347,18 @@ public class Chain {
     public void go() throws ApiException {
         boolean root = next == 0;
         try {
+            //TODO: this is not correct, the Params in the op should have a source and get applied from the op params based on the source not being an action
             if (root)
-                applyRuleParams(getRequest().getUrl(), getEngine(), getApi(), getEndpoint());
+                applyRuleParams(getRequest().getUrl(), getServer(), getEndpoint());
+
 
             while (next()) {
                 //-- intentionally empty
             }
+
         } finally {
             if (root) {
-                JSNode json = response.getJson();
-                filterPathParams(json);
+                filterPathParams(response.getJson());
             }
         }
     }
@@ -372,18 +380,6 @@ public class Chain {
         return this;
     }
 
-
-    public Chain doNext(Action... newActions) {
-        for (int i = 0; newActions != null && i < newActions.length; i++) {
-            Action action = newActions[i];
-            if (action == null)
-                continue;
-            ActionMatch am = new ActionMatch(new Path("*"), new Path("*"), action);
-            actions.add(next + i, am);
-        }
-        return this;
-    }
-
     public Chain skipNext() {
         next += 1;
         return this;
@@ -401,11 +397,11 @@ public class Chain {
             next += 1;
 
             Map<String, String> pathParams = new HashMap<>();
-            actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
-
-            applyPathParams(pathParams, request.getUrl(), request.getJson());
+            if (actionMatch.path != null) {
+                actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
+                applyPathParams(pathParams, request.getUrl(), request.getJson());
+            }
             applyRuleParams(request.getUrl(), actionMatch.action);
-
             actionMatch.action.run(request, response);
             return true;
         }
@@ -433,6 +429,8 @@ public class Chain {
 
     public Chain applyRuleParams(Url url, Rule... rules) {
         for (Rule rule : rules) {
+            if (rule == null)
+                continue;
             String query = rule.getQuery();
             if (query != null) {
                 Url temp = new Url("http://127.0.0.1?" + query);
@@ -468,6 +466,10 @@ public class Chain {
 
     public Api getApi() {
         return request.getApi();
+    }
+
+    public Server getServer() {
+        return request.getServer();
     }
 
     public Endpoint getEndpoint() {

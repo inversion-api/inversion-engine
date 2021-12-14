@@ -19,7 +19,7 @@ package io.inversion.lambda;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -37,7 +37,7 @@ public class EchoRequestStreamHandler implements RequestStreamHandler {
         try {
             String input = Utils.read(new BufferedInputStream(inputStream));
             context.getLogger().log(input);
-            JSNode request = JSNode.parseJsonNode(input);
+            JSNode request = JSNode.asJSNode(input);
             responseBody.put("request", request);
 
         } catch (Exception ex) {

@@ -25,7 +25,7 @@ import com.amazonaws.services.kinesisfirehose.model.Record;
 import io.inversion.*;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

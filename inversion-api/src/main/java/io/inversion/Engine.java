@@ -19,38 +19,70 @@ package io.inversion;
 import ch.qos.logback.classic.Level;
 import io.inversion.Api.ApiListener;
 import io.inversion.Chain.ActionMatch;
+import io.inversion.action.db.DbAction;
+import io.inversion.config.Codec;
+import io.inversion.config.Config;
+import io.inversion.config.Context;
+import io.inversion.config.InversionNamer;
 import io.inversion.rql.RqlParser;
 import io.inversion.rql.Term;
 import io.inversion.utils.*;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.file.PathMatcher;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Matches inbound Request Url paths to an Api Endpoint and executes associated Actions.
  */
-public class Engine extends Rule<Engine> {
+public class Engine {
 
     static {
         ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
         logger.setLevel(Level.WARN);
     }
 
+    protected final transient Logger log = LoggerFactory.getLogger(getClass().getName());
+
+    final String name = "engine";
+
+    /**
+     * Optional override for the configPath sys/env prop used by Config to locate configuration property files
+     *
+     * @see Config#loadConfiguration(Object, String, String)
+     */
+    transient protected          String  configPath       = null;
+    /**
+     * Optional override for the sys/env prop used by Config to determine which profile specific configuration property files to load
+     *
+     * @see Config#loadConfiguration(Object, String, String)
+     */
+    transient protected          String  configProfile    = null;
+
+    transient protected Context context = null;
+
+
     /**
      * Listeners that will receive Engine and Api lifecycle, request, and error callbacks.
      */
-    protected final transient    List<EngineListener> listeners        = new ArrayList<>();
+    protected final transient    List<EngineListener> listeners    = new ArrayList<>();
     /**
      * The last {@code Response} served by this Engine, primarily used for writing test cases.
      */
-    protected transient volatile Response             lastResponse     = null;
+    protected transient volatile Response             lastResponse = null;
     /**
      * The {@code Api}s being service by this Engine
      */
-    protected                    List<Api>            apis             = new Vector<>();
+    protected                    List<Api>            apis         = new Vector<>();
+
+    protected final List<Action> filters = new ArrayList();
+
     /**
      * Base value for the CORS "Access-Control-Allow-Headers" response header.
      * <p>
@@ -59,26 +91,13 @@ public class Engine extends Rule<Engine> {
      * <p>
      * Unless you are really doing something specific with browser security you probably won't need to customize this list.
      */
-    protected                    String               corsAllowHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,content-type,host,user-agent,x-auth-token";
-    /**
-     * Optional override for the configPath sys/env prop used by Config to locate configuration property files
-     *
-     * @see Config#loadConfiguration(String, String)
-     */
-    protected                    String               configPath       = null;
-    /**
-     * Optional override for the sys/env prop used by Config to determine which profile specific configuration property files to load
-     *
-     * @see Config#loadConfiguration(String, String)
-     */
-    protected                    String               configProfile    = null;
-    transient volatile           boolean              started          = false;
-    transient volatile           boolean              starting         = false;
+    protected          String  corsAllowHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,content-type,host,user-agent,x-auth-token";
 
-    protected transient List<Operation> operations = new ArrayList();
+    transient volatile boolean started          = false;
+    transient volatile boolean starting         = false;
 
     public Engine() {
-        System.out.println("Engine() <>");
+        //System.out.println("Engine<>");
     }
 
     public Engine(Api... apis) {
@@ -90,14 +109,14 @@ public class Engine extends Rule<Engine> {
     /**
      * Convenient pre-startup hook for subclasses guaranteed to only be called once.
      * <p>
-     * Called after <code>starting</code> has been set to true but before the {@code Configurator} is run or  any {@code Api}s have been started.
+     * Called after <code>starting</code> has been set to true but before the {@code Wirer} is run or  any {@code Api}s have been started.
      */
     protected void startup0() {
         //implement me
     }
 
     /**
-     * Runs the {@code Configurator} and calls <code>startupApi</code> for each Api.
+     * Runs the {@code Wirer} and calls <code>startupApi</code> for each Api.
      * <p>
      * An Engine can only be started once.
      * Any calls to <code>startup</code> after the initial call will not have any affect.
@@ -109,15 +128,50 @@ public class Engine extends Rule<Engine> {
             return this;
 
         System.out.println("STARTING ENGINE...");
+        long start = System.currentTimeMillis();
 
         starting = true;
         try {
             startup0();
 
-            if (!Config.hasConfiguration()) {
-                Config.loadConfiguration(getConfigPath(), getConfigProfile());
+            if (!Config.hasConfiguration())
+                Config.loadConfiguration(this, getConfigPath(), getConfigProfile());
+
+            if(context == null){
+                context = new Context();
+                context.withNamer(new InversionNamer());
+
+                context.withCodec(new Codec(Path.class){
+                    @Override
+                    public Object fromString(Class clazz, String encoded) {
+                        return new Path(encoded);
+                    }
+                });
+                context.withCodec(new Codec(JSNode.class){
+                    @Override
+                    public String toString(Object jsNode){
+                        return ((JSNode)jsNode).toString(false);
+                    }
+                    @Override
+                    public Object fromString(Class clazz, String encoded) {
+                        return JSNode.parseJson(encoded);
+                    }
+                });
+                context.withCodec(new Codec(Rule.RuleMatcher.class){
+                    @Override
+                    public Object fromString(Class clazz, String encoded) { return new Rule.RuleMatcher(encoded); }
+                });
+
+                Map<String, String> properties = Config.getProperties();
+                Map<String, String> firstPassApplied = context.wire(properties, this);
+
+                autowire(context);
+
+                //-- remove props that were previously applied so configed classes don't get re-instantiated etc.
+                //properties.entrySet().removeIf(entry -> firstPassApplied.containsKey(entry.getKey()));
+                properties.entrySet().removeIf(entry -> entry.getKey().toLowerCase().endsWith(".class") || entry.getKey().toLowerCase().endsWith(".classname"));
+                Map<String, String> secondPassApplied = context.wire(properties, this);
             }
-            //new Configurator().configure(this, Config.getConfiguration());
 
             started = true;
 
@@ -132,16 +186,6 @@ public class Engine extends Rule<Engine> {
             }
             if (!hasApi)
                 throw ApiException.new500InternalServerError("CONFIGURATION ERROR: You don't have any Apis configured.");
-
-
-            this.operations.addAll(buildOperations());
-
-            System.out.println("\r\n--------------------------------------------");
-            for (Operation op : this.operations) {
-                System.out.println(op.getMethod() + " " + op.getDisplayPath());
-            }
-            System.out.println("\r\n--------------------------------------------");
-
 
 //            //-- debug output
 //            for (Api api : apis) {
@@ -178,6 +222,7 @@ public class Engine extends Rule<Engine> {
 //            //-- end debug output
 
 
+            System.out.println("...ENGINE STARTED IN: " + (System.currentTimeMillis() - start) + "ms");
             return this;
         } finally {
             starting = false;
@@ -191,7 +236,7 @@ public class Engine extends Rule<Engine> {
      */
     public void shutdown() {
         for (Api api : getApis()) {
-            removeApi(api);
+            shutdownApi(api);
         }
 
         for (EngineListener listener : listeners) {
@@ -201,6 +246,9 @@ public class Engine extends Rule<Engine> {
                 ex.printStackTrace();
             }
         }
+
+        started = false;
+        starting = false;
 
         Chain.resetAll();
     }
@@ -449,7 +497,14 @@ public class Engine extends Rule<Engine> {
             chain = Chain.push(this, req, res);
             req.withEngine(this);
             req.withChain(chain);
-            res.withChain(chain);
+
+            Url url = req.getUrl();
+
+            if (req.isMethod("options")) {
+                //this is a CORS preflight request. All of the work was done above
+                res.withStatus(Status.SC_200_OK);
+                return chain;
+            }
 
             //--
             //-- CORS header setup
@@ -468,13 +523,8 @@ public class Engine extends Rule<Engine> {
             //--
             //-- End CORS Header Setup
 
-            if (req.isMethod("options")) {
-                //this is a CORS preflight request. All of the work was done above
-                res.withStatus(Status.SC_200_OK);
-                return chain;
-            }
 
-            Url url = req.getUrl();
+
 
             Path urlPath = url.getPath();
             for (int i = 0; i < urlPath.size(); i++) {
@@ -500,13 +550,6 @@ public class Engine extends Rule<Engine> {
                     url.withHost(xfh);
             }
 
-
-            if (!matches(req.getMethod(), req.getUrl().getPath())) {
-                log.error("A request url {} was incorrectly routed to an Engine that does not support the given context path.  The request will be rejected but this is probably a server configuration error.", url);
-                throw ApiException.new400BadRequest("The requested URL has an unsupported context path.");
-            }
-
-
             //-- remove any RQL terms that functions with leading "_" as these are internal/restricted
             if (Chain.getDepth() < 2) {
                 Map<String, String> urlParams = req.getUrl().getParams();
@@ -521,61 +564,28 @@ public class Engine extends Rule<Engine> {
                 }
             }
 
-            matchRequest(req);
-
-
-            if (req.isDebug()) {
-                res.debug("");
-                res.debug("");
-                res.debug(">> request --------------");
-                res.debug(req.getMethod() + ": " + url);
-                res.debug("OPERATION: " + req.getOperation());
-
-                ArrayListValuedHashMap<String, String> headers = req.getHeaders();
-                for (String key : headers.keys()) {
-                    res.debug(key + " " + Utils.implode(",", headers.get(key)));
+            for (Action filter : filters) {
+                Path path = req.getUrl().getPath().copy();
+                Path match = filter.match(req.getMethod(), path);
+                if (match != null) {
+                    chain.withAction(new ActionMatch(match, path, filter));
                 }
-                res.debug("");
-
-                List actionNames = new ArrayList();
-                for (ActionMatch am : req.getActionMatches()) {
-                    String name = am.action.getName();
-                    if (name == null)
-                        name = am.action.getClass().getSimpleName();
-                    actionNames.add(name);
-                }
-                String msg = req.getMethod() + " " + url.getPath() + " [" + Utils.implode(",", actionNames) + "]";
-                Chain.debug(msg);
             }
 
-            if (req.getApi() == null) {
-                throw ApiException.new400BadRequest("No API found matching URL: '{}'", url);
-            }
-
-            if (req.getEndpoint() == null) {
-                StringBuilder buff = new StringBuilder();
-                for (Endpoint e : req.getApi().getEndpoints()) {
-                    if (!e.isInternal())
-                        buff.append(e.toString()).append(" | ");
+            final Chain finalChain = chain;
+            chain.withAction(new ActionMatch(null, null, new Action() {
+                @Override
+                public void run(Request req, Response res) throws ApiException {
+                    service0(finalChain, req, res);
                 }
-
-                String orig = url.getOriginal();
-                System.out.println(orig);
-
-
-                throw ApiException.new404NotFound("No Endpoint found matching '{}:{}' Valid endpoints are: {}", req.getMethod(), url.getOriginal(), buff.toString());
-            }
-
-            List<ActionMatch> actions = req.getActionMatches();
-            if (actions.size() == 0)
-                throw ApiException.new404NotFound("No Actions are configured to handle your request.  Check your server configuration.");
-
-            run(chain, actions);
+            }));
+            //-- causes filters to run then the above anon action the runs the rest of the match/serve process after the filters run.
+            chain.go();
 
             Exception listenerEx = null;
             for (ApiListener listener : getApiListeners(req)) {
                 try {
-                    listener.afterRequest(req, res);
+                    listener.onAfterRequest(req, res);
                 } catch (Exception ex) {
                     if (listenerEx == null)
                         listenerEx = ex;
@@ -584,7 +594,6 @@ public class Engine extends Rule<Engine> {
             if (listenerEx != null)
                 throw listenerEx;
 
-            return chain;
         } catch (Throwable ex) {
 
             if (req.isDebug())
@@ -599,7 +608,7 @@ public class Engine extends Rule<Engine> {
 
             for (ApiListener listener : getApiListeners(req)) {
                 try {
-                    listener.afterError(req, res);
+                    listener.onAfterError(req, res);
                 } catch (Exception ex2) {
                     log.warn("Error notifying EngineListener.beforeError", ex);
                 }
@@ -614,7 +623,7 @@ public class Engine extends Rule<Engine> {
             try {
                 for (ApiListener listener : getApiListeners(req)) {
                     try {
-                        listener.beforeFinally(req, res);
+                        listener.onBeforeFinally(req, res);
                     } catch (Exception ex) {
                         log.warn("Error notifying EngineListener.onFinally", ex);
                     }
@@ -630,63 +639,63 @@ public class Engine extends Rule<Engine> {
         return chain;
     }
 
-    List<Operation> getOperations() {
-        return operations;
-    }
+    void service0(Chain chain, Request req, Response res) throws ApiException {
 
-    public void matchRequest(Request req) {
-
-        Path                reqPath    = req.getUrl().getPath();
-        Map<String, String> pathParams = new HashMap<>();
-
-
-        for (Operation op : operations) {
-
-            if (op.matches(req)) {
-                req.withOperation(op);
-
-                for (Parameter param : op.getParams()) {
-                    if ("path".equalsIgnoreCase(param.getIn())) {
-                        String name  = param.getKey();
-                        String value = reqPath.get(param.getIndex());
-                        pathParams.put(name, value);
-                    }
-                }
-                req.withPathParams(pathParams);
-
-                String method  = req.getMethod();
-                Path   path    = req.getPath();
-                Path   subpath = req.getSubpath();
-
-                //this will get all actions specifically configured on the endpoint
-                List<ActionMatch> actions = new ArrayList<>();
-
-                for (Action action : req.getEndpoint().getActions()) {
-                    Path actionPath = action.match(method, subpath);
-                    if (actionPath != null) {
-                        actions.add(new ActionMatch(actionPath, new Path(subpath), action));
-                    }
-                }
-
-                //this matches for actions that can run across multiple endpoints.
-                //this might be something like an authorization or logging action
-                //that acts like a filter
-                for (Action action : req.getApi().getActions()) {
-                    Path actionPath = action.match(method, path);
-                    if (actionPath != null) {
-                        actions.add(new ActionMatch(actionPath, new Path(path), action));
-                    }
-                }
-
-                Collections.sort(actions);
-                req.withActionMatches(actions);
-
-                return;
-            }
+        Url url = req.getUrl();
+        if (!matchRequest(req)) {
+            String requestUrl = req.getUrl().getOriginal();
+            throw ApiException.new400BadRequest("No API or Endpoint was found matching your request '{}':'{}'", req.getMethod(), requestUrl);
         }
 
-    }
+        if (req.isDebug()) {
+            res.debug("");
+            res.debug("");
+            res.debug(">> request --------------");
+            res.debug(req.getMethod() + ": " + url);
+            res.debug("OPERATION: " + req.getOp());
 
+            ArrayListValuedHashMap<String, String> headers = req.getHeaders();
+            for (String key : headers.keys()) {
+                res.debug(key + " " + Utils.implode(",", headers.get(key)));
+            }
+            res.debug("");
+
+            List actionNames = new ArrayList();
+            for (ActionMatch am : req.getActionMatches()) {
+                String name = am.action.getName();
+                if (name == null)
+                    name = am.action.getClass().getSimpleName();
+                actionNames.add(name);
+            }
+            String msg = req.getMethod() + " " + url.getPath() + " [" + Utils.implode(",", actionNames) + "]";
+            Chain.debug(msg);
+        }
+
+        if (req.getApi() == null) {
+            throw ApiException.new400BadRequest("No API found matching URL: '{}'", url);
+        }
+
+        if (req.getEndpoint() == null) {
+            StringBuilder buff = new StringBuilder();
+            for (Endpoint e : req.getApi().getEndpoints()) {
+                if (!e.isInternal())
+                    buff.append(e.toString()).append(" | ");
+            }
+
+            String orig = url.getOriginal();
+            System.out.println(orig);
+
+            throw ApiException.new404NotFound("No Endpoint found matching '{}:{}' Valid endpoints are: {}", req.getMethod(), url.getOriginal(), buff.toString());
+        }
+
+        List<ActionMatch> actions = req.getActionMatches();
+        if (actions.size() == 0)
+            throw ApiException.new404NotFound("No Actions are configured to handle your request.  Check your server configuration.");
+
+        run(chain, actions);
+
+
+    }
 
     /**
      * This is specifically pulled out so you can mock Engine invocations
@@ -699,6 +708,127 @@ public class Engine extends Rule<Engine> {
     void run(Chain chain, List<ActionMatch> actions) throws ApiException {
         chain.withActions(actions).go();
     }
+
+
+    public boolean matchApi(Request req){
+
+        if(req.getApi() != null)
+            return true;
+
+        Path reqPath = req.getUrl().getPath();
+        Path                remainder       = reqPath.copy();
+        Path                serverPathMatch = null;
+        Path                serverPath      = null;
+        Server              server          = null;
+        Api                 api             = null;
+        Map<String, String> pathParams = new HashMap();
+
+        for (Api a : getApis()) {
+            for (Server serv : a.getServers()) {
+                serverPathMatch = serv.match(req.getMethod(), req.getUrl());
+                if (serverPathMatch == null)
+                    continue;
+                server = serv;
+                api = a;
+                serverPath = serverPathMatch.extract(pathParams, remainder);
+                break;
+            }
+            if (api != null) {
+                break;
+            }
+        }
+        if(api != null && server != null){
+            req.withApi(api);
+            req.withServer(server);
+            req.withServerPath(serverPath);
+            req.withPathParams(pathParams);
+            req.withOperationPath(remainder);
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    boolean matchRequest(Request req) {
+
+        if(!matchApi(req))
+            return false;
+
+        Api api = req.getApi();
+        if(api == null)
+            return false;
+
+        Map<String, String> pathParams = new HashMap<>();
+        Path remainder = req.getOperationPath().copy();
+
+        if (api != null) {
+            for (Op op : api.getOps()) {
+                if (op.matches(req, remainder)) {
+                    //TODO: need to revalidate for exclude rules...or remove the concept
+                    req.withOp(op);
+                    req.withEndpoint(op.getEndpoint());
+                    req.withDb(op.getDb());
+                    req.withCollection(op.getCollection());
+
+                    Path dbPath         = op.getDbPathMatch() != null ? op.getDbPathMatch().extract(pathParams, remainder.copy()) : null;
+                    Path endpointPath   = op.getEndpointPathMatch().extract(pathParams, remainder);
+                    Path collectionPath = op.getCollectionPathMatch() != null ? op.getCollectionPathMatch().extract(pathParams, remainder.copy()) : null;
+
+                    req.withEndpointPath(endpointPath);
+                    req.withActionPath(remainder);
+                    req.withDbPath(dbPath);
+                    req.withCollectionPath(collectionPath);
+                    req.withPathParams(pathParams);
+
+//                pathParams.clear();
+//                for(Parameter param : op.getParameters()){
+//                    if(param.getIn().equalsIgnoreCase("path")){
+//                        String name = param.getKey();
+//                        String value = reqPath.get(param.getIndex());
+//                        pathParams.put(name, value);
+//                    }
+//                }
+
+
+                    String method  = req.getMethod();
+                    Path   path    = req.getPath();
+                    Path   subpath = req.getSubpath();
+
+                    //this will get all actions specifically configured on the endpoint
+                    List<ActionMatch> actions = new ArrayList<>();
+
+                    for (Action action : req.getEndpoint().getActions()) {
+                        Path actionPath = action.match(method, subpath);
+                        if (actionPath != null) {
+                            actions.add(new ActionMatch(actionPath, new Path(subpath), action));
+                        }
+                    }
+
+                    //this matches for actions that can run across multiple endpoints.
+                    //this might be something like an authorization or logging action
+                    //that acts like a filter
+                    for (Action action : req.getApi().getActions()) {
+                        Path actionPath = action.match(method, path);
+                        if (actionPath != null) {
+                            actions.add(new ActionMatch(actionPath, new Path(path), action));
+                        }
+                    }
+
+                    Collections.sort(actions);
+                    req.withActionMatches(actions);
+
+                    System.out.println("SELECTING OPERATION: " + op.getMethod() + " " + op.getPath());
+
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+
 
     public static JSNode buildErrorJson(Throwable ex) {
         String status  = "500";
@@ -776,6 +906,9 @@ public class Engine extends Rule<Engine> {
         if (apis.contains(api))
             return this;
 
+        if (api.isStarted() && api.getEngine() != null)
+            api.getEngine().removeApi(api);
+
         List<Api> newList = new ArrayList<>(apis);
 
         Api existingApi = getApi(api.getName());
@@ -846,6 +979,7 @@ public class Engine extends Rule<Engine> {
         }
     }
 
+
     public Engine withAllowHeaders(String allowHeaders) {
         this.corsAllowHeaders = allowHeaders;
         return this;
@@ -891,6 +1025,15 @@ public class Engine extends Rule<Engine> {
         return this;
     }
 
+    public Context getContext() {
+        return context;
+    }
+
+    public Engine withContext(Context context) {
+        this.context = context;
+        return this;
+    }
+
     /**
      * Receives {@code Engine} and {@code Api} lifecycle,
      * per request and per error callback notifications.
@@ -916,6 +1059,22 @@ public class Engine extends Rule<Engine> {
         default void onShutdown(Engine engine) {
             //implement me
         }
+    }
+
+    public Engine withFilters(Action... filters) {
+        for (Action filter : filters) {
+            if(filters != null) {
+                if (!this.filters.contains(filter)) {
+                    this.filters.add(filter);
+                }
+            }
+        }
+        Collections.sort(this.filters);
+        return this;
+    }
+
+    public List<Action> getFilters(){
+        return Collections.unmodifiableList(filters);
     }
 
     protected static void exclude(Request req, Response res) {
@@ -989,7 +1148,6 @@ public class Engine extends Rule<Engine> {
                     found = true;
             }
         }
-        //System.out.println("find(" + paths + ", " + path + ", " + matchStart + ") -> " + found);
         return found;
     }
 
@@ -1019,459 +1177,118 @@ public class Engine extends Rule<Engine> {
         return set;
     }
 
-
-    List<Operation> buildOperations() {
-        List<Operation>                      operations = new ArrayList<>();
-        ArrayListValuedHashMap<String, Path> allPaths   = buildRequestPaths();
-        for (String method : allPaths.keySet()) {
-            List<Path> requestPaths = allPaths.get(method);
-            for (Path requestPath : requestPaths) {
-                Operation op = buildOperation(method, requestPath);
-                if (op != null)
-                    operations.add(op);
-            }
+    protected void autowire(Context context) {
+        //-- SHORTCUT BOOTSTRAPPING
+        //--
+        //--
+        //-- this is a shortcut bootstrapping options for
+        //-- apis configured primarily through configuration
+        if (context.getBeans(Api.class).size() == 0) {
+            Api api = new Api();
+            context.putBean("api", api);
         }
 
+        //-- assign all Apis to the engine
+        for (Api api : context.getBeans(Api.class)) {
+            if (!getApis().contains(api))
+                withApi(api);
+        }
 
-        deduplicateOperationNames(operations);
+        //-- if you have a single Api, you don't have to explicitly assign endpoints/dbs/actions to the Api
+        Api singleApi = getApis().size() == 1 ? getApis().get(0) : null;
+        if (singleApi != null) {
 
-        return operations;
-    }
-
-    void deduplicateOperationNames(List<Operation> operations) {
-        for(Api api : apis){
-            List<Operation> apiOps = new ArrayList<>();
-            for(Operation op : operations){
-                if(op.getApi() == api)
-                    apiOps.add(op);
+            //-- assign all dbs to single api
+            for (Db db : context.getBeans(Db.class)) {
+                singleApi.withDb(db);
             }
 
-            ArrayListValuedHashMap<String, Operation> map = new ArrayListValuedHashMap<>();
-            apiOps.forEach(op -> map.put(op.getName(), op));
+            //-- assign all endpoints to the single Api
+            for (Endpoint ep : context.getBeans(Endpoint.class)) {
+                singleApi.withEndpoint(ep);
+            }
 
-            for (String operationName : map.keySet()) {
-                List<Operation> values = map.get(operationName);
-                if (values.size() > 1) {
-                    for (int i = 0; i < values.size(); i++) {
-                        String name = values.get(i).getName() + (i + 1);
-                        values.get(i).withName(name);
+            //-- make sure the Api has an endpoint
+            if (singleApi.getEndpoints().size() == 0) {
+                Endpoint ep = new Endpoint().withName("endpoint");
+                singleApi.withEndpoint(ep);
+                context.putBean("endpoint", ep);
+            }
+
+            //-- assign all unassigned actions to the endpoint if there is one endpoint
+            //-- or to the Api if there are multiple endpoints
+            boolean        assignToEndpoint = false;
+            List<Endpoint> endpoints        = context.getBeans(Endpoint.class);
+            if (endpoints.size() == 1 && endpoints.get(0).getActions().size() == 0)
+                assignToEndpoint = true;
+
+            for (Action action : context.getBeans(Action.class)) {
+                boolean assigned = false;
+
+                for (Endpoint ep : singleApi.getEndpoints()) {
+                    if (ep.getActions().contains(action)) {
+                        assigned = true;
+                        break;
                     }
+                }
+
+                if (!assigned && getFilters().contains(action))
+                    assigned = true;
+
+                if (!assigned && singleApi.getActions().contains(action))
+                    assigned = true;
+
+                if (!assigned) {
+                    if (assignToEndpoint)
+                        endpoints.get(0).withAction(action);
+                    else
+                        singleApi.withAction(action);
                 }
             }
         }
-    }
 
-    Operation buildOperation(String method, Path requestPath) {
-
-        Path operationPath = requestPath.copy();
-
-        Path engineMatch = this.match(method, requestPath);
-        if (engineMatch == null)
-            return null;
-
-        int       offset = 0;
-        Operation op     = new Operation();
-        op.withMethod(method);
-        op.withOperationPath(operationPath);
-        op.withEnginePathMatch(engineMatch.copy());
-
-        offset = addParams(op, engineMatch, requestPath, offset, true);
-
+        //-- AFTER potentially assigning unassigned objects to single api above
+        //--  1. make sure every api has a server
+        //--  2. again, make sure every Api has an endpoint
+        //--  3. add a DbAction if there are no other actions
         for (Api api : getApis()) {
-            Path apiMatch = api.match(method, requestPath);
-            if (apiMatch == null)
-                continue;
 
-            op.withApi(api);
-            op.withApiMatchPath(apiMatch.copy());
+            if (api.getServers().size() == 0)
+                api.withServer(new Server());
 
-            offset = addParams(op, apiMatch, requestPath, offset, true);
-
-            for (Endpoint ep : api.getEndpoints()) {
-                Path endpointMatch = ep.match(method, requestPath);
-                if (endpointMatch == null)
-                    continue;
-
-                op.withEndpoint(ep);
-                op.withEpMatchPath(endpointMatch.copy());
-
-
-                //-- find the db with the most specific (longest) path match
-                Db   winnerDb      = null;
-                Path winnerDbMatch = null;
-                for (Db db : api.getDbs()) {
-                    Path dbMatch = db.match(method, requestPath);
-                    if (dbMatch != null) {
-                        if (winnerDbMatch == null || dbMatch.size() > winnerDbMatch.size()) {
-                            winnerDb = db;
-                            winnerDbMatch = dbMatch;
-                        }
-                    }
-                }
-                if (winnerDb != null) {
-                    op.withDb(winnerDb);
-                    op.withDbMatchPath(winnerDbMatch);
-                    addParams(op, winnerDbMatch, requestPath, offset, false);
-                }
-
-
-                //-- pull out api action match paths before consuming the
-                //-- request path for the endpoint action matches
-                for (Action action : api.getActions()) {
-                    Path actionMatch = action.match(method, requestPath);
-                    if (actionMatch != null) {
-                        op.withActionMatch(action, actionMatch.copy(), false);
-                        addParams(op, actionMatch, requestPath, offset, false);
-                    }
-                }
-
-                //-- consume the requestPath for Endpoint Actions to match.
-                offset = addParams(op, endpointMatch, requestPath, offset, true);
-
-                for (Action action : ep.getActions()) {
-                    Path actionMatch = action.match(method, requestPath);
-                    if (actionMatch != null) {
-                        op.withActionMatch(action, actionMatch.copy(), true);
-                        addParams(op, actionMatch, requestPath, offset, false);
-                    }
-                }
-
-                break;
+            //-- give all APIs a default endpoint if they don't have one
+            if (api.getEndpoints().size() == 0) {
+                Endpoint ep = new Endpoint();
+                api.withEndpoint(ep);
             }
-            break;
-        }
 
-
-        //-- find the collection and relationship if applicable
-        Db db = op.getDb();
-        if (db != null && op.getCollection() == null) {
-            String     collectionKey = op.getPathParam(Request.COLLECTION_KEY);
-            Collection collection    = db.getCollection(collectionKey);
-            if (collection != null) {
-                op.withCollection(collection);
-            }
-        }
-        Collection collection = op.getCollection();
-        if (collection != null && op.getRelationship() == null) {
-            String relationshipKey = op.getPathParam(Request.RELATIONSHIP_KEY);
-            if (relationshipKey != null) {
-                Relationship relationship = collection.getRelationship(relationshipKey);
-                op.withRelationship(relationship);
+            if (api.getDbs().size() > 0 && api.getActions().size() == 0) {
+                boolean hasAction = false;
+                for (Endpoint ep : api.getEndpoints()) {
+                    if (ep.getActions().size() > 0) {
+                        hasAction = true;
+                        break;
+                    }
+                }
+                if (hasAction == false) {
+                    Action dbAction = new DbAction();
+                    if (api.getEndpoints().size() == 1)
+                        api.getEndpoints().get(0).withAction(dbAction);
+                    else
+                        api.withAction(dbAction);
+                }
             }
         }
         //--
+        //--
+        //--
+        //-- END SHORTCUT BOOTSTRAPPING
 
-        String name = buildOperationName(op);
-        op.withName(name);
-
-
-        return op;
-
+        //--
+        //-- this will cause the Dbs to reflect their data sources and create Collections etc.
+        for (Api api : getApis())
+            for (Db db : api.getDbs())
+                db.startup(api);
     }
-
-    protected int addParams(Operation op, Path matchedPath, Path requestPath, int offset, boolean consume) {
-        for (int i = 0; i < matchedPath.size() && i < requestPath.size(); i++) {
-            if (matchedPath.isVar(i)) {
-                String key = matchedPath.getVarName(i);
-                op.withParameter(new Parameter(key, i + offset));
-            }
-        }
-
-        if (consume) {
-            for (int i = 0; i < matchedPath.size(); i++) {
-                if (matchedPath.isOptional(i) || matchedPath.isWildcard(i))
-                    break;
-                requestPath.remove(0);
-                offset += 1;
-            }
-        }
-        return offset;
-    }
-
-
-    public ArrayListValuedHashMap<String, Path> buildRequestPaths() {
-        ArrayListValuedHashMap<String, Path> raw      = enumeratePaths();
-        ArrayListValuedHashMap<String, Path> filtered = new ArrayListValuedHashMap<String, Path>();
-        for (String method : raw.keySet()) {
-            List<Path> paths = raw.get(method);
-            filtered.putAll(method, paths);
-        }
-        return filtered;
-    }
-
-    ArrayListValuedHashMap<String, Path> enumeratePaths() {
-        ArrayListValuedHashMap<String, Path> paths = new ArrayListValuedHashMap<>();
-        for (Rule.RuleMatcher engineMatcher : getIncludeMatchers()) {
-            for (String method : engineMatcher.getMethods()) {
-                for (Path enginePath : engineMatcher.getPaths()) {
-                    for (Api api : apis) {
-                        for (Rule.RuleMatcher apiMatcher : api.getIncludeMatchers()) {
-                            if (!apiMatcher.hasMethod(method))
-                                continue;
-                            for (Path apiPath : apiMatcher.getPaths()) {
-                                Path fullApiPath = Path.joinPaths(enginePath, apiPath);
-
-                                if (fullApiPath == null)
-                                    continue;
-
-                                for (Endpoint ep : api.getEndpoints()) {
-                                    for (Rule.RuleMatcher epMatcher : ep.getIncludeMatchers()) {
-                                        if (!epMatcher.hasMethod(method))
-                                            continue;
-                                        for (Path epPath : epMatcher.getPaths()) {
-                                            Path fullEpPath = Path.joinPaths(fullApiPath, epPath);
-
-                                            if (fullEpPath == null)
-                                                continue;
-
-                                            List<Action> epActions  = ep.getActions();
-                                            List<Action> allActions = new ArrayList(ep.getActions());
-                                            for (Action action : api.actions) {
-                                                if (!allActions.contains(action))
-                                                    allActions.add(action);
-                                            }
-                                            Collections.sort(allActions);
-
-                                            List<Path> allPathsForEndpoint = new ArrayList<>();
-
-                                            for (Action action : allActions) {
-                                                for (Rule.RuleMatcher actionMatcher : (List<Rule.RuleMatcher>) action.getIncludeMatchers()) {
-                                                    if (!actionMatcher.hasMethod(method))
-                                                        continue;
-                                                    for (Path actionPath : actionMatcher.getPaths()) {
-
-                                                        Path fullActionPath = null;
-                                                        if (epActions.contains(action)) {
-                                                            fullActionPath = Path.joinPaths(fullEpPath, actionPath);
-
-                                                        } else {
-                                                            if (actionPath.matches(epPath)) {
-                                                                fullActionPath = Path.joinPaths(fullApiPath, actionPath);
-                                                            }
-
-                                                        }
-                                                        if (fullActionPath == null)
-                                                            continue;
-
-                                                        allPathsForEndpoint.add(fullActionPath);
-                                                        //paths.put(method, fullActionPath);
-                                                    }
-                                                }
-                                            }
-                                            allPathsForEndpoint = expandOptionalsAndFilterDuplicates(allPathsForEndpoint);
-                                            allPathsForEndpoint = Endpoint.mergePaths(new ArrayList(), allPathsForEndpoint);
-                                            paths.putAll(method, allPathsForEndpoint);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return paths;
-    }
-
-    public static List<Path> expandOptionalsAndFilterDuplicates(List<Path> paths) {
-        List<Path> allPaths = new ArrayList();
-        for (Path path : paths)
-            allPaths.addAll(path.getSubPaths());
-
-        for (int i = 0; i < allPaths.size(); i++) {
-            for (int j = i + 1; j < allPaths.size(); j++) {
-                Path p1 = allPaths.get(i);
-                Path p2 = allPaths.get(j);
-
-                if (p1.size() != p2.size())
-                    continue;
-
-                boolean same = true;
-
-                for (int k = 0; same && k < p1.size(); k++) {
-                    if (p1.isVar(k) && p2.isVar(k))
-                        continue;
-                    else if (p1.isWildcard(k) && p2.isWildcard(k))
-                        continue;
-                    else {
-                        String part1 = p1.get(k);
-                        String part2 = p2.get(k);
-                        if (!part1.equalsIgnoreCase(part2)) {
-                            same = false;
-                        }
-                    }
-                }
-                if (same) {
-                    allPaths.remove(j);
-                    j -= 1;
-                }
-            }
-        }
-
-        return allPaths;
-    }
-
-    /**
-     * LIST
-     * GET /books
-     * ListBooksRequest    - ListBooksResponse
-     * <p>
-     * GET
-     * GET /book/:id
-     * GetBookRequest      - GetBookResponse
-     * <p>
-     * RELATED
-     * GET /book/:id/author
-     * RelatedAuthorsRequest - ListAuthorsResponse
-     * <p>
-     * POST
-     * POST /books
-     * CreateBookRequest - CreateBookResponse
-     * <p>
-     * BATCH_POST
-     * POST /books
-     * CreateBooksBatchRequest - CreateBooksBatchResponse
-     * <p>
-     * BATCH_PUT
-     * PUT /books
-     * UpdateBooksBatchRequest - UpdateBooksBatchResponse
-     * <p>
-     * PUT
-     * PUT /books/:id
-     * UpdateBookRequest - UpdateBookResponse
-     * <p>
-     * PATCH
-     * PATCH /books/:id
-     * PatchBookRequest  - PatchBookResponse
-     * <p>
-     * DELETE
-     * DELETE /books/:id
-     * DeleteBookRequest - DeleteBookResponse
-     * <p>
-     * BATCH_DELETE
-     * DELETE /books/
-     * DeleteBooksBatchRequest - DeleteBooksBatchResponse
-     */
-    /**
-     * //        switch (function.toLowerCase()) {
-     * //            case "get":
-     * //                name = "get" + singular;
-     * //                break;
-     * //            case "list":
-     * //                name = "find" + plural;
-     * //                break;
-     * //            case "related":
-     * //                name = "findRelated" + Utils.capitalize(relationship.getRelated().getPluralDisplayName());
-     * //                break;
-     * //            case "post":
-     * //                name = "create" + singular;
-     * //                break;
-     * //            case "batch_post":
-     * //                name = "createMultiple" + plural;
-     * //                break;
-     * //            case "put":
-     * //                name = "update" + singular;
-     * //                break;
-     * //            case "batch_put":
-     * //                name = "updateMultiple" + plural;
-     * //                break;
-     * //            case "patch":
-     * //                name = "patch" + plural;
-     * //                break;
-     * //            case "delete":
-     * //                name = "delete" + singular;
-     * //                break;
-     * //            case "batch_delete":
-     * //                name = "deleteMultiple" + plural;
-     * //                break;
-     * //            default:
-     * //                throw new ApiException("Unknown function {}", function);
-     * //        }
-     *
-     * @param op
-     * @return
-     */
-
-    public String buildOperationName(Operation op) {
-
-        String name = null;
-
-        Collection collection = op.getCollection();
-        String     epName     = op.getEndpoint().getName();
-
-        String singular = Utils.capitalize(collection == null ? epName : collection.getSingularDisplayName());
-        String plural   = Utils.capitalize(collection == null ? epName : collection.getPluralDisplayName());
-
-        String method = op.getMethod().toUpperCase();
-
-        if (op.hasAllParams("path", Request.COLLECTION_KEY, Request.RESOURCE_KEY, Request.RELATIONSHIP_KEY)) {
-
-            switch (method){
-                case "GET" :
-                    name = "findRelated" + Utils.capitalize(op.getPathParam(Request.RELATIONSHIP_KEY));
-                    break;
-                case "POST" :
-                case "PUT" :
-                case "PATCH" :
-                case "DELETE" :
-                    name = "UNSUPPORTED";
-            }
-
-        } else if (op.hasAllParams("path", Request.COLLECTION_KEY, Request.RESOURCE_KEY)) {
-            switch (method) {
-                case "GET":
-                    name = "get" + singular;
-                    break;
-                case "POST":
-                    name = "createIdentified" + singular;
-                    break;
-                case "PUT":
-                    name = "update" + singular;
-                    break;
-                case "PATCH":
-                    name = "patch" + singular;
-                    break;
-                case "DELETE":
-                    name = "delete" + singular;
-            }
-
-        } else if (op.hasAllParams("path", Request.COLLECTION_KEY)) {
-            switch (method) {
-                case "GET":
-                    name = "find" + plural;
-                    break;
-                case "POST":
-                    name = "create" + plural;
-                    break;
-                case "PUT":
-                    name = "update" + plural;
-                    break;
-                case "PATCH":
-                    name = "patch" + plural;
-                case "DELETE":
-                    name = "delete" + plural;
-            }
-        } else {
-            switch (method) {
-                case "GET":
-                case "POST":
-                case "PUT":
-                case "PATCH":
-                case "DELETE":
-                    name = method.toLowerCase();
-            }
-        }
-
-         for (int i = 0; i < op.operationPath.size(); i++) {
-            if (op.getOperationPath().isVar(i))
-                name += "By" + Utils.capitalize(op.getOperationPath().getVarName(i));
-        }
-
-        return name;
-    }
-
-
-
 
 }

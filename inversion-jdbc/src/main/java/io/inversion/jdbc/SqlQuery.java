@@ -20,7 +20,7 @@ import io.inversion.*;
 import io.inversion.rql.*;
 import io.inversion.rql.Order.Sort;
 import io.inversion.utils.Rows;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -51,6 +51,16 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         //-- is required to set the columnQuote after member variable
         //-- initialization happens AFTER the super call.
         withDb(db);
+
+
+//        Order order = getOrder();
+//        List<Sort> sorts = order.getSorts();
+//        if(sorts.size() == 0){
+//            Index pk = table.getResourceIndex();
+//            for(Property p : pk.getProperties()) {
+//                sorts.add(new Sort(p.getColumnName(), true));
+//            }
+//        }
     }
 
     protected boolean addTerm(String token, Term term) {
@@ -109,7 +119,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 //-- adds support for index based pagination instead of offset pagination if page params were not supplied
                 if(!getPage().isPaginated()){
                     if(rows.size() > 0 && collection != null) {
-                        Index pk = collection.getPrimaryIndex();
+                        Index pk = collection.getResourceIndex();
                         if (pk != null && pk.size() == 1) {
                             List<Sort> sorts = getOrder().getSorts();
                             if (sorts.size() > 0) {
@@ -454,8 +464,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         boolean wildcard = parts.select.contains("* ") //
                 || parts.select.contains("*,");//this trailing space or comma is important because otherwise this would incorrectly match "COUNT(*)"
 
-        if (collection != null && collection.getPrimaryIndex() != null) {
-            for (String pkCol : collection.getPrimaryIndex().getColumnNames()) {
+        if (collection != null && collection.getResourceIndex() != null) {
+            for (String pkCol : collection.getResourceIndex().getColumnNames()) {
                 if (wildcard || parts.select.contains(quoteCol(pkCol))) {
                     Sort sort = new Sort(pkCol, true);
                     sorts.add(sort);
@@ -469,21 +479,21 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
         //-- TODO: make test case for this
         if (sorts.size() == 0) {
-            boolean hasCol = false;
-            for (Term term : select.getAllColumns()) {
-                if (term.isLeaf() || term.hasToken("as") && term.getTerm(0).isLeaf()) {
-                    hasCol = true;
-                    break;
-                }
-            }
-
-            if (!hasCol)
-                return sorts;
+//            boolean hasCol = false;
+//            for (Term term : select.getAllColumns()) {
+//                if (term.isLeaf() || term.hasToken("as") && term.getTerm(0).isLeaf()) {
+//                    hasCol = true;
+//                    break;
+//                }
+//            }
+//
+//            if (!hasCol)
+//                return sorts;
 
             Collection coll = getCollection();
             if (coll != null) {
                 for (Property prop : coll.getProperties()) {
-                    if (parts.select.contains(quoteCol(prop.getColumnName())))
+                    if (wildcard || parts.select.contains(quoteCol(prop.getColumnName())))
                         sorts.add(new Sort(prop.getColumnName(), true));
                 }
             } else {
@@ -497,8 +507,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     protected String printLimitClause(Parts parts, int offset, int limit) {
+
+        //-- limiting without a sort does not make sense, in fact sqlserver will throw an error
+        //-- getDefaultSorts attempts to create a sort if one is not provided
         if (Utils.empty(parts.order))
-            return "";
+            throw ApiException.new400BadRequest("You must include a 'order=' in your query");
 
         String s = null;
         if (limit >= 0 || offset >= 0) {

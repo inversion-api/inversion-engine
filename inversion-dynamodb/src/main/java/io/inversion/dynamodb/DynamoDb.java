@@ -26,8 +26,8 @@ import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.*;
 import io.inversion.*;
 import io.inversion.rql.Term;
-import io.inversion.utils.Config;
-import io.inversion.utils.Utils;
+import io.inversion.config.Config;
+import ioi.inversion.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -174,7 +174,7 @@ public class DynamoDb extends Db<DynamoDb> {
     public void deleteRow(Collection table, Map<String, Object> row) throws ApiException {
         com.amazonaws.services.dynamodbv2.document.Table dynamo = getDynamoTable(table);
 
-        Index pk = table.getPrimaryIndex();
+        Index pk = table.getResourceIndex();
 
         if (pk.size() == 1) {
             dynamo.deleteItem(pk.getProperty(0).getColumnName(), row.get(pk.getProperty(0).getColumnName()));

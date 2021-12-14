@@ -20,7 +20,7 @@ import io.inversion.*;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Rows.Row;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.apache.http.HttpHost;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -155,7 +155,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
 
             result.withFoundRows((int) hits.getTotalHits().value);
         } else
-            System.out.println("request failed :*(");
+            System.out.println("request failed (");
 
         return result;
     }
@@ -266,7 +266,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
             if (isSuccess(statusCode)) {
                 // we now have the indices, aliases for each index, and mappings (and settings if we need them)
 
-                JSNode jsObj = JSNode.parseJsonNode(EntityUtils.toString(allResponse.getEntity()));
+                JSNode jsObj = JSNode.asJSNode(EntityUtils.toString(allResponse.getEntity()));
 
                 Map<String, JSNode> jsContentMap = (Map<String, JSNode>) jsObj.asMap();
 

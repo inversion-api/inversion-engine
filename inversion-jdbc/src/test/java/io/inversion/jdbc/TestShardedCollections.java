@@ -39,12 +39,12 @@ public class TestShardedCollections {
                 .withName("pricebook")//
                 .withDb(db)//
                 .withAction(new HALAction().withOrder(50))
-                //.withEndpoint("GET", "{storeId:[0-9]*}/[{_collection:items}]/[{productId}]/*", dbAction)
-                .withEndpoint("GET", "{storeId:[0-9]*}/[items]/*", dbAction)
-                .withEndpoint("GET", "[{_collection:products|stores|channels}]/*", dbAction)
+                //.withEndpoint("{storeId:[0-9]*}/[{_collection:items}]/[{productId}]/*", dbAction)
+                .withEndpoint("{storeId:[0-9]*}/[items]/*", dbAction)
+                .withEndpoint("[{_collection:products|stores|channels}]/*", dbAction)
         ;
 
-        db.withIncludeTables("Product|products");//, "Channel", "Store");
+        db.withIncludeTables("Product|products");//, "Channel:Store");
 
 
         /**

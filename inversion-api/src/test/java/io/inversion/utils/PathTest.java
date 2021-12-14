@@ -16,9 +16,10 @@
  */
 package io.inversion.utils;
 
-import io.inversion.Api;
+import ioi.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,34 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PathTest {
+
+
+    void join(String expected, String leftPath, String rightPath, boolean relative){
+        Path path =  Path.joinPaths(new Path(leftPath), new Path(rightPath), relative);
+        assertEquals(expected, path != null ? path.toString() : null);
+    }
+
+    @Test
+    public void test_materializeTrivialRegexes() {
+        List<Path> paths = Utils.asList(new Path("{var1:car|bus|plane}"), new Path("{var1:books}/{var2:[a-z]*}/{var3:author|category|price}"));
+        paths = Path.materializeTrivialRegexes(paths);
+        assertEquals("[car, bus, plane, books/var2/author, books/var2/category, books/var2/price]", paths.toString());
+    }
+
+    @Test
+    public void test_joinPaths(){
+        join("servlet/path/api/v1/*", "/servlet/path/*", "api/v1/*", true);
+        join("servlet/path/api/v1/[books]/*", "/servlet/path/*", "api/v1/[books]/*", true);
+        join("api/v1/[{collection}]/[{resource}]/[{relationship}]", "/api/v1/[{collection}]/[{resource}]/[{relationship}]", "/*", true);
+        join("api/v1/*", "/*", "api/v1/*", true);
+        join(null, "servlet/[api1]/*", "api2/*", true);
+
+        join("catalog/books/*", "catalog/*", "catalog/books/*", false);
+
+        join("catalog/books/abook", "catalog/[books]/*", "catalog/books/abook", false);
+        join(null, "catalog/[cars]/*", "catalog/books/abook", false);
+
+    }
 
 
     @Test
@@ -63,19 +92,20 @@ public class PathTest {
     }
 
     @Test
+    public void add_ignores_duplicate_trailing_wildcard(){
+        Path p = new Path("asd/*");
+        p.add("*");
+        assertEquals("asd/*", p.toString());
+    }
+
+
+    @Test
     public void add_errors_when_wildcard_is_not_the_last_segment(){
         try{
             new Path("asd/*/sdf");
             fail();
         }catch(Exception ex){
-            System.out.println(ex.getMessage());
-        }
-        try{
-            Path p = new Path("asd/*");
-            p.add("*");
-            fail();
-        }catch(Exception ex){
-            System.out.println(ex.getMessage());
+            //System.out.println(ex.getMessage());
         }
     }
 
@@ -111,7 +141,7 @@ public class PathTest {
     public void extract_stopsOnOptionalWithColonVarParsing() {
         Map<String, String> params = new HashMap<>();
 
-        Path rule = new Path("part1/:part2/part3/[{varName1:part4}]/[:varName2]/*");
+        Path rule = new Path("part1/{part2}/part3/[{varName1:part4}]/[{varName2}]/*");
         Path path = new Path("part1/val2/part3/part4/part5/part6/part7/part8/part9");
 
         Path matched = rule.extract(params, path);
@@ -218,5 +248,53 @@ public class PathTest {
         assertTrue(new Path("something/{collection:books|customers}/[{resource:[0-9]{1,8}}]/[{relationship:[a-zA-Z]*}]").matches("something/customers/1234/"));
         assertFalse(new Path("something/{collection:books|customers}/{resource:[0-9]{1,8}}/{relationship:[a-zA-Z]*}").matches("something/customers/1234/"));
         assertTrue(new Path("{collection:players|locations|ads}/[{resource:[0-9]{1,12}}]/{relationship:[a-z]*}").matches("Locations/698/players"));
+    }
+
+    @Test
+    public void mergePaths() {
+
+        merge("[a/*]", "a/*", "a");
+        merge("[a/*]", "a", "a/*");
+
+        merge("[a/b]", "a/*", "a/b");
+        merge("[a/b]", "a/b", "a/*");
+        merge("[a, a/b]", "a", "a/b");
+
+        merge("[a, a/b/c]", "a", "a/b/c");
+
+        merge("[a/b/c]", "a/*", "a/b/c");
+        merge("[a/b/c]", "a/b/c", "a/*");
+
+        merge("[a/b/c/*]", "a/*", "a/b/c/*");
+        merge("[a/b/c/*]", "a/b/c/*", "a/*");
+
+        merge("[a/b, a/b/c]", "a/b", "a/b/c");
+        merge("[a/b]", "a/{asdf}", "a/b");
+        merge("[a/b/c]", "a/{asdf}/c", "a/b/c");
+
+
+        merge("[a/b/c]", "a/b/c", "a/{asdf}/c");
+
+        merge("[a/b/c]", "a/b/c", "a/{asdf}/*");
+        merge("[a/b/c/*]", "a/b/c/*", "a/{asdf}/c");
+
+
+        merge("[1/2/3/4]", "{v1}/{v1}/{v1}/{v1}", "1/{a}/{b}/{c}/", "{a}/2/{b}/{c}/", "{a}/{b}/3/{c}/", "{a}/{b}/{c}/4");
+        merge("[1/2/3/4]", "{v1}/{v1}/{v1}/{v1}", "1/*", "{a}/2/*", "{a}/{b}/3/*", "{a}/{b}/{c}/4");
+
+
+        merge("[1/2/3/4]","{v1}/{v1}/{v1}/{v1}", "1/*", "{a}/2/3/4");
+
+    }
+
+    static void merge(String expected, String... paths) {
+        List<Path> list = new ArrayList<>();
+        for (String p : paths) {
+            list.add(new Path(p));
+        }
+        List<Path> merged = new ArrayList();
+        Path.mergePaths(merged, list);
+        System.out.println("MERGING: " + expected + " vs " + merged + " - " + list);
+        assertEquals(expected, merged.toString());
     }
 }

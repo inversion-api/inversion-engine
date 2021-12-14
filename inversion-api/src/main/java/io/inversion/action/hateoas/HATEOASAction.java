@@ -17,6 +17,10 @@
 package io.inversion.action.hateoas;
 
 import io.inversion.Action;
+import io.inversion.action.openapi.OpenAPIWriter;
 
-public class HATEOASAction<T extends HATEOASAction>  extends Action<T> {
+public class HATEOASAction<T extends HATEOASAction>  extends Action<T> implements OpenAPIWriter<T> {
+    public HATEOASAction(){
+        withDecoration(true);
+    }
 }

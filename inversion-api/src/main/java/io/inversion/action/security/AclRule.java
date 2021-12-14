@@ -16,10 +16,9 @@
  */
 package io.inversion.action.security;
 
-import io.inversion.Chain;
 import io.inversion.Request;
 import io.inversion.Rule;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,9 +35,9 @@ public class AclRule extends Rule<AclRule> {
         super();
     }
 
-    public AclRule(String name, String methods, String includePaths, String permission1, String... permissionsN) {
+    public AclRule(String name, String ruleMatcherSpec, String permission1, String... permissionsN) {
         withName(name);
-        withIncludeOn(methods, includePaths);
+        withIncludeOn(ruleMatcherSpec);
 
         if (permission1 != null)
             withPermissions(permission1);
@@ -47,33 +46,33 @@ public class AclRule extends Rule<AclRule> {
             withPermissions(permissionsN);
     }
 
-    public static AclRule allowAll(String methods, String includePaths) {
-        AclRule rule = new AclRule(null, methods, includePaths, null);
+    public static AclRule allowAll(String ruleMatcherSpec) {
+        AclRule rule = new AclRule(null, ruleMatcherSpec, null);
         return rule;
     }
 
-    public static AclRule requireAllPerms(String methods, String includePaths, String permission1, String... permissionsN) {
-        AclRule rule = new AclRule(null, null, includePaths, permission1, permissionsN);
+    public static AclRule requireAllPerms(String ruleMatcherSpec, String permission1, String... permissionsN) {
+        AclRule rule = new AclRule(null, ruleMatcherSpec, permission1, permissionsN);
         rule.withAllPermissionsMustMatch(true);
         return rule;
     }
 
-    public static AclRule requireOnePerm(String methods, String includePaths, String permission1, String... permissionsN) {
-        AclRule rule = new AclRule(null, null, includePaths, permission1, permissionsN);
+    public static AclRule requireOnePerm(String ruleMatcherSpec, String permission1, String... permissionsN) {
+        AclRule rule = new AclRule(null, ruleMatcherSpec, permission1, permissionsN);
         rule.withAllPermissionsMustMatch(false);
         return rule;
     }
 
-    public static AclRule requireAllRoles(String methods, String includePaths, String role1, String... rolesN) {
-        AclRule rule = new AclRule(null, null, includePaths, null);
+    public static AclRule requireAllRoles(String ruleMatcherSpec, String role1, String... rolesN) {
+        AclRule rule = new AclRule(null, ruleMatcherSpec, null);
         rule.withAllRolesMustMatch(true);
         rule.withRoles(role1);
         rule.withRoles(rolesN);
         return rule;
     }
 
-    public static AclRule requireOneRole(String methods, String includePaths, String role1, String... rolesN) {
-        AclRule rule = new AclRule(null, null, includePaths, null);
+    public static AclRule requireOneRole(String ruleMatcherSpec, String role1, String... rolesN) {
+        AclRule rule = new AclRule(null, ruleMatcherSpec, null);
         rule.withAllRolesMustMatch(false);
         rule.withRoles(role1);
         rule.withRoles(rolesN);
@@ -81,53 +80,55 @@ public class AclRule extends Rule<AclRule> {
     }
 
     public boolean ruleMatches(Request req) {
-        if (match(req.getMethod(), req.getPath()) == null)
-            return false;
-
-        //short cut 
-        if (Chain.getUser() == null && (roles.size() > 0 || permissions.size() > 0))
-            return false;
-
-        int matches = 0;
-        for (String requiredRole : roles) {
-            boolean matched = Chain.getUser().hasRoles(requiredRole);
-
-            if (matched) {
-                matches += 1;
-                if (!allRolesMustMatch) {
-                    break;
-                }
-            } else {
-                if (allRolesMustMatch) {
-                    break;
-                }
-            }
-        }
-
-        for (String requiredPerm : permissions) {
-            boolean matched = Chain.getUser().hasPermissions(requiredPerm);
-
-            if (matched) {
-                matches += 1;
-                if (!allPermissionsMustMatch) {
-                    break;
-                }
-            } else {
-                if (allPermissionsMustMatch) {
-                    break;
-                }
-            }
-        }
-
-        boolean hasRoles = roles.size() == 0 //
-                || (allRolesMustMatch && matches == roles.size())//
-                || (!allRolesMustMatch && matches > 0);
-
-        boolean hasPermissions = permissions.size() == 0 //
-                || (allPermissionsMustMatch && matches == permissions.size())//
-                || (!allPermissionsMustMatch && matches > 0);
-
-        return hasRoles || hasPermissions;
+//TODO: restore me
+//        if (match(req.getMethod(), req.getFunctionPath()) == null)
+//            return false;
+//
+//        //short cut
+//        if (Chain.getUser() == null && (roles.size() > 0 || permissions.size() > 0))
+//            return false;
+//
+//        int matches = 0;
+//        for (String requiredRole : roles) {
+//            boolean matched = Chain.getUser().hasRoles(requiredRole);
+//
+//            if (matched) {
+//                matches += 1;
+//                if (!allRolesMustMatch) {
+//                    break;
+//                }
+//            } else {
+//                if (allRolesMustMatch) {
+//                    break;
+//                }
+//            }
+//        }
+//
+//        for (String requiredPerm : permissions) {
+//            boolean matched = Chain.getUser().hasPermissions(requiredPerm);
+//
+//            if (matched) {
+//                matches += 1;
+//                if (!allPermissionsMustMatch) {
+//                    break;
+//                }
+//            } else {
+//                if (allPermissionsMustMatch) {
+//                    break;
+//                }
+//            }
+//        }
+//
+//        boolean hasRoles = roles.size() == 0 //
+//                || (allRolesMustMatch && matches == roles.size())//
+//                || (!allRolesMustMatch && matches > 0);
+//
+//        boolean hasPermissions = permissions.size() == 0 //
+//                || (allPermissionsMustMatch && matches == permissions.size())//
+//                || (!allPermissionsMustMatch && matches > 0);
+//
+//        return hasRoles || hasPermissions;
+        return true;
     }
 
     public ArrayList<String> getRoles() {

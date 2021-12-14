@@ -16,6 +16,7 @@
  */
 package io.inversion.utils;
 
+import ioi.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,6 +26,83 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  */
 public class UrlTest {
+
+    @Test
+    public void test_pass_parsing(){
+        passUrl("https://some.my.host/path/v1/{var1}/{var2}", "https://some.my.host/path/v1/{var1}/{var2}/", "remove trailing slash");
+        passUrl("http://127.0.0.1:8080", "/", "default host with no trailing slash");
+        passUrl("http://127.0.0.1:8080", "////");
+        passUrl("http://127.0.0.1:8080/path", "path/");
+        passUrl("http://127.0.0.1:8080/path", "/path");
+        passUrl("http://127.0.0.1:8080/path", "/path/");
+
+        passUrl("http://127.0.0.1:8080/path", "path///");
+        passUrl("http://127.0.0.1:8080/path", "///path");
+        passUrl("http://127.0.0.1:8080/path", "///path///");
+
+        passUrl("http://127.0.0.1:8080/a/b", "////a///b///");
+        passUrl("http://127.0.0.1:8080/a/b", "http://127.0.0.1:8080////a///b///");
+        passUrl("https://127.0.0.1:8080/a/b", "https://127.0.0.1:8080////a///b///");
+        passUrl("http://127.0.0.1/a/b", "http://127.0.0.1////a///b///");
+
+        passUrl("http://127.0.0.1:8080/{asdf...asdf}", "{asdf...asdf}");
+
+        passUrl("http://host:8080/abc", "http:/host:8080/abc");
+        passUrl("http://host:8080/abc", "http://///host:8080////abc");
+        passUrl("http://host:8080/abc", "http:host:8080////abc");
+
+        passUrl("http://127.0.0.1:8080", "");
+        passUrl("http://127.0.0.1:8080", "");
+        passUrl("http://127.0.0.1:8080", "");
+    }
+
+    @Test
+    public void test_should_fail_parsing(){
+        failUrl(".");
+        failUrl("..");
+        failUrl("./");
+        failUrl("../");
+
+        failUrl("http:/host/.");
+        failUrl("http:/host/./");
+        failUrl("http:/host/..");
+        failUrl("http:/host/../");
+
+        failUrl("http:/host:8080/.");
+        failUrl("http:/host:8080/./");
+        failUrl("http:/host:8080/..");
+        failUrl("http:/host:8080/../");
+
+        failUrl("http:/host:abc");
+
+        failUrl("./");
+        failUrl("/.");
+        failUrl("asf/../sd");
+        failUrl("/../sd");
+    }
+
+    void failUrl(String url){
+        failUrl(url, null);
+    }
+    void failUrl(String url, String comment){
+        Url u = null;
+        try{
+            u = new Url(url);
+        }
+        catch(Exception ex){
+            return;
+        }
+        fail("SHOULD FAIL: '" + url + "' parsed as '" + u + "'" + (comment != null ? (" - " + comment) : ""));
+    }
+
+    void passUrl(String expected, String url){
+        assertEquals(expected, new Url(url).toString());
+    }
+
+    void passUrl(String expected, String url, String comment){
+        assertEquals(expected, new Url(url).toString(), comment);
+    }
+
     @Test
     public void testUrlWithParams() {
         assertEquals("http://test.com/api?a=b&c=d", new Url("http://test.com/api").withParams("a", "b", "c", "d").toString());

@@ -29,7 +29,7 @@ import io.inversion.Response;
 import io.inversion.User;
 import io.inversion.action.security.AuthAction;
 import io.inversion.action.security.AuthScheme;
-import io.inversion.utils.Config;
+import io.inversion.config.Config;
 
 import java.io.UnsupportedEncodingException;
 import java.util.*;

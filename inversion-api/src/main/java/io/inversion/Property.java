@@ -16,7 +16,7 @@
  */
 package io.inversion;
 
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.io.Serializable;
 
@@ -24,7 +24,7 @@ import java.io.Serializable;
  *
  */
 public class Property implements Serializable {
-    protected String  jsonName   = null;
+    protected String  name   = null;
     protected String  columnName = null;
     protected String description = null;
     protected String  type       = "string";
@@ -134,7 +134,11 @@ public class Property implements Serializable {
      * @return the name
      */
     public String getJsonName() {
-        return jsonName;
+        return name;
+    }
+
+    public String getName(){
+        return this.name != null ? name : columnName;
     }
 
     /**
@@ -142,7 +146,12 @@ public class Property implements Serializable {
      * @return this
      */
     public Property withJsonName(String name) {
-        this.jsonName = name;
+        this.name = name;
+        return this;
+    }
+
+    public Property withName(String name){
+        this.name = name;
         return this;
     }
 

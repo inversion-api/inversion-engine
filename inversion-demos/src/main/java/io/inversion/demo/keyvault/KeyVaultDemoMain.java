@@ -26,8 +26,8 @@ import io.inversion.Api;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDb;
 import io.inversion.spring.main.InversionMain;
-import io.inversion.utils.Config;
-import io.inversion.utils.Utils;
+import io.inversion.config.Config;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * Example of how database connectivity settings can be pulled from an Azure KeyVault at runtime.
  *
  * @see <a href="https://inversion-api.github.io/inversion-engine/javadoc/io/inversion/jdbc/JdbcDb.html">io.inversion.jdbc.JdbcDb</a>
- * @see <a href="https://inversion-api.github.io/inversion-engine/javadoc/io/inversion/utils/Config.html">io.inversion.utils.Config</a>
+ * @see <a href="https://inversion-api.github.io/inversion-engine/javadoc/io/inversion/utils/Config.html">io.inversion.config.Config</a>
  * @see <a href="http://commons.apache.org/proper/commons-configuration/apidocs/org/apache/commons/configuration2/CombinedConfiguration.html">org.apache.commons.configuration2.CombinedConfiguration</a>
  */
 public class KeyVaultDemoMain {
@@ -74,7 +74,7 @@ public class KeyVaultDemoMain {
         String configPath    = Utils.findSysEnvProp("configPath");
         String configProfile = Utils.findSysEnvProp("configProfile", "profile");
 
-        Config.loadConfiguration(configPath, configProfile);//this loads the default configuration
+        Config.loadConfiguration(KeyVaultDemoMain.class, configPath, configProfile);//this loads the default configuration
         CompositeConfiguration config = Config.getConfiguration();
 
         //-- add the secrets to the start of the composite list so that key vault values are pulled first
@@ -85,7 +85,7 @@ public class KeyVaultDemoMain {
 
         Api api = new Api()//
                 .withDb(new JdbcDb().withName("myDb"))//
-                .withEndpoint("*", "*", new DbAction());
+                .withEndpoint(new DbAction());
 
         //-- runs the Api as a spring boot app
         InversionMain.run(api);

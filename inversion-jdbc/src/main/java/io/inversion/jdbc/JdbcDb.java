@@ -21,11 +21,11 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.inversion.*;
 import io.inversion.Collection;
 import io.inversion.Api.ApiListener;
+import io.inversion.config.Config;
 import io.inversion.jdbc.JdbcUtils.SqlListener;
 import io.inversion.rql.Term;
-import io.inversion.utils.Config;
 import io.inversion.utils.Rows.Row;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.configuration2.Configuration;
 
 import javax.sql.DataSource;
@@ -186,15 +186,7 @@ public class JdbcDb extends Db<JdbcDb> {
         api.withApiListener(new ApiListener() {
 
             @Override
-            public void onStartup(Engine engine, Api api) {
-            }
-
-            @Override
-            public void onShutdown(Engine engine, Api api) {
-            }
-
-            @Override
-            public void afterRequest(Request req, Response res) {
+            public void onAfterRequest(Request req, Response res) {
                 try {
                     JdbcConnectionLocal.commit();
                 } catch (Exception ex) {
@@ -203,7 +195,7 @@ public class JdbcDb extends Db<JdbcDb> {
             }
 
             @Override
-            public void afterError(Request req, Response res) {
+            public void onAfterError(Request req, Response res) {
 
                 try {
                     JdbcConnectionLocal.rollback();
@@ -214,7 +206,7 @@ public class JdbcDb extends Db<JdbcDb> {
             }
 
             @Override
-            public void beforeFinally(Request req, Response res) {
+            public void onBeforeFinally(Request req, Response res) {
                 try {
                     JdbcConnectionLocal.close();
                 } catch (Throwable t) {
@@ -230,7 +222,7 @@ public class JdbcDb extends Db<JdbcDb> {
         if (isType("h2") && getUrl() != null) {
             try {
                 String url = getUrl().toUpperCase();
-                if (url.indexOf(":MEM:") > 0 && url.indexOf("DB_CLOSE_DELAY=-1") > 0) {
+                if (url.indexOf("MEM:") > 0 && url.indexOf("DB_CLOSE_DELAY=-1") > 0) {
                     JdbcUtils.execute(getConnection(), "SHUTDOWN");
                 }
 
@@ -274,10 +266,10 @@ public class JdbcDb extends Db<JdbcDb> {
 
         log.warn("Unable to determine db type. type='{}', driver='{}', url='{}'", this.type, this.driver, this.url);
 
-        if(Chain.peek() != null) {
+        if (Chain.peek() != null) {
             Chain.peek().getResponse().debug("Unable to determine db type. type='{}', driver='{}', url='{}'", this.type, this.driver, this.url);
         }
-        
+
         return "UNKNOWN";
     }
 
@@ -297,7 +289,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 }
             }
 
-            List<Row> upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+            List<Row> upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getResourceIndex().getColumnNames(), rows);
             return upserted.stream().map(table::encodeKeyFromColumnNames).collect(Collectors.toList());
         } catch (Exception ex) {
             throw ApiException.new500InternalServerError(ex);
@@ -314,19 +306,18 @@ public class JdbcDb extends Db<JdbcDb> {
                 }
             }
 
-            List<String> resourceKeys = new ArrayList<>();
-            List<Integer> updateCounts = JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
-            for(int i=0; i<rows.size(); i++){
+            List<String>  resourceKeys = new ArrayList<>();
+            List<Integer> updateCounts = JdbcUtils.update(getConnection(), table.getTableName(), table.getResourceIndex().getColumnNames(), rows);
+            for (int i = 0; i < rows.size(); i++) {
                 Integer count = updateCounts.get(i);
-                if(count == null)
+                if (count == null)
                     count = 0;
 
-                if(count <= 0)
+                if (count <= 0)
                     continue;
-                else if(count == 1){
+                else if (count == 1) {
                     resourceKeys.add(table.encodeKeyFromColumnNames(rows.get(i)));
-                }
-                else{
+                } else {
                     throw new ApiException("A patch requested reported that it updated more than one row");
                 }
             }
@@ -598,22 +589,22 @@ public class JdbcDb extends Db<JdbcDb> {
                         Object type    = colsRs.getString("DATA_TYPE");
                         String colType = types.get(type);
 
-                        boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
+                        boolean nullable      = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
                         boolean autoincrement = Utils.in((colsRs.getObject("IS_AUTOINCREMENT") + "").toLowerCase(), "yes", "true", "1");
 
                         Property column = new Property(colName, colType, nullable);
 
-                        if(autoincrement)
+                        if (autoincrement)
                             column.withReadOnly(true);
 
                         table.withProperties(column);
                     }
                     colsRs.close();
 
-                    ResultSet indexMd = dbmd.getIndexInfo(conn.getCatalog(), null, tableName, true, false);
+                    ResultSet indexMd = dbmd.getIndexInfo(conn.getCatalog(), null, tableName, false, false);
                     while (indexMd.next()) {
                         String idxName = indexMd.getString("INDEX_NAME");
-                        String idxType = "Other";
+                        String idxType = Index.TYPE_INDEX;
                         String colName = indexMd.getString("COLUMN_NAME");
 
                         if (idxName == null || colName == null) {
@@ -622,6 +613,7 @@ public class JdbcDb extends Db<JdbcDb> {
                             continue;
                         }
 
+                        /*
                         switch (indexMd.getInt("TYPE")) {
                             case DatabaseMetaData.tableIndexClustered:
                                 idxType = "Clustered";
@@ -636,18 +628,33 @@ public class JdbcDb extends Db<JdbcDb> {
                                 idxType = "Statistic";
                                 break;
                         }
+                        */
 
-                        Property column    = table.getProperty(colName);
                         Object   nonUnique = indexMd.getObject("NON_UNIQUE") + "";
                         boolean  unique    = !(nonUnique.equals("true") || nonUnique.equals("1"));
 
                         //this looks like it only supports single column indexes but if
                         //an index with this name already exists, that means this is another
                         //column in that index.
-                        table.withIndex(idxName, idxType, unique, column.getColumnName());
+                        table.withIndex(idxName, idxType, unique, colName);
 
                     }
                     indexMd.close();
+
+                    ResultSet pkMd = dbmd.getPrimaryKeys(conn.getCatalog(), null, tableName);
+                    while (pkMd.next()) {
+                        String   idxName = pkMd.getString("PK_NAME");
+                        String   idxType = Index.TYPE_PRIMARY_KEY;
+                        String   colName = pkMd.getString("COLUMN_NAME");
+                        Property column  = table.getProperty(colName);
+
+                        int   keySeq = pkMd.getInt("KEY_SEQ");
+
+                        table.withIndex(idxName, idxType, true, colName);
+                        System.out.println("Primary key: " + colName);
+                    }
+                    pkMd.close();
+
 
                 } while (rs.next());
 
@@ -696,7 +703,7 @@ public class JdbcDb extends Db<JdbcDb> {
                         Collection coll = getCollectionByTableName(fkTableName);
                         if (coll != null) {
                             //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
-                            coll.withIndex(fkName, "FOREIGN_KEY", false, fk.getColumnName());
+                            coll.withIndex(fkName, Index.TYPE_FOREIGN_KEY, false, fk.getColumnName());
                         }
 
                     }

@@ -23,19 +23,35 @@ import java.util.List;
 import java.util.Map;
 
 public class MockDb extends Db<MockDb> {
+
+    /**
+     * Generic property for configuration test cases to set
+     */
     String property1 = null;
 
-    //   @Override
-    //   protected void doStartup()
-    //   {
-    //      Table users = new Table("users")//
-    //                                      .withColumn("primaryKey", "int", false)//
-    //                                      .withColumn("firstName", "varchar", true)//
-    //                                      .withColumn("lastName", "varchar", true);
-    //      withTable(users);
-    //      api.makeCollection(users, "users");
-    //   }
-    //
+    /**
+     * Generic property for configuration test cases to set
+     */
+    String property2 = null;
+
+    /**
+     * Generic property for configuration test cases to set
+     */
+    String property3 = null;
+
+    /**
+     * Generic property for testing configuration secret masking
+     */
+    String password = null;
+
+    public MockDb(){
+
+    }
+
+    public MockDb(String name){
+        withName(name);
+    }
+
     @Override
     public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException {
         return new Results(null);
@@ -60,4 +76,21 @@ public class MockDb extends Db<MockDb> {
         return this;
     }
 
+    public String getProperty2() {
+        return property2;
+    }
+
+    public MockDb withProperty2(String property2) {
+        this.property2 = property2;
+        return this;
+    }
+
+    public String getProperty3() {
+        return property3;
+    }
+
+    public MockDb withProperty3(String property3) {
+        this.property3 = property3;
+        return this;
+    }
 }

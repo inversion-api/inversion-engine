@@ -24,13 +24,12 @@ import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Url;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -53,7 +52,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
         Exception ex           = null;
 
         try {
-            JSNode json = JSNode.parseJsonNode(input);
+            JSNode json = JSNode.asJSNode(input);
 
             debug("Request Event");
             debug(json.toString(false));
@@ -122,7 +121,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
 
                 responseBody.put("error", Utils.getShortCause(ex));
 
-                responseBody.put("request", JSNode.parseJsonNode(input));
+                responseBody.put("request", JSNode.asJSNode(input));
 
                 JSNode responseJson = new JSNode();
                 responseJson.put("isBase64Encoded", false);
@@ -148,7 +147,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
      *
      * @param configProfile the configuration runtime profile
      * @param servletPath   the servlet path
-     * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Config/Configurator.
+     * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Config/Wirer.
      * @see #buildApi
      */
     protected Engine buildEngine(String configProfile, String servletPath) {
@@ -173,7 +172,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
      * Optional subclass override hook to supply your own custom wired up Api.
      * <p>
      * If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api
-     * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Config/Configurator.
+     * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Config/Wirer.
      *
      * @param engine the engine that will host the Api
      * @return null unless you override this method to construct an Api.

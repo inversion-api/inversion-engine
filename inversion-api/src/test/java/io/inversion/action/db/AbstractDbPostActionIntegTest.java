@@ -20,7 +20,7 @@ import io.inversion.Engine;
 import io.inversion.Response;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,7 +39,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.region"));
 
         JSNode employee5 = res.findNode("data.0");
-        JSNode employee5Copy = JSNode.parseJsonNode(employee5.toString());
+        JSNode employee5Copy = JSNode.asJSNode(employee5.toString());
 
         //-- this adds a logical duplicate
         JSArray territories = res.findArray("data.0.territories");
@@ -131,7 +131,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         assertEquals(4, res.findInt("data.0.region.regionId"));
         assertEquals("Southern", res.findString("data.0.region.regionDescription"));
 
-        JSNode updateTo30346 = JSNode.parseJsonNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/put_with_nested_one_to_many_post.json")));
+        JSNode updateTo30346 = JSNode.asJSNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/put_with_nested_one_to_many_post.json")));
         res = engine.put(url("territories"), updateTo30346);
         res.dump();
 
@@ -217,7 +217,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         Response res;
         Engine   engine = engine();
 
-        JSNode john = JSNode.parseJsonNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/upsert001-1.json")));
+        JSNode john = JSNode.asJSNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/upsert001-1.json")));
 
         res = engine.get(url("employees?employeeId=5&expands=employees"));
         JSNode steve = res.findNode("data.0");

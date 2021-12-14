@@ -57,7 +57,7 @@ public class LinksAction extends HATEOASAction<LinksAction> {
                     if(rel.isManyToOne()){
 
                         Map<String, Object> primaryKey = rel.buildPrimaryKeyFromForeignKey(node);
-                        String key = primaryKey == null ? null : Collection.encodeKey(primaryKey, rel.getRelated().getPrimaryIndex(), true);
+                        String key = primaryKey == null ? null : Collection.encodeKey(primaryKey, rel.getRelated().getResourceIndex(), true);
 
                         if(key != null)
                             link = Chain.buildLink(rel.getRelated(), key);

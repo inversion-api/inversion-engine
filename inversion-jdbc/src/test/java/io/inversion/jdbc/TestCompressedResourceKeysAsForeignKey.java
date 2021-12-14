@@ -38,7 +38,7 @@ public class TestCompressedResourceKeysAsForeignKey {
 
         db = JdbcDbFactory.bootstrapH2(getClass().getName() + System.currentTimeMillis(), JdbcDb.class.getResource("person-h2.ddl").toString());
         api = new Api("person") //
-                .withEndpoint("*", "*/", new LinksAction(), new DbAction())//
+                .withEndpoint(new LinksAction(), new DbAction())//
                 .withDb(db);
 
         engine = new Engine(api);

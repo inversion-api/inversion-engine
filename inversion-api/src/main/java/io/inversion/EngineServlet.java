@@ -19,12 +19,11 @@ package io.inversion;
 import io.inversion.Request.Upload;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.StreamBuffer;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -32,6 +31,7 @@ import javax.servlet.http.Part;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 
@@ -107,6 +107,21 @@ public class EngineServlet extends HttpServlet {
                 urlstr += "?" + query;
             }
 
+            String lower = urlstr;
+            if (lower.equals("http://localhost")
+                    || lower.startsWith("http://localhost/")
+                    || lower.startsWith("http://localhost:")
+                    || lower.equals("https://localhost")
+                    || lower.startsWith("https://localhost/")
+                    || lower.startsWith("https://localhost:")
+            ) {
+
+                urlstr = Pattern.compile("localhost", Pattern.CASE_INSENSITIVE).matcher(urlstr).replaceFirst("127.0.0.1");
+                httpResp.sendRedirect(urlstr);
+                return;
+            }
+
+
             ArrayListValuedHashMap headers    = new ArrayListValuedHashMap<>();
             Enumeration<String>    headerEnum = httpReq.getHeaderNames();
             while (headerEnum.hasMoreElements()) {
@@ -129,7 +144,7 @@ public class EngineServlet extends HttpServlet {
 
             String body = readBody(httpReq);
 
-            if(body != null && body.startsWith("--") && body.indexOf("Content-Disposition") > 0){
+            if (body != null && body.startsWith("--") && body.indexOf("Content-Disposition") > 0) {
                 throw ApiException.new400BadRequest("Received invalid multipart content.");
             }
 
@@ -175,9 +190,9 @@ public class EngineServlet extends HttpServlet {
             engine.service(req, res);
             writeResponse(req, res, httpResp);
         } catch (Throwable ex) {
-            JSNode       json = Engine.buildErrorJson(ex);
-            OutputStream out  = httpResp.getOutputStream();
-            byte[] bytes = json.toString().getBytes(StandardCharsets.UTF_8);
+            JSNode       json  = Engine.buildErrorJson(ex);
+            OutputStream out   = httpResp.getOutputStream();
+            byte[]       bytes = json.toString().getBytes(StandardCharsets.UTF_8);
             out.write(bytes);
             out.flush();
             out.close();
@@ -199,7 +214,7 @@ public class EngineServlet extends HttpServlet {
             http.setContentType(contentType);
 
             StreamBuffer buffer = res.getOutput();
-            if(buffer != null){
+            if (buffer != null) {
                 http.setContentLength(buffer.getLength());
                 Utils.pipe(buffer.getInputStream(), out, true, false);
             }

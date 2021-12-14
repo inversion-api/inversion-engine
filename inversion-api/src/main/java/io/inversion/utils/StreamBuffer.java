@@ -1,7 +1,9 @@
 package io.inversion.utils;
 
+import io.inversion.ApiException;
+import ioi.inversion.utils.Utils;
+
 import java.io.*;
-import java.util.stream.Stream;
 
 /**
  * Uses an in memory buffer to hold output until bufferSize data is written then will switch over
@@ -21,6 +23,19 @@ public class StreamBuffer extends OutputStream {
     boolean closed = false;
     byte[] bytes = null;
     int openFileStreams = 0;
+
+    public StreamBuffer(){
+
+    }
+
+    public StreamBuffer(InputStream in){
+        try{
+            Utils.pipe(new BufferedInputStream(in), this);
+        }
+        catch(Exception ex){
+            throw ApiException.new500InternalServerError("Error buffering stream");
+        }
+    }
 
     OutputStream getOut(int toWrite) throws IOException{
 

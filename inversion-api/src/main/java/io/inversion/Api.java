@@ -16,18 +16,26 @@
  */
 package io.inversion;
 
-//import com.github.curiousoddman.rgxgen.RgxGen;
-//import com.github.curiousoddman.rgxgen.iterators.StringIterator;
-
 import io.inversion.utils.Path;
+import io.inversion.utils.Task;
+import ioi.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 /**
- * Contains the Collections, Endpoints and Actions that make up a REST API.
+ * Contains the Servers, Dbs, Collections, Endpoints and Actions that make up a REST API.
  */
-public class Api extends Rule<Api> {
+public class Api {
+
+    protected final transient Logger log = LoggerFactory.getLogger(getClass().getName());
+
+    /**
+     * Host and root path config
+     */
+    protected final List<Server> servers = new ArrayList<>();
 
     /**
      * The underlying data sources for the Api.
@@ -58,6 +66,7 @@ public class Api extends Rule<Api> {
      */
     protected final List<Collection> collections = new ArrayList<>();
 
+
     /**
      * Listeners that receive callbacks on startup/shutdown/request/error.
      */
@@ -65,9 +74,9 @@ public class Api extends Rule<Api> {
 
     protected transient Linker linker = new Linker(this);
 
-    protected final transient List<Operation> operations = new ArrayList();
+    protected transient List<Op> ops = new ArrayList();
 
-
+    protected           String  name     = null;
     transient protected String  hash     = null;
     protected           boolean debug    = false;
     protected           String  url      = null;
@@ -88,14 +97,16 @@ public class Api extends Rule<Api> {
         withName(name);
     }
 
-    @Override
-    protected RuleMatcher getDefaultIncludeMatch() {
-        List<String> parts = new ArrayList<>();
-        if (name != null) {
-            parts.add(name);
+    public Api withIncludeOn(String ruleMatcherSpec) {
+        withServer(new Server().withIncludeOn(ruleMatcherSpec));
+        return this;
+    }
+
+    public Server getServer() {
+        if (servers.size() == 0) {
+            servers.add(new Server());
         }
-        parts.add("*");
-        return new RuleMatcher(null, new Path(parts));
+        return servers.get(0);
     }
 
     public boolean isStarted() {
@@ -103,6 +114,11 @@ public class Api extends Rule<Api> {
     }
 
     synchronized Api startup(Engine engine) {
+
+        if(this.engine != null && engine != this.engine){
+            this.engine.removeApi(this);
+        }
+
         if (started || starting) //starting is an accidental recursion guard
             return this;
 
@@ -114,6 +130,8 @@ public class Api extends Rule<Api> {
             }
 
             removeExcludes();
+
+            this.ops = Collections.unmodifiableList(buildOps());
 
             started = true;
 
@@ -191,6 +209,25 @@ public class Api extends Rule<Api> {
         return this;
     }
 
+    public List<Server> getServers() {
+        return new ArrayList<>(servers);
+    }
+
+    public Api withServers(String... urls) {
+        for (String url : urls) {
+            Server server = new Server().withUrls(url);
+            withServer(server);
+        }
+        return this;
+    }
+
+    public Api withServer(Server server) {
+        if (!servers.contains(server)) {
+            servers.add(server);
+        }
+        return this;
+    }
+
     public Api withCollection(Collection coll) {
         //if (coll.isLinkTbl() || coll.isExclude())
         if (coll.isExclude())
@@ -262,6 +299,17 @@ public class Api extends Rule<Api> {
         return this;
     }
 
+
+    public String getName() {
+        return name;
+    }
+
+
+    public Api withName(String name) {
+        this.name = name;
+        return this;
+    }
+
     public Api withVersion(String version) {
         this.version = version;
         return this;
@@ -279,12 +327,32 @@ public class Api extends Rule<Api> {
         this.loadTime = loadTime;
     }
 
+    public Endpoint getEndpoint(String name) {
+        for (Endpoint ep : endpoints) {
+            if (name.equalsIgnoreCase(ep.getName()))
+                return ep;
+        }
+        return null;
+    }
+
     public List<Endpoint> getEndpoints() {
         return new ArrayList<>(endpoints);
     }
 
-    public Api withEndpoint(String methods, String includePaths, Action... actions) {
-        Endpoint endpoint = new Endpoint(methods, includePaths, actions);
+    public Api removeEndpoint(Endpoint ep){
+        endpoints.remove(ep);
+        return this;
+    }
+
+    public Api withEndpoint(Action action1, Action... actions) {
+        Endpoint endpoint = new Endpoint(action1);
+        endpoint.withActions(actions);
+        withEndpoint(endpoint);
+        return this;
+    }
+
+    public Api withEndpoint(String ruleMatcherSpec, Action... actions) {
+        Endpoint endpoint = new Endpoint(ruleMatcherSpec, actions);
         withEndpoint(endpoint);
         return this;
     }
@@ -303,6 +371,8 @@ public class Api extends Rule<Api> {
 
                 if (!inserted)
                     this.endpoints.add(endpoint);
+
+                endpoint.withApi(this);
             }
         }
         return this;
@@ -365,6 +435,14 @@ public class Api extends Rule<Api> {
 //        return this;
 //    }
 
+    public Action getAction(String name) {
+        for (Action action : actions) {
+            if (name.equalsIgnoreCase(action.getName()))
+                return action;
+        }
+        return null;
+    }
+
     public List<Action> getActions() {
         return new ArrayList<>(actions);
     }
@@ -386,6 +464,10 @@ public class Api extends Rule<Api> {
         if (!this.actions.contains(action))
             this.actions.add(action);
         return this;
+    }
+
+    public Engine getEngine(){
+        return engine;
     }
 
     public boolean isDebug() {
@@ -439,355 +521,460 @@ public class Api extends Rule<Api> {
             //implement me
         }
 
-        default void afterRequest(Request req, Response res) {
+        default void onAfterRequest(Request req, Response res) {
             //implement me
         }
 
-        default void afterError(Request req, Response res) {
+        default void onAfterError(Request req, Response res) {
             //implement me
         }
 
-        default void beforeFinally(Request req, Response res) {
+        default void onBeforeFinally(Request req, Response res) {
             //implement me
         }
     }
 
-//    public List<Operation> getOperations() {
-//        if (operations.size() == 0) {
-//            synchronized (this) {
-//                if (operations.size() == 0)
-//                    operations.addAll(buildOperations());
-//            }
-//        }
-//        return operations;
-//    }
 
-
-    /**
-     * LIST
-     * GET /books
-     * ListBooksRequest    - ListBooksResponse
-     * <p>
-     * GET
-     * GET /book/:id
-     * GetBookRequest      - GetBookResponse
-     * <p>
-     * RELATED
-     * GET /book/:id/author
-     * RelatedAuthorsRequest - ListAuthorsResponse
-     * <p>
-     * POST
-     * POST /books
-     * CreateBookRequest - CreateBookResponse
-     * <p>
-     * BATCH_POST
-     * POST /books
-     * CreateBooksBatchRequest - CreateBooksBatchResponse
-     * <p>
-     * BATCH_PUT
-     * PUT /books
-     * UpdateBooksBatchRequest - UpdateBooksBatchResponse
-     * <p>
-     * PUT
-     * PUT /books/:id
-     * UpdateBookRequest - UpdateBookResponse
-     * <p>
-     * PATCH
-     * PATCH /books/:id
-     * PatchBookRequest  - PatchBookResponse
-     * <p>
-     * DELETE
-     * DELETE /books/:id
-     * DeleteBookRequest - DeleteBookResponse
-     * <p>
-     * BATCH_DELETE
-     * DELETE /books/
-     * DeleteBooksBatchRequest - DeleteBooksBatchResponse
-     */
-    List<Operation> buildOperations() {
-        //List<Operation> operations = generateCandidateOperations();
-        //filterValidOperations(operations);
-        //deduplicateOperationIds(operations);
-        //return operations;
-        return null;
+    public List<Op> getOps() {
+        return ops;
     }
 
 
+    List<Op> buildOps() {
 
+        if (servers.size() == 0)
+            servers.add(new Server());
 
+        List<Op>                             operations = new ArrayList<>();
+        ArrayListValuedHashMap<String, Path> allPaths   = buildRequestPaths();
+        for (String method : allPaths.keySet()) {
+            List<Path> requestPaths = allPaths.get(method);
+            for (Path requestPath : requestPaths) {
+                List<Op> ops = buildOp(method, requestPath);
+                operations.addAll(ops);
+            }
+        }
+        operations.removeIf(o -> o.getActions().size() == 0);
+        operations.removeIf(o -> o.getActions().parallelStream().allMatch(a -> a.isDecoration()));
 
-
-//    List<Operation> generateCandidateOperations() {
-//        List<Operation> operations = new ArrayList();
-//
-//        for (Rule.RuleMatcher apiMatcher : getIncludeMatchers()) {
-//            for (Path apiPath : apiMatcher.getPaths()) {
-//
-//                Path candidateApiPath = new Path();
-//
-//                for (int i = 0; i < apiPath.size() && !(apiPath.isWildcard(i) || apiPath.isOptional(i)); i++) {
-//                    String part = apiPath.get(i);
-//                    candidateApiPath.add(part);
-//                }
-//
-//                for (Endpoint endpoint : getEndpoints()) {
-//                    for (Rule.RuleMatcher epMatcher : endpoint.getIncludeMatchers()) {
-//                        for (Path epPath : epMatcher.getPaths()) {
-//
-//                            if (!epPath.hasAllVars(Request.COLLECTION_KEY) && (!epPath.isWildcard(epPath.size() - 1) || getCollections().size() == 0)) {
-//
-//                                for (Path candidateEpPath : epPath.getSubPaths()) {
-//
-//                                    Path candidatePath = new Path(candidateApiPath.toString(), candidateEpPath.toString());
-//                                    operations.add(new Operation(this, "GET", "GET", candidatePath, apiPath, epPath, null, endpoint, null, null));
-//                                    operations.add(new Operation(this, "POST", "POST", candidatePath, apiPath, epPath, null, endpoint, null, null));
-//                                    operations.add(new Operation(this, "PUT", "PUT", candidatePath, apiPath, epPath, null, endpoint, null, null));
-//                                    operations.add(new Operation(this, "PATCH", "PATCH", candidatePath, apiPath, epPath, null, endpoint, null, null));
-//                                    operations.add(new Operation(this, "DELETE", "DELETE", candidatePath, apiPath, epPath, null, endpoint, null, null));
-//                                }
-//                            } else {
-//
-//                                Path candidateEpPath = new Path();
-//
-//                                for (int i = 0; i < epPath.size() && !(epPath.isWildcard(i) || epPath.isOptional(i)); i++) {
-//                                    String part = epPath.get(i);
-//                                    candidateEpPath.add(part);
-//                                }
-//
-//                                for (Collection coll : getCollections()) {
-//                                    for (Rule.RuleMatcher collMatcher : coll.getIncludeMatchers()) {
-//                                        for (Path collPath : collMatcher.getPaths()) {
-//
-//                                            Path candidateCollPath = new Path();
-//
-//                                            for (int i = 0; i < collPath.size(); i++) {
-//                                                if (collPath.isWildcard(i) && i == collPath.size() - 1)
-//                                                    break;
-//
-//                                                String part = collPath.get(i);
-//                                                candidateCollPath.add(part);
-//
-//                                                //TODO iterate over subpaths here
-//                                                Path candidatePath = new Path(candidateApiPath.toString(), candidateEpPath.toString(), candidateCollPath.toString());
-//
-//                                                if (candidatePath.hasAllVars(Request.COLLECTION_KEY, Request.RESOURCE_KEY, Request.RELATIONSHIP_KEY)) {
-//                                                    for (Relationship rel : coll.getRelationships()) {
-//                                                        operations.add(new Operation(this, "RELATED", "GET", candidatePath, apiPath, epPath, collPath, endpoint, coll, rel));
-//                                                    }
-//                                                } else if (candidatePath.hasAllVars(Request.COLLECTION_KEY, Request.RESOURCE_KEY)) {
-//                                                    operations.add(new Operation(this, "GET", "GET", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//                                                    operations.add(new Operation(this, "PUT", "PUT", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//                                                    operations.add(new Operation(this, "PATCH", "PATCH", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//                                                    operations.add(new Operation(this, "DELETE", "DELETE", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//
-//                                                } else if (candidatePath.hasAllVars(Request.COLLECTION_KEY)) {
-//                                                    operations.add(new Operation(this, "LIST", "GET", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//                                                    operations.add(new Operation(this, "POST", "POST", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//
-//                                                }
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        return operations;
-//    }
-
-
-//    List<Operation> generateCandidateOperations(){
-//        List<Operation> operations = new ArrayList();
-//
-//        for (Rule.RuleMatcher apiMatcher : getIncludeMatchers()) {
-//            for (Path apiPath : apiMatcher.getPaths()) {
-//
-//                Path candidateApiPath = new Path();
-//
-//                for (int i = 0; i < apiPath.size() && !(apiPath.isWildcard(i) || apiPath.isOptional(i)); i++) {
-//                    String part = apiPath.get(i);
-//                    candidateApiPath.add(part);
-//                }
-//
-//                for (Endpoint endpoint : getEndpoints()) {
-//                    for (Rule.RuleMatcher epMatcher : endpoint.getIncludeMatchers()) {
-//                        for (Path epPath : epMatcher.getPaths()) {
-//
-//                            if(!epPath.hasAllVars(Request.COLLECTION_KEY) && (!epPath.isWildcard(epPath.size()-1) || getCollections().size() == 0)){
-//
-//                                for(Path candidateEpPath : epPath.getSubPaths()){
-//
-//                                    Path candidatePath = new Path(candidateApiPath.toString(), candidateEpPath.toString());
-//                                    operations.add(new Operation(this, "GET", "GET", candidatePath, apiPath, epPath, null, endpoint, null, null));
-//                                    operations.add(new Operation(this, "POST", "POST", candidatePath, apiPath, epPath, null, endpoint, null, null));
-//                                    operations.add(new Operation(this,"PUT", "PUT", candidatePath, apiPath, epPath, null, endpoint, null, null));
-//                                    operations.add(new Operation(this,"PATCH", "PATCH", candidatePath, apiPath, epPath, null, endpoint, null, null));
-//                                    operations.add(new Operation(this,"DELETE", "DELETE", candidatePath, apiPath, epPath, null, endpoint, null, null));
-//                                }
-//                            }
-//                            else {
-//
-//                                Path candidateEpPath = new Path();
-//
-//                                for (int i = 0; i < epPath.size() && !(epPath.isWildcard(i) || epPath.isOptional(i)); i++) {
-//                                    String part = epPath.get(i);
-//                                    candidateEpPath.add(part);
-//                                }
-//
-//                                for (Collection coll : getCollections()) {
-//                                    for (Rule.RuleMatcher collMatcher : coll.getIncludeMatchers()) {
-//                                        for (Path collPath : collMatcher.getPaths()) {
-//
-//                                            Path candidateCollPath = new Path();
-//
-//                                            for (int i = 0; i < collPath.size(); i++) {
-//                                                if (collPath.isWildcard(i) && i == collPath.size() - 1)
-//                                                    break;
-//
-//                                                String part = collPath.get(i);
-//                                                candidateCollPath.add(part);
-//
-//                                                //TODO iterate over subpaths here
-//                                                Path candidatePath = new Path(candidateApiPath.toString(), candidateEpPath.toString(), candidateCollPath.toString());
-//
-//                                                if (candidatePath.hasAllVars(Request.COLLECTION_KEY, Request.RESOURCE_KEY, Request.RELATIONSHIP_KEY)) {
-//                                                    for (Relationship rel : coll.getRelationships()) {
-//                                                        operations.add(new Operation(this,"RELATED", "GET", candidatePath, apiPath, epPath, collPath, endpoint, coll, rel));
-//                                                    }
-//                                                } else if (candidatePath.hasAllVars(Request.COLLECTION_KEY, Request.RESOURCE_KEY)) {
-//                                                    operations.add(new Operation(this,"GET", "GET", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//                                                    operations.add(new Operation(this,"PUT", "PUT", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//                                                    operations.add(new Operation(this,"PATCH", "PATCH", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//                                                    operations.add(new Operation(this,"DELETE", "DELETE", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//
-//                                                } else if (candidatePath.hasAllVars(Request.COLLECTION_KEY)) {
-//                                                    operations.add(new Operation(this,"LIST", "GET", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//                                                    operations.add(new Operation(this,"POST", "POST", candidatePath, apiPath, epPath, collPath, endpoint, coll, null));
-//
-//                                                }
-//                                            }
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        return operations;
-//    }
-
-    void filterValidOperations(List<Operation> operations) {
-        List<Operation> validOps = new ArrayList();
-        for (Operation op : operations) {
-
-            Map<String, String> pathParams = new HashMap();
-
-            Path operationMatchPath = new Path(op.operationPath);
-            Path examplePath        = materialziePath(op.operationPath);
-
-            Path match = match(op.method, examplePath);
-            if (match != null) {
-                for (int i = 0; i < match.size() && !match.isOptional(i) && !match.isWildcard(i); i++) {
-                    examplePath.remove(0);
-                    operationMatchPath.remove(0);
-                }
-
-
-                match = op.endpoint.match(op.method, examplePath);
-                if (match != null) {
-
-                    if (op.getCollection() != null) {
-                        Path dbPath = op.collection.getDb() == null ? null : op.collection.getDb().getEndpointPath();
-                        if (dbPath != null && !dbPath.matches(examplePath))
-                            continue;
-                    }
-
-
-                    List<Action> actions = new ArrayList();
-                    for (Action action : getActions()) {
-                        if (action.match(op.method, operationMatchPath) != null)
-                            actions.add(action);
-                    }
-                    for (int i = 0; i < match.size() && !match.isOptional(i) && !match.isWildcard(i); i++) {
-                        examplePath.remove(0);
-                        operationMatchPath.remove(0);
-                    }
-
-
-                    for (Action action : op.endpoint.getActions()) {
-                        if (action.match(op.method, operationMatchPath) != null)
-                            actions.add(action);
-                    }
-                    Collections.sort(actions);
-
-
-                    if (op.collection == null || op.collection.match(op.method, examplePath) != null) {
-                        if (op.error != null)
-                            throw new ApiException(op.error);
-
-                        if (actions.size() == 0) {
-                            //throw new ApiException("Operation '{}' does not have any eligible actions to run.", op);
+        for(int i=0; i<operations.size(); i++){
+            Op o = operations.get(i);
+            if(o.getRelationship() != null){
+                boolean found = false;
+                for(Op candiate : operations){
+                    //TODO: probably need to distinguish between GET and FIND methods here
+                    if("GET".equalsIgnoreCase(candiate.getMethod())){
+                        if(candiate.getCollection() == o.getRelationship().getRelated()){
+                            found = true;
+                            break;
                         }
+                    }
+                }
+                if(!found){
+                    operations.remove(i);
+                    i--;
+                }
+            }
+        }
 
-                        validOps.add(op);
+        operations.forEach(o -> {
+            String name = buildOperationName(o);
+            o.withName(name);
+        });
+        deduplicateOperationNames(operations);
+        Collections.sort(operations);
+
+        for (Op op : operations) {
+            List<Rule> rules = new ArrayList();
+            Utils.add(rules, op.getEngine(), op.getApi(), op.getEndpoint(), op.getCollection());
+            rules.addAll(op.getActions());
+            Task.buildTask(rules, "hook_configureOp", op).go();
+        }
+
+
+        //for (Api api : getApis())
+        {
+            ArrayListValuedHashMap<Server, Path> servers = new ArrayListValuedHashMap();
+            for (Server server : getServers()) {
+                servers.putAll(server, server.getAllIncludePaths());
+            }
+
+            System.out.println("\r\n--------------------------------------------");
+
+            System.out.println("SERVERS: ");
+            for (Server server : servers.keySet()) {
+                List<Path> serverPaths = new ArrayList(new LinkedHashSet(servers.get(server)));
+
+                for (Path serverPath : serverPaths) {
+                    List<String> serverUrls = server.getUrls();
+                    if (serverUrls.size() == 0)
+                        serverUrls.add("127.0.0.1");
+
+                    for (String host : serverUrls) {
+                        System.out.println(" - " + host + "/" + serverPath);
+                    }
+                }
+            }
+
+            System.out.println("\r\nOPERATIONS:");
+
+            List<Op> apiOps = new ArrayList(operations);
+            Collections.sort(apiOps);
+            for (Op op : apiOps) {
+                System.out.println(op.getName() + " - " + op.getMethod() + " " + op.getPath());
+                System.out.println("  - Parameters: " + op.getParams());
+                System.out.println("  - Collection: " + (op.getCollection() == null ? null : op.getCollection().getName()));
+                System.out.print("  - Actions   :");
+                for (Action a : op.getActions()) {
+                    System.out.print(" " + (a.getName() == null ? a.getClass().getSimpleName() : a.getName()) + ",");
+                }
+                System.out.println("");
+            }
+
+            System.out.println("\r\n--------------------------------------------");
+
+        }
+
+        return operations;
+    }
+
+//    public Op findOperation(Op.OpFunction function, String... pathParams){
+//        for(Op op : ops){
+//            if(function != null && function != op.getFunction())
+//                continue;
+//
+//            for(String )
+//        }
+//    }
+
+    List<Op> buildOp(String method, Path requestPath) {
+
+        Path     requestPathCopy = requestPath.copy();
+        List<Op> ops             = new ArrayList<>();
+
+        requestPath = requestPathCopy.copy();
+        int offset = 0;
+
+        for (Endpoint ep : getEndpoints()) {
+            requestPath = requestPathCopy.copy();
+
+            Op  op     = new Op();
+            op.withEngine(engine);
+            op.withApi(this);
+            op.withMethod(method);
+            op.withPath(requestPath.copy());
+
+            Path endpointMatch = ep.match(method, requestPath);
+            if (endpointMatch == null)
+                continue;
+
+            System.out.println("REQUEST PATH: " + method + " - " + requestPath + " " + ep.getName());
+
+            op.withEndpoint(ep);
+            op.withEpMatchPath(endpointMatch.copy());
+
+            //-- find the db with the most specific (longest) path match
+            Db   winnerDb      = null;
+            Path winnerDbMatch = null;
+            for (Db db : getDbs()) {
+                Path dbMatch = db.match(method, requestPath);
+                if (dbMatch != null) {
+                    if (winnerDbMatch == null || dbMatch.size() > winnerDbMatch.size()) {
+                        winnerDb = db;
+                        winnerDbMatch = dbMatch;
+                    }
+                }
+            }
+            if (winnerDb != null) {
+                op.withDb(winnerDb);
+                op.withDbMatchPath(winnerDbMatch);
+                addParams(op, winnerDbMatch, requestPath, offset, false);
+            }
+
+            //-- pull out api action match paths before consuming the
+            //-- request path for the endpoint action matches
+            for (Action action : getActions()) {
+                Path actionMatch = action.match(method, requestPath);
+                if (actionMatch != null) {
+                    op.withActionMatch(action, actionMatch.copy(), false);
+                    addParams(op, actionMatch, requestPath, offset, false);
+                }
+            }
+
+            //-- consume the requestPath for Endpoint Actions to match.
+            offset = addParams(op, endpointMatch, requestPath, offset, true);
+
+            for (Action action : ep.getActions()) {
+                Path actionMatch = action.match(method, requestPath);
+                if (actionMatch != null) {
+                    op.withActionMatch(action, actionMatch.copy(), true);
+                    addParams(op, actionMatch, requestPath, offset, false);
+                }
+            }
+
+            List<Op> fixed = new ArrayList();
+            fixed.add(op);
+            Task.buildTask(op.getActions(), "hook_enumerateOps", fixed).go();
+            ops.addAll(fixed);
+        }
+        return ops;
+    }
+
+
+    public ArrayListValuedHashMap<String, Path> buildRequestPaths() {
+
+        ArrayListValuedHashMap<String, Path> paths = new ArrayListValuedHashMap<>();
+
+        Set<String>      methods       = new HashSet();
+//        List<Server> servers = getServers();
+//        for (Server server : getServers()) {
+//            if (aServer == null) {
+//                serverMatcher = server.getIncludeMatchers().get(0);
+//                aServer = server;
+//            }
+//
+//            for (Rule.RuleMatcher sm : server.getIncludeMatchers()) {
+//                methods.addAll(sm.getMethods());
+//            }
+//        }
+
+        Utils.add(methods, "GET", "POST", "PUT", "PATCH", "DELETE");
+
+
+        for (String method : methods) {
+            for (Endpoint ep : getEndpoints()) {
+                for (Rule.RuleMatcher epMatcher : ep.getIncludeMatchers()) {
+                    if (!epMatcher.hasMethod(method))
+                        continue;
+                    for (Path epPath : epMatcher.getPaths()) {
+
+                        List<Action> epActions  = ep.getActions();
+                        List<Action> allActions = new ArrayList(ep.getActions());
+                        for (Action action : getActions()) {
+                            if (!allActions.contains(action))
+                                allActions.add(action);
+                        }
+                        Collections.sort(allActions);
+
+                        List<Path> allPathsForEndpoint = new ArrayList<>();
+                        allPathsForEndpoint.add(epPath.copy());
+
+                        for (Action action : allActions) {
+                            for (Rule.RuleMatcher actionMatcher : (List<Rule.RuleMatcher>) action.getIncludeMatchers()) {
+                                if (!actionMatcher.hasMethod(method))
+                                    continue;
+                                for (Path actionPath : actionMatcher.getPaths()) {
+                                    Path fullActionPath = null;
+                                    if (epActions.contains(action)) {
+                                        fullActionPath = Path.joinPaths(epPath, actionPath, true);
+
+                                    } else {
+                                        if (actionPath.matches(epPath, true)) {
+                                            fullActionPath = Path.joinPaths(epPath, actionPath, false);
+                                        }
+                                    }
+                                    if (fullActionPath == null)
+                                        continue;
+
+                                    allPathsForEndpoint.add(fullActionPath);
+                                    //paths.put(method, fullActionPath);
+                                }
+                            }
+                        }
+                        allPathsForEndpoint = Path.expandOptionals(allPathsForEndpoint);
+                        allPathsForEndpoint = Path.materializeTrivialRegexes(allPathsForEndpoint);
+                        allPathsForEndpoint = Path.filterDuplicates(allPathsForEndpoint);
+                        allPathsForEndpoint = Path.mergePaths(new ArrayList(), allPathsForEndpoint);
+                        paths.putAll(method, allPathsForEndpoint);
                     }
                 }
             }
         }
 
-        operations.clear();
-        operations.addAll(validOps);
+
+        for (String key : new ArrayList<String>(paths.keySet())) {
+            List<Path> ps = new ArrayList(paths.get(key));
+            for (Path p : ps) {
+                if (p.endsWithWildcard()) {
+                    p.removeTrailingWildcard();
+                }
+                if (p.size() == 0)
+                    paths.removeMapping(key, p);
+            }
+        }
+
+        //-- endpoints could have produced identical paths. Filter out duplicates
+        ArrayListValuedHashMap<String, Path> merged = new ArrayListValuedHashMap<>();
+        for (String method : paths.keySet()) {
+            List<Path> before = paths.get(method);
+            List<Path> after  = Path.filterDuplicates(before);
+            merged.putAll(method, after);
+        }
+        paths = merged;
+
+
+        System.out.println("\r\nPATHS ------------------------");
+        List<String> methodsList = new ArrayList(paths.keySet());
+        Collections.sort(methodsList);
+        for (String method : methodsList) {
+            List<Path> pathList = new ArrayList(paths.get(method));
+            for (Path path : pathList) {
+                System.out.println(method + " " + path);
+            }
+        }
+        System.out.println("END PATHS --------------------\r\n");
+
+        return paths;
     }
 
-
-    Path materialziePath(Path livePath) {
-        livePath = new Path(livePath);
-        for (int i = 0; i < livePath.size(); i++) {
-            String part = livePath.get(i);
-            if (livePath.isVar(i)) {
-                part = livePath.getVarName(i);
-                String regex = livePath.getRegex(i);
+    protected int addParams(Op op, Path matchedPath, Path requestPath, int offset, boolean consume) {
+        for (int i = 0; i < matchedPath.size() && i < requestPath.size(); i++) {
+            if (matchedPath.isVar(i)) {
+                String key   = matchedPath.getVarName(i);
+                Param  param = new Param(key, i + offset);
+                param.withRequired(true);
+                String regex = matchedPath.getRegex(i);
                 if (regex != null)
-                    part = generateMatch(regex);
+                    param.withRegex(regex);
+                op.withParam(param);
             }
-            if (part.startsWith("["))
-                part = part.substring(1);
-            if (part.endsWith("]"))
-                part = part.substring(0, part.length() - 1);
-
-            livePath.set(i, part);
         }
-        return livePath;
+
+        if (consume) {
+            for (int i = 0; i < matchedPath.size(); i++) {
+                if (matchedPath.isOptional(i) || matchedPath.isWildcard(i))
+                    break;
+                requestPath.remove(0);
+                offset += 1;
+            }
+        }
+        return offset;
+    }
+
+    static String cleanNamePart(String part){
+        if(part == null)
+            part = "Unknown";
+        part = part.replace("{", "");
+        part = part.replace("}", "");
+        part = part.replace(".", " ");
+        part = part.replace("_", "");
+        return part;
+    }
+
+    public String buildOperationName(Op op) {
+
+        String name = null;
+
+        Collection collection  = op.getCollection();
+        String     defaultName = op.getEndpoint().getName();
+        if (defaultName == null) {
+            defaultName = op.getPath().last();
+            defaultName = cleanNamePart(defaultName);
+            defaultName = Utils.beautifyName(defaultName);
+        }
+
+        String singular = Utils.capitalize(collection == null ? defaultName : collection.getSingularDisplayName());
+        String plural   = Utils.capitalize(collection == null ? defaultName : collection.getPluralDisplayName());
+
+        String method = op.getMethod().toUpperCase();
+
+        if (op.hasParams(Param.In.PATH, Request.COLLECTION_KEY, Request.RESOURCE_KEY, Request.RELATIONSHIP_KEY)) {
+
+            switch (method) {
+                case "GET":
+                    name = "findRelated" + Utils.capitalize(cleanNamePart(op.getPathParamValue(Request.RELATIONSHIP_KEY)));
+                    op.function = Op.OpFunction.RELATED;
+                    break;
+                case "POST":
+                case "PUT":
+                case "PATCH":
+                case "DELETE":
+                    throw new ApiException("Unsupported operation: " + op);
+            }
+
+        } else if (op.hasParams(Param.In.PATH, Request.COLLECTION_KEY, Request.RESOURCE_KEY)) {
+            switch (method) {
+                case "GET":
+                    name = "get" + singular;
+                    op.function = Op.OpFunction.GET;
+                    break;
+//                case "POST":
+//                    name = "createIdentified" + singular;
+//                    op.function = Op.OpFunction.POST;
+//                    break;
+                case "PUT":
+                    name = "update" + singular;
+                    op.function = Op.OpFunction.PUT;
+                    break;
+                case "PATCH":
+                    name = "patch" + singular;
+                    op.function = Op.OpFunction.PATCH;
+                    break;
+                case "DELETE":
+                    name = "delete" + singular;
+                    op.function = Op.OpFunction.DELETE;
+                    break;
+            }
+
+        } else if (op.hasParams(Param.In.PATH, Request.COLLECTION_KEY)) {
+            switch (method) {
+                case "GET":
+                    name = "find" + plural;
+                    op.function = Op.OpFunction.FIND;
+                    break;
+                case "POST":
+                    name = "create" + plural;
+                    op.function = Op.OpFunction.POST;
+                    break;
+                case "PUT":
+                    name = "batchUpdate" + plural;
+                    op.function = Op.OpFunction.BATCH_PUT;
+                    break;
+                case "PATCH":
+                    name = "batchPatch" + plural;
+                    op.function = Op.OpFunction.BATCH_PATCH;
+                    break;
+                case "DELETE":
+                    name = "batchDelete" + plural;
+                    op.function = Op.OpFunction.BATCH_DELETE;
+                    break;
+            }
+        } else {
+            switch (method) {
+                case "GET":
+                case "POST":
+                case "PUT":
+                case "PATCH":
+                case "DELETE":
+                    name = Utils.beautifyName(method.toLowerCase() + " " + defaultName);
+                    op.function = Op.OpFunction.valueOf(method);
+                    break;
+            }
+        }
+
+        for (int i = 0; i < op.getPath().size(); i++) {
+            if (op.getPath().isVar(i))
+                name += "By" + Utils.capitalize(cleanNamePart(op.getPath().getVarName(i)));
+        }
+
+        return name;
     }
 
 
-    String generateMatch(String regex) {
-//        RgxGen         rgxGen        = new RgxGen(regex);
-//        StringIterator uniqueStrings = rgxGen.iterateUnique();
-//        String         match         = uniqueStrings.next();
-//        if (match.length() == 0)
-//            match = uniqueStrings.next();
-//        return match;
-        return null;
-    }
+    void deduplicateOperationNames(List<Op> ops) {
+        ArrayListValuedHashMap<String, Op> map = new ArrayListValuedHashMap<>();
+        ops.forEach(op -> map.put(op.getName(), op));
 
-
-    void deduplicateOperationIds(List<Operation> operation) {
-        ArrayListValuedHashMap<String, Operation> map = new ArrayListValuedHashMap<>();
-        operation.forEach(op -> map.put(op.name, op));
-
-        for (String operationId : map.keySet()) {
-            List<Operation> values = map.get(operationId);
+        for (String operationName : map.keySet()) {
+            List<Op> values = map.get(operationName);
             if (values.size() > 1) {
-                for (int i = 0; i < values.size(); i++)
-                    values.get(i).name += (i + 1);
+                for (int i = 0; i < values.size(); i++) {
+                    String name = values.get(i).getName() + (i + 1);
+                    values.get(i).withName(name);
+                }
             }
         }
     }
+
 
 }

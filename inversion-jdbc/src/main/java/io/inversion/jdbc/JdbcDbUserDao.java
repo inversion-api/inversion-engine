@@ -19,7 +19,7 @@ package io.inversion.jdbc;
 import io.inversion.ApiException;
 import io.inversion.User;
 import io.inversion.action.security.AuthAction;
-import io.inversion.utils.Config;
+import io.inversion.config.Config;
 import io.inversion.utils.Rows;
 import io.inversion.utils.Rows.Row;
 import org.apache.commons.codec.binary.Base64;

@@ -18,30 +18,71 @@ package io.inversion.action.misc;
 
 import io.inversion.*;
 import io.inversion.utils.Path;
-import io.inversion.utils.Utils;
+import io.inversion.utils.StreamBuffer;
+import ioi.inversion.utils.Utils;
 
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
 
-public class FileAction extends Action<io.inversion.action.misc.CsvAction> {
-
+public class FileAction <A extends FileAction> extends Action<A> {
     protected String baseDir = null;
+    protected Set<String> files = new HashSet<>();
 
     public void doGet(Request req, Response res) throws ApiException {
+        serveFile(req, res);
+    }
 
-        String filePath = req.getEndpointPath().toString();
-        if(filePath.startsWith("/"))
-            filePath = filePath.substring(1, filePath.length());
+    protected void serveFile(Request req, Response res){
+        boolean filterMode = req.getOp() == null;
+        Path path = req.getOperationPath();
+        String filePath = null;
+        if(path == null){
+            path = req.getUrl().getPath();
+            filePath = path.last();
+        }
+        else{
+            filePath = path.toString();
+        }
+        serveFile(req, res, filePath, filterMode);
+    }
 
+    protected void serveFile(Request req, Response res, String filePath, boolean filterMode){
+        if(filePath != null) {
+            InputStream is = findStream(filePath);
+            if (is != null) {
+                res.withStream(new StreamBuffer(is));
+                if (filterMode)
+                    req.getChain().cancel();
+
+                return;
+            }
+        }
+        if(!filterMode)
+            throw ApiException.new404NotFound("File '{}' could not be found", filePath);
+    }
+
+    protected InputStream findStream(String filePath){
+        if(baseDir != null)
+            filePath = new Path(baseDir, filePath).toString();
+
+        return Utils.findInputStream(filePath);
+    }
+
+    public boolean canServe(String filePath){
+        if(filePath == null)
+            return false;
+
+        filePath = new Path(filePath).toString();
         String fullPath = filePath;
         if(baseDir != null)
-            fullPath = new Path(baseDir, filePath).toString();
+            fullPath = new Path(baseDir, fullPath).toString();
 
-        InputStream is = Utils.findInputStream(fullPath);
-        if(is == null)
-            throw ApiException.new404NotFound("File '{}' could not be found", filePath);
-
-        String txt = Utils.read(is);
-        res.withText(txt);
+        if(files.size() > 0){
+            if(!(files.contains(fullPath.toLowerCase()) || files.contains(filePath.toLowerCase())))
+                return false;
+        }
+        return true;
     }
 
     public String getBaseDir() {
@@ -52,4 +93,15 @@ public class FileAction extends Action<io.inversion.action.misc.CsvAction> {
         this.baseDir = baseDir;
         return this;
     }
+
+    public Set<String> getFiles() {
+        return files;
+    }
+
+    public FileAction withFiles(String... files) {
+        for(String file : files)
+            this.files.add(file.toLowerCase());
+        return this;
+    }
+
 }

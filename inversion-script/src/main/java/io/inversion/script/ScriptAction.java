@@ -24,7 +24,7 @@ import io.inversion.script.velocity.VelocityResourceLoader;
 import io.inversion.utils.JSArray;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Path;
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 import net.jodah.expiringmap.ExpiringMap;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -302,7 +302,7 @@ public class ScriptAction extends Action<ScriptAction> {
                 boolean setText = true;
                 if (content.startsWith("{") || content.startsWith("[")) {
                     try {
-                        JSNode obj = JSNode.parseJsonNode(content);
+                        JSNode obj = JSNode.asJSNode(content);
                         res.withJson(obj);
                         setText = false;
                     } catch (Exception ex) {

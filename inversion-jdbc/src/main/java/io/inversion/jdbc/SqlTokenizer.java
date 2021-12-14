@@ -16,7 +16,7 @@
  */
 package io.inversion.jdbc;
 
-import io.inversion.utils.Utils;
+import ioi.inversion.utils.Utils;
 
 import java.util.HashSet;
 import java.util.Set;

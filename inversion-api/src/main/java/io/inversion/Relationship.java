@@ -105,7 +105,7 @@ public class Relationship implements Serializable {
                     continue;
 
                 if (getFkIndex1().equals(other.getFkIndex1()) //
-                        && getPrimaryKeyTable1().getPrimaryIndex().equals(other.getPrimaryKeyTable1().getPrimaryIndex())) {
+                        && getPrimaryKeyTable1().getResourceIndex().equals(other.getPrimaryKeyTable1().getResourceIndex())) {
                     return other;
                 }
             }
@@ -166,9 +166,9 @@ public class Relationship implements Serializable {
             String str = collection.getName() + "." + getName() + " : " + getType() + " ";
 
             if (isManyToOne()) {
-                str += getFkIndex1() + " -> " + getRelated().getPrimaryIndex();
+                str += getFkIndex1() + " -> " + getRelated().getResourceIndex();
             } else if (isOneToMany()) {
-                str += collection.getPrimaryIndex() + " <- " + getFkIndex1();
+                str += collection.getResourceIndex() + " <- " + getFkIndex1();
             } else {
                 str += getFkIndex1() + " <--> " + getFkIndex2();
             }
@@ -240,7 +240,7 @@ public class Relationship implements Serializable {
         Map<String, Object> primaryKey = new LinkedHashMap<>();
 
         Index fkIdx = getFkIndex1();
-        Index pkIdx = getRelated().getPrimaryIndex();
+        Index pkIdx = getRelated().getResourceIndex();
 
         if(fkIdx.size() == 1 && pkIdx.size() > 1){
             //-- this is compressed foreign key and a composite primary key
@@ -287,11 +287,11 @@ public class Relationship implements Serializable {
         Map<String, Object> foreignKey = new LinkedHashMap<>();
 
         Index fkIdx = getFkIndex1();
-        Index pkIdx = getRelated().getPrimaryIndex();
+        Index pkIdx = getRelated().getResourceIndex();
 
         if(fkIdx.size() == 1 && pkIdx.size() > 1){
             //-- this is compressed foreign key and a composite primary key
-            String compressedFk = getRelated().encodeKey(primaryKey, getRelated().getPrimaryIndex(), true);
+            String compressedFk = getRelated().encodeKey(primaryKey, getRelated().getResourceIndex(), true);
             if(compressedFk == null)
                 return null;
             foreignKey.put(fkIdx.getJsonName(0), compressedFk);

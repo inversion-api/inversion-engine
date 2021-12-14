@@ -281,7 +281,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
         String collectionPath = collectionPath();
 
-        String toMatch = JSNode.parseJson("[{\"employee\":{\"reportsto\":{\"territories\":\"http://localhost/COLLECTION_PATHemployees/2/territories\"}}}]").toString();
+        String toMatch = JSNode.parseJson("[{\"employee\":{\"reportsto\":{\"territories\":\"http://127.0.0.1/COLLECTION_PATHemployees/2/territories\"}}}]").toString();
         toMatch = toMatch.replace("COLLECTION_PATH", collectionPath);
 
         assertEquals(toMatch.toLowerCase(), res.getStream().toString().toLowerCase());

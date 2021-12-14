@@ -83,6 +83,6 @@ public abstract class AbstractDbActionIntegTest implements AbstractEngineTest {
         //      if (path.indexOf(cp) > -1 || path.startsWith("http"))
         //         return path;
 
-        return "http://localhost/" + cp + path;
+        return "http://127.0.0.1/" + cp + path;
     }
 }
