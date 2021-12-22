@@ -23,7 +23,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 import io.inversion.*;
 import io.inversion.rql.Term;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 import java.util.List;
 import java.util.Map;

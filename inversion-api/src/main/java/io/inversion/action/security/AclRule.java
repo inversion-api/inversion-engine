@@ -18,7 +18,7 @@ package io.inversion.action.security;
 
 import io.inversion.Request;
 import io.inversion.Rule;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.List;

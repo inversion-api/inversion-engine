@@ -21,7 +21,7 @@ import io.inversion.Collection;
 import io.inversion.action.security.AuthScheme;
 import io.inversion.utils.Path;
 import io.inversion.utils.Task;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Schema;
@@ -39,7 +39,7 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 
 
     protected String getDescription() {
-        return Utils.read(Utils.findInputStream("description.md"));
+        return Utils.read(Utils.findInputStream(this, "description.md"));
     }
 
 

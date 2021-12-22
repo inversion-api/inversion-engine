@@ -15,7 +15,7 @@
  */
 package io.inversion.script.velocity;
 
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;

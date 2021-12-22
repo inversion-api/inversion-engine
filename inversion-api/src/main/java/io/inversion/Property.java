@@ -16,7 +16,7 @@
  */
 package io.inversion;
 
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 import java.io.Serializable;
 
@@ -24,6 +24,7 @@ import java.io.Serializable;
  *
  */
 public class Property implements Serializable {
+
     protected String  name   = null;
     protected String  columnName = null;
     protected String description = null;

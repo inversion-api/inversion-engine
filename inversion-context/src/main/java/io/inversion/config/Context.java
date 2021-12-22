@@ -16,7 +16,7 @@
  */
 package io.inversion.config;
 
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

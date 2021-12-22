@@ -19,9 +19,10 @@ package io.inversion.cosmosdb;
 import com.microsoft.azure.documentdb.*;
 import io.inversion.Index;
 import io.inversion.*;
+import io.inversion.json.JSMap;
 import io.inversion.rql.Term;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSNode;
+import io.inversion.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +39,8 @@ public class CosmosDb extends Db<CosmosDb> {
     transient protected DocumentClient documentClient = null;
     boolean allowCrossPartitionQueries = false;
 
+    transient ConnectionPolicy connectionPolicy = null;
+
     public CosmosDb() {
         this.withType("cosmosdb");
     }
@@ -47,7 +50,7 @@ public class CosmosDb extends Db<CosmosDb> {
         withName(name);
     }
 
-    public static DocumentClient buildDocumentClient(String uri, String key) {
+    public static DocumentClient buildDocumentClient(String uri, String key, ConnectionPolicy connectionPolicy) {
         if (Utils.empty(uri) || Utils.empty(key)) {
             String error = "";
             error += "Unable to connect to Cosmos DB because conf values for 'uri' or 'key' can not be found. ";
@@ -59,7 +62,9 @@ public class CosmosDb extends Db<CosmosDb> {
             throw ApiException.new500InternalServerError(error);
         }
 
-        DocumentClient client = new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
+        connectionPolicy = ConnectionPolicy.GetDefault();
+
+        DocumentClient client = new DocumentClient(uri, key, connectionPolicy, ConsistencyLevel.Session);
         return client;
     }
 
@@ -145,7 +150,7 @@ public class CosmosDb extends Db<CosmosDb> {
 
             normalizePartitionKey(collection, row);
 
-            JSNode doc = new JSNode(row);
+            JSMap  doc = new JSMap(row);
             String id  = doc.getString("id");
             if (id == null) {
                 id = collection.encodeKeyFromColumnNames(row);
@@ -160,7 +165,7 @@ public class CosmosDb extends Db<CosmosDb> {
                 Map<String, Object> existingRow = existing.getRow(0);
                 for (String key : existingRow.keySet()) {
                     if (!doc.containsKey(key))
-                        doc.put(key, existingRow.get(key));
+                        doc.putValue(key, existingRow.get(key));
                 }
             }
 
@@ -283,11 +288,18 @@ public class CosmosDb extends Db<CosmosDb> {
         return this;
     }
 
-    public DocumentClient getDocumentClient() {
+    public synchronized DocumentClient getDocumentClient() {
         if (this.documentClient == null) {
             synchronized (this) {
                 if (this.documentClient == null) {
-                    this.documentClient = buildDocumentClient(uri, key);
+
+                    if(this.connectionPolicy == null){
+                        connectionPolicy = new ConnectionPolicy();
+                        connectionPolicy.setConnectionMode(ConnectionMode.DirectHttps);
+                        connectionPolicy.setMaxPoolSize(10);
+                    }
+
+                    this.documentClient = buildDocumentClient(uri, key, connectionPolicy);
                 }
             }
         }

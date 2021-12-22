@@ -24,17 +24,21 @@ import io.inversion.config.Codec;
 import io.inversion.config.Config;
 import io.inversion.config.Context;
 import io.inversion.config.InversionNamer;
+import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSReader;
 import io.inversion.rql.RqlParser;
 import io.inversion.rql.Term;
 import io.inversion.utils.*;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.net.URL;
-import java.nio.file.PathMatcher;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -149,12 +153,12 @@ public class Engine {
                 });
                 context.withCodec(new Codec(JSNode.class){
                     @Override
-                    public String toString(Object jsNode){
-                        return ((JSNode)jsNode).toString(false);
+                    public String toString(Object JSNode){
+                        return ((JSNode)JSNode).toString(false);
                     }
                     @Override
                     public Object fromString(Class clazz, String encoded) {
-                        return JSNode.parseJson(encoded);
+                        return JSReader.parseJson(encoded);
                     }
                 });
                 context.withCodec(new Codec(Rule.RuleMatcher.class){
@@ -257,7 +261,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST GET Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      * <p>
      * GET requests for a specific resource should return 200 of 404.
      * GET requests with query string search conditions should return 200 even if the search did not yield any results.
@@ -275,7 +279,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST GET Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      * <p>
      * GET requests for a specific resource should return 200 of 404.
      * GET requests with query string search conditions should return 200 even if the search did not yield any results.
@@ -294,7 +298,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST GET Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      * <p>
      * GET requests for a specific resource should return 200 of 404.
      * GET requests with query string search conditions should return 200 even if the search did not yield any results.
@@ -319,7 +323,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST POST Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      * <p>
      * Successful POSTs that create a new resource should return a 201.
      *
@@ -337,7 +341,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST PUT Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      * <p>
      * Successful PUTs that update an existing resource should return a 204.
      * If the PUT references a resource that does not exist, a 404 will be returned.
@@ -356,7 +360,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST PATCH Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      * <p>
      * Successful PATCHes that update an existing resource should return a 204.
      * If the PATCH references a resource that does not exist, a 404 will be returned.
@@ -375,7 +379,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST DELETE Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      *
      * @param url the url of the resource to be DELETED
      * @return the Response generated by handling the Request with status 204 if the delete was successful or 404 if the resource was not found
@@ -390,7 +394,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)} to run a REST DELETE Request on this Engine.
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      *
      * @param url   the url of the resource to be DELETED
      * @param hrefs the hrefs of the resource to delete
@@ -398,7 +402,7 @@ public class Engine {
      * @see #service(Request, Response)
      * @see io.inversion.action.db.DbDeleteAction
      */
-    public Response delete(String url, JSArray hrefs) {
+    public Response delete(String url, JSList hrefs) {
         return service("DELETE", url, hrefs.toString());
     }
 
@@ -406,7 +410,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)}
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      *
      * @param method the http method of the requested operation
      * @param url    the url that will be serviced by this Engine
@@ -421,7 +425,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)}
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      *
      * @param method the http method of the requested operation
      * @param url    the url that will be serviced by this Engine.
@@ -437,7 +441,7 @@ public class Engine {
      * Convenience overloading of {@code #service(Request, Response)}
      * <p>
      * IMPORTANT: This method does not make an external HTTP request, it runs the request on this Engine.
-     * If you want to make an external HTTP request see {@link io.inversion.utils.RestClient}.
+     * If you want to make an external HTTP request see {@link ApiClient}.
      *
      * @param method the http method of the requested operation
      * @param url    the url that will be serviced by this Engine.
@@ -853,9 +857,9 @@ public class Engine {
             error = Utils.getShortCause(ex);
         }
 
-        JSNode json = new JSNode("status", status, "message", message);
+        JSNode json = new JSMap("status", status, "message", message);
         if (error != null)
-            json.put("error", error);
+            json.putValue("error", error);
 
         return json;
     }
@@ -1079,7 +1083,7 @@ public class Engine {
 
     protected static void exclude(Request req, Response res) {
 
-        JSArray data = res.getStream();
+        JSList data = res.data();
         if (data == null)
             return;
 
@@ -1087,32 +1091,32 @@ public class Engine {
         Set<String> excludes = getXcludesSet(req.getUrl().getParam("exclude"));
 
         if ((includes != null && includes.size() > 0) || (excludes != null && excludes.size() > 0)) {
-            for (JSNode node : data.asNodeList()) {
+            for (JSMap node : data.asMapList()) {
                 exclude(node, includes, excludes, null);
             }
         }
     }
 
-    protected static void exclude(JSNode node, Set<String> includes, Set<String> excludes, String path) {
+    protected static void exclude(JSMap node, Set<String> includes, Set<String> excludes, String path) {
         for (String key : node.keySet()) {
             String attrPath = (path != null ? (path + "." + key) : key).toLowerCase();
 
-            Object value = node.get(key);
+            Object value = node.getValue(key);
             if (exclude(attrPath, includes, excludes)) {
                 node.remove(key);
             } else {
                 if (!(value instanceof JSNode))
                     continue;
 
-                if (value instanceof JSArray) {
-                    JSArray arr = (JSArray) value;
+                if (value instanceof JSList) {
+                    JSList arr = (JSList) value;
                     for (int i = 0; i < arr.size(); i++) {
-                        if (arr.get(i) instanceof JSNode) {
-                            exclude((JSNode) arr.get(i), includes, excludes, attrPath);
+                        if (arr.get(i) instanceof JSMap) {
+                            exclude((JSMap) arr.get(i), includes, excludes, attrPath);
                         }
                     }
                 } else {
-                    exclude((JSNode) value, includes, excludes, attrPath);
+                    exclude((JSMap) value, includes, excludes, attrPath);
                 }
             }
         }

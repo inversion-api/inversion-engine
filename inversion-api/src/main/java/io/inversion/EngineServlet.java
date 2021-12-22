@@ -17,9 +17,9 @@
 package io.inversion;
 
 import io.inversion.Request.Upload;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSNode;
 import io.inversion.utils.StreamBuffer;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import javax.servlet.ServletConfig;

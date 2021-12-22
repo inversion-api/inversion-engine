@@ -17,9 +17,9 @@
 package io.inversion.action.misc;
 
 import io.inversion.*;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.*;
+import io.inversion.json.JSNode;
+import io.inversion.utils.Utils;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -54,7 +54,7 @@ public class MockAction extends Action<MockAction> {
 
     public MockAction(String ruleMatcherSpec, String name, JSNode json) {
         if (name != null && json == null)
-            json = new JSNode("name", name);
+            json = new JSMap("name", name);
 
         withName(name);
         withIncludeOn(ruleMatcherSpec);
@@ -74,7 +74,7 @@ public class MockAction extends Action<MockAction> {
         JSNode json = getJson();
 
         if (json != null) {
-            if (json instanceof JSArray)
+            if (json instanceof JSList)
                 res.withRecords(json.asList());
             else
                 res.withJson(json);
@@ -126,7 +126,7 @@ public class MockAction extends Action<MockAction> {
             }
 
             if (stream != null) {
-                json = JSNode.asJSNode(Utils.read(stream));
+                json = JSReader.asJSNode(Utils.read(stream));
             } else {
                 throw ApiException.new500InternalServerError("Unable to locate jsonUrl '{}'. Please check your configuration", jsonUrl);
             }

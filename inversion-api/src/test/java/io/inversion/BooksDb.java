@@ -1,12 +1,15 @@
 package io.inversion;
 
 import io.inversion.rql.Term;
+import io.inversion.utils.Utils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class BooksDb extends Db<BooksDb>{
-    protected void buildCollections(){
+
+    public static List<Collection> makeTestCollections(){
         Collection books = new Collection("books")
                 .withProperty("bookId", "int", false)//
                 .withProperty("authorId", "int")//
@@ -19,7 +22,12 @@ public class BooksDb extends Db<BooksDb>{
                 .withProperty("name", "string")//
                 .withIndex("primaryIndex", "primary", true, "authorId");
 
-        withCollections(books, authors);
+        return Utils.add(new ArrayList<>(), books, authors);
+    }
+
+
+    protected void buildCollections(){
+        makeTestCollections().forEach(c -> withCollections(c));
     }
 
 

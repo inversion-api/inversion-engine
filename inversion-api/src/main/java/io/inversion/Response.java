@@ -16,8 +16,9 @@
  */
 package io.inversion;
 
+import io.inversion.json.*;
 import io.inversion.utils.*;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.List;
  * This class serves as holder for the Response returned from a RestClient call AND as the object
  * used to construct your own response to an Engine request.
  */
-public class Response implements JSNode.JSAccessor {
+public class Response implements JSFind {
 
     protected Chain   chain   = null;
     protected Request request = null;
@@ -44,7 +45,7 @@ public class Response implements JSNode.JSAccessor {
 
     protected final ArrayListValuedHashMap<String, String> headers = new ArrayListValuedHashMap<>();
 
-    protected JSNode       json   = new JSNode("meta", new JSNode(), "data", new JSArray());
+    protected JSNode       json   = new JSMap("meta", new JSMap(), "data", new JSList());
     protected String       text   = null;
     protected StreamBuffer stream = null;
 
@@ -106,7 +107,7 @@ public class Response implements JSNode.JSAccessor {
                 return null;
 
             try {
-                json = (JSNode) JSNode.parseJson(stream.getInputStream());
+                json = (JSNode) JSReader.parseJson(stream.getInputStream());
             } catch (Exception e) {
                 throw new ApiException(e);
             } finally {
@@ -302,16 +303,16 @@ public class Response implements JSNode.JSAccessor {
 
     public Response withMeta(String key, Object value) {
         JSNode json = getJson();
-        JSNode meta = json.getNode("meta");
+        JSNode meta = json.getMap("meta");
         if (meta == null)
             meta = json;
-        meta.put(key, value);
+        meta.putValue(key, value);
         return this;
     }
 
     public JSNode getMeta() {
         JSNode json = getJson();
-        JSNode meta = json.getNode("meta");
+        JSNode meta = json.getMap("meta");
         if (meta == null)
             meta = json;
         return meta;
@@ -365,23 +366,23 @@ public class Response implements JSNode.JSAccessor {
     }
 
     public Response withLink(String name, String url) {
-        JSNode links = findNode("_links");
+        JSNode links = getJson().findMap("_links");
         if (links != null) {
-            links.put(name, new JSNode("href", url));
+            links.putValue(name, new JSMap("href", url));
         } else {
-            getMeta().put(name, url);
+            getMeta().putValue(name, url);
         }
         return this;
     }
 
     public String getLink(String name) {
-        JSNode links = findNode("_links");
+        JSNode links = getJson().findMap("_links");
         if (links != null) {
             JSNode link = links.getNode(name);
             if (link != null)
                 return link.getString("href");
         } else {
-            Object link = getMeta().get(name);
+            Object link = getMeta().getValue(name);
             if (link instanceof String)
                 return (String) link;
         }
@@ -438,33 +439,39 @@ public class Response implements JSNode.JSAccessor {
     //----------------------------------------------------------------------------------------------------------------------
     //Data Construction
 
-    public JSArray data() {
-        return getStream();
-    }
-
-    public JSArray getStream() {
+    public JSList data() {
         JSNode json = getJson();
 
         if (json == null)
             return null;
 
-        if (json instanceof JSArray)
-            return (JSArray) json;
+        if (json instanceof JSList)
+            return (JSList) json;
 
-        if (json.get("data") instanceof JSArray)
-            return json.getArray("data");
+        if (json.getValue("data") instanceof JSList)
+            return json.getList("data");
 
-        if (json.get("_embedded") instanceof JSArray)
-            return json.getArray("_embedded");
+        if (json.getValue("_embedded") instanceof JSList)
+            return json.getList("_embedded");
 
-        return new JSArray(json);
+        //-- there is a single object in the payload without a meta or payload section
+        //-- this could mess up some callers that try to add to the returned
+        //-- JSList instead of calling withRecord
+        return new JSList(json);
+    }
+
+    public JSMap getFirstRecordAsMap(){
+        JSList data = data();
+        if(data == null || data.size() == 0)
+            return null;
+        return data.getMap(0);
     }
 
     public Response withRecord(Object record) {
-        JSArray data = getStream();
+        JSList data = data();
         if (data == null) {
-            data = new JSArray();
-            getJson().put("data", data);
+            data = new JSList();
+            getJson().putValue("data", data);
         }
         data.add(record);
         return this;
@@ -690,7 +697,7 @@ public class Response implements JSNode.JSAccessor {
         String message = getText();
         try {
             while (message != null && message.startsWith("{") && message.contains("\\\"message\\\"")) {
-                message = JSNode.asJSNode(message).getString("message");
+                message = JSReader.asJSNode(message).getString("message");
             }
         } catch (Exception ex) {
             //igore

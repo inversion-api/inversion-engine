@@ -16,11 +16,13 @@
  */
 package io.inversion;
 
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSReader;
 import io.inversion.rql.RqlParser;
 import io.inversion.rql.Term;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSList;
+import io.inversion.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -187,10 +189,10 @@ public abstract class Db<T extends Db> extends Rule<T>{
 
                 case "array":
 
-                    if (value instanceof JSArray)
+                    if (value instanceof JSList)
                         return value;
                     else
-                        return JSNode.asJSArray(value + "");
+                        return JSReader.asJSList(value + "");
 
                 case "object":
                     if (value instanceof JSNode)
@@ -200,7 +202,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
                         if (json.length() > 0) {
                             char c = json.charAt(0);
                             if (c == '[' || c == '{')
-                                return JSNode.parseJson(value + "");
+                                return JSReader.parseJson(value + "");
                         }
                         return json;
                     }
@@ -390,10 +392,10 @@ public abstract class Db<T extends Db> extends Rule<T>{
                 Map<String, Object> row = results.getRow(i);
 
                 if (collection == null) {
-                    JSNode node = new JSNode(row);
+                    JSMap node = new JSMap(row);
                     results.setRow(i, node);
                 } else {
-                    JSNode node = new JSNode();
+                    JSMap node = new JSMap();
                     results.setRow(i, node);
 
                     //------------------------------------------------
@@ -414,7 +416,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
                             //if (!node.containsKey(attrName))
                             {
                                 val = castDbOutput(attr, val);
-                                node.put(attrName, val);
+                                node.putValue(attrName, val);
                             }
                         }
                     }
@@ -425,7 +427,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
                     for (String key : row.keySet()) {
                         if (!key.equalsIgnoreCase("href") && !node.containsKey(key)) {
                             Object value = row.get(key);
-                            node.put(key, value);
+                            node.putValue(key, value);
                         }
                     }
 
@@ -436,7 +438,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
                         for(int j=idx.size()-1; j>=0; j--){
                             Property prop = idx.getProperty(j);
                             if(node.containsKey(prop.getJsonName()))
-                                node.putFirst(prop.getJsonName(), node.get(prop.getJsonName()));
+                                node.putFirst(prop.getJsonName(), node.getValue(prop.getJsonName()));
                         }
                     }
 
@@ -883,8 +885,8 @@ public abstract class Db<T extends Db> extends Rule<T>{
         if ("json".equalsIgnoreCase(type)) {
             String json = value.toString().trim();
             if (json.isEmpty())
-                return new JSNode();
-            return JSNode.parseJson(json);
+                return new JSMap();
+            return JSReader.parseJson(json);
         }
 
         if (Utils.in(type, "char", "nchar", "clob"))

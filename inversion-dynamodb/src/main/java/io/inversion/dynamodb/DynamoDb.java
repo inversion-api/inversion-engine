@@ -27,7 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.*;
 import io.inversion.*;
 import io.inversion.rql.Term;
 import io.inversion.config.Config;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 import java.util.ArrayList;
 import java.util.LinkedList;

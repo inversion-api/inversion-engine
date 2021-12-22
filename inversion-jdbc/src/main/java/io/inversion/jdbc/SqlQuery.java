@@ -19,8 +19,9 @@ package io.inversion.jdbc;
 import io.inversion.*;
 import io.inversion.rql.*;
 import io.inversion.rql.Order.Sort;
+import io.inversion.utils.JdbcUtils;
 import io.inversion.utils.Rows;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -426,6 +427,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     }
 
     protected String printOrderClause(Parts parts, Order order) {
+
+        if(true)
+            return "";
 
         List<Sort> sorts = order.getSorts();
 

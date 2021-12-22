@@ -9,19 +9,12 @@ dependencies {
 
     api group: "commons-beanutils", name: "commons-beanutils", version: "${commonsBeanUtilsVersion}"
 
-    api group: "org.apache.commons", name: "commons-lang3", version: "${commonsLang3Version}"
+
     api group: "org.apache.commons", name: "commons-csv", version: "${commonsCsvVersion}"
     api group: "org.apache.commons", name: "commons-text", version: "${commonsTextVersion}"
 
     api group: "org.apache.httpcomponents", name: "httpclient", version: "${httpclientVersion}"
     api group: "org.apache.httpcomponents", name: "httpmime", version: "${httpmimeVersion}"
-
-    //JSON parsing
-    api group: "com.fasterxml.jackson.core", name: "jackson-core", version: "${jacksonCoreVersion}"
-    api group: "com.fasterxml.jackson.core", name: "jackson-databind", version: "${jacksonDatabindVersion}"
-
-    //JSON Patch
-    api group: "com.flipkart.zjsonpatch",    name: "zjsonpatch", version: "${zjsonpatchVersion}"
 
     //JWT support
     api group: "com.auth0", name: "java-jwt", version: "${auth0JwtVersion}"

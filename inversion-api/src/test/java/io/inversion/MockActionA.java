@@ -16,7 +16,8 @@
  */
 package io.inversion;
 
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
 
 public class MockActionA extends Action<MockActionA> {
 
@@ -32,7 +33,7 @@ public class MockActionA extends Action<MockActionA> {
     @Override
     public void run(Request req, Response res) throws ApiException {
         if (req.isMethod("get")) {
-            res.withRecord(new JSNode("primaryKey", 1, "firstName", "tester1", "className", getClass().getSimpleName()));
+            res.withRecord(new JSMap("primaryKey", 1, "firstName", "tester1", "className", getClass().getSimpleName()));
         } else if (req.isMethod("put", "post")) {
             //-- none
         } else if (req.isMethod("delete")) {

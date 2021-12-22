@@ -18,8 +18,7 @@ package io.inversion;
 
 import io.inversion.config.Context;
 import io.inversion.utils.Path;
-import io.inversion.utils.Url;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.util.ArrayList;
@@ -205,8 +204,8 @@ public class Server extends Rule<Server> {
 
     protected void hook_wiringComplete_mergeUrlPaths() {
 
-        ArrayListValuedHashMap<RuleMatcher, Path> updatedIncludePaths = new ArrayListValuedHashMap();
-        ArrayListValuedHashMap<RuleMatcher, Path> updatedExcludePaths = new ArrayListValuedHashMap();
+        ArrayListValuedHashMap<RuleMatcher, Path> updatedIncludePaths = new ArrayListValuedHashMap<>();
+        ArrayListValuedHashMap<RuleMatcher, Path> updatedExcludePaths = new ArrayListValuedHashMap<>();
         for (String url : urls) {
             if (url.length() > 0) {
 
@@ -243,13 +242,20 @@ public class Server extends Rule<Server> {
         }
 
         for (RuleMatcher matcher : updatedIncludePaths.keySet()) {
+            //-- WB 20211218
+            //-- TODO: this array list wrapper should not be necessary to my eye but
+            //-- if it is not here calling matcher.clearPaths() removes the elements
+            //-- from the list that is returned from the ArrayListValuedHashMap.
+            //-- I can't figure it out...
+            List<Path> paths = new ArrayList<>(updatedIncludePaths.get(matcher));
             matcher.clearPaths();
-            matcher.withPaths(updatedIncludePaths.get(matcher));
+            matcher.withPaths(paths);
         }
 
         for (RuleMatcher matcher : updatedExcludePaths.keySet()) {
+            List<Path> paths = new ArrayList<>(updatedExcludePaths.get(matcher));
             matcher.clearPaths();
-            matcher.withPaths(updatedExcludePaths.get(matcher));
+            matcher.withPaths(paths);
         }
     }
 

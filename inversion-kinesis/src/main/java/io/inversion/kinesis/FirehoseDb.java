@@ -23,9 +23,10 @@ import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder
 import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
 import io.inversion.*;
+import io.inversion.json.JSMap;
 import io.inversion.rql.Term;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSNode;
+import io.inversion.utils.Utils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -122,7 +123,7 @@ public class FirehoseDb extends Db<FirehoseDb> {
     public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
         List<Record> batch = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {
-            String string = new JSNode(rows.get(i)).toString(jsonPrettyPrint, jsonLowercaseNames);
+            String string = new JSMap(rows.get(i)).toString(jsonPrettyPrint, jsonLowercaseNames);
 
             if (jsonSeparator != null && !string.endsWith(jsonSeparator))
                 string += jsonSeparator;

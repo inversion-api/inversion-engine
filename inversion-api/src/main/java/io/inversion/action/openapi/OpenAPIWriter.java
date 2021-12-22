@@ -178,13 +178,9 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
     }
 
     default Operation documentOpPatch(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
-
-
         return null;
-
         //--TODO: implement me...make DbPatchAction first
         //--TODO: add this operation as a link to GET
-
     }
 
     default Operation documentOpDelete(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {

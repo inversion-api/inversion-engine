@@ -198,6 +198,9 @@ quite;
 exit;
 ```
 
+TODO: update his!!!! for mysql 8
+https://stackoverflow.com/questions/50177216/how-to-grant-all-privileges-to-root-user-in-mysql-8-0
+
 Then run:
 ```
 docker start mysql57

@@ -20,7 +20,7 @@ import io.inversion.Api;
 import io.inversion.ApiException;
 import io.inversion.Engine;
 import io.inversion.config.Config;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.PropertiesConfiguration;

@@ -18,8 +18,10 @@ package io.inversion.lambda;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSReader;
+import io.inversion.utils.Utils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -29,22 +31,22 @@ import java.nio.charset.StandardCharsets;
  */
 public class EchoRequestStreamHandler implements RequestStreamHandler {
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-        JSNode responseBody = new JSNode();
-        JSNode responseJson = new JSNode();
-        responseJson.put("isBase64Encoded", false);
-        responseJson.put("statusCode", "200");
-        responseJson.put("headers", new JSNode("Access-Control-Allow-Origin", "*"));
+        JSNode responseBody = new JSMap();
+        JSNode responseJson = new JSMap();
+        responseJson.putValue("isBase64Encoded", false);
+        responseJson.putValue("statusCode", "200");
+        responseJson.putValue("headers", new JSMap("Access-Control-Allow-Origin", "*"));
         try {
             String input = Utils.read(new BufferedInputStream(inputStream));
             context.getLogger().log(input);
-            JSNode request = JSNode.asJSNode(input);
-            responseBody.put("request", request);
+            JSNode request = JSReader.asJSNode(input);
+            responseBody.putValue("request", request);
 
         } catch (Exception ex) {
-            responseBody.put("error", Utils.getShortCause(ex));
+            responseBody.putValue("error", Utils.getShortCause(ex));
         }
 
-        responseJson.put("body", responseBody.toString());
+        responseJson.putValue("body", responseBody.toString());
         OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
         writer.write(responseJson.toString());
         writer.close();

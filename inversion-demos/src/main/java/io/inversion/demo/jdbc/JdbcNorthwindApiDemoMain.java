@@ -20,7 +20,7 @@ import io.inversion.Api;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDb;
 import io.inversion.spring.main.InversionMain;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 /**
  * This demo launches an API that exposes SQL database tables as REST collection endpoints.
@@ -75,7 +75,7 @@ public class JdbcNorthwindApiDemoMain {
         InversionMain.run(buildApi());
 
         //this simply prints out the README to the console
-        System.out.println(Utils.read("README-JdbcNorthwindApiDemoMain.md"));
+        System.out.println(Utils.read(JdbcNorthwindApiDemoMain.class, "README-JdbcNorthwindApiDemoMain.md"));
     }
 
 }

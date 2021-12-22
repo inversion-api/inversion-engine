@@ -19,8 +19,8 @@ package io.inversion.cosmosdb;
 import io.inversion.*;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDbFactory;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSNode;
+import io.inversion.utils.Utils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -50,7 +50,7 @@ public class CosmosDbFactory {
 
                         JSNode json = req.getJson();
                         if (json != null) {
-                            json.asNodeList().forEach(node -> node.put("type", collectionKey.toLowerCase()));
+                            json.asMapList().forEach(node -> node.putValue("type", collectionKey.toLowerCase()));
                         }
                     }
                 }//
@@ -77,21 +77,21 @@ public class CosmosDbFactory {
             //Set<Object> orderIds = new HashSet<>();
             Set<Object> customerIds = new HashSet<>();
 
-            for (JSNode order : res.getStream().asNodeList()) {
+            for (JSNode order : res.data().asMapList()) {
                 cleanSourceNode("orders", order);
 
                 //orderIds.add(order.get("orderid"));
-                customerIds.add(order.get("customerid"));
+                customerIds.add(order.getValue("customerid"));
 
-                res = srcEngine.get("/northwind/source/orderDetails?orderId=" + order.get("orderid"));
+                res = srcEngine.get("/northwind/source/orderDetails?orderId=" + order.getValue("orderid"));
 
-                for (JSNode details : res.getStream().asNodeList()) {
+                for (JSNode details : res.data().asMapList()) {
                     cleanSourceNode("orderDetails", details);
-                    details.remove("employees");
-                    details.remove("order");
-                    details.remove("orderid");
+                    details.removeValues("employees");
+                    details.removeValues("order");
+                    details.removeValues("orderid");
                 }
-                order.put("orderDetails", res.getStream());
+                order.putValue("orderDetails", res.data());
                 dstEngine.post("/northwind/cosmosdb/orders", order).assertOk();
             }
 
@@ -105,14 +105,14 @@ public class CosmosDbFactory {
 
             String getCustomers = "/northwind/source/customers?in(customerid," + Utils.implode(",", customerIds) + ")";
             res = srcEngine.get(getCustomers).assertOk();
-            for (JSNode customer : res.getStream().asNodeList()) {
+            for (JSNode customer : res.data().asMapList()) {
                 cleanSourceNode("customers", customer);
                 dstEngine.post("/northwind/cosmosdb/customers", customer).assertOk();
             }
 
             res = srcEngine.get("/northwind/source/employees").assertOk();
-            for (JSNode employee : res.getStream().asNodeList()) {
-                employee.remove("employees");
+            for (JSNode employee : res.data().asMapList()) {
+                employee.removeValues("employees");
                 cleanSourceNode("employees", employee);
                 dstEngine.post("/northwind/cosmosdb/employees", employee).assertOk();
             }
@@ -128,8 +128,8 @@ public class CosmosDbFactory {
      * @param node       the node to clean
      */
     public static void cleanSourceNode(String collection, JSNode node) {
-        node.remove("href");
-        node.remove("employee");
+        node.removeValues("href");
+        node.removeValues("employee");
 
         if ("employees".equalsIgnoreCase(collection)) {
             String reportsTo = node.getString("reportsTo");
@@ -137,16 +137,16 @@ public class CosmosDbFactory {
                 //List parts = Arrays.asList("employees", "employee-" + reportsTo.substring(reportsTo.lastIndexOf("/") + 1));
                 reportsTo = reportsTo.substring(0, reportsTo.lastIndexOf("/") + 1) + "employees~" + reportsTo.substring(reportsTo.lastIndexOf("/") + 1);
 
-                node.put("reportsTo", reportsTo);
+                node.putValue("reportsTo", reportsTo);
             }
         }
 
         for (String key : node.keySet()) {
-            Object value = node.get(key);
+            Object value = node.getValue(key);
             if (value instanceof String) {
                 String str = (String) value;
                 if (str.startsWith("http://"))
-                    node.put(key, Utils.last(Utils.explode("/", str)));
+                    node.putValue(key, Utils.last(Utils.explode("/", str)));
             }
         }
     }
@@ -162,10 +162,10 @@ public class CosmosDbFactory {
 
             res = e.get(url).assertOk();
 
-            if (res.getStream().size() == 0)
+            if (res.data().size() == 0)
                 break;
 
-            for (JSNode order : res.getStream().asNodeList()) {
+            for (JSNode order : res.data().asMapList()) {
                 res = e.delete(order.getString("href"));
                 res.assertOk();
             }

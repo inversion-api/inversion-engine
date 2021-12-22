@@ -18,8 +18,8 @@ package io.inversion.action.db;
 
 import io.inversion.Engine;
 import io.inversion.Response;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSList;
+import io.inversion.json.JSNode;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,9 +60,9 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 
         res = engine.get(url("orderdetails?limit=10&sort=orderid")).assertOk();
 
-        JSArray hrefs = new JSArray();
+        JSList hrefs = new JSList();
 
-        res.getStream().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
+        res.data().forEach(o -> hrefs.add(((JSNode) o).getString("href")));
 
         assertEquals(10, hrefs.size());
 
@@ -78,7 +78,7 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 //      Response res = null;
 //      Engine engine = engine();
 //
-//      JSArray hrefs = new JSArray(url("orderdetails/10248~11"), url("orderdetails?orderid=10249"), url("orderdetails?orderid=10250"));
+//      JSList hrefs = new JSList(url("orderdetails/10248~11"), url("orderdetails?orderid=10249"), url("orderdetails?orderid=10250"));
 //
 //      for (int i = 0; i < hrefs.size(); i++)
 //         assertTrue(engine.get(hrefs.getString(i)).assertOk().getFoundRows() > 0);
@@ -103,10 +103,10 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 //      // select * from `Order Details` where Quantity = 60 and UnitPrice > 10;
 //      String url = url("orderdetails?Quantity=60&gt(UnitPrice,10)");
 //
-//      JSArray data = engine.get(url).getJson().findArray("data");
+//      JSList data = engine.get(url).getJson().findArray("data");
 //      assertTrue(data.size() == 2, "data should contain two records");
 //
-//      Response res = engine.delete(url("orderdetails"), new JSArray(url));
+//      Response res = engine.delete(url("orderdetails"), new JSList(url));
 //      assertTrue(res.isSuccess(), "bulk delete should succeed");
 //
 //      data = engine.get(url).getJson().findArray("data");
@@ -133,10 +133,10 @@ public abstract class AbstractDbDeleteActionIntegTest extends AbstractDbActionIn
 //      String url = url("indexlogs?tenantCode=us&n(error)&lt(modifiedAt,2019-04-01 00:00:00)");
 //      res = engine.get(url);
 //
-//      JSArray data = res.getJson().findArray("data");
+//      JSList data = res.getJson().findArray("data");
 //      assertTrue(data.size() == 3, "data should contain three records");
 //
-//      res = engine.delete(url("indexlogs"), new JSArray(url));
+//      res = engine.delete(url("indexlogs"), new JSList(url));
 //      res.dump();
 //      assertTrue(res.isSuccess(), "bulk delete should succeed");
 //

@@ -20,9 +20,10 @@ import io.inversion.ApiException;
 import io.inversion.Chain;
 import io.inversion.Collection;
 import io.inversion.Results;
+import io.inversion.json.JSReader;
 import io.inversion.rql.*;
 import io.inversion.rql.Order.Sort;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSNode;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -367,7 +368,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
     }
 
     public JSNode getJson() {
-        return JSNode.asJSNode(getSearchBuilder().toString());
+        return JSReader.asJSNode(getSearchBuilder().toString());
     }
 
     /**

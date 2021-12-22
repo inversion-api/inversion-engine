@@ -19,9 +19,11 @@ package io.inversion;
 import io.inversion.Chain.ActionMatch;
 import io.inversion.action.db.DbAction;
 import io.inversion.action.misc.MockAction;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSReader;
 import io.inversion.utils.Path;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -106,6 +108,7 @@ public class EngineTest {
         Db db = new MockDb().withCollections(books, authors);
 
         Api      api    = new Api();
+        api.withDb(db);
         api.withRelationship("authors", "books", "books", "author", "authorId");
 
         return api;
@@ -286,12 +289,12 @@ public class EngineTest {
                 assertNull(req.getUrl().getParam("named4"));
 
                 if (req.getJson() != null) {
-                    assertEquals("a", req.getJson().get("endpointNamed1"));
-                    assertEquals("c", req.getJson().get("endpointNamed2"));
-                    assertEquals("c", req.getJson().get("named1"));
-                    assertEquals("d", req.getJson().get("named2"));
-                    assertNull(req.getJson().get("named3"));
-                    assertNull(req.getJson().get("named4"));
+                    assertEquals("a", req.getJson().getValue("endpointNamed1"));
+                    assertEquals("c", req.getJson().getValue("endpointNamed2"));
+                    assertEquals("c", req.getJson().getValue("named1"));
+                    assertEquals("d", req.getJson().getValue("named2"));
+                    assertNull(req.getJson().getValue("named3"));
+                    assertNull(req.getJson().getValue("named4"));
                 }
             }
         });
@@ -310,12 +313,12 @@ public class EngineTest {
                 assertEquals("d", req.getUrl().getParam("named4"));
 
                 if (req.getJson() != null) {
-                    assertEquals("a", req.getJson().get("endpointNamed1"));
-                    assertEquals("c", req.getJson().get("endpointNamed2"));
-                    assertEquals("c", req.getJson().get("named1"));
-                    assertEquals("d", req.getJson().get("named2"));
-                    assertEquals("c", req.getJson().get("named3"));
-                    assertEquals("d", req.getJson().get("named4"));
+                    assertEquals("a", req.getJson().getValue("endpointNamed1"));
+                    assertEquals("c", req.getJson().getValue("endpointNamed2"));
+                    assertEquals("c", req.getJson().getValue("named1"));
+                    assertEquals("d", req.getJson().getValue("named2"));
+                    assertEquals("c", req.getJson().getValue("named3"));
+                    assertEquals("d", req.getJson().getValue("named4"));
                 }
             }
         });
@@ -333,7 +336,7 @@ public class EngineTest {
         assertTrue(res.getJson().toString().indexOf("action1") > 0);
         assertTrue(res.getJson().toString().indexOf("action2") > 0);
 
-        e.post("http://localhost:8080/api/a/b/c/d/e", new JSNode()).assertStatus(400, 404);
+        e.post("http://localhost:8080/api/a/b/c/d/e", new JSMap()).assertStatus(400, 404);
         e.get("http://localhost:8080/api/a/b/c/d/f").assertStatus(400, 404);
 
     }
@@ -849,7 +852,7 @@ public class EngineTest {
     public void test_exclude() {
         Engine engine;
 
-        MockAction action = new MockAction().withJson(JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("EngineTest_test_excludes.response.json"))));
+        MockAction action = new MockAction().withJson(JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("EngineTest_test_excludes.response.json"))));
 
         engine = new Engine()//
                 .withApi(new Api()//
@@ -859,7 +862,7 @@ public class EngineTest {
         resp = engine.get("/test?include=val1,val3|val4,rel1.val1|val2,rel1.rel1_1.rel1_1_1.*&excludes(rel1.rel1_1.rel1_1_1.val1|val3,rel1.rel1_1.rel1_1_1.rel1_1_1_1.val3)");
 
         String actual   = resp.getJson().toString();
-        String expected = JSNode.asJSNode(Utils.read(getClass().getResourceAsStream("EngineTest_test_excludes.expected.json"))).toString();
+        String expected = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("EngineTest_test_excludes.expected.json"))).toString();
 
         assertEquals(expected, actual);
     }

@@ -24,8 +24,9 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import io.inversion.*;
 import io.inversion.Request.Upload;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.utils.Utils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -125,7 +126,7 @@ public class S3UploadAction extends Action<S3UploadAction> {
 
             responseContent.put("fileMd5", getHash(uploadStream.getMessageDigest()));
             responseContent.put("fileSizeBytes", fileSize);
-            res.withJson(new JSNode(responseContent));
+            res.withJson(new JSMap(responseContent));
         } catch (Exception ex) {
             throw ApiException.new500InternalServerError(ex);
         } finally {
@@ -143,7 +144,7 @@ public class S3UploadAction extends Action<S3UploadAction> {
         Map<String, String> content = new HashMap<>();
         content.put("message", message);
         content.put("error", "Bad Request Exception");
-        res.withJson(new JSNode(content));
+        res.withJson(new JSMap(content));
 
     }
 

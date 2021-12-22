@@ -1,14 +1,15 @@
 package io.inversion.config;
 
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.map.MultiKeyMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.*;
+import java.sql.Timestamp;
 import java.util.*;
 
-class Encoder {
+public class Encoder {
 
     static final Logger log = LoggerFactory.getLogger(Encoder.class);
     static MultiKeyMap<Object, Object> defaults      = new MultiKeyMap();
@@ -32,6 +33,8 @@ class Encoder {
         STRINGIFIED_TYPES.add(Double.class);
         STRINGIFIED_TYPES.add(Void.class);
         STRINGIFIED_TYPES.add(String.class);
+        STRINGIFIED_TYPES.add(Date.class);
+        STRINGIFIED_TYPES.add(Timestamp.class);
     }
 
 
@@ -126,8 +129,6 @@ class Encoder {
                 if (!includeField(context, field))
                     continue;
 
-                System.out.println("TRAVERSING: " + field);
-
                 Object value = field.get(bean);
 
                 if (value != null) {
@@ -201,6 +202,11 @@ class Encoder {
         }
     }
 
+    public List<Field> getEncodableFields(Context context, Class type){
+        List<Field> fields = Utils.getFields(type);
+        fields.removeIf(f -> !includeField(context, f));
+        return fields;
+    }
 
     boolean includeField(Context context, Field field) {
 

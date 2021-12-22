@@ -20,11 +20,12 @@ import com.microsoft.azure.documentdb.*;
 import io.inversion.Index;
 import io.inversion.*;
 import io.inversion.jdbc.SqlQuery;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSReader;
 import io.inversion.rql.Order.Sort;
 import io.inversion.rql.Term;
 import io.inversion.rql.Where;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
 
 import java.util.ArrayList;
@@ -67,7 +68,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
     }
 
     public Results doSelect() throws ApiException {
-        Results<JSNode> results = new Results(this);
+        Results results = new Results(this);
         CosmosDb        db      = getDb();
 
         String collectionUri = db.getCollectionUri(collection);
@@ -130,6 +131,9 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         Chain.debug(debug);
         results.withTestQuery(debug);
 
+        System.out.println(debug);
+
+
         if (partKeyMissing)
             throw ApiException.new400BadRequest("CosmosSqlQuery.allowCrossPartitionQueries is false.");
 
@@ -146,7 +150,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
             for (Document doc : queryResults.getQueryIterable()) {
                 String json = doc.toJson();
-                JSNode node = JSNode.asJSNode(json);
+                JSMap  node = JSReader.asJSMap(json);
 
                 //-- removes all cosmos applied system keys that start with "_"
                 //-- TODO: might want to make this a configuration option and/or
@@ -155,7 +159,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
                 //-- by the user
                 for (String key : node.keySet()) {
                     if (key.startsWith("_"))
-                        node.remove(key);
+                        node.removeValues(key);
                 }
                 //-- the JSON returned from cosmos looks crazy, keys are all jumbled up.
                 node.sortKeys();

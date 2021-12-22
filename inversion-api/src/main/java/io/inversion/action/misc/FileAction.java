@@ -19,7 +19,7 @@ package io.inversion.action.misc;
 import io.inversion.*;
 import io.inversion.utils.Path;
 import io.inversion.utils.StreamBuffer;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 import java.io.InputStream;
 import java.util.HashSet;
@@ -66,7 +66,7 @@ public class FileAction <A extends FileAction> extends Action<A> {
         if(baseDir != null)
             filePath = new Path(baseDir, filePath).toString();
 
-        return Utils.findInputStream(filePath);
+        return Utils.findInputStream(this, filePath);
     }
 
     public boolean canServe(String filePath){

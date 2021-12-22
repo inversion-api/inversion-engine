@@ -1,14 +1,13 @@
 package io.inversion.config;
 
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.util.*;
 
-class Decoder {
+public class Decoder {
 
     static final Logger log = LoggerFactory.getLogger(Decoder.class);
 

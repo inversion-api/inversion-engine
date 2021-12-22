@@ -1,6 +1,6 @@
 package io.inversion;
 
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

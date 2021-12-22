@@ -1,0 +1,13 @@
+{
+  "orderId": 1,
+  "receiptNum": "123456",
+  "lineItems": [
+    {
+      "item1" : "asdfasd"
+    },
+    {
+      "somethingElse" : "item2"
+    }
+  ],
+  "undefined_field1" : "asdfasdf"
+}

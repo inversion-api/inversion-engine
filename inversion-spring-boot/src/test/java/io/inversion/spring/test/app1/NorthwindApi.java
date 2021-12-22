@@ -21,7 +21,8 @@ import io.inversion.Api;
 import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.action.misc.MockAction;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -35,7 +36,7 @@ public class NorthwindApi {
     public static Api buildApi() {
         return new Api().withName("test")
 
-                .withEndpoint("mock1/*", new MockAction().withJson(new JSNode("hello_world", "from northwind api")))//
+                .withEndpoint("mock1/*", new MockAction().withJson(new JSMap("hello_world", "from northwind api")))//
                 .withEndpoint("custom1/*", new Action() {
                     @Override
                     public void doGet(Request req, Response res) {

@@ -26,9 +26,9 @@ import io.inversion.Engine;
 import io.inversion.Response;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDbFactory;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSList;
+import io.inversion.json.JSNode;
+import io.inversion.utils.Utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -149,23 +149,23 @@ public class DynamoDbFactory {
             String   start = "northwind/orders?pageSize=100&sort=orderid";
             String   next  = start;
             do {
-                JSArray toPost = new JSArray();
+                JSList toPost = new JSList();
 
                 res = h2Engine.get(next);
                 res.assertOk();
-                if (res.getStream().size() == 0)
+                if (res.data().size() == 0)
                     break;
 
                 pages += 1;
                 next = res.getNext();
 
                 //-- now post to DynamoDb
-                for (Object o : res.getStream()) {
+                for (Object o : res.data()) {
                     total += 1;
                     JSNode js = (JSNode) o;
 
-                    js.remove("href");
-                    js.put("type", "ORDER");
+                    js.removeValues("href");
+                    js.putValue("type", "ORDER");
 
                     if (Utils.empty(js.findString("shipregion"))) {
                         empShipRegion += 1;
@@ -175,12 +175,12 @@ public class DynamoDbFactory {
                         String value = js.getString(key);
                         if (value != null && (value.startsWith("http://") || value.startsWith("https://"))) {
                             value = value.substring(value.lastIndexOf("/") + 1);
-                            js.remove(key);
+                            js.removeValues(key);
 
                             if (!key.toLowerCase().endsWith("id"))
                                 key = key + "Id";
 
-                            js.put(key, value);
+                            js.putValue(key, value);
                         }
                     }
                     toPost.add(js);

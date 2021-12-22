@@ -16,8 +16,10 @@
  */
 package io.inversion;
 
+import io.inversion.json.JSNode;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Path;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.text.StringEscapeUtils;
 
@@ -276,7 +278,6 @@ public class Collection  extends Rule<Collection>  implements Serializable {
     public String getName() {
         return name != null ? name : tableName;
     }
-
 
     public Collection withSingularDispalyName(String singularName){
         this.singularDisplayName = singularName;
@@ -805,8 +806,6 @@ public class Collection  extends Rule<Collection>  implements Serializable {
     public String encodeKeyFromJsonNames(Map<String, Object> values, Index index) {
         return encodeKey(values, index, true);
     }
-
-
 
 
     /**

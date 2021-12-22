@@ -1,0 +1,37 @@
+{
+  "str1": "hello",
+  "int1": 1,
+  "unmappedString": "unmappedString",
+  "unmappedInt": 1,
+  "unmappedBool": true,
+  "unmappedObj": {
+    "what": [
+      {
+        "asdf": [
+          3,
+          4,
+          5,
+          6
+        ]
+      }
+    ]
+  },
+  "bean2s": [
+    {
+      "abc": "mapped",
+      "xyz": 99,
+      "unmapped": "unmapped"
+    }
+  ],
+  "bean3": {
+    "asdf": "aaaa",
+    "qwer": 22,
+    "unmappedBool": true,
+    "unamappedList": [
+      1,
+      2,
+      3,
+      4
+    ]
+  }
+}

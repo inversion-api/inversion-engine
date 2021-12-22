@@ -27,7 +27,7 @@ import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDb;
 import io.inversion.spring.main.InversionMain;
 import io.inversion.config.Config;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 

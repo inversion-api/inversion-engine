@@ -20,7 +20,7 @@ import io.inversion.Api;
 import io.inversion.Engine;
 import io.inversion.spring.config.EnableInversion;
 import io.inversion.spring.config.InversionRegistrar;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;

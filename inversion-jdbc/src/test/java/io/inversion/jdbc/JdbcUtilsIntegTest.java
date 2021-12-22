@@ -17,6 +17,7 @@
 package io.inversion.jdbc;
 
 import io.inversion.AbstractEngineTest;
+import io.inversion.utils.JdbcUtils;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

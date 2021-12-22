@@ -18,9 +18,11 @@ package io.inversion.action.db;
 
 import io.inversion.Engine;
 import io.inversion.Response;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSReader;
+import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,13 +41,13 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.region"));
 
         JSNode employee5 = res.findNode("data.0");
-        JSNode employee5Copy = JSNode.asJSNode(employee5.toString());
+        JSNode employee5Copy = JSReader.asJSNode(employee5.toString());
 
         //-- this adds a logical duplicate
-        JSArray territories = res.findArray("data.0.territories");
-        territories.add(territories.get(territories.length()-1));                                   //-- this adds a referential duplicate
-        territories.add(JSNode.parseJson(territories.get(territories.length()-1).toString()));      //--this adds a copy duplicate
-        territories.getNode(1).put("region", new JSNode("regionId", 1)); //-- this is another duplicate
+        JSList territories = res.findList("data.0.territories");
+        territories.add(territories.get(territories.size()-1));                                   //-- this adds a referential duplicate
+        territories.add(JSReader.parseJson(territories.get(territories.size()-1).toString()));      //--this adds a copy duplicate
+        territories.getNode(1).putValue("region", new JSMap("regionId", 1)); //-- this is another duplicate
 
         res = engine.put(employee5.getString("href"), employee5);
 
@@ -73,7 +75,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         assertEquals(25, res.find("meta.foundRows")); //25 rows are copied by the bootstrap process, 11058 is last one
 
         //post one new bogus order
-        res = engine.post(url("orders"), new JSNode("shipaddress", "somewhere in atlanta", "shipcity", "atlanta")).assertOk();
+        res = engine.post(url("orders"), new JSMap("shipaddress", "somewhere in atlanta", "shipcity", "atlanta")).assertOk();
 
         res.dump();
         //check the values we sent are the values we got back
@@ -86,7 +88,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res.dump();
         assertEquals(26, res.find("meta.foundRows"));
 
-        assertEquals(10273, res.getStream().getNode(25).getInt("orderId"));
+        assertEquals(10273, res.data().getNode(25).getInt("orderId"));
     }
 
     @Test
@@ -100,7 +102,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         JSNode employee5 = res.findNode("data.0");
 
         String comp1 = res.getJson().toString();
-        String comp2 = JSNode.parseJson(comp1).toString();
+        String comp2 = JSReader.parseJson(comp1).toString();
         assertEquals(comp1, comp2);
 
         System.out.println(employee5);
@@ -131,13 +133,13 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         assertEquals(4, res.findInt("data.0.region.regionId"));
         assertEquals("Southern", res.findString("data.0.region.regionDescription"));
 
-        JSNode updateTo30346 = JSNode.asJSNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/put_with_nested_one_to_many_post.json")));
+        JSNode updateTo30346 = JSReader.asJSNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/put_with_nested_one_to_many_post.json")));
         res = engine.put(url("territories"), updateTo30346);
         res.dump();
 
         res = engine.get(url("territories/30346?expands=region"));
         res.dump();
-        JSNode updated30346 = res.getStream();
+        JSNode updated30346 = res.data();
 
         assertEquals(5, res.findInt("data.0.regionId"));
         assertEquals(5, res.findInt("data.0.region.regionId"));
@@ -153,9 +155,9 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         Engine   engine = engine();
 
         res = engine.get(url("employees?employeeId=5&expands=territories"));
-        assertEquals(7, res.findArray("data.0.territories").size());
+        assertEquals(7, res.findList("data.0.territories").size());
 
-        JSArray territories = res.findArray("data.0.territories");
+        JSList territories = res.findList("data.0.territories");
         territories.remove(6);
         territories.remove(0);
 
@@ -174,10 +176,10 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         Engine   engine = engine();
 
         res = engine.get(url("employees?employeeId=5&expands=employees"));
-        JSArray employees = res.findArray("data.0.employees");
+        JSList employees = res.findList("data.0.employees");
         System.out.println(employees.size());
 
-        assertEquals(3, employees.length());
+        assertEquals(3, employees.size());
         employees.remove(2);
         employees.remove(0);
 
@@ -186,7 +188,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res.assertOk();
 
         res = engine.get(url("employees?employeeId=5&expands=employees"));
-        JSArray newEmployees = res.findArray("data.0.employees");
+        JSList newEmployees = res.findList("data.0.employees");
         assertEquals(employees.toString(), newEmployees.toString());
     }
 
@@ -200,7 +202,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res.dump();
         assertTrue(res.findString("data.0.reportsTo").endsWith("/2"));
 
-        res.findNode("data.0").put("reportsTo", null);
+        res.findNode("data.0").putValue("reportsTo", null);
         res = engine.put(res.findString("data.0.href"), res.getJson());
         res.dump();
         res.assertOk();
@@ -217,15 +219,15 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         Response res;
         Engine   engine = engine();
 
-        JSNode john = JSNode.asJSNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/upsert001-1.json")));
+        JSNode john = JSReader.asJSNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/upsert001-1.json")));
 
         res = engine.get(url("employees?employeeId=5&expands=employees"));
         JSNode steve = res.findNode("data.0");
 
-        assertEquals(3, res.findArray("data.0.employees").size());
+        assertEquals(3, res.findList("data.0.employees").size());
 
-        //steve.findArray("employees").clear();
-        steve.findArray("employees").add(john);
+        //steve.findList("employees").clear();
+        steve.findList("employees").add(john);
 
         System.out.println(steve);
         res = engine.put(steve.getString("href"), steve);
@@ -235,12 +237,12 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res = engine.get(url("employees?employeeId=5&expands=employees"));
         res.dump();
 
-        assertEquals(4, res.findArray("data.0.employees").size(), "the new employee was not related to its parent");
+        assertEquals(4, res.findList("data.0.employees").size(), "the new employee was not related to its parent");
 
         //-- make sure the new employee was POSTED
         res = engine.get(url("employees/99999991?expands=reportsTo,territories,territories.region"));
         res.dump();
-        assertEquals(1, res.getStream().size());
+        assertEquals(1, res.data().size());
         assertTrue(res.findString("data.0.href").contains("/99999991"));
         assertTrue(res.findString("data.0.reportsTo.href").contains("employees/5"));
         assertEquals(res.findString("data.0.territories.0.TerritoryID"), "30346");
@@ -256,9 +258,9 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res = engine.get(url("employees?employeeId=5&expands=employees"));
         steve = res.findNode("data.0");
 
-        JSArray employees = steve.findArray("employees");
+        JSList employees = steve.findList("employees");
 
-        for (int i = 0; i < employees.length(); i++) {
+        for (int i = 0; i < employees.size(); i++) {
             if (!"99999991".equals(employees.getNode(i).getString("employeeId"))) {
                 employees.remove(i);
                 i--;
@@ -268,7 +270,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         engine.put(steve.getString("href"), steve).dump();
         res = engine.get(url("employees?employeeId=5&expands=employees")).dump();
 
-        assertEquals(1, res.findArray("data.0.employees").size());
+        assertEquals(1, res.findList("data.0.employees").size());
         assertTrue(res.findString("data.0.employees.0.href").contains("/99999991"));
         res.dump();
 
@@ -276,23 +278,23 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res = engine.get(url("employees?employeeId=5&expands=employees"));
         steve = res.findNode("data.0");
 
-        employees = steve.findArray("employees");
+        employees = steve.findList("employees");
         employees.clear();
 
         engine.put(steve.getString("href"), steve);
         res = engine.get(url("employees?employeeId=5&expands=employees"));
         res.dump();
-        assertEquals(0, res.findArray("data.0.employees").size());
+        assertEquals(0, res.findList("data.0.employees").size());
 
         //-- now unhook all many-to-many employee->territories...this a different case than unhooking some but not all  
         res = engine.get(url("employees?employeeId=5&expands=territories"));
-        assertEquals(7, res.findArray("data.0.territories").size());
+        assertEquals(7, res.findList("data.0.territories").size());
         JSNode manager = res.findNode("data.0");
-        manager.findArray("territories").clear();
+        manager.findList("territories").clear();
 
         engine.put(manager.getString("href"), manager);
         res = engine.get(url("employees?employeeId=5&expands=territories")).dump();
-        assertEquals(0, res.findArray("data.0.territories").size());
+        assertEquals(0, res.findList("data.0.territories").size());
 
         res.dump();
     }
@@ -405,14 +407,14 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
     //      res = engine.post("crm/identifiers", id11);
     //      res = engine.get("crm/customers?lastName=Tester2&expands=identifiers");
     //
-    //      assertEquals(1, res.findArray("data.0.identifiers").size());
+    //      assertEquals(1, res.findList("data.0.identifiers").size());
     //      assertEquals("Tester2", (res.find("data.0.lastName")));
     //      assertEquals("new_one_1", (res.find("data.0.identifiers.0.providerCode")));
     //      assertEquals("customerId", (res.find("data.0.identifiers.0.type")));
     //      assertEquals("new_one_val_1_updated", (res.find("data.0.identifiers.0.identifier")));
     //
     //      res = engine.get("crm/customers?lastName=Tester1&expands=identifiers");
-    //      assertEquals(0, res.findArray("data.0.identifiers").size());
+    //      assertEquals(0, res.findList("data.0.identifiers").size());
     //   }
 
 }

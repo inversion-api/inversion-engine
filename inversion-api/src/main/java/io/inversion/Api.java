@@ -18,7 +18,7 @@ package io.inversion;
 
 import io.inversion.utils.Path;
 import io.inversion.utils.Task;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,7 +115,7 @@ public class Api {
 
     synchronized Api startup(Engine engine) {
 
-        if(this.engine != null && engine != this.engine){
+        if (this.engine != null && engine != this.engine) {
             this.engine.removeApi(this);
         }
 
@@ -339,7 +339,7 @@ public class Api {
         return new ArrayList<>(endpoints);
     }
 
-    public Api removeEndpoint(Endpoint ep){
+    public Api removeEndpoint(Endpoint ep) {
         endpoints.remove(ep);
         return this;
     }
@@ -405,11 +405,11 @@ public class Api {
             Collection parentCollection = getCollection(parentCollectionName);
             Collection childCollection  = getCollection(childCollectionName);
 
-            if (parentPropertyName != null)
-                parentCollection.withOneToManyRelationship(parentPropertyName, childCollection, childFkProps);
+            if (parentCollection == null || childCollection == null)
+                throw ApiException.new500InternalServerError("You have specified a relationship between collections that don't exist in the Api after startup during delayed config: '{}' and, '{}'", parentCollectionName, childCollectionName);
 
-            if (childPropertyName != null)
-                childCollection.withManyToOneRelationship(childPropertyName, parentCollection, childFkProps);
+            parentCollection.withOneToManyRelationship(parentPropertyName, childCollection, childFkProps);
+            childCollection.withManyToOneRelationship(childPropertyName, parentCollection, childFkProps);
         });
 
         return this;
@@ -466,7 +466,7 @@ public class Api {
         return this;
     }
 
-    public Engine getEngine(){
+    public Engine getEngine() {
         return engine;
     }
 
@@ -539,6 +539,14 @@ public class Api {
         return ops;
     }
 
+    public Op getOp(String name) {
+        for (Op op : ops) {
+            if (name.equalsIgnoreCase(op.getName()))
+                return op;
+        }
+        return null;
+    }
+
 
     List<Op> buildOps() {
 
@@ -550,37 +558,42 @@ public class Api {
         for (String method : allPaths.keySet()) {
             List<Path> requestPaths = allPaths.get(method);
             for (Path requestPath : requestPaths) {
+
+                //-- there is a template variable here that was not bound by an action.
+                if (requestPath.toString().indexOf("{_") < -1)
+                    continue;
+
                 List<Op> ops = buildOp(method, requestPath);
                 operations.addAll(ops);
             }
         }
+
         operations.removeIf(o -> o.getActions().size() == 0);
         operations.removeIf(o -> o.getActions().parallelStream().allMatch(a -> a.isDecoration()));
 
-        for(int i=0; i<operations.size(); i++){
+        for (int i = 0; i < operations.size(); i++) {
             Op o = operations.get(i);
-            if(o.getRelationship() != null){
+            if (o.getRelationship() != null) {
                 boolean found = false;
-                for(Op candiate : operations){
+                for (Op candiate : operations) {
                     //TODO: probably need to distinguish between GET and FIND methods here
-                    if("GET".equalsIgnoreCase(candiate.getMethod())){
-                        if(candiate.getCollection() == o.getRelationship().getRelated()){
+                    if ("GET".equalsIgnoreCase(candiate.getMethod())) {
+                        if (candiate.getCollection() == o.getRelationship().getRelated()) {
                             found = true;
                             break;
                         }
                     }
                 }
-                if(!found){
+                if (!found) {
                     operations.remove(i);
                     i--;
                 }
             }
         }
 
-        operations.forEach(o -> {
-            String name = buildOperationName(o);
-            o.withName(name);
-        });
+        operations.removeIf(op -> setOpFunctionAndName(op) == null);
+
+
         deduplicateOperationNames(operations);
         Collections.sort(operations);
 
@@ -658,7 +671,7 @@ public class Api {
         for (Endpoint ep : getEndpoints()) {
             requestPath = requestPathCopy.copy();
 
-            Op  op     = new Op();
+            Op op = new Op();
             op.withEngine(engine);
             op.withApi(this);
             op.withMethod(method);
@@ -671,7 +684,7 @@ public class Api {
             System.out.println("REQUEST PATH: " + method + " - " + requestPath + " " + ep.getName());
 
             op.withEndpoint(ep);
-            op.withEpMatchPath(endpointMatch.copy());
+            op.withEndpointPathMatch(endpointMatch.copy());
 
             //-- find the db with the most specific (longest) path match
             Db   winnerDb      = null;
@@ -704,6 +717,8 @@ public class Api {
             //-- consume the requestPath for Endpoint Actions to match.
             offset = addParams(op, endpointMatch, requestPath, offset, true);
 
+            op.withActionPathMatch(requestPath.copy());
+
             for (Action action : ep.getActions()) {
                 Path actionMatch = action.match(method, requestPath);
                 if (actionMatch != null) {
@@ -720,27 +735,19 @@ public class Api {
         return ops;
     }
 
+    public void assignDefaultCollections(Op op) {
+        String collectionKey = op.getPathParamValue("_collection");
+        if (collectionKey == null) {
+
+        }
+    }
+
 
     public ArrayListValuedHashMap<String, Path> buildRequestPaths() {
 
-        ArrayListValuedHashMap<String, Path> paths = new ArrayListValuedHashMap<>();
-
-        Set<String>      methods       = new HashSet();
-//        List<Server> servers = getServers();
-//        for (Server server : getServers()) {
-//            if (aServer == null) {
-//                serverMatcher = server.getIncludeMatchers().get(0);
-//                aServer = server;
-//            }
-//
-//            for (Rule.RuleMatcher sm : server.getIncludeMatchers()) {
-//                methods.addAll(sm.getMethods());
-//            }
-//        }
-
+        ArrayListValuedHashMap<String, Path> paths   = new ArrayListValuedHashMap<>();
+        Set<String>                          methods = new HashSet();
         Utils.add(methods, "GET", "POST", "PUT", "PATCH", "DELETE");
-
-
         for (String method : methods) {
             for (Endpoint ep : getEndpoints()) {
                 for (Rule.RuleMatcher epMatcher : ep.getIncludeMatchers()) {
@@ -851,8 +858,8 @@ public class Api {
         return offset;
     }
 
-    static String cleanNamePart(String part){
-        if(part == null)
+    static String cleanNamePart(String part) {
+        if (part == null)
             part = "Unknown";
         part = part.replace("{", "");
         part = part.replace("}", "");
@@ -861,7 +868,7 @@ public class Api {
         return part;
     }
 
-    public String buildOperationName(Op op) {
+    public String setOpFunctionAndName(Op op) {
 
         String name = null;
 
@@ -889,7 +896,7 @@ public class Api {
                 case "PUT":
                 case "PATCH":
                 case "DELETE":
-                    throw new ApiException("Unsupported operation: " + op);
+                    return null;//-- unsupported operations
             }
 
         } else if (op.hasParams(Param.In.PATH, Request.COLLECTION_KEY, Request.RESOURCE_KEY)) {
@@ -957,6 +964,7 @@ public class Api {
                 name += "By" + Utils.capitalize(cleanNamePart(op.getPath().getVarName(i)));
         }
 
+        op.withName(name);
         return name;
     }
 

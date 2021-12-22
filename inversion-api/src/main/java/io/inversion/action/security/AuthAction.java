@@ -164,24 +164,24 @@ public class AuthAction extends Action<AuthAction> {
 //            String sessionKey = sessionDao.post(user);
 //
 //            resp.withHeader("x-auth-token", "Session " + sessionKey);
-//            JSNode obj = new JSNode();
+//            JSNode obj = new JSMap();
 //            obj.put("id", user.getId());
 //            obj.put("username", username);
 //            obj.put("displayname", user.getDisplayName());
 //
-//            JSArray perms = new JSArray();
+//            JSList perms = new JSList();
 //            for (String perm : user.getPermissions()) {
 //                perms.add(perm);
 //            }
 //            obj.put("perms", perms);
 //
-//            JSArray roles = new JSArray();
+//            JSList roles = new JSList();
 //            for (String role : user.getRoles()) {
 //                roles.add(role);
 //            }
 //            obj.put("roles", roles);
 //
-//            resp.withJson(new JSNode("data", obj));
+//            resp.withJson(new JSMap("data", obj));
 //        }
     }
 

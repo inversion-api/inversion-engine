@@ -50,16 +50,16 @@ public class ServerTest {
     public void hook_wiringComplete_mergeUrlPaths() {
 
         Server server = new Server("http://localhost/urlPath")
-                .withIncludeOn("path1/path1.1,path2/*")
-                .withIncludeOn("/path3/*")
-                .withExcludeOn("path2/excluded/*")
-                .withExcludeOn("path3/excluded/*");
+                .withIncludeOn("GET,path1/path1.1,path2/*")
+                .withIncludeOn("POST,/path3/*")
+                .withExcludeOn("PUT,path2/excluded/*")
+                .withExcludeOn("POST,path3/excluded/*");
 
 
         server.hook_wiringComplete_mergeUrlPaths();
 
-        String actualIncludes = "[[GET]:[urlPath/path1/path1.1, urlPath/path2/*], [POST]:[urlPath/path3/*]]";
-        String actualExcludes = "[[PUT]:[urlPath/path2/excluded/*], [POST]:[urlPath/path3/excluded/*]]";
+        String actualIncludes = "[[GET,urlPath/path1/path1.1,urlPath/path2/*], [POST,urlPath/path3/*]]";
+        String actualExcludes = "[[PUT,urlPath/path2/excluded/*], [POST,urlPath/path3/excluded/*]]";
 
         assertEquals(actualIncludes, server.getIncludeMatchers().toString());
         assertEquals(actualExcludes, server.getExcludeMatchers().toString());

@@ -2,9 +2,9 @@ package io.inversion.action.misc;
 
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -20,9 +20,9 @@ public class CsvActionTest {
     @Test
     public void run_shouldReturnCsv_when_singleObject_in_response() throws Exception {
         Response res          = new Response();
-        JSNode   singleObject = new JSNode();
-        singleObject.put("key1", "value1");
-        singleObject.put("key2", "value2");
+        JSNode   singleObject = new JSMap();
+        singleObject.putValue("key1", "value1");
+        singleObject.putValue("key2", "value2");
         res.withJson(singleObject);
         action.run(buildSuccessfulRequest(), res);
         assertNull(res.getJson());
@@ -32,12 +32,12 @@ public class CsvActionTest {
     @Test
     public void run_shouldReturnCsv_when_ArrayObject_in_response() throws Exception {
         Response res          = new Response();
-        JSNode   singleObject = new JSNode();
-        singleObject.put("key1", "value1");
-        singleObject.put("key2", "value2");
-        JSArray array = new JSArray();
-        array.put(0, singleObject);
-        array.put(1, singleObject.copy());
+        JSNode   singleObject = new JSMap();
+        singleObject.putValue("key1", "value1");
+        singleObject.putValue("key2", "value2");
+        JSList array = new JSList();
+        array.putValue(0, singleObject);
+        array.putValue(1, singleObject.copy());
         res.withJson(array);
         action.run(buildSuccessfulRequest(), res);
         assertNull(res.getJson());
@@ -47,12 +47,12 @@ public class CsvActionTest {
     @Test
     public void run_shouldReturnCsv_when_InversionWrapper_in_response() throws Exception {
         Response res          = new Response();
-        JSNode   singleObject = new JSNode();
-        singleObject.put("key1", "value1");
-        singleObject.put("key2", "value2");
-        JSArray array = new JSArray();
-        array.put(0, singleObject);
-        array.put(1, singleObject.copy());
+        JSNode   singleObject = new JSMap();
+        singleObject.putValue("key1", "value1");
+        singleObject.putValue("key2", "value2");
+        JSList array = new JSList();
+        array.putValue(0, singleObject);
+        array.putValue(1, singleObject.copy());
         res.withRecords(array.asList());
         res.withMeta("blah", "blahvalue");
         action.run(buildSuccessfulRequest(), res);
@@ -65,9 +65,9 @@ public class CsvActionTest {
     @Test
     public void run_should_doNothing_when_notGetRequest() throws Exception {
         Response res          = new Response();
-        JSNode   singleObject = new JSNode();
-        singleObject.put("key1", "value1");
-        singleObject.put("key2", "value2");
+        JSNode   singleObject = new JSMap();
+        singleObject.putValue("key1", "value1");
+        singleObject.putValue("key2", "value2");
         res.withJson(singleObject);
         Map<String, String> params = new HashMap<>();
         params.put("format", "csv");
@@ -82,7 +82,7 @@ public class CsvActionTest {
 //      {
 //
 //         Response res = new Response();
-//         JSNode singleObject = new JSNode();
+//         JSNode singleObject = new JSMap();
 //         singleObject.put("key1", "value1");
 //         singleObject.put("key2", "value2");
 //         res.withJson(singleObject);

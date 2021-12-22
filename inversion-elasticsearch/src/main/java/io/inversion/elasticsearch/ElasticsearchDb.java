@@ -17,10 +17,12 @@
 package io.inversion.elasticsearch;
 
 import io.inversion.*;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSReader;
 import io.inversion.rql.Term;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Rows.Row;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.http.HttpHost;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -204,8 +206,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
     }
 
     public String upsertRow(Collection table, Map<String, Object> columnMappedTermsRow) throws ApiException {
-        JSNode doc = new JSNode(columnMappedTermsRow);
-
+        JSMap doc = new JSMap(columnMappedTermsRow);
         String id = doc.getString("id");
         if (id == null) {
             id = table.encodeKeyFromColumnNames(columnMappedTermsRow);
@@ -266,9 +267,9 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
             if (isSuccess(statusCode)) {
                 // we now have the indices, aliases for each index, and mappings (and settings if we need them)
 
-                JSNode jsObj = JSNode.asJSNode(EntityUtils.toString(allResponse.getEntity()));
+                JSMap jsObj = JSReader.asJSMap(EntityUtils.toString(allResponse.getEntity()));
 
-                Map<String, JSNode> jsContentMap = (Map<String, JSNode>) jsObj.asMap();
+                Map<String, JSNode> jsContentMap = (Map<String, JSNode>) jsObj;
 
                 // a map is needed when building tables to keep track of which alias'ed indexes, such as 'all', have previously been built.
                 Map<String, Collection> tableMap = new HashMap<>();
@@ -311,7 +312,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
      * @param tableMap    the tableMap
      */
     private void buildTables(String elasticName, JSNode jsIndex, Map<String, Collection> tableMap) {
-        Map<String, JSNode> jsMappingsDocProps = (Map<String, JSNode>) jsIndex.getNode("mappings").getNode("_doc").getNode("properties").asMap();
+        Map<String, JSMap> jsMappingsDocProps = (Map<String, JSMap>) jsIndex.getMap("mappings").getNode("_doc").getNode("properties");
 
         Collection table;
 
@@ -328,7 +329,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
         addColumns(table, false, jsMappingsDocProps, "");
 
         String                  aliasName;
-        Map<String, JSNode> jsAliasProps = (Map<String, JSNode>) jsIndex.getNode("aliases").asMap();
+        Map<String, JSNode> jsAliasProps = (Map<String, JSNode>) jsIndex.getMap("aliases");
         for (Map.Entry<String, JSNode> propEntry : jsAliasProps.entrySet()) {
             aliasName = propEntry.getKey();
 
@@ -353,13 +354,13 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
      * @param jsPropsMap   - contains the parent's nested properties
      * @param parentPrefix - necessary for 'nested' column names.
      */
-    private void addColumns(Collection table, boolean nullable, Map<String, JSNode> jsPropsMap, String parentPrefix) {
+    private void addColumns(Collection table, boolean nullable, Map<String, JSMap> jsPropsMap, String parentPrefix) {
         //      int columnNumber = 0;
-        for (Map.Entry<String, JSNode> propEntry : jsPropsMap.entrySet()) {
+        for (Map.Entry<String, JSMap> propEntry : jsPropsMap.entrySet()) {
             //         columnNumber += 1;
 
             String colName   = parentPrefix + propEntry.getKey();
-            JSNode propValue = propEntry.getValue();
+            JSMap propValue = propEntry.getValue();
 
             // potential types include: keyword, long, nested, object, boolean
             if (propValue.containsKey("type") && table.getProperty(colName) == null) {

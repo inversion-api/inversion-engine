@@ -16,10 +16,13 @@
  */
 package io.inversion;
 
+import io.inversion.action.openapi.OpenAPIWriter;
 import io.inversion.utils.Task;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -49,7 +52,7 @@ import java.util.List;
  * You can override <code>run</code> to process all Requests this Action is selected for, or you can override any of the HTTP method specific doGet/Post/Put/Patch/Delete() handlers
  * if you want to segregate your business logic by HTTP method.
  */
-public class Action<A extends Action> extends Rule<A> {
+public class Action<A extends Action> extends Rule<A> implements OpenAPIWriter<A> {
 
     boolean decoration = false;
 
@@ -57,8 +60,38 @@ public class Action<A extends Action> extends Rule<A> {
 
     }
 
-    public void hook_enumerateOps(Task taskChain, List<Op> ops){
+    public void hook_enumerateOps(Task taskChain, List<Op> ops) {
+        List<Op> fixed = new ArrayList();
+        for (Op op : ops) {
+            fixed.addAll(enumerateOps(op));
+        }
+        ops.clear();
+        ops.addAll(fixed);
+    }
 
+
+    public List<Op> enumerateOps(Op template) {
+        List<Op> ops       = Arrays.asList(template);
+        Param    collParam = template.getParam(Param.In.PATH, Request.COLLECTION_KEY);
+        if (collParam != null && !template.getPath().isVar(collParam.getIndex())) {
+            String     collName   = template.getPathParamValue(Request.COLLECTION_KEY);
+            Collection collection = template.getApi().getCollection(collName);
+            if (collection != null) {
+                if (collection.matches(template.getMethod(), template.getActionPathMatch()))
+                    template.withCollection(collection);
+
+                if("GET".equalsIgnoreCase(template.getMethod())) {
+                    Param relParam = template.getParam(Param.In.PATH, Request.RELATIONSHIP_KEY);
+                    if (relParam != null && !template.getPath().isVar(collParam.getIndex())) {
+                        String       relName = template.getPathParamValue(Request.RELATIONSHIP_KEY);
+                        Relationship rel     = collection.getRelationship(relName);
+                        if (relName != null)
+                            template.withRelationship(rel);
+                    }
+                }
+            }
+        }
+        return ops;
     }
 
 
@@ -81,32 +114,31 @@ public class Action<A extends Action> extends Rule<A> {
     protected void run0(Request req, Response res) throws ApiException {
 
         String collectionKey = req.getCollectionKey();
-        String methodKey = req.getUrl().getParam("_method");
+        String methodKey     = req.getUrl().getParam("_method");
 
         Method method = null;
-        if(methodKey != null)
+        if (methodKey != null)
             method = Utils.getMethod(getClass(), methodKey);
-        if(method == null && collectionKey != null)
+        if (method == null && collectionKey != null)
             method = Utils.getMethod(getClass(), "do" + collectionKey + req.getMethod());
-        if(method == null)
+        if (method == null)
             method = Utils.getMethod(getClass(), "do" + collectionKey);
-        if(method == null)
+        if (method == null)
             method = Utils.getMethod(getClass(), "do" + req.getMethod());
 
-        if(method != null) {
+        if (method != null) {
             try {
                 method.invoke(this, req, res);
-            }
-            catch(Throwable ex){
-                if(!(ex instanceof ApiException))
+            } catch (Throwable ex) {
+                if (!(ex instanceof ApiException))
                     ex = ex.getCause();
 
                 ex.printStackTrace();
 
-                if(!(ex instanceof ApiException))
+                if (!(ex instanceof ApiException))
                     ex = ApiException.new500InternalServerError(ex);
 
-                throw (ApiException)ex;
+                throw (ApiException) ex;
             }
         }
     }
@@ -178,6 +210,6 @@ public class Action<A extends Action> extends Rule<A> {
 
     public A withDecoration(boolean decoration) {
         this.decoration = decoration;
-        return (A)this;
+        return (A) this;
     }
 }

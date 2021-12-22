@@ -18,7 +18,7 @@ package io.inversion.action.db;
 
 import io.inversion.Request;
 import io.inversion.action.openapi.OpenAPIWriter;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 import java.util.List;
 
@@ -28,7 +28,7 @@ import java.util.List;
  * Currently this class exists as a potential future compatibility shim and so that people looking at the
  * source code tree before really digging in will not be confused by the superficial lack of a PATCH action class.
  */
-public class DbPatchAction extends DbPostAction implements OpenAPIWriter {
+public class DbPatchAction<A extends DbPatchAction> extends DbPostAction<A> implements OpenAPIWriter<A> {
 
     @Override
     protected List<RuleMatcher> getDefaultIncludeMatchers(){

@@ -1,7 +1,7 @@
 package io.inversion.dynamodb;
 
 import io.inversion.*;
-import io.inversion.utils.Url;
+import io.inversion.Url;
 
 public interface AbstractDynamoTest extends AbstractEngineTest {
 

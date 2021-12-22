@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-public class DbAction extends Action<DbAction> implements OpenAPIWriter<DbAction> {
+public class DbAction<A extends DbAction> extends Action<A> implements OpenAPIWriter<A> {
     private DbGetAction    getAction    = new DbGetAction();
     private DbPostAction   postAction   = new DbPostAction();
     private DbPutAction    putAction    = new DbPutAction();
@@ -65,7 +65,6 @@ public class DbAction extends Action<DbAction> implements OpenAPIWriter<DbAction
                 workingOps.remove(i);
                 i--;
                 for (Collection coll : (List<Collection>) template.getDb().getCollections()) {
-
                     String colName = coll.getName();
                     Param colP = op.getParam(Param.In.PATH, Request.COLLECTION_KEY);
                     boolean matched = true;
@@ -198,6 +197,7 @@ public class DbAction extends Action<DbAction> implements OpenAPIWriter<DbAction
 
         return workingOps;
     }
+
 
 
     @Override

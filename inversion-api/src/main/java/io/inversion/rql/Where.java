@@ -17,7 +17,7 @@
 package io.inversion.rql;
 
 import io.inversion.*;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 import java.util.List;
 import java.util.Map;

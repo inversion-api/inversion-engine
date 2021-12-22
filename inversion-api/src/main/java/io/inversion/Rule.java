@@ -17,10 +17,12 @@
 package io.inversion;
 
 import io.inversion.config.Context;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Path;
 import io.inversion.utils.Task;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +50,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     /**
      * {@code JSNode} is used because it implements a case insensitive map without modifying the keys
      */
-    protected final transient JSNode            configMap       = new JSNode();
+    protected final transient JSMap            configMap       = new JSMap();
     /**
      * The name used for configuration and debug purposes.
      */
@@ -415,7 +417,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     public static class RuleMatcher {
 
         protected final SortedSet<String> methods = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        protected final SortedSet<Path>  paths   = new TreeSet<>();
+        protected final LinkedHashSet<Path>  paths   = new LinkedHashSet<>();
 
         public RuleMatcher() {
         }
@@ -439,8 +441,9 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         }
 
         public String toString() {
-            return Utils.implode(",", methods, paths);
+            return "[" + Utils.implode(",", methods, paths) + "]";
         }
+
         public int hashCode() {
             return toString().toLowerCase().hashCode();
         }
@@ -511,11 +514,11 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
             return Collections.unmodifiableSortedSet(methods);
         }
 
-        public SortedSet<Path> getPaths() {
+        public LinkedHashSet<Path> getPaths() {
             if(this.paths.size() == 0){
-                return Utils.add(new TreeSet(), new Path("*"));
+                return Utils.add(new LinkedHashSet(), new Path("*"));
             }
-            return Collections.unmodifiableSortedSet(paths);
+            return new LinkedHashSet(paths);
         }
     }
 }

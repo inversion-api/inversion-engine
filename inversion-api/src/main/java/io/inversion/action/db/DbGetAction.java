@@ -19,10 +19,13 @@ package io.inversion.action.db;
 import io.inversion.Collection;
 import io.inversion.*;
 import io.inversion.action.openapi.OpenAPIWriter;
+import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
 import io.inversion.rql.Page;
 import io.inversion.rql.Term;
 import io.inversion.utils.*;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
@@ -31,7 +34,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.util.*;
 
-public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
+public class DbGetAction<A extends DbGetAction> extends Action<A> implements OpenAPIWriter<A> {
 
     protected int maxRows = 100;
 
@@ -87,9 +90,9 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
     }
 
 
-    protected static String getForeignKey(Relationship rel, JSNode node) {
+    protected static String getForeignKey(Relationship rel, JSMap node) {
         Index idx = rel.getFkIndex1();
-        if (idx.size() == 1 && node.get(idx.getJsonName(0)) != null)
+        if (idx.size() == 1 && node.getValue(idx.getJsonName(0)) != null)
             return node.getString(idx.getJsonName(0));
 
         String key = rel.getCollection().encodeKeyFromJsonNames(node, rel.getFkIndex1());
@@ -97,7 +100,7 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
     }
 
 
-    protected static String getResourceKey(Collection collection, JSNode node) {
+    protected static String getResourceKey(Collection collection, JSMap node) {
         String key = collection.encodeKeyFromJsonNames(node);
         if (key == null)
             throw ApiException.new500InternalServerError("The primary key '{}' could not be constructed from the data provided.", collection.getResourceIndex());
@@ -219,11 +222,9 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
                 url = url.substring(0, url.lastIndexOf("/"));
 
                 Response tempRes = res.getEngine().get(url).assertOk();
-                JSNode   data    = tempRes.getStream();
-                if (data instanceof JSArray)
-                    data = (JSNode) ((JSArray) data).get(0);
+                JSMap   node    = tempRes.getFirstRecordAsMap();
 
-                String link = Chain.buildLink(data, rel);
+                String link = Chain.buildLink(node, rel);
                 newHref = new StringBuilder(link);
 
 //                String fk = data.findString(rel.getName());
@@ -353,7 +354,7 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
 
         if (results.size() > 0) {
             if (collection != null)
-                expand(req, collection, (List<JSNode>) results.getRows(), null, null, null);
+                expand(req, collection, (List<JSMap>) results.getRows(), null, null, null);
         }
 
         return results;
@@ -375,7 +376,7 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
      * @param expandsPath the path we are currently on
      * @param pkCache     a cache of things already looked up
      */
-    protected void expand(Request request, Collection collection, List<JSNode> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) {
+    protected void expand(Request request, Collection collection, List<JSMap> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) {
         if (parentObjs.size() == 0)
             return;
 
@@ -406,7 +407,7 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
                     // already retrieved.
                     pkCache = new MultiKeyMap();
 
-                    for (JSNode node : parentObjs) {
+                    for (JSMap node : parentObjs) {
                         pkCache.put(collection, getResourceKey(collection, node), node);
                     }
                 }
@@ -436,7 +437,7 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
                     //would be exactly the same you would just end up running an extra db query
 
                     relatedEks = new ArrayList<>();
-                    for (JSNode parentObj : parentObjs) {
+                    for (JSMap parentObj : parentObjs) {
                         String parentEk = getResourceKey(collection, parentObj);
                         String childEk  = getForeignKey(rel, parentObj);
                         if (childEk != null) {
@@ -453,10 +454,10 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
 
                 if (relatedEks == null) {
                     List toMatchEks = new ArrayList<>();
-                    for (JSNode parentObj : parentObjs) {
+                    for (JSMap parentObj : parentObjs) {
                         String parentEk = getResourceKey(collection, parentObj);
                         if (!toMatchEks.contains(parentEk)) {
-                            if (parentObj.get(rel.getName()) instanceof JSArray)
+                            if (parentObj.getValue(rel.getName()) instanceof JSList)
                                 throw ApiException.new500InternalServerError("This relationship seems to have already been expanded.");//-- this is an implementation logic error. If it ever happens...FIX IT.
 
                             toMatchEks.add(parentEk);
@@ -464,7 +465,7 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
                             if (rel.isManyToOne()) {
                                 parentObj.remove(rel.getName());
                             } else {
-                                parentObj.put(rel.getName(), new JSArray());
+                                parentObj.putValue(rel.getName(), new JSList());
                             }
                         }
                     }
@@ -489,7 +490,7 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
                 }
 
                 //this recursive call populates the pkCache
-                List<JSNode> newChildObjs = recursiveGet(pkCache, relatedCollection, unfetchedChildEks, expandPath(expandsPath, rel.getName()));
+                List<JSMap> newChildObjs = recursiveGet(pkCache, relatedCollection, unfetchedChildEks, expandPath(expandsPath, rel.getName()));
 
                 for (KeyValue<String, String> row : relatedEks) {
                     String parentEk  = row.getKey();
@@ -499,10 +500,10 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
                     JSNode childObj  = (JSNode) pkCache.get(relatedCollection, relatedEk);
 
                     if (rel.isManyToOne()) {
-                        parentObj.put(rel.getName(), childObj);
+                        parentObj.putValue(rel.getName(), childObj);
                     } else {
                         if (childObj != null) {
-                            parentObj.getArray(rel.getName()).add(childObj);
+                            parentObj.getList(rel.getName()).add(childObj);
                         }
                     }
                 }
@@ -532,11 +533,11 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
         String   link = Chain.buildLink(idxToRetrieve.getCollection());
         Response res  = Chain.peek().getEngine().get(link, Arrays.asList(termKeys, includes, sort, notNull)).assertOk();
 
-        for (JSNode node : res.data().asNodeList()) {
+        for (JSNode node : res.data().asMapList()) {
             List idxToMatchVals = new ArrayList<>();
 
             for (String property : idxToMatch.getJsonNames()) {
-                Object propVal = node.get(property);
+                Object propVal = node.getValue(property);
 
                 if (propVal instanceof String) {
                     propVal = Utils.substringAfter(propVal.toString(), "/");
@@ -551,7 +552,7 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
 
             List idxToRetrieveVals = new ArrayList<>();
             for (String property : idxToRetrieve.getJsonNames()) {
-                Object propVal = node.get(property);
+                Object propVal = node.getValue(property);
 
                 propVal = Utils.substringAfter(propVal.toString(), "/");
                 if (((String) propVal).contains("~")) {
@@ -571,7 +572,7 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
         return related;
     }
 
-    protected List<JSNode> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection resourceKeys, String expandsPath) throws ApiException {
+    protected List<JSMap> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection resourceKeys, String expandsPath) throws ApiException {
         if (resourceKeys.size() == 0)
             return Collections.EMPTY_LIST;
 
@@ -612,9 +613,9 @@ public class DbGetAction extends Action<DbGetAction> implements OpenAPIWriter {
         } else if (sc == 500) {
             res.rethrow();
         } else if (sc == 200) {
-            List<JSNode> nodes = (List<JSNode>) res.getStream().asList();
+            List<JSMap> nodes = res.data().asMapList();
 
-            for (JSNode node : nodes) {
+            for (JSMap node : nodes) {
                 Object resourceKey = getResourceKey(collection, node);
                 if (pkCache.containsKey(collection, resourceKey)) {
                     throw ApiException.new500InternalServerError("The requested resource has already been retrieved.");//-- logic error...fix me if found.

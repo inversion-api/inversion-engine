@@ -14,7 +14,7 @@ public class Op implements Comparable<Op> {
 
     public enum OpFunction {GET, FIND, RELATED, POST, PUT, PATCH, DELETE, BATCH_POST, BATCH_PUT, BATCH_PATCH, BATCH_DELETE}
 
-    String name          = null;
+    String name   = null;
     String method = null;
     Path   path   = null;
 
@@ -26,6 +26,8 @@ public class Op implements Comparable<Op> {
 
     Endpoint endpoint          = null;
     Path     endpointPathMatch = null;
+
+    Path actionPathMatch = null;
 
     //-- action,path/isEndpointAction
     List<Triple<Action, Path, Boolean>> actionPathMatches = new ArrayList();
@@ -39,7 +41,7 @@ public class Op implements Comparable<Op> {
 
     List<Param> params = new ArrayList();
 
-    public Op copy(){
+    public Op copy() {
         Op op = new Op();
         op.method = method;
         op.path = path.copy();
@@ -63,18 +65,18 @@ public class Op implements Comparable<Op> {
 
     }
 
-    public boolean matches(Request req, Path path){
+    public boolean matches(Request req, Path path) {
 
-        if(!getPath().matches(path))
+        if (!getPath().matches(path))
             return false;
 
         if (!getEndpoint().matches(req.getMethod(), path))
             return false;
 
-        for(Param param : getParams()){
-            if(param.in == Param.In.PATH){
-                for(Pattern regex : param.getPatterns()){
-                    if(!regex.matcher(path.get(param.getIndex())).matches())
+        for (Param param : getParams()) {
+            if (param.in == Param.In.PATH) {
+                for (Pattern regex : param.getPatterns()) {
+                    if (!regex.matcher(path.get(param.getIndex())).matches())
                         return false;
                 }
             }
@@ -83,7 +85,7 @@ public class Op implements Comparable<Op> {
         return true;
     }
 
-    public String getOperationPath(){
+    public String getOperationPath() {
         return "/" + path;
     }
 
@@ -118,6 +120,15 @@ public class Op implements Comparable<Op> {
 //        return op;
 //    }
 
+
+    public Path getActionPathMatch() {
+        return actionPathMatch;
+    }
+
+    public Op withActionPathMatch(Path actionPathMatch) {
+        this.actionPathMatch = actionPathMatch;
+        return this;
+    }
 
     public Op withActionMatch(Action action, Path actionMatchPath, Boolean isEpAction) {
         actionPathMatches.add(new MutableTriple<Action, Path, Boolean>(action, actionMatchPath, isEpAction));
@@ -169,21 +180,21 @@ public class Op implements Comparable<Op> {
 
     public Op withParam(Param param) {
 
-        for(Param p : getParams()){
-            if(p.getKey().equalsIgnoreCase(param.getKey())){
-                if(p.in == Param.In.HOST || p.in == Param.In.SERVER_PATH || p.in == Param.In.PATH){
-                    if(p.in != param.in || p.index != param.index)
+        for (Param p : getParams()) {
+            if (p.getKey().equalsIgnoreCase(param.getKey())) {
+                if (p.in == Param.In.HOST || p.in == Param.In.SERVER_PATH || p.in == Param.In.PATH) {
+                    if (p.in != param.in || p.index != param.index)
                         throw ApiException.new500InternalServerError("You have a configuration error.  You can not have a path param with the same key at different locations.");
 
-                    if(p.getName() == null && param.getName() != null)
+                    if (p.getName() == null && param.getName() != null)
                         p.withName(param.getName());
 
-                    if(p.getDescription() == null && param.getDescription() != null)
+                    if (p.getDescription() == null && param.getDescription() != null)
                         p.withDescription(param.getDescription());
 
                     param.getRegexs().forEach(r -> p.withRegex(r));
 
-                    if(param.isRequired())
+                    if (param.isRequired())
                         p.withRequired(true);
 
                     return this;
@@ -221,7 +232,7 @@ public class Op implements Comparable<Op> {
     }
 
 
-//    public List<String> getParamKeys(int pathIndex) {
+    //    public List<String> getParamKeys(int pathIndex) {
 //        List<String> found = new ArrayList();
 //        for (Param p : params) {
 //            if (pathIndex != p.getIndex())
@@ -348,11 +359,6 @@ public class Op implements Comparable<Op> {
         return this;
     }
 
-    public Op withEpMatchPath(Path epMatchPath) {
-        this.endpointPathMatch = epMatchPath;
-        return this;
-    }
-
     public Endpoint getEndpoint() {
         return endpoint;
     }
@@ -361,6 +367,8 @@ public class Op implements Comparable<Op> {
         this.endpoint = endpoint;
         return this;
     }
+
+
 
     public Collection getCollection() {
         return collection;

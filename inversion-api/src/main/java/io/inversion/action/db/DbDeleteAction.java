@@ -19,13 +19,13 @@ package io.inversion.action.db;
 import io.inversion.*;
 import io.inversion.Collection;
 import io.inversion.action.openapi.OpenAPIWriter;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Url;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSMap;
+import io.inversion.Url;
+import io.inversion.utils.Utils;
 
 import java.util.*;
 
-public class DbDeleteAction extends Action<DbDeleteAction> implements OpenAPIWriter {
+public class DbDeleteAction<A extends DbDeleteAction> extends Action<A> implements OpenAPIWriter<A> {
 
     @Override
     protected List<RuleMatcher> getDefaultIncludeMatchers(){
@@ -73,7 +73,7 @@ public class DbDeleteAction extends Action<DbDeleteAction> implements OpenAPIWri
 
             List<Map<String, Object>> rows = new ArrayList();
 
-            for (JSNode node : res.getStream().asNodeList()) {
+            for (JSMap node : res.data().asMapList()) {
 
                 String key = collection.encodeKeyFromJsonNames(node);
 
@@ -85,7 +85,7 @@ public class DbDeleteAction extends Action<DbDeleteAction> implements OpenAPIWri
                 rows.add(node);
             }
             collection.getDb().delete(collection, rows);
-            deleted += res.getStream().size();
+            deleted += res.data().size();
         }
 
         return deleted;

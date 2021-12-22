@@ -16,8 +16,11 @@
  */
 package io.inversion;
 
+import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
 import io.inversion.utils.*;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import java.util.*;
@@ -141,7 +144,7 @@ public class Chain {
         root.response.debug(format, args);
     }
 
-    public static String buildLink(JSNode fromHere, Relationship toHere) {
+    public static String buildLink(JSMap fromHere, Relationship toHere) {
         String link = null;
         if (toHere.isManyToOne()) {
             String fkval = null;
@@ -149,7 +152,7 @@ public class Chain {
                 fkval = toHere.getCollection().encodeKeyFromJsonNames(fromHere, toHere.getFkIndex1());
             } else {
                 //this value is already an encoded resourceKey
-                Object obj = fromHere.get(toHere.getFk1Col1().getJsonName());
+                Object obj = fromHere.getValue(toHere.getFk1Col1().getJsonName());
                 if (obj != null)
                     fkval = obj.toString();
             }
@@ -372,9 +375,9 @@ public class Chain {
     public Chain filterPathParams(JSNode json) {
         if (json != null && request.pathParams.size() > 0) {
             json.streamAll()
-                    .filter(node -> node instanceof JSNode && !(node instanceof JSArray))
+                    .filter(node -> node instanceof JSNode && !(node instanceof JSList))
                     .forEach(node -> {
-                        pathParamsToRemove.forEach(key -> ((JSNode) node).remove(key));
+                        pathParamsToRemove.forEach(key -> ((JSNode) node).removeValues(key));
                     });
         }
         return this;
@@ -419,8 +422,8 @@ public class Chain {
 
         if (json != null) {
             json.stream()
-                    .filter(node -> node instanceof JSNode && !(node instanceof JSArray))
-                    .forEach(node -> pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null && !e.getKey().startsWith("_"))).forEach(e -> ((JSNode) node).put(e.getKey(), e.getValue())));
+                    .filter(node -> node instanceof JSMap)
+                    .forEach(node -> pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null && !e.getKey().startsWith("_"))).forEach(e -> ((JSNode) node).putValue(e.getKey(), e.getValue())));
         }
 
         pathParamsToRemove.addAll(pathParamsToAdd.keySet());

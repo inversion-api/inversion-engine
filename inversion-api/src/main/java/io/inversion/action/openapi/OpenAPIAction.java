@@ -20,10 +20,11 @@ import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.action.misc.FileAction;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSList;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSReader;
 import io.inversion.utils.Path;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import io.swagger.parser.OpenAPIParser;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.core.util.Yaml;
@@ -129,8 +130,8 @@ public class OpenAPIAction<A extends OpenAPIAction> extends FileAction<A> {
      */
     public JSNode writeOpenAPI(Request req, OpenAPI openApi) {
         String  string  = Json.pretty(openApi);
-        JSNode  json    = JSNode.asJSNode(string);
-        JSArray patches = findPatches(req);
+        JSNode  json    = JSReader.asJSNode(string);
+        JSList patches = findPatches(req);
         if (patches.size() > 0)
             json.patch(patches);
         return json;
@@ -153,10 +154,10 @@ public class OpenAPIAction<A extends OpenAPIAction> extends FileAction<A> {
             for (int i = path.size() - 1; i >= 0; i--) {
                 String      pathString   = path.subpath(0, i).toString();
                 String      templatePath = new Path(templateBaseDir, pathString, "openapi.json").toString();
-                InputStream stream       = Utils.findInputStream(templatePath);
+                InputStream stream       = Utils.findInputStream(this, templatePath);
                 if (stream == null) {
                     templatePath = new Path(templateBaseDir, pathString, "openapi.yaml").toString();
-                    stream = Utils.findInputStream(templatePath);
+                    stream = Utils.findInputStream(this, templatePath);
                 }
                 if (stream != null)
                     return Utils.read(stream);
@@ -165,8 +166,8 @@ public class OpenAPIAction<A extends OpenAPIAction> extends FileAction<A> {
         return null;
     }
 
-    public JSArray findPatches(Request req) {
-        JSArray patches = new JSArray();
+    public JSList findPatches(Request req) {
+        JSList patches = new JSList();
 
         if (patchesBaseDir != null) {
             Path path = req.getUrl().getPath();
@@ -174,9 +175,9 @@ public class OpenAPIAction<A extends OpenAPIAction> extends FileAction<A> {
                 String pathString = path.subpath(0, i).toString();
                 for (int j = 0; j <= 10; j++) {
                     String      patchPath = new Path(patchesBaseDir, pathString, "openapi.patch" + (j == 0 ? "" : ("." + j)) + ".json").toString();
-                    InputStream stream    = Utils.findInputStream(patchPath);
+                    InputStream stream    = Utils.findInputStream(this, patchPath);
                     if (stream != null) {
-                        patches.add(JSNode.asJSNode(Utils.read(stream)));
+                        patches.add(JSReader.asJSNode(Utils.read(stream)));
                     }
                 }
             }

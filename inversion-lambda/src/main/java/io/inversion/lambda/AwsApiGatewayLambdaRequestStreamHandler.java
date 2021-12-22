@@ -22,9 +22,11 @@ import io.inversion.Api;
 import io.inversion.Engine;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Url;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSReader;
+import io.inversion.Url;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.io.*;
@@ -47,12 +49,12 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
 
         String input = Utils.read(new BufferedInputStream(inputStream));
 
-        JSNode    responseBody = new JSNode();
+        JSNode    responseBody = new JSMap();
         JSNode    config       = null;
         Exception ex           = null;
 
         try {
-            JSNode json = JSNode.asJSNode(input);
+            JSNode json = JSReader.asJSNode(input);
 
             debug("Request Event");
             debug(json.toString(false));
@@ -76,7 +78,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
                 servletPath = pathStr.substring(0, pathStr.length() - proxyStr.length());
             }
 
-            config = new JSNode("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
+            config = new JSMap("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
 
             if (engine == null) {
                 synchronized (this) {
@@ -89,12 +91,12 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
 
 
             ArrayListValuedHashMap<String, String> headers     = new ArrayListValuedHashMap<>();
-            JSNode                                 jsonHeaders = json.getNode("headers");
+            JSMap                                 jsonHeaders = json.getMap("headers");
             if(jsonHeaders != null)
-                headers.putAll((Map<String, String>)jsonHeaders.asMap());
+                headers.putAll((Map<String, String>)headers);
 
             JSNode              jsonParams = json.getNode("queryStringParameters");
-            Map<String, String> params     = jsonParams == null ? new HashMap<>() : (Map<String, String>) jsonParams.asMap();
+            Map<String, String> params     = jsonParams == null ? new HashMap<>() : (Map<String, String>) jsonParams;
 
             String body = json.getString("body");
 
@@ -117,18 +119,18 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
         } finally {
             if (ex != null) {
                 if (config != null)
-                    responseBody.put("config", config);
+                    responseBody.putValue("config", config);
 
-                responseBody.put("error", Utils.getShortCause(ex));
+                responseBody.putValue("error", Utils.getShortCause(ex));
 
-                responseBody.put("request", JSNode.asJSNode(input));
+                responseBody.putValue("request", JSReader.asJSNode(input));
 
-                JSNode responseJson = new JSNode();
-                responseJson.put("isBase64Encoded", false);
-                responseJson.put("statusCode", "500");
-                responseJson.put("headers", new JSNode("Access-Control-Allow-Origin", "*"));
+                JSNode responseJson = new JSMap();
+                responseJson.putValue("isBase64Encoded", false);
+                responseJson.putValue("statusCode", "500");
+                responseJson.putValue("headers", new JSMap("Access-Control-Allow-Origin", "*"));
 
-                responseJson.put("body", responseBody.toString());
+                responseJson.putValue("body", responseBody.toString());
                 OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
                 writer.write(responseJson.toString());
                 writer.close();
@@ -184,11 +186,11 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
     }
 
     protected void writeResponse(Response res, OutputStream outputStream) throws IOException {
-//        JSNode responseJson = new JSNode();
+//        JSNode responseJson = new JSMap();
 //
 //        responseJson.put("isBase64Encoded", false);
 //        responseJson.put("statusCode", res.getStatusCode());
-//        JSNode headers = new JSNode();
+//        JSNode headers = new JSMap();
 //        responseJson.put("headers", headers);
 //
 //        asdfasdf

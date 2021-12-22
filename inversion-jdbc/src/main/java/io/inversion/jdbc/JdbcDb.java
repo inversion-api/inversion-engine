@@ -22,10 +22,11 @@ import io.inversion.*;
 import io.inversion.Collection;
 import io.inversion.Api.ApiListener;
 import io.inversion.config.Config;
-import io.inversion.jdbc.JdbcUtils.SqlListener;
+import io.inversion.utils.JdbcUtils;
+import io.inversion.utils.JdbcUtils.SqlListener;
 import io.inversion.rql.Term;
 import io.inversion.utils.Rows.Row;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.configuration2.Configuration;
 
 import javax.sql.DataSource;

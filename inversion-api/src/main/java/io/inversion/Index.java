@@ -16,7 +16,7 @@
  */
 package io.inversion;
 
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 
 import java.io.Serializable;
 import java.util.ArrayList;

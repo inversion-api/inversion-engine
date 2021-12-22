@@ -16,8 +16,12 @@
  */
 package io.inversion;
 
+import io.inversion.json.JSFind;
+import io.inversion.json.JSList;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSReader;
 import io.inversion.utils.*;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.io.InputStream;
@@ -28,7 +32,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Request implements JSNode.JSAccessor {
+public class Request implements JSFind {
 
     public static final String COLLECTION_KEY   = "_collection";
     public static final String RESOURCE_KEY     = "_resource";
@@ -354,7 +358,7 @@ public class Request implements JSNode.JSAccessor {
             return null;
 
         try {
-            json = JSNode.asJSNode(body);
+            json = JSReader.asJSNode(body);
         } catch (Exception ex) {
             throw ApiException.new400BadRequest("Unparsable JSON body");
         }
@@ -369,7 +373,7 @@ public class Request implements JSNode.JSAccessor {
      * <p>
      * Conversion rules:
      * <ol>
-     *   <li>if getBody() is a JSArray return it.
+     *   <li>if getBody() is a JSList return it.
      *   <li>if getBody() is a JSNode with a "data" array prop, return it
      *   <li>if getBody() is a JSNode with a "_embedded" array prop, return it
      *   <li>if getBody() is a JSNode wrap it in an array and return it.
@@ -378,20 +382,20 @@ public class Request implements JSNode.JSAccessor {
      *
      * @return the JSON boty messaged into an array
      */
-    public JSArray getData() {
+    public JSList getData() {
         JSNode node = getJson();
         if (node != null) {
-            if (node instanceof JSArray) {
-                return (JSArray) node;
-            } else if (node.get("data") instanceof JSArray) {
-                return node.getArray("data");
-            } else if (node.get("_embedded") instanceof JSArray) {
-                return node.getArray("_embedded");
+            if (node instanceof JSList) {
+                return (JSList) node;
+            } else if (node.getValue("data") instanceof JSList) {
+                return node.getList("data");
+            } else if (node.getValue("_embedded") instanceof JSList) {
+                return node.getList("_embedded");
             } else {
-                return new JSArray(node);
+                return new JSList(node);
             }
         } else if (getBody() == null)
-            return new JSArray();
+            return new JSList();
         return null;
     }
 
@@ -715,9 +719,9 @@ public class Request implements JSNode.JSAccessor {
             if (Utils.empty(value))
                 fail("Required field '" + propOrPath + "' is missing.");
 
-            if (childProps != null && value instanceof JSNode && !((JSNode) value).isArray()) {
+            if (childProps != null && value instanceof JSNode && !((JSNode) value).isList()) {
                 for (String childProp : childProps) {
-                    if (Utils.empty(((JSNode) value).get(childProp))) {
+                    if (Utils.empty(((JSNode) value).getValue(childProp))) {
                         fail("Required field '" + propOrPath + "." + childProp + "' is missing.");
                     }
                 }
@@ -903,19 +907,19 @@ public class Request implements JSNode.JSAccessor {
                 return null;
 
             if (value instanceof String)
-                value = JSNode.parseJson(value.toString());
+                value = JSReader.parseJson(value.toString());
 
             return ((JSNode) value);
         }
 
-        public JSArray asArray() {
+        public JSList asArray() {
             if (value == null)
                 return null;
 
             if (value instanceof String)
-                value = JSNode.asJSArray(value.toString());
+                value = JSReader.asJSList(value.toString());
 
-            return ((JSArray) value);
+            return ((JSList) value);
         }
 
         public String asString() {

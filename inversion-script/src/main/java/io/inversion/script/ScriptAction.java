@@ -17,14 +17,16 @@
 package io.inversion.script;
 
 import io.inversion.*;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSReader;
 import io.inversion.script.velocity.LayoutDirective;
 import io.inversion.script.velocity.SaveDirective;
 import io.inversion.script.velocity.SwitchDirective;
 import io.inversion.script.velocity.VelocityResourceLoader;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSList;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Path;
-import ioi.inversion.utils.Utils;
+import io.inversion.utils.Utils;
 import net.jodah.expiringmap.ExpiringMap;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -109,7 +111,7 @@ public class ScriptAction extends Action<ScriptAction> {
             URL url = chain.getEngine().getResource(Utils.implode("/", scriptsDir, p));
             if (url != null) {
                 try {
-                    script = new JSNode("type", handler.scriptTypes.get(ext), "script", Utils.read(url.openStream()));
+                    script = new JSMap("type", handler.scriptTypes.get(ext), "script", Utils.read(url.openStream()));
                 } catch (IOException e) {
                     //ignore
                 }
@@ -121,7 +123,7 @@ public class ScriptAction extends Action<ScriptAction> {
             String   url = chain.getRequest().getApiUrl() + scriptsCollection + "?name=" + path;
             Response r   = chain.getEngine().get(url);
             if (r.getStatusCode() == 200) {
-                JSArray dataArr = r.getJson().getArray("data");
+                JSList dataArr = r.getJson().getList("data");
                 if (!dataArr.isEmpty()) {
                     script = dataArr.getNode(0);
                 }
@@ -302,7 +304,7 @@ public class ScriptAction extends Action<ScriptAction> {
                 boolean setText = true;
                 if (content.startsWith("{") || content.startsWith("[")) {
                     try {
-                        JSNode obj = JSNode.asJSNode(content);
+                        JSNode obj = JSReader.asJSNode(content);
                         res.withJson(obj);
                         setText = false;
                     } catch (Exception ex) {
@@ -444,7 +446,7 @@ public class ScriptAction extends Action<ScriptAction> {
     //         Response r = chain.getEngine().include(chain, "GET", url, null);
     //         if (r.getStatusCode() == 200)
     //         {
-    //            ArrayNode dataArr = r.getJson().getArray("data");
+    //            ArrayNode dataArr = r.getJson().getList("data");
     //            if (!dataArr.asList().isEmpty())
     //            {
     //               scriptJson = dataArr.getObject(0);

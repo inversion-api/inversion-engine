@@ -2,9 +2,10 @@ package io.inversion.jdbc;
 
 import io.inversion.*;
 import io.inversion.action.db.DbAction;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import ioi.inversion.utils.Utils;
+import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.utils.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -101,27 +102,27 @@ public class TestOverloadedDynamicTables {
                         JSNode json = req.getJson();
 
                         if (json != null) {
-                            for (JSNode node : json.asNodeList()) {
+                            for (JSNode node : json.asMapList()) {
                                 //-- not necessary for RDBMS stores but prevents
                                 //-- unintended props in document stores
-                                node.removeAll("collection", "resource", "relationship");
+                                node.removeValues("_collection", "_resource", "_relationship");
 
                                 //-- forces correct case
-                                node.put("tenant", tenant);
-                                node.put("type", type);
+                                node.putValue("tenant", tenant);
+                                node.putValue("type", type);
 
                                 //-- creates a unique id for each record
-                                if (Utils.empty(node.get("id")))
-                                    node.put("id", UUID.randomUUID().toString());
+                                if (Utils.empty(node.getValue("id")))
+                                    node.putValue("id", UUID.randomUUID().toString());
 
                                 switch (req.getCollection().getName()) {
                                     case "customers":
-                                        node.put("partition", node.get("id"));
+                                        node.putValue("partition", node.getValue("id"));
                                         break;
                                     case "addresses":
 
                                         Object customerId = null;
-                                        Object customerNode = node.get("customer");
+                                        Object customerNode = node.getValue("customer");
 
                                         if (customerNode instanceof JSNode)
                                             customerId = ((JSNode) customerNode).getString("id");
@@ -137,7 +138,7 @@ public class TestOverloadedDynamicTables {
                                         if (customerId == null)
                                             throw ApiException.new400BadRequest("An address must have an associated customer");
 
-                                        node.put("partition", customerId);
+                                        node.putValue("partition", customerId);
 
                                         break;
                                     default:
@@ -184,9 +185,9 @@ public class TestOverloadedDynamicTables {
         Engine   e   = engine;
         Response res = null;
 
-        res = e.post("crm/acmeco/customers", new JSNode("firstName", "myFirstName", "lastName", "myLastName", "addresses", //
-                new JSArray(new JSNode("alias", "home", "address1", "1234 hometown rd."), //
-                        new JSNode("alias", "office", "address1", "6789 workville st."))));
+        res = e.post("crm/acmeco/customers", new JSMap("firstName", "myFirstName", "lastName", "myLastName", "addresses", //
+                new JSList(new JSMap("alias", "home", "address1", "1234 hometown rd."), //
+                        new JSMap("alias", "office", "address1", "6789 workville st."))));
 
         res.dump();
         res.assertOk();
@@ -211,16 +212,16 @@ public class TestOverloadedDynamicTables {
         //-- this will fail because there is no customerKey to establish the partition
         e.get("crm/acmeco/customers").assertStatus(400);
 
-        JSNode apartment = new JSNode("alias", "apartment", "address1", "1234 downtown rd.");
+        JSNode apartment = new JSMap("alias", "apartment", "address1", "1234 downtown rd.");
         e.post("crm/acmeco/addresses", apartment).assertStatus(400);
 
-        apartment.put("customer", customerKey);
+        apartment.putValue("customer", customerKey);
         e.post("crm/acmeco/addresses", apartment).assertOk();
 
         res = e.get(customerHref + "/addresses").assertOk();
         assertEquals(3, res.data().size());
 
-        for (JSNode address : res.data().asNodeList()) {
+        for (JSNode address : res.data().asMapList()) {
             e.delete(address.getString("href")).assertOk();
         }
 

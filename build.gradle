@@ -177,9 +177,7 @@ subprojects {
 	        destination = file("$buildDir/../pom.xml")
 	    }
 	}
-	
 
-	
 	publishing {
 	    publications {
 	        mavenJava(MavenPublication) {

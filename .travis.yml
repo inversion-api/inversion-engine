@@ -15,7 +15,7 @@ stages:
     if: branch = master AND type IN (push)
   - name: release
     # only publish releases from "release" branch and not in pull requests
-    if: (branch = release-0.7.x OR branch = release-0.8.x OR branch = release-0.9.x) AND type IN (push)
+    if: (branch = release-0.7.x OR branch = release-0.8.x OR branch = release-0.9.x OR branch = alpha-0.10.x) AND type IN (push)
 
 
 jobs:

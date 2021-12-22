@@ -3,8 +3,6 @@ package io.inversion.jdbc;
 import io.inversion.*;
 import io.inversion.action.db.DbAction;
 import io.inversion.action.hateoas.LinksAction;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -101,7 +99,7 @@ public class TestCompressedResourceKeysAsForeignKey {
 //    public void post_with_one_to_many_with_child_compressed_foreign_key(){
 //        Response res;
 //
-//        JSNode newPerson = new JSNode("type", "employee", "Identifier", "33333", "props", new JSArray(new JSNode("name", "testProp1", "value", "testValue1")));
+//        JSNode newPerson = new JSMap("type", "employee", "Identifier", "33333", "props", new JSList(new JSMap("name", "testProp1", "value", "testValue1")));
 //        engine.post("person/persons", newPerson).dump();
 //        res = engine.get("person/persons/employee~33333?expands=props").dump();
 //        assertTrue(res.findString("data.0.props.0.person").endsWith("/employee~33333"));
@@ -111,7 +109,7 @@ public class TestCompressedResourceKeysAsForeignKey {
 //    public void post_many_to_one_with_parent_compressed_foreign_key(){
 //        Response res;
 //
-//        JSNode newProp = new JSNode("name", "testProp2", "value", "testValue2", "person", new JSNode("type", "employee", "Identifier", "4444"));
+//        JSNode newProp = new JSMap("name", "testProp2", "value", "testValue2", "person", new JSMap("type", "employee", "Identifier", "4444"));
 //        res = engine.post("person/props", newProp).assertOk();
 //        //todo add assertions about all parts of child pk
 //        //todo add assertions about parent compressed fk
@@ -123,7 +121,7 @@ public class TestCompressedResourceKeysAsForeignKey {
 //        Response res;
 //
 //        //-- insert with the MANY_TO_ONE child as the json parent
-//        JSNode newProp = new JSNode("name", "testProp2", "value", "testValue2", "person", new JSNode("type", "employee", "Identifier", "4444"));
+//        JSNode newProp = new JSMap("name", "testProp2", "value", "testValue2", "person", new JSMap("type", "employee", "Identifier", "4444"));
 //        res = engine.post("person/props", newProp).assertOk();
 //
 //        String newUrl = res.findString("data.0.href");
