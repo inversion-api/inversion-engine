@@ -394,13 +394,17 @@ public class AuthAction extends Action<AuthAction> {
             c = jwt.getClaim("groups");
             if (c != null && !c.isNull()) {
                 List<String> groups = c.asList(String.class);
-                user.withRoles(groups.toArray(new String[0]));
+                if (groups != null) {
+                    user.withRoles(groups.toArray(new String[0]));
+                }
             }
 
             c = jwt.getClaim("roles");
             if (c != null && !c.isNull()) {
                 List<String> roles = c.asList(String.class);
-                user.withRoles(roles.toArray(new String[0]));
+                if (roles != null) {
+                    user.withRoles(roles.toArray(new String[0]));
+                }
             }
 
             c = jwt.getClaim("tenantId");//legacy support
