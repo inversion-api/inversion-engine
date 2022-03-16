@@ -16,7 +16,10 @@
  */
 package io.inversion.rql;
 
+import io.inversion.utils.Utils;
+
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 public class Group<T extends Group, P extends Query> extends Builder<T, P> {

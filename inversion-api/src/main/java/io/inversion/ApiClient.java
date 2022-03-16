@@ -20,6 +20,7 @@ package io.inversion;
 import io.inversion.config.Config;
 import io.inversion.config.Context;
 import io.inversion.json.JSNode;
+import io.inversion.utils.Path;
 import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -41,6 +42,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -742,25 +745,103 @@ public class ApiClient {
         if (url == null)
             throw ApiException.new500InternalServerError("Unable to determine url for ApiClient.buildUrl().  Either pass the desired url in on your call or set configuration property {}.url=${url}.", getName());
 
-        String protocol = "";
-        if ((url.startsWith("http://") || url.startsWith("https://"))) {
-            protocol = url.substring(0, url.indexOf(":"));
-            url = url.substring(url.indexOf(":") + 1);
-        }
+        if(!url.startsWith("http://") || url.startsWith("https://"))
+            throw ApiException.new500InternalServerError("The destination URL must start with 'http://' or 'https://', received '{}'", url);
 
+        Request parentRequest = null;
+        Chain chain = Chain.peek();
+        if(chain != null)
+            parentRequest = chain.getRequest();
 
-        if (Chain.peek() != null && url.indexOf(':') > 0) {
-            Request request = Chain.top().getRequest();
-            url = request.buildPath(url);
+        if(parentRequest != null){
+            url = replaceVars(parentRequest, url);
         }
 
         if (url.endsWith("/"))
             url = url.substring(0, url.length() - 1);
 
-        if(!Utils.empty(protocol))
-            return protocol + ":" + url;
-        else
-            return url;
+        return url;
+    }
+
+    /**
+     * Replaces path parameters with their corresponding request params
+     */
+    public String replaceVars(Request parentRequest, String url) {
+
+        String protocol = url.substring(0, url.indexOf(":") + 3);
+        url = url.substring(url.indexOf(":") + 3);
+
+        String query = null;
+        int queryIdx = url.indexOf("?");
+        if(queryIdx > -1){
+            query = url.substring(url.indexOf("?") + 1);
+            url = url.substring(0, url.indexOf("?"));
+        }
+
+        String host = null;
+        int slashIdx = url.indexOf("/");
+        int colonIdx = url.indexOf(":");
+        if(slashIdx < 0 && colonIdx < 0){
+            //-- localhost
+            host = url;
+            url = "";
+        }
+        else if(slashIdx > 0 && colonIdx < 0){
+            //--- localhost/*
+            host = url.substring(0, slashIdx);
+            url = url.substring(slashIdx + 1);
+        }
+        else if(colonIdx > 0 && slashIdx < 0){
+            //--- localhost:8080
+            host = url;
+            url = "";
+        }
+        else if(colonIdx > 0 && slashIdx > 0 && colonIdx < slashIdx){
+            //--- localhost:8080/*
+            host = url.substring(0, slashIdx);
+            url = url.substring(0, slashIdx);
+        }
+        else if(colonIdx > 0 && slashIdx > 0 && slashIdx < colonIdx){
+            //--- localhost/{var:regex}
+            host = url.substring(0, slashIdx);
+            url = url.substring(0, slashIdx);
+        }
+
+        String path = url;
+
+        host = replaceVars(parentRequest, new Path(host.replace(".", "/")), false).toString().replace("/", ".");
+        path = path == null ? null : replaceVars(parentRequest, new Path(path), true).toString();
+
+        if (query != null) {
+            //TODO: add support for querystring var replacement with options
+        }
+
+        url = protocol + host + (path != null ? ("/") + path : "") + (query != null ? "?" + query : "");
+        return url;
+    }
+
+    Path replaceVars(Request request, Path path, boolean allowOptionals){
+        path = path.copy();
+        boolean isOptional = false;
+        for(int i=0; i<path.size(); i++){
+            isOptional  = isOptional || path.isOptional(i);
+            if(path.isVar(i)){
+                String value = request.getUrl().getParam(path.getVarName(i));
+                if(value != null){
+                    path.set(i, value);
+                }
+                else if(isOptional){
+                    if(!allowOptionals)
+                        throw ApiException.new500InternalServerError("Optionals are not allowed in this variable substitution.");
+                    path = path.subpath(0, i);
+                    break;
+                }
+                else{
+                    throw ApiException.new500InternalServerError("You have a non optional unbound variable in your ApiClient configuration.");
+                }
+            }
+        }
+        return path;
     }
 
     public ApiClient withUrl(String url) {

@@ -22,7 +22,7 @@ public class ApiException extends RuntimeException implements Status {
     protected String status = Status.SC_500_INTERNAL_SERVER_ERROR;
 
     public ApiException() throws ApiException {
-        this(null, SC_500_INTERNAL_SERVER_ERROR, null, null);
+        this((Exception)null, SC_500_INTERNAL_SERVER_ERROR, null);
     }
 
     public ApiException(Throwable cause) throws ApiException {

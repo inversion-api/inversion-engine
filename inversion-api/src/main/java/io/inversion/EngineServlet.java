@@ -16,7 +16,7 @@
  */
 package io.inversion;
 
-import io.inversion.Request.Upload;
+import io.inversion.Upload;
 import io.inversion.json.JSNode;
 import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;

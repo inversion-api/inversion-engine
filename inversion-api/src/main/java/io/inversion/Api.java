@@ -605,48 +605,38 @@ public class Api {
         }
 
 
-        //for (Api api : getApis())
-        {
-            ArrayListValuedHashMap<Server, Path> servers = new ArrayListValuedHashMap();
-            for (Server server : getServers()) {
-                servers.putAll(server, server.getAllIncludePaths());
-            }
-
-            System.out.println("\r\n--------------------------------------------");
-
-            System.out.println("SERVERS: ");
-            for (Server server : servers.keySet()) {
-                List<Path> serverPaths = new ArrayList(new LinkedHashSet(servers.get(server)));
-
-                for (Path serverPath : serverPaths) {
-                    List<String> serverUrls = server.getUrls();
-                    if (serverUrls.size() == 0)
-                        serverUrls.add("127.0.0.1");
-
-                    for (String host : serverUrls) {
-                        System.out.println(" - " + host + "/" + serverPath);
-                    }
-                }
-            }
-
-            System.out.println("\r\nOPERATIONS:");
-
-            List<Op> apiOps = new ArrayList(operations);
-            Collections.sort(apiOps);
-            for (Op op : apiOps) {
-                System.out.println(op.getName() + " - " + op.getMethod() + " " + op.getPath());
-                System.out.println("  - Parameters: " + op.getParams());
-                System.out.println("  - Collection: " + (op.getCollection() == null ? null : op.getCollection().getName()));
-                System.out.print("  - Actions   :");
-                for (Action a : op.getActions()) {
-                    System.out.print(" " + (a.getName() == null ? a.getClass().getSimpleName() : a.getName()) + ",");
-                }
-                System.out.println("");
-            }
-
-            System.out.println("\r\n--------------------------------------------");
-
+        ArrayListValuedHashMap<Server, Path> servers = new ArrayListValuedHashMap();
+        for (Server server : getServers()) {
+            servers.putAll(server, server.getAllIncludePaths());
         }
+
+        System.out.println("\r\n--------------------------------------------");
+
+        System.out.println("SERVERS: ");
+        for (Server server : servers.keySet()) {
+            List<Path> serverPaths = new ArrayList(new LinkedHashSet(servers.get(server)));
+
+            for (Path serverPath : serverPaths) {
+                List<String> serverUrls = server.getUrls();
+                if (serverUrls.size() == 0)
+                    serverUrls.add("127.0.0.1");
+
+                for (String host : serverUrls) {
+                    System.out.println(" - " + host + "/" + serverPath);
+                }
+            }
+        }
+
+        System.out.println("\r\nOPERATIONS:");
+
+        List<Op> apiOps = new ArrayList(operations);
+        Collections.sort(apiOps);
+        for (Op op : apiOps) {
+            //System.out.println(op.getMethod() + " " + op.getPath() + " - " + op.toString());
+            System.out.println(op.toString());
+        }
+        System.out.println("\r\n--------------------------------------------");
+
 
         return operations;
     }
@@ -681,8 +671,6 @@ public class Api {
             if (endpointMatch == null)
                 continue;
 
-            System.out.println("REQUEST PATH: " + method + " - " + requestPath + " " + ep.getName());
-
             op.withEndpoint(ep);
             op.withEndpointPathMatch(endpointMatch.copy());
 
@@ -707,7 +695,7 @@ public class Api {
             //-- pull out api action match paths before consuming the
             //-- request path for the endpoint action matches
             for (Action action : getActions()) {
-                Path actionMatch = action.match(method, requestPath);
+                Path actionMatch = action.match(method, requestPath, true);
                 if (actionMatch != null) {
                     op.withActionMatch(action, actionMatch.copy(), false);
                     addParams(op, actionMatch, requestPath, offset, false);
@@ -720,7 +708,7 @@ public class Api {
             op.withActionPathMatch(requestPath.copy());
 
             for (Action action : ep.getActions()) {
-                Path actionMatch = action.match(method, requestPath);
+                Path actionMatch = action.match(method, requestPath, true);
                 if (actionMatch != null) {
                     op.withActionMatch(action, actionMatch.copy(), true);
                     addParams(op, actionMatch, requestPath, offset, false);
@@ -835,6 +823,7 @@ public class Api {
     }
 
     protected int addParams(Op op, Path matchedPath, Path requestPath, int offset, boolean consume) {
+
         for (int i = 0; i < matchedPath.size() && i < requestPath.size(); i++) {
             if (matchedPath.isVar(i)) {
                 String key   = matchedPath.getVarName(i);

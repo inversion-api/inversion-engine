@@ -40,6 +40,7 @@ public class CsvActionTest {
         array.putValue(1, singleObject.copy());
         res.withJson(array);
         action.run(buildSuccessfulRequest(), res);
+        System.out.println(res.getJson());
         assertNull(res.getJson());
         assertEquals("key1,key2\r\nvalue1,value2\r\nvalue1,value2\r\n", res.getText());
     }

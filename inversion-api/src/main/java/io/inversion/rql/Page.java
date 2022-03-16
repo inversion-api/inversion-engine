@@ -41,7 +41,7 @@ public class Page<T extends Page, P extends Query> extends Builder<T, P> {
         int page = findInt("page", 0, -1);
         if(page < 0)
             page = findInt("pageNum", 0, -1);
-        return page >= 0;
+        return page >= 0 || find("after") != null;
     }
 
     public int getOffset() {

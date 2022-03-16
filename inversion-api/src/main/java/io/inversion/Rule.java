@@ -18,8 +18,6 @@ package io.inversion;
 
 import io.inversion.config.Context;
 import io.inversion.json.JSMap;
-import io.inversion.json.JSNode;
-import io.inversion.json.JSNode;
 import io.inversion.utils.Path;
 import io.inversion.utils.Task;
 import io.inversion.utils.Utils;
@@ -50,7 +48,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     /**
      * {@code JSNode} is used because it implements a case insensitive map without modifying the keys
      */
-    protected final transient JSMap            configMap       = new JSMap();
+    protected final transient JSMap             configMap       = new JSMap();
     /**
      * The name used for configuration and debug purposes.
      */
@@ -182,6 +180,9 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
      * @return the first includeMatchers path to match when method also matches, null if no matches or excluded
      */
     public Path match(String method, Path path) {
+        return match(method, path, false);
+    }
+    public Path match(String method, Path path, boolean bidirectional) {
         checkLazyConfig();
 
         for (RuleMatcher excluder : excludeMatchers) {
@@ -189,7 +190,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
                 continue;
 
             for (Path excludePath : excluder.paths) {
-                if (excludePath.matches(path)) {
+                if (excludePath.matches(path, bidirectional)) {
                     return null;
                 }
             }
@@ -204,7 +205,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
                 continue;
 
             for (Path includePath : includer.paths) {
-                if (includePath.matches(path)) {
+                if (includePath.matches(path, bidirectional)) {
                     return includePath;
                 }
             }
@@ -416,8 +417,8 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
 
     public static class RuleMatcher {
 
-        protected final SortedSet<String> methods = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        protected final LinkedHashSet<Path>  paths   = new LinkedHashSet<>();
+        protected final SortedSet<String>   methods = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        protected final LinkedHashSet<Path> paths   = new LinkedHashSet<>();
 
         public RuleMatcher() {
         }
@@ -485,37 +486,37 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
 
         public void withMethods(String... methods) {
             for (String method : Utils.explode(",", methods)) {
-                if(method.equals("*"))
+                if (method.equals("*"))
                     continue;
                 method = method.toUpperCase();
-                if(ALL_METHODS.contains(method)){
+                if (ALL_METHODS.contains(method)) {
                     this.methods.add(method);
                 }
             }
         }
 
         public RuleMatcher withPaths(Path... paths) {
-            for(int i=0; paths != null && i < paths.length; i++){
-                if(paths[i] != null)
+            for (int i = 0; paths != null && i < paths.length; i++) {
+                if (paths[i] != null)
                     this.paths.add(paths[i]);
             }
             return this;
         }
 
         public RuleMatcher withPaths(List<Path> paths) {
-            for(Path p : paths)
+            for (Path p : paths)
                 withPaths(p);
             return this;
         }
 
         public SortedSet<String> getMethods() {
-            if(methods.size() == 0)
+            if (methods.size() == 0)
                 return ALL_METHODS;
             return Collections.unmodifiableSortedSet(methods);
         }
 
         public LinkedHashSet<Path> getPaths() {
-            if(this.paths.size() == 0){
+            if (this.paths.size() == 0) {
                 return Utils.add(new LinkedHashSet(), new Path("*"));
             }
             return new LinkedHashSet(paths);

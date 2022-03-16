@@ -1,8 +1,12 @@
 package io.inversion.json;
 
+import org.springframework.util.LinkedCaseInsensitiveMap;
+
 import java.util.*;
 
 public class JSMap <T> extends JSNode implements Map<String, T> {
+
+    LinkedCaseInsensitiveMap asdf = null;
 
     /**
      * Maps the lower case JSProperty.name to the property for case

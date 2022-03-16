@@ -22,6 +22,14 @@ public class BooksDb extends Db<BooksDb>{
                 .withProperty("name", "string")//
                 .withIndex("primaryIndex", "primary", true, "authorId");
 
+
+        Property authors_authorId = authors.getProperty("authorId");
+        Property books_authorId = books.getProperty("authorId");
+        books_authorId.withPk(authors_authorId);
+
+        Index bookToAuthorForeignKey = new Index("bookToAuthorForeignKey", Index.TYPE_FOREIGN_KEY, false, books_authorId);
+        books.withIndexes(bookToAuthorForeignKey);
+
         return Utils.add(new ArrayList<>(), books, authors);
     }
 

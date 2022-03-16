@@ -183,7 +183,7 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
 
             Response res = runTest(getEngine(), urlPrefix, testKey, queryString + "&explain=true");
 
-            String maybeMatch = !Utils.empty(Results.LAST_QUERY) ? Results.LAST_QUERY : res.findString("message");
+            String maybeMatch = !Utils.empty(Results.LAST_QUERY) ? Results.LAST_QUERY : res.findString("error");
 
             if (Utils.empty(expected))
                 expected = "YOU NEED TO SUPPLY A MATCH FOR THIS TEST: " + maybeMatch;

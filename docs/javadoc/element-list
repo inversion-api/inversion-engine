@@ -1,8 +1,12 @@
 io.inversion
 io.inversion.action.db
+io.inversion.action.hateoas
 io.inversion.action.misc
+io.inversion.action.openapi
 io.inversion.action.security
+io.inversion.action.security.schemes
 io.inversion.azure.functions
+io.inversion.config
 io.inversion.cosmosdb
 io.inversion.demo.aclrules
 io.inversion.demo.jdbc
@@ -11,6 +15,7 @@ io.inversion.demo.script
 io.inversion.dynamodb
 io.inversion.elasticsearch
 io.inversion.jdbc
+io.inversion.json
 io.inversion.kinesis
 io.inversion.lambda
 io.inversion.redis

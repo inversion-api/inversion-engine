@@ -339,7 +339,7 @@ public class Context {
         List<String>        excludes        = Arrays.asList("java.", "javax.");
         for (String key : configuration.keySet()) {
             boolean skip = false;
-            System.out.println(key);
+            //System.out.println(key);
             if (!key.contains("."))
                 skip = true;
             if (key.indexOf(".") != key.lastIndexOf("."))
@@ -490,7 +490,7 @@ public class Context {
             PrintStream fileOut = null;
             if (outputFilePath != null) {
                 File file = new File(outputFilePath);
-                System.out.println(file.getCanonicalPath());
+                //System.out.println(file.getCanonicalPath());
                 fileOut = new PrintStream(new FileOutputStream(file));
             }
 
@@ -507,7 +507,7 @@ public class Context {
 
 
             log.debug("\r\n" + startTitle);
-            System.out.println("\r\n" + startTitle);
+            //System.out.println("\r\n" + startTitle);
             for (String key : keys) {
 
                 //if (key.startsWith("_anonymous_"))
@@ -522,10 +522,10 @@ public class Context {
                     fileOut.println(key + " = " + value);
 
                 log.debug("   > " + maskOutput(key, value));
-                System.out.println("   > " + maskOutput(key, value));
+                //System.out.println("   > " + maskOutput(key, value));
             }
             log.debug(endTitle + "\r\n");
-            System.out.println(endTitle + "\r\n");
+            //System.out.println(endTitle + "\r\n");
 
             if (fileOut != null) {
                 fileOut.flush();

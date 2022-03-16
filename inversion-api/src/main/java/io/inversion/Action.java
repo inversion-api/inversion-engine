@@ -95,11 +95,6 @@ public class Action<A extends Action> extends Rule<A> implements OpenAPIWriter<A
     }
 
 
-    public Action(String ruleMatcherSpec) {
-        withIncludeOn(ruleMatcherSpec);
-    }
-
-
     /**
      * Override this method with your custom business logic or override one of the
      * http method "doMETHOD" specific handlers.

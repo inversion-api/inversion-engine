@@ -1,21 +1,33 @@
 package io.inversion;
 
 import io.inversion.action.db.DbAction;
-import io.inversion.action.hateoas.HALAction;
 import io.inversion.action.misc.MockAction;
 import io.inversion.utils.Path;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ApiTest {
 
+
+    void assertPaths(Api api, String... opMethodAndPathString) {
+        ArrayListValuedHashMap<String, Path> paths = api.buildRequestPaths();
+
+        Set opStrings = new HashSet<>();
+        for (String method : paths.keySet()) {
+            for (Path path : paths.get(method)) {
+                opStrings.add(method + " " + path);
+            }
+        }
+        assertEquals(opMethodAndPathString.length, opStrings.size(), "The api produced the wrong number of operations");
+        for (String str : opMethodAndPathString) {
+            assertTrue(opStrings.contains(str), "The api did not produce the op " + str);
+        }
+    }
 
     void assertParameter(Op op, String key, int index) {
         for (Param p : op.getParams()) {
@@ -25,43 +37,64 @@ public class ApiTest {
         fail("Parameter '" + key + "' at index " + index + " not found in operation");
     }
 
-    void assertOp(List<Op> ops, String method, String displayPath) {
-        assertOp(ops, method, displayPath, -1);
-    }
+//    void assertOp(List<Op> ops, String method, String displayPath) {
+//        assertOp(ops, method, displayPath, -1);
+//    }
 
-    void assertOp(List<Op> ops, String method, String displayPath, int numParams, Object... paramKeyIndexPairs) {
-        for (Op op : ops) {
-            if (op.getMethod().equalsIgnoreCase(method) && op.getPath().toString().equalsIgnoreCase(displayPath)) {
-                if (numParams > -1)
-                    assertEquals(numParams, op.getParams().size());
-                for (int i = 0; paramKeyIndexPairs != null && i < paramKeyIndexPairs.length - 1; i += 2) {
-                    assertParameter(op, (String) paramKeyIndexPairs[i], (Integer) paramKeyIndexPairs[i + 1]);
-                }
-                return;
-            }
+//    void assertOp(List<Op> ops, String method, String displayPath, int numParams, Object... paramKeyIndexPairs) {
+//        for (Op op : ops) {
+//            if (op.getMethod().equalsIgnoreCase(method) && op.getPath().toString().equalsIgnoreCase(displayPath)) {
+//                if (numParams > -1)
+//                    assertEquals(numParams, op.getParams().size());
+//                for (int i = 0; paramKeyIndexPairs != null && i < paramKeyIndexPairs.length - 1; i += 2) {
+//                    assertParameter(op, (String) paramKeyIndexPairs[i], (Integer) paramKeyIndexPairs[i + 1]);
+//                }
+//                return;
+//            }
+//        }
+//        fail("Operation " + method + " " + displayPath + " not found");
+//    }
+
+
+    void assertOps(Api api, String... opToStrings) {
+        Set opStrings = new HashSet<>();
+        for (Op op : api.buildOps()) {
+            opStrings.add(op.toString());
         }
-        fail("Operation " + method + " " + displayPath + " not found");
+        assertEquals(opToStrings.length, opStrings.size(), "The api produced the wrong number of operations");
+        for (String str : opToStrings) {
+            assertTrue(opStrings.contains(str), "The api did not produce the op " + str);
+        }
     }
 
 
     @Test
-    public void test_rename_me() {
-        DbAction  dbAction  = new DbAction();
-        HALAction halAction = new HALAction();
-
+    public void test_buildRequestPaths_endpoint_optional_literal_overrides_action_var() {
+        DbAction dbAction = new DbAction();
+        Db       bookDb   = new BooksDb();
         Api api = new Api()//
-                .withDb(new BooksDb())
-                .withIncludeOn("sipandsave/v2/{tenantCode}/*")//
-                //-- TODO: this does not work but should
-                .withEndpoint("[books]/*", halAction, dbAction)//
-                .withEndpoint("[authors]/*", halAction, dbAction)//
-                //.withEndpoint("openapi.json  ", new OpenAPIAction())
-                //.withEndpoint("rapidoc.html", new FileAction())
+                .withDb(bookDb)
+                .withEndpoint("GET,[books]/[{bookKey}]/*", dbAction)
+                .withEndpoint("GET,[authors]/*", dbAction);
 
-                ;
+        assertPaths(api, "GET books"
+                , "GET books/{bookKey}"
+                , "GET books/{bookKey}/{_relationship}"
+                , "GET authors"
+                , "GET authors/{_resource}"
+                , "GET authors/{_resource}/{_relationship}"
+        );
 
-        Engine e = new Engine(api);
-        e.startup();
+        bookDb.startup(api);
+
+        assertOps(api,
+                "{name=findAuthors, method=GET, path=authors, collection=authors, relationship=null, actions=[DbAction], params=[[PATH: {_collection},0], [QUERY: {page},0], [QUERY: {size},0], [QUERY: {sort},0], [QUERY: {q},0]]}"
+                , "{name=getAuthorsByAuthorId, method=GET, path=authors/{authorId}, collection=authors, relationship=null, actions=[DbAction], params=[[PATH: {_collection},0], [PATH: {_resource},1]]}"
+                , "{name=findRelatedBooksByAuthorId, method=GET, path=authors/{authorId}/books, collection=authors, relationship=books, actions=[DbAction], params=[[PATH: {_collection},0], [PATH: {_resource},1], [PATH: {_relationship},2], [QUERY: {page},0], [QUERY: {size},0], [QUERY: {sort},0], [QUERY: {q},0]]}"
+                , "{name=findBooks, method=GET, path=books, collection=books, relationship=null, actions=[DbAction], params=[[PATH: {_collection},0], [QUERY: {page},0], [QUERY: {size},0], [QUERY: {sort},0], [QUERY: {q},0]]}"
+                , "{name=getBooksByBookKey, method=GET, path=books/{bookKey}, collection=books, relationship=null, actions=[DbAction], params=[[PATH: {bookKey},1], [PATH: {_collection},0], [PATH: {_resource},1]]}"
+                , "{name=findRelatedAuthorByBookKey, method=GET, path=books/{bookKey}/author, collection=books, relationship=author, actions=[DbAction], params=[[PATH: {bookKey},1], [PATH: {_collection},0], [PATH: {_resource},1], [PATH: {_relationship},2], [QUERY: {page},0], [QUERY: {size},0], [QUERY: {sort},0], [QUERY: {q},0]]}"
+        );
     }
 
     @Test
@@ -81,7 +114,7 @@ public class ApiTest {
     }
 
     @Test
-    public void test_buildRequestPaths() {
+    public void test_buildRequestPaths_no_endpoint_vars_no_endpoint_optionals() {
         Api        api    = new Api();
         Endpoint   ep1    = new Endpoint().withIncludeOn("GET,catalog/*");
         MockAction booksA = new MockAction().withIncludeOn("[{collection}]/[{resource}]/[{relationship}]");
@@ -90,9 +123,31 @@ public class ApiTest {
         api.withEndpoint(ep1);
 
         String expected = "{GET=[catalog, catalog/{collection}, catalog/{collection}/{resource}, catalog/{collection}/{resource}/{relationship}]}";
-        String actual = api.buildRequestPaths().toString();
+        String actual   = api.buildRequestPaths().toString();
         assertEquals(expected, actual);
     }
+
+    @Test
+    public void test_buildRequestPaths_no_endpoint_vars_has_endpoint_optionals() {
+        Api api = new Api().withEndpoint(
+                new Endpoint().withIncludeOn("GET,catalog/[books]/*")
+                        .withAction(new MockAction().withIncludeOn("[{collection}]/[{resource}]/[{relationship}]")));
+
+        String expected = "{GET=[catalog, catalog/books, catalog/books/{resource}, catalog/books/{resource}/{relationship}]}";
+        String actual   = api.buildRequestPaths().toString();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void test_buildRequestPaths_endpoint_vars_override_action_literal() {
+        Api api = new Api();
+        api.withAction(new MockAction().withIncludeOn("a/b/{named1}/{named2}/*"));
+        api.withAction(new MockAction().withIncludeOn("a/b/{named3}/{named4}/*"));
+        api.withEndpoint("GET,{endpointNamed1}/b/{endpointNamed2}/[{Ecoll}]/[{Eent:e}]/[{Eid}]/*");
+
+        api.buildRequestPaths();
+    }
+
 
 //    @Test
 //    public void test_buildRequestPaths_action_identifies_full_path_with_simple_regex() {
@@ -111,127 +166,35 @@ public class ApiTest {
 //    }
 
 
-    void assertPaths(Api api, String... opMethodAndPathString) {
-        ArrayListValuedHashMap<String, Path> paths = api.buildRequestPaths();
-
-        Set opStrings = new HashSet<>();
-        for (String method : paths.keySet()) {
-            for (Path path : paths.get(method)) {
-                opStrings.add(method + " " + path);
-            }
-        }
-        assertEquals(opMethodAndPathString.length, opStrings.size(), "The api produced the wrong number of operations");
-        for (String str : opMethodAndPathString) {
-            assertTrue(opStrings.contains(str), "The api did not produce the op " + str);
-        }
-    }
-
-
-    void assertOps(Api api, String... opMethodAndPathString) {
-        Set opStrings = new HashSet<>();
-        for (Op op : api.buildOps()) {
-            opStrings.add(op.getMethod() + " " + op.getPath());
-        }
-        assertEquals(opMethodAndPathString.length, opStrings.size(), "The api produced the wrong number of operations");
-        for (String str : opMethodAndPathString) {
-            assertTrue(opStrings.contains(str), "The api did not produce the op " + str);
-        }
-    }
-
     @Test
     public void test_buildOps_actions_and_collections_no_db() {
-        Api api = new Api();
-        BooksDb.makeTestCollections().forEach(c -> api.withCollection(c));
-
-        api
+        Api api = new Api()
                 .withEndpoint("GET,[{_collection:books}]", new MockAction())
-                .withEndpoint("GET,[{_collection:toys}]", new MockAction())
-        ;
+                .withEndpoint("GET,[{_collection:toys}]", new MockAction());
 
-        assertPaths(api, "GET books", "GET toys");
-
-        List<Op> ops = api.buildOps();
-        api.ops.addAll(ops);
-        assertEquals("books", api.getOp("findBooks").getCollection().getName());
-        assertNull(api.getOp("findToys").getCollection());
-    }
-
-
-    @Test
-    public void test_buildOps_endpointDeclaresFullPath_withConflictingActions() {
-        Api        api      = new Api();
-        Endpoint   ep1      = new Endpoint().withIncludeOn("GET,catalog/[{collection}]/[{resource}]/[{relationship}]");
-        MockAction booksA   = new MockAction().withIncludeOn("books/*");
-        MockAction authorsA = new MockAction().withIncludeOn("authors/*");
-        ep1.withActions(booksA, authorsA);
-        api.withEndpoint(ep1);
-
-        List<Op> ops = api.buildOps();
-
-        System.out.println("----");
-        for (Op op : ops)
-            System.out.println(op.getMethod() + " " + op.getPath());
-        System.out.println("----");
-
-        assertEquals(6, ops.size());
-        assertOp(ops, "GET", "catalog/books", 1, "collection", 1);
-        assertOp(ops, "GET", "catalog/books/{resource}", 2, "resource", 2);
-        assertOp(ops, "GET", "catalog/books/{resource}/{relationship}", 3, "resource", 2, "relationship", 3);
-
-        assertEquals(6, ops.size());
-        assertOp(ops, "GET", "catalog/authors", 1, "collection", 1);
-        assertOp(ops, "GET", "catalog/authors/{resource}", 2, "resource", 2);
-        assertOp(ops, "GET", "catalog/authors/{resource}/{relationship}", 3, "resource", 2, "relationship", 3);
-    }
-
-
-    @Test
-    public void test_buildOps_endpointDeclaresFullPath_withOptionalConflictingActions() {
-        Api        api      = new Api();
-        Endpoint   ep1      = new Endpoint().withIncludeOn("GET,catalog/[{collection}]/[{resource}]/[{relationship}]");
-        MockAction booksA   = new MockAction().withIncludeOn("books/*");
-        MockAction authorsA = new MockAction().withIncludeOn("[authors]/*");
-        ep1.withActions(booksA, authorsA);
-        api.withEndpoint(ep1);
-
-        List<Op> ops = api.buildOps();
-
-        System.out.println("----");
-        for (Op op : ops)
-            System.out.println(op.getMethod() + " " + op.getPath());
-        System.out.println("----");
-
-        assertEquals(7, ops.size());
-        assertOp(ops, "GET", "catalog", 0);
-        assertOp(ops, "GET", "catalog/books", 1, "collection", 1);
-        assertOp(ops, "GET", "catalog/books/{resource}", 2, "resource", 2);
-        assertOp(ops, "GET", "catalog/books/{resource}/{relationship}", 3, "resource", 2, "relationship", 3);
-        assertOp(ops, "GET", "catalog/authors", 1, "collection", 1);
-        assertOp(ops, "GET", "catalog/authors/{resource}", 2, "resource", 2);
-        assertOp(ops, "GET", "catalog/authors/{resource}/{relationship}", 3, "resource", 2, "relationship", 3);
+        BooksDb.makeTestCollections().forEach(c -> api.withCollection(c));
+        assertOps(api
+                , "{name=findBooks, method=GET, path=books, collection=books, relationship=null, actions=[MockAction], params=[[PATH: {_collection},0, [books]]]}"
+                , "{name=findToys, method=GET, path=toys, collection=null, relationship=null, actions=[MockAction], params=[[PATH: {_collection},0, [toys]]]}"
+        );
     }
 
 
     @Test
     public void test_buildOps_endpointDeclaresFullPath_withOptionalVarConflictingActions() {
-        Api      api = new Api();
-        Endpoint ep1 = new Endpoint().withIncludeOn("GET,catalog/[{collection}]/[{resource}]/[{relationship}]");
-        ep1.withAction(new MockAction().withIncludeOn("books/*"));
-        ep1.withAction(new MockAction().withIncludeOn("{var|authors}/*"));
+        Api api = new Api().withEndpoint(
+                new Endpoint()
+                        .withIncludeOn("GET,catalog/[{collection}]/[{resource}]/[{relationship}]")
+                        .withAction(new MockAction("a1").withIncludeOn("books/*"))
+                        .withAction(new MockAction("a2").withIncludeOn("{var|authors}/*"))
+        );
 
-        api.withEndpoint(ep1);
-
-        List<Op> ops = api.buildOps();
-
-        System.out.println("----");
-        for (Op op : ops)
-            System.out.println(op.getMethod() + " " + op.getPath());
-        System.out.println("----");
-
-        assertEquals(3, ops.size());
-        assertOp(ops, "GET", "catalog/books", 2, "collection", 1);
-        assertOp(ops, "GET", "catalog/books/{resource}", 3, "resource", 2);
-        assertOp(ops, "GET", "catalog/books/{resource}/{relationship}", 4, "resource", 2, "relationship", 3);
+        api.buildOps();
+        assertOps(api
+                , "{name=getCollectionByCollection, method=GET, path=catalog/{collection}, collection=null, relationship=null, actions=[a1, a2], params=[[PATH: {collection},1], [PATH: {var|authors},1]]}"
+                , "{name=getResourceByCollectionByResource, method=GET, path=catalog/{collection}/{resource}, collection=null, relationship=null, actions=[a1, a2], params=[[PATH: {collection},1], [PATH: {resource},2], [PATH: {var|authors},1]]}"
+                , "{name=getRelationshipByCollectionByResourceByRelationship, method=GET, path=catalog/{collection}/{resource}/{relationship}, collection=null, relationship=null, actions=[a1, a2], params=[[PATH: {collection},1], [PATH: {resource},2], [PATH: {relationship},3], [PATH: {var|authors},1]]}"
+        );
     }
 
 
@@ -242,111 +205,27 @@ public class ApiTest {
         MockAction booksA = new MockAction().withIncludeOn("books/*");
         ep1.withAction(booksA);
         api.withEndpoint(ep1);
-        List<Op> ops = api.buildOps();
 
-        System.out.println("----");
-        for (Op op : ops)
-            System.out.println(op.getMethod() + " " + op.getPath());
-        System.out.println("----");
-
-        assertEquals(3, ops.size());
-        assertOp(ops, "GET", "catalog/books", 1, "collection", 1);
-        assertOp(ops, "GET", "catalog/books/{resource}", 2, "resource", 2);
-        assertOp(ops, "GET", "catalog/books/{resource}/{relationship}", 3, "resource", 2, "relationship", 3);
-    }
-
-    @Test
-    public void test_buildOps_EndpointActionDeclaresFullPath() {
-        Api        api    = new Api();
-        Endpoint   ep1    = new Endpoint().withIncludeOn("GET,catalog/*");
-        MockAction booksA = new MockAction().withIncludeOn("[{collection}]/[{resource}]/[{relationship}]");
-        ep1.withAction(booksA);
-        api.withEndpoint(ep1);
-
-        List<Op> ops = api.buildOps();
-        System.out.println("----");
-        for (Op op : ops)
-            System.out.println(op.getMethod() + " " + op.getPath());
-        System.out.println("----");
-
-        assertEquals(4, ops.size());
-        assertOp(ops, "GET", "catalog");
-        assertOp(ops, "GET", "catalog/{collection}");
-        assertOp(ops, "GET", "catalog/{collection}/{resource}");
-        assertOp(ops, "GET", "catalog/{collection}/{resource}/{relationship}");
-    }
-
-
-    @Test
-    public void test_buildOps_EndpointAndActionParamsGetApplied() {
-
-        Api api = new Api().withIncludeOn("GET");
-        Endpoint   ep1 = new Endpoint().withIncludeOn("GET,[{_collection}]/[{_resource}]/[{_relationship}]");
-        MockAction dbA = new MockAction();
-        dbA.withIncludeOn("books/[{bookId}]/[{author}]");
-        dbA.withIncludeOn("author/[{authorId}]/[{books}]");
-        ep1.withAction(dbA);
-        api.withEndpoint(ep1);
-
-        List<Op> ops = api.buildOps();
-
-        System.out.println("----");
-        for (Op op : ops)
-            System.out.println(op.getMethod() + " " + op.getPath() + " - " + op.getParams());
-        System.out.println("----");
-
-        ArrayListValuedHashMap<String, Path> paths = api.buildRequestPaths();
-        System.out.println(paths);
-
-        assertOp(ops, "GET", "books", 1, "_collection", 0);
-        assertOp(ops, "GET", "books/{bookId}", 3, "_collection", 0, "_resource", 1, "bookId", 1);
-        assertOp(ops, "GET", "books/{bookId}/{author}", 5, "_collection", 0, "_resource", 1, "bookId", 1, "_relationship", 2, "author", 2);
-
-        assertOp(ops, "GET", "author", 1, "_collection", 0);
-        assertOp(ops, "GET", "author/{authorId}", 3, "_collection", 0, "_resource", 1, "authorId", 1);
-        assertOp(ops, "GET", "author/{authorId}/{books}", 5, "_collection", 0, "_resource", 1, "authorId", 1, "_relationship", 2, "books", 2);
-    }
-
-    @Test
-    public void expandAndFilterDuplicates() {
-        List<Path> paths = new ArrayList();
-        paths.add(new Path("{_collection}/[{_resource}]/[{_relationship}]"));
-        paths.add(new Path("books/[{bookId}]/[{author}]"));
-        paths.add(new Path("author/[{authorId}]/[{books}]"));
-
-        paths = Path.expandOptionals(paths);
-        paths = Path.filterDuplicates(paths);
-        assertEquals("[{_collection}, {_collection}/{_resource}, {_collection}/{_resource}/{_relationship}, books, books/{bookId}, books/{bookId}/{author}, author, author/{authorId}, author/{authorId}/{books}]", paths.toString());
-
-        List<Path> merged = Path.mergePaths(new ArrayList<>(), paths);
-        assertEquals("[books, books/{_resource}, books/{_resource}/{_relationship}, author, author/{authorId}, author/{authorId}/{books}]", merged.toString());
-
-        System.out.println(merged);
-        System.out.println("-----");
+        assertOps(api
+                , "{name=getCollectionByCollection, method=GET, path=catalog/{collection}, collection=null, relationship=null, actions=[MockAction], params=[[PATH: {collection},1]]}"
+                , "{name=getResourceByCollectionByResource, method=GET, path=catalog/{collection}/{resource}, collection=null, relationship=null, actions=[MockAction], params=[[PATH: {collection},1], [PATH: {resource},2]]}"
+                , "{name=getRelationshipByCollectionByResourceByRelationship, method=GET, path=catalog/{collection}/{resource}/{relationship}, collection=null, relationship=null, actions=[MockAction], params=[[PATH: {collection},1], [PATH: {resource},2], [PATH: {relationship},3]]}"
+        );
     }
 
 
     @Test
     public void test_buildOps_ApiActionDeclaresFullPath() {
-        Api api = new Api();
-
+        Api        api    = new Api();
         Endpoint   ep1    = new Endpoint().withIncludeOn("GET,catalog/[{collection}]/*");
         MockAction booksA = new MockAction().withIncludeOn("catalog/books/[{resource}]/[{relationship}]");
         api.withAction(booksA);
         api.withEndpoint(ep1);
 
-
-        List<Op> ops = api.buildOps();
-
-        System.out.println("----");
-        for (Op op : ops)
-            System.out.println(op.getMethod() + " " + op.getPath());
-        System.out.println("----");
-
-        assertEquals(3, ops.size());
-        assertOp(ops, "GET", "catalog/books");
-        assertOp(ops, "GET", "catalog/books/{resource}");
-        assertOp(ops, "GET", "catalog/books/{resource}/{relationship}");
+        assertOps(api,
+                "{name=getCollectionByCollection, method=GET, path=catalog/{collection}, collection=null, relationship=null, actions=[MockAction], params=[[PATH: {collection},1]]}"
+                , "{name=getResourceByCollectionByResource, method=GET, path=catalog/{collection}/{resource}, collection=null, relationship=null, actions=[MockAction], params=[[PATH: {resource},2], [PATH: {collection},1]]}"
+                , "{name=getRelationshipByCollectionByResourceByRelationship, method=GET, path=catalog/{collection}/{resource}/{relationship}, collection=null, relationship=null, actions=[MockAction], params=[[PATH: {resource},2], [PATH: {relationship},3], [PATH: {collection},1]]}");
     }
 
 

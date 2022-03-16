@@ -272,10 +272,10 @@ public class EngineTest {
     }
 
     @Test
-    public void actionPathVariablesAreAddedToQueryAndJson() {
+    public void test_actionPathVariablesAreAddedToQueryAndJson() {
         Api api = new Api("api").withIncludeOn("api/*");
 
-        api.withAction(new Action("a/b/{named1}/{named2}/*") {
+        api.withAction(new MockAction() {
 
             public void run(Request req, Response res) throws ApiException {
                 res.data().add("action1");
@@ -297,9 +297,9 @@ public class EngineTest {
                     assertNull(req.getJson().getValue("named4"));
                 }
             }
-        });
+        }.withIncludeOn("a/b/{named1}/{named2}/*"));
 
-        api.withAction(new Action("a/b/{named3}/{named4}/*") {
+        api.withAction(new MockAction() {
 
             public void run(Request req, Response res) throws ApiException {
                 res.data().add("action2");
@@ -321,9 +321,9 @@ public class EngineTest {
                     assertEquals("d", req.getJson().getValue("named4"));
                 }
             }
-        });
+        }.withIncludeOn("a/b/{named3}/{named4}/*"));
 
-        api.withEndpoint("{endpointNamed1}/b/{endpointNamed2}/[{Ecoll}]/[{Eent:e}}]/[{Eid}]/*");
+        api.withEndpoint("GET,{endpointNamed1}/b/{endpointNamed2}/[{Ecoll}]/[{Eent:e}]/[{Eid}]/*");
 
         Engine e = new Engine(api);
 

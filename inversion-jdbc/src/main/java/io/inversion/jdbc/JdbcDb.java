@@ -652,7 +652,7 @@ public class JdbcDb extends Db<JdbcDb> {
                         int   keySeq = pkMd.getInt("KEY_SEQ");
 
                         table.withIndex(idxName, idxType, true, colName);
-                        System.out.println("Primary key: " + colName);
+                        //System.out.println("Primary key: " + colName);
                     }
                     pkMd.close();
 

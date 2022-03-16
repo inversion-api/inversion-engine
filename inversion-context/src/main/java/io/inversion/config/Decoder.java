@@ -37,8 +37,6 @@ public class Decoder {
      * 1. Instantiate all beans
      * 2. Set primitive types on all beans
      * 3. Set object types on all beans
-     *
-     * @throws Exception when configuration fails
      */
     public LinkedHashMap<String, String> decode(Context context, Map<String, String> propsToDecode) {
         try{

@@ -1,13 +1,11 @@
 package io.inversion;
 
 import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class Op implements Comparable<Op> {
@@ -104,7 +102,30 @@ public class Op implements Comparable<Op> {
     }
 
     public String toString() {
-        return method + " " + getPath();
+        LinkedHashMap props = new LinkedHashMap();
+        props.put("name", getName());
+        props.put("method", getMethod());
+        props.put("path", getPath());
+        props.put("collection", (collection != null ? collection.getName() : null));
+        props.put("relationship", (relationship != null ? relationship.getName() : null));
+
+        List<String> actStr = new ArrayList<>();
+        for(Action action : getActions()){
+            actStr.add(getActionNameString(action));
+        }
+        props.put("actions", actStr);
+        props.put("params", getParams());
+        return props.toString();
+    }
+
+    String getActionNameString(Action action){
+        String name = action.getName();
+        if(name == null){
+            name = action.getClass().getName();
+            if(name.indexOf(".") > 0)
+                name = name .substring(name.lastIndexOf(".") + 1);
+        }
+        return name;
     }
 
 //    public Op copy() {

@@ -23,7 +23,6 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import io.inversion.*;
-import io.inversion.Request.Upload;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
 import io.inversion.utils.Utils;

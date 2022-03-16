@@ -19,120 +19,121 @@ package io.inversion.action.hateoas;
 import io.inversion.*;
 import io.inversion.Collection;
 import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
 
 import java.util.*;
 
 public class LinksAction extends HATEOASAction<LinksAction> {
 
-//    public void run(Request req, Response res) throws ApiException {
-//        if (Chain.isRoot() && req.getCollection() != null){
-//            if(req.getJson() != null){
-//                req.getData().asMapList().forEach(node -> removeLinks(req.getCollection(), node));
-//            }
-//
-//            req.getChain().go();
-//
-//            if (res.isSuccess() && res.getJson() != null){
-//                Collection coll = req.getRelationship() != null ? req.getRelationship().getRelated() : req.getCollection();
-//                res.data().stream().filter(node -> node instanceof JSNode && !(node instanceof JSList)).forEach(node -> addLinks(coll, (JSNode) node));
-//            }
-//        }
-//    }
-//
-//    protected void addLinks(Collection coll, JSNode node){
-//
-//        String resourceKey = coll.encodeKeyFromJsonNames(node);
-//        LinkedHashMap<String, String> toAdd = new LinkedHashMap<>();
-//
-//        if(coll != null && resourceKey != null){
-//            for(Relationship rel : coll.getRelationships()){
-//
-//                Object value = node.getValue(rel.getName());
-//                if(value instanceof JSNode){
-//                    ((JSNode)value).asMapList().forEach(child -> addLinks(rel.getRelated(), child));
-//                }
-//                else{
-//                    String link = null;
-//                    if(rel.isManyToOne()){
-//
-//                        Map<String, Object> primaryKey = rel.buildPrimaryKeyFromForeignKey(node);
-//                        String key = primaryKey == null ? null : Collection.encodeKey(primaryKey, rel.getRelated().getResourceIndex(), true);
-//
-//                        if(key != null)
-//                            link = Chain.buildLink(rel.getRelated(), key);
-//                        else
-//                            continue;
-//                    }
-//
-//                    if(link == null)
-//                        link = Chain.buildLink(coll, resourceKey, rel.getName());
-//
-//                    toAdd.put(rel.getName(), link);
-//                }
-//            }
-//        }
-//
-//        //-- you can't change the properties in the above loop because you may be
-//        //-- modifying data that you need for the creation of additional MANY_TO_ONE
-//        //-- optimized links...meaning you may be overwriting data fields that are still important.
-//        if(toAdd.size() > 0){
-//            List<String> keys = new ArrayList(toAdd.keySet());
-//            Collections.reverse(keys);
-//            for(String key : keys){
-//                node.putFirst(key, toAdd.get(key));
-//            }
-//        }
-//
-//        if(node.getValue("href") == null){
-//            String href = Chain.buildLink(coll, resourceKey, null);
-//            node.putFirst("href", href);
-//        }
-//    }
-//
-//
-//    protected void removeLinks(Collection coll, final JSNode node) {
-//
-//        if (node.getValue("href") instanceof String){
-//            String href = (String)node.remove("href");
-//
-//            if(href.startsWith("http://") || href.startsWith("https://")){
-//                href = href.substring(href.lastIndexOf("/") + 1);
-//            }
-//
-//            Map<String, Object> row = coll.decodeKeyToJsonNames((String) href);
-//            for (String key : row.keySet()) {
-//                node.putValue(key, row.get(key));
-//            }
-//        }
-//
-//        for (Relationship rel : coll.getRelationships()) {
-//            if (node.hasProperty(rel.getName())) {
-//                Object value = node.getValue(rel.getName());
-//
-//                if (value instanceof JSNode) {
-//                    ((JSNode)value).asMapList().forEach(child -> removeLinks(rel.getRelated(), child));
-//                }else {
-//                    if (rel.isManyToOne()) {
-//                        if (value != null && value instanceof String) {
-//                            String href = (String)value;
-//                            if(href.startsWith("http://") || href.startsWith("https://")) {
-//                                node.remove(rel.getName());
-//                                href = href.substring(href.lastIndexOf("/") + 1);
-//                                Map<String, Object> primaryKey = rel.getRelated().decodeKeyToJsonNames(href);
-//                                Map<String, Object> foreignKey = rel.buildForeignKeyFromPrimaryKey(primaryKey);
-//                                for(String key : foreignKey.keySet()){
-//                                    if(!node.hasProperty(key)){
-//                                        node.putValue(key, foreignKey.get(key));
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    } else {
-//                        node.remove(rel.getName());
-//                    }
-//                }
-//            }
-//        }
-//    }
+    public void run(Request req, Response res) throws ApiException {
+        if (Chain.isRoot() && req.getCollection() != null){
+            if(req.getJson() != null){
+                req.getData().asMapList().forEach(node -> removeLinks(req.getCollection(), node));
+            }
+
+            req.getChain().go();
+
+            if (res.isSuccess() && res.getJson() != null){
+                Collection coll = req.getRelationship() != null ? req.getRelationship().getRelated() : req.getCollection();
+                res.data().stream().filter(node -> node instanceof JSMap).forEach(node -> addLinks(coll, (JSMap) node));
+            }
+        }
+    }
+
+    protected void addLinks(Collection coll, JSMap node){
+
+        String resourceKey = coll.encodeKeyFromJsonNames(node);
+        LinkedHashMap<String, String> toAdd = new LinkedHashMap<>();
+
+        if(coll != null && resourceKey != null){
+            for(Relationship rel : coll.getRelationships()){
+
+                Object value = node.getValue(rel.getName());
+                if(value instanceof JSNode){
+                    ((JSNode)value).asMapList().forEach(child -> addLinks(rel.getRelated(), child));
+                }
+                else{
+                    String link = null;
+                    if(rel.isManyToOne()){
+
+                        Map<String, Object> primaryKey = rel.buildPrimaryKeyFromForeignKey(node);
+                        String key = primaryKey == null ? null : Collection.encodeKey(primaryKey, rel.getRelated().getResourceIndex(), true);
+
+                        if(key != null)
+                            link = Chain.buildLink(rel.getRelated(), key);
+                        else
+                            continue;
+                    }
+
+                    if(link == null)
+                        link = Chain.buildLink(coll, resourceKey, rel.getName());
+
+                    toAdd.put(rel.getName(), link);
+                }
+            }
+        }
+
+        //-- you can't change the properties in the above loop because you may be
+        //-- modifying data that you need for the creation of additional MANY_TO_ONE
+        //-- optimized links...meaning you may be overwriting data fields that are still important.
+        if(toAdd.size() > 0){
+            List<String> keys = new ArrayList(toAdd.keySet());
+            Collections.reverse(keys);
+            for(String key : keys){
+                node.putFirst(key, toAdd.get(key));
+            }
+        }
+
+        if(node.getValue("href") == null){
+            String href = Chain.buildLink(coll, resourceKey, null);
+            node.putFirst("href", href);
+        }
+    }
+
+
+    protected void removeLinks(Collection coll, final JSMap node) {
+
+        if (node.getValue("href") instanceof String){
+            String href = (String)node.remove("href");
+
+            if(href.startsWith("http://") || href.startsWith("https://")){
+                href = href.substring(href.lastIndexOf("/") + 1);
+            }
+
+            Map<String, Object> row = coll.decodeKeyToJsonNames((String) href);
+            for (String key : row.keySet()) {
+                node.putValue(key, row.get(key));
+            }
+        }
+
+        for (Relationship rel : coll.getRelationships()) {
+            if (node.containsKey(rel.getName())) {
+                Object value = node.getValue(rel.getName());
+
+                if (value instanceof JSNode) {
+                    ((JSNode)value).asMapList().forEach(child -> removeLinks(rel.getRelated(), child));
+                }else {
+                    if (rel.isManyToOne()) {
+                        if (value != null && value instanceof String) {
+                            String href = (String)value;
+                            if(href.startsWith("http://") || href.startsWith("https://")) {
+                                node.remove(rel.getName());
+                                href = href.substring(href.lastIndexOf("/") + 1);
+                                Map<String, Object> primaryKey = rel.getRelated().decodeKeyToJsonNames(href);
+                                Map<String, Object> foreignKey = rel.buildForeignKeyFromPrimaryKey(primaryKey);
+                                for(String key : foreignKey.keySet()){
+                                    if(!node.containsKey(key)){
+                                        node.putValue(key, foreignKey.get(key));
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        node.remove(rel.getName());
+                    }
+                }
+            }
+        }
+    }
 }

@@ -177,9 +177,6 @@ public class Chain {
     }
 
     public static String buildLink(Collection collection, String resourceKey, String relationshipKey) {
-
-        if ("orderDetails".equals(relationshipKey))
-            System.out.println("asdf");
         Request req       = top().getRequest();
         Request linkedReq = req.getApi().getLinker().buildRequest(req, null, "GET", collection, resourceKey, relationshipKey, null);
         //if (linkedReq == null)

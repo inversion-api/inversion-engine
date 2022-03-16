@@ -31,6 +31,24 @@ public class PathTest {
     }
 
     @Test
+    public void test_expandOptionalsAndFilterDuplicates() {
+        List<Path> paths = new ArrayList();
+        paths.add(new Path("{_collection}/[{_resource}]/[{_relationship}]"));
+        paths.add(new Path("books/[{bookId}]/[{author}]"));
+        paths.add(new Path("author/[{authorId}]/[{books}]"));
+
+        paths = Path.expandOptionals(paths);
+        paths = Path.filterDuplicates(paths);
+        assertEquals("[{_collection}, {_collection}/{_resource}, {_collection}/{_resource}/{_relationship}, books, books/{bookId}, books/{bookId}/{author}, author, author/{authorId}, author/{authorId}/{books}]", paths.toString());
+
+        List<Path> merged = Path.mergePaths(new ArrayList<>(), paths);
+        assertEquals("[books, books/{_resource}, books/{_resource}/{_relationship}, author, author/{authorId}, author/{authorId}/{books}]", merged.toString());
+
+        System.out.println(merged);
+        System.out.println("-----");
+    }
+
+    @Test
     public  void test_expandOptionals(){
         Path apiPath = new Path("base/*");
         Path epPath = new Path("[{asdf}]/[{qwer}]/[{sdfg}]");
@@ -48,12 +66,6 @@ public class PathTest {
         assertEquals("[car, bus, plane, books/var2/author, books/var2/category, books/var2/price]", paths.toString());
     }
 
-    @Test
-    public void test_materializeTrivialRegexes2() {
-        List<Path> paths = Utils.asList(new Path("{var1:toy-boat}"));
-        paths = Path.materializeTrivialRegexes(paths);
-        assertEquals("[car, bus, plane, books/var2/author, books/var2/category, books/var2/price]", paths.toString());
-    }
 
     @Test
     public void test_joinPaths(){

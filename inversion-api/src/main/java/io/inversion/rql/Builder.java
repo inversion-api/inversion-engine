@@ -42,8 +42,8 @@ public class Builder<T, P extends Builder> {
     /**
      * OVERRIDE ME TO ADD CUSTOM FUNCTIONALITY TO YOUR FLUENT API
      *
-     * @param token the term to add
-     * @param term  the token of the term
+     * @param token the token of the term (will be lowercase)
+     * @param term  the term to add
      * @return true if the builder or one of its child builders accepted and added the term
      */
     protected boolean addTerm(String token, Term term) {
@@ -167,7 +167,8 @@ public class Builder<T, P extends Builder> {
 
         String token = term.getToken().toLowerCase();
         if ("eq".equals(token)) {
-            //-- single arg functions such as limit(x) or page(y) can be written as limit=x and page=y
+
+            //-- WHY: single arg functions such as limit(x) or page(y) can be written as limit=x and page=y
             //-- which will parse here as eq(limit,x) or eq(page,y).  If the terms first child is a leaf
             //-- with a token that is a fucntion name of a child builder, then this logic reorders eq
             //-- functions and attempts to add them before attempting to add the eq function that was
@@ -281,8 +282,15 @@ public class Builder<T, P extends Builder> {
         return null;
     }
 
-    public List<Term> findAll(String token) {
-        return findAll(token, new ArrayList<>());
+    public List<Term> findAll(Collection<String> tokens) {
+        List found = new ArrayList();
+        for(String token : tokens)
+            findAll(token, found);
+        return found;
+    }
+
+    public List<Term> findAll(String... tokens) {
+        return findAll(Arrays.asList(tokens));
     }
 
     List<Term> findAll(String token, List<Term> found) {

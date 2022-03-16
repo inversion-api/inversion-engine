@@ -1514,6 +1514,13 @@ public class Utils {
         return null;
     }
 
+    public static String getSysEnvProp(String name, String defaultValue) {
+        String found = getSysEnvProp(name);
+        if(!Utils.empty(found))
+            return found.trim();
+        return defaultValue;
+    }
+
     public static String getSysEnvProp(String name) {
         String value = System.getProperty(name);
 

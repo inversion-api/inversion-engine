@@ -8,11 +8,12 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class ApiClientTest {
 
     @Test
-    public void testFluency()
+    public void test_testFluency()
     {
         ApiClient client = new ApiClient() {
             protected Response doRequest(Request request) {
@@ -27,13 +28,13 @@ public class ApiClientTest {
         client.onRequest(request -> {System.out.println("client.onRequest"); return null;});
         client.onRequest(response -> {System.out.println("client.onResponse"); return null;});
 
-        client.get("/something/error")//
+        client.get("http://127.0.0.1:8080/something/error")//
                 .onSuccess(response -> System.out.println("response.onSuccess1"))
                 .onFailure(response -> System.out.println("response.onFailure1"))
                 .onResponse(response -> System.out.println("response.onResponse1"));
 
 
-        client.get("/something/success")//
+        client.get("http://127.0.0.1:8080/something/success")//
                 .onSuccess(response -> System.out.println("response.onSuccess2"))
                 .onFailure(response -> System.out.println("response.onFailure2"))
                 .onResponse(response -> System.out.println("response.onResponse2"));
@@ -41,26 +42,46 @@ public class ApiClientTest {
         //TODO: where is the validation here?
     }
 
+    @Test
+    public void test_buildUrl_host_variables_replaced() {
+        ApiClient client = new ApiClient().withUrl("http://{host}.domain.com/{_collection}/[{_resource}]/{_relationship}");
+        try {
+            Chain.push(null, new Request("GET", "http://myservice?host=acme&tenant=12345&_collection=books&_resource=12345"), null);
+            String url = client.buildUrl(null);
+            System.out.println(url);
+            assertEquals("http://acme.domain.com/books/12345", url);
+        } finally {
+            Chain.pop();
+        }
+    }
+
 
     @Test
-    public void buildUrl_variable_replaced() {
-
-        ApiClient client = new ApiClient().withUrl("http://somehost/{_collection}/[{_resource}]/[{_relationship}]");
-
-//        try {
-//            Chain.push(null, new Request("GET", "http://myservice?tenant=12345&_collection=books"), null);
-//            String url = client.buildUrl(null);
-//            System.out.println(url);
-//            assertEquals("http://somehost/books", url);
-//        } finally {
-//            Chain.pop();
-//        }
-
+    public void test_buildUrl_variable_replaced_missing_optional_is_OK() {
+        ApiClient client = new ApiClient().withUrl("http://somehost/{_collection}/[{_resource}]/{_relationship}");
         try {
             Chain.push(null, new Request("GET", "http://myservice?tenant=12345&_collection=books&_resource=12345"), null);
             String url = client.buildUrl(null);
             System.out.println(url);
             assertEquals("http://somehost/books/12345", url);
+        } finally {
+            Chain.pop();
+        }
+    }
+
+    @Test
+    public void test_buildUrl_variable_replaced_missing_requiree_throws_exception() {
+        ApiClient client = new ApiClient().withUrl("http://somehost/{_collection}/[{_resource}]/[{_relationship}]");
+        try {
+            Chain.push(null, new Request("GET", "http://myservice?tenant=12345&_resource=12345"), null);
+            try{
+                String url = client.buildUrl(null);
+                fail("should have thrown an exception because required variable '_collection' is missing");
+                assertEquals("http://somehost/books/12345", url);
+            }
+            catch(Exception ex){
+                //this is correct
+            }
         } finally {
             Chain.pop();
         }
@@ -93,7 +114,7 @@ public class ApiClientTest {
     //   }
 
     @Test
-    public void testBuildFuture_includeHeaders_applied() {
+    public void test_buildFuture_includeHeaders_applied() {
         ApiClient client = new ApiClient() {
             protected Response getResponse(FutureResponse future) {
                 return new Response(null);

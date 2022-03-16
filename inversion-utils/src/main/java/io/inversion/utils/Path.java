@@ -70,9 +70,6 @@ import java.util.regex.Pattern;
  *                                           .withEndpoint(new Endpoint().withIncludeOn(null, new Path("categories/:category/"))
  *                                                                       .withAction(new BrowseCategoriesAction().withIncludeOn(null, new Path("[:subcategory]/*")))));
  * </pre>
- *
- * @see io.inversion.Rule#withIncludeOn
- * @see io.inversion.Rule#withExcludeOn
  */
 
 public class Path implements Comparable<Path> {
@@ -730,8 +727,6 @@ public class Path implements Comparable<Path> {
      *   //orderId=67890 has been added to params and requestPath is now empty.
      * </pre>
      * <p>
-     * The above example is very similar to how an {@link io.inversion.Engine} processes paths when selecting an Api, Endpoint, and Actions to run.
-     * <p>
      * Engine will also add the params to the Request Url params as if they had been supplied as name value pairs by the caller on the query string.
      *
      * @param params               the map to add extracted name/value pairs to
@@ -893,16 +888,17 @@ public class Path implements Comparable<Path> {
                 joined.add(rightPart);
             else if (rightPath.isWildcard())
                 joined.add(leftPart);
-            else if (leftPath.isVar(0) && rightPath.isVar(0)) {
-                joined.add(rightPart);
+            else if (leftPath.isVar(0)){// && rightPath.isVar(0)) {
+                //joined.add(rightPart);
+                joined.add(leftPart);
             } else if (!leftPath.isVar(0) && !rightPath.isVar(0)) {
                 String leftVal  = Path.unwrapOptional(leftPath.get(0));
                 String rightVal = Path.unwrapOptional(rightPath.get(0));
                 if (!leftVal.equalsIgnoreCase(rightVal))
                     return null;
                 joined.add(rightVal);
-            } else if (!rightPath.isVar(0)) {
-                joined.add(rightPart);
+//            } else if (!rightPath.isVar(0)) {
+//                joined.add(rightPart);
             } else {
                 joined.add(leftPart);
             }

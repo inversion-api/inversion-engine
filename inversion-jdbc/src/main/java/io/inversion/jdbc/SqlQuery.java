@@ -22,6 +22,7 @@ import io.inversion.rql.Order.Sort;
 import io.inversion.utils.JdbcUtils;
 import io.inversion.utils.Rows;
 import io.inversion.utils.Utils;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -112,14 +113,14 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             //-- generation of the prepared statement above
 
             try {
-                Rows rows      = JdbcUtils.selectRows(conn, sql, values);
+                Rows rows = JdbcUtils.selectRows(conn, sql, values);
                 results.withRows(rows);
 
                 boolean usesAfter = false;
 
                 //-- adds support for index based pagination instead of offset pagination if page params were not supplied
-                if(!getPage().isPaginated()){
-                    if(rows.size() > 0 && collection != null) {
+                if (!getPage().isPaginated()) {
+                    if (rows.size() > 0 && collection != null) {
                         Index pk = collection.getResourceIndex();
                         if (pk != null && pk.size() == 1) {
                             List<Sort> sorts = getOrder().getSorts();
@@ -127,10 +128,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                                 String pkCol = pk.getColumnName(0);
                                 Sort   last  = sorts.get(sorts.size() - 1);
                                 if (last.getProperty().equalsIgnoreCase(pk.getColumnName(0))) {
-                                    String lastPk = collection.encodeKeyFromColumnNames(rows.get(rows.size()-1));
-                                    if(lastPk != null){
+                                    String lastPk = collection.encodeKeyFromColumnNames(rows.get(rows.size() - 1));
+                                    if (lastPk != null) {
                                         usesAfter = true;
-                                        if(last.isAsc())
+                                        if (last.isAsc())
                                             results.withNext(Term.term(null, "gt", pk.getColumnName(0), lastPk));
                                         else
                                             results.withNext(Term.term(null, "lt", pk.getColumnName(0), lastPk));
@@ -141,7 +142,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                     }
                 }
 
-                if(!usesAfter){
+                if (!usesAfter) {
                     int foundRows = rows.size();
                     int limit     = getPage().getLimit();
                     int page      = getPage().getOffset();
@@ -227,24 +228,24 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         String initialSelect = (String) find("_query", 0);
 
         if (Utils.empty(initialSelect)) {
-            String  expression = getFrom().getSubquery();
+            String subquery = getFrom().getSubquery();
 
-            String  alias      = quoteCol(getFrom().getAlias());
-            boolean distinct   = getSelect().isDistinct();
+            String  alias    = quoteCol(getFrom().getAlias());
+            boolean distinct = getSelect().isDistinct();
 
-            if (expression != null) {
-                initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM (" + expression + ")";
+            if (subquery != null) {
+                initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM (" + subquery + ")";
             } else {
 
                 String table = getFrom().getTable();
-                if(Utils.empty(table))
+                if (Utils.empty(table))
                     throw ApiException.new400BadRequest("Your requested url '{}' could not be mapped to a table to query.", Chain.peek().getRequest().getUrl());
 
-                expression = quoteCol(getFrom().getTable());
-                initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM " + expression;
+                subquery = quoteCol(getFrom().getTable());
+                initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM " + subquery;
             }
 
-            if (!expression.equals(alias)) {
+            if (!subquery.equals(alias)) {
                 initialSelect += " AS " + alias;
             }
         }
@@ -255,10 +256,10 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
     protected String printTermsSelect(Parts parts, boolean preparedStmt) {
         StringBuilder cols = new StringBuilder();
+        LinkedCaseInsensitiveMap<Term> projection = getSelect().getProjection();
+        for (String column : projection.keySet()){
 
-        List<Term> terms = getSelect().getAllColumns();
-        for (int i = 0; i < terms.size(); i++) {
-            Term term = terms.get(i);
+            Term term = projection.get();
             if (term.hasToken("as")) {
                 Term function = term.getTerm(0);
                 cols.append(" ").append(printTerm(function, null, preparedStmt));
@@ -280,7 +281,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         }
 
         if (cols.length() > 0) {
-            boolean aggregate = find("sum", "min", "max", "count", "function", "aggregate", "distinct") != null;
+            boolean aggregate    = find("sum", "min", "max", "count", "function", "aggregate", "distinct") != null;
             boolean restrictCols = find("include") != null || aggregate;
 
             if (db == null || db.isType("mysql")) {
@@ -428,9 +429,6 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
     protected String printOrderClause(Parts parts, Order order) {
 
-        if(true)
-            return "";
-
         List<Sort> sorts = order.getSorts();
 
         //-- before printing the "order by" statement, if the users did not supply
@@ -465,46 +463,36 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     protected List<Sort> getDefaultSorts(Parts parts) {
         List<Sort> sorts = new ArrayList<>();
 
-        boolean wildcard = parts.select.contains("* ") //
-                || parts.select.contains("*,");//this trailing space or comma is important because otherwise this would incorrectly match "COUNT(*)"
+        boolean    wildcard = false;
+        List<Term> columns  = getSelect().getProjection();
+        if (columns.size() == 0) //this is a "select *"
+            wildcard = true;
 
-        if (collection != null && collection.getResourceIndex() != null) {
+        boolean aggregate = getSelect().findAggregateTerms().size() > 0;
+        if (aggregate)
+            return sorts;
+
+        boolean hasPkCols = collection != null && collection.getResourceIndex() != null;
+
+        if(collection != null){
+            //-- make sure we have all pk cols before adding them as sorts
             for (String pkCol : collection.getResourceIndex().getColumnNames()) {
-                if (wildcard || parts.select.contains(quoteCol(pkCol))) {
+                if (!wildcard && !parts.select.contains(quoteCol(pkCol))) {
+                    hasPkCols = false;
+                    break;
+                }
+            }
+            if (hasPkCols) {
+                for (String pkCol : collection.getResourceIndex().getColumnNames()) {
                     Sort sort = new Sort(pkCol, true);
                     sorts.add(sort);
                 }
+                return sorts;
             }
         }
 
-        //-- in this case the primaryIndex cols are not included in the select
-        //-- meaning this must be some time of aggregate...so we will do a
-        //-- full sort on all selected columns
-
-        //-- TODO: make test case for this
-        if (sorts.size() == 0) {
-//            boolean hasCol = false;
-//            for (Term term : select.getAllColumns()) {
-//                if (term.isLeaf() || term.hasToken("as") && term.getTerm(0).isLeaf()) {
-//                    hasCol = true;
-//                    break;
-//                }
-//            }
-//
-//            if (!hasCol)
-//                return sorts;
-
-            Collection coll = getCollection();
-            if (coll != null) {
-                for (Property prop : coll.getProperties()) {
-                    if (wildcard || parts.select.contains(quoteCol(prop.getColumnName())))
-                        sorts.add(new Sort(prop.getColumnName(), true));
-                }
-            } else {
-                for (String col : getSelect().getIncludeColumns()) {
-                    sorts.add(new Sort(col, true));
-                }
-            }
+        for (String col : getSelect().getIncludeColumns()) {
+            sorts.add(new Sort(col, true));
         }
 
         return sorts;
@@ -514,8 +502,8 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
         //-- limiting without a sort does not make sense, in fact sqlserver will throw an error
         //-- getDefaultSorts attempts to create a sort if one is not provided
-        if (Utils.empty(parts.order))
-            throw ApiException.new400BadRequest("You must include a 'order=' in your query");
+        //if (Utils.empty(parts.order))
+        //    throw ApiException.new400BadRequest("You must include a 'order=' in your query");
 
         String s = null;
         if (limit >= 0 || offset >= 0) {

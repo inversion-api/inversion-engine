@@ -36,76 +36,68 @@ import java.util.List;
  * or the Endpoint or an action has 'format=csv' as part of its config.
  */
 public class CsvAction extends Action<CsvAction> {
-//    @Override
-//    public void run(Request req, Response res) throws ApiException {
-//        if (!"GET".equals(req.getMethod()) || 200 != res.getStatusCode() || res.getJson() == null || res.getText() != null) {
-//            return;
-//        }
-//
-//        if (!"csv".equalsIgnoreCase(req.getUrl().getParam("format"))) {
-//            return;
-//        }
-//
-//        //support result being an array, a single object, or an inversion state object where we will pull results from the data field.
-//        JSNode arr = res.getJson();
-//        if (!(arr instanceof JSList)) {
-//            if (res.getJson().hasProperty("data")) {
-//                arr = res.getJson().getList("data");
-//            } else {
-//                arr = new JSList(arr);
-//            }
-//        }
-//
-//        byte[] bytes = toCsv((JSList) arr).getBytes();
-//
-//        res.withHeader("Content-Length", bytes.length + "");
-//        res.debug("Content-Length " + bytes.length + "");
-//        //res.setContentType("text/csv");
-//
-//        res.withText(new String(bytes));
-//    }
-//
-//    public String toCsv(JSList arr) throws ApiException {
-//        try {
-//            StringBuilder buff = new StringBuilder();
-//            LinkedHashSet<String> keys = new LinkedHashSet<>();
-//
-//            for (int i = 0; i < arr.size(); i++) {
-//                JSNode obj = (JSNode) arr.get(i);
-//                if (obj != null) {
-//                    for (String key : obj.keySet()) {
-//                        Object val = obj.getValue(key);
-//                        if (!(val instanceof JSList) && !(val instanceof JSNode))
-//                            keys.add(key);
-//                    }
-//                }
-//            }
-//
-//            CSVPrinter printer = new CSVPrinter(buff, CSVFormat.DEFAULT);
-//
-//            List<String> keysList = new ArrayList<>(keys);
-//            for (String key : keysList) {
-//                printer.print(key);
-//            }
-//            printer.println();
-//
-//            for (int i = 0; i < arr.size(); i++) {
-//                for (String key : keysList) {
-//                    Object val = ((JSNode) arr.get(i)).getValue(key);
-//                    if (val != null) {
-//                        printer.print(val);
-//                    } else {
-//                        printer.print("");
-//                    }
-//                }
-//                printer.println();
-//            }
-//            printer.flush();
-//            printer.close();
-//
-//            return buff.toString();
-//        } catch (Exception ex) {
-//            throw ApiException.new500InternalServerError(ex);
-//        }
-//    }
+    @Override
+    public void run(Request req, Response res) throws ApiException {
+        if (!"GET".equals(req.getMethod()) || 200 != res.getStatusCode() || res.getJson() == null || res.getText() != null) {
+            return;
+        }
+
+        if (!"csv".equalsIgnoreCase(req.getUrl().getParam("format"))) {
+            return;
+        }
+
+        //support result being an array, a single object, or an inversion state object where we will pull results from the data field.
+        JSList arr = res.data();
+        byte[] bytes = toCsv((JSList) arr).getBytes();
+
+        res.withHeader("Content-Length", bytes.length + "");
+        res.debug("Content-Length " + bytes.length + "");
+        //res.setContentType("text/csv");
+
+        res.withText(new String(bytes));
+    }
+
+    public String toCsv(JSList arr) throws ApiException {
+        try {
+            StringBuilder buff = new StringBuilder();
+            LinkedHashSet<String> keys = new LinkedHashSet<>();
+
+            for (int i = 0; i < arr.size(); i++) {
+                JSNode obj = (JSNode) arr.get(i);
+                if (obj != null) {
+                    for (String key : obj.keySet()) {
+                        Object val = obj.getValue(key);
+                        if (!(val instanceof JSList) && !(val instanceof JSNode))
+                            keys.add(key);
+                    }
+                }
+            }
+
+            CSVPrinter printer = new CSVPrinter(buff, CSVFormat.DEFAULT);
+
+            List<String> keysList = new ArrayList<>(keys);
+            for (String key : keysList) {
+                printer.print(key);
+            }
+            printer.println();
+
+            for (int i = 0; i < arr.size(); i++) {
+                for (String key : keysList) {
+                    Object val = ((JSNode) arr.get(i)).getValue(key);
+                    if (val != null) {
+                        printer.print(val);
+                    } else {
+                        printer.print("");
+                    }
+                }
+                printer.println();
+            }
+            printer.flush();
+            printer.close();
+
+            return buff.toString();
+        } catch (Exception ex) {
+            throw ApiException.new500InternalServerError(ex);
+        }
+    }
 }
