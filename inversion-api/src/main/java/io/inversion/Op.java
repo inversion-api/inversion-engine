@@ -65,6 +65,9 @@ public class Op implements Comparable<Op> {
 
     public boolean matches(Request req, Path path) {
 
+        if(!getMethod().equalsIgnoreCase(req.getMethod()))
+            return false;
+
         if (!getPath().matches(path))
             return false;
 

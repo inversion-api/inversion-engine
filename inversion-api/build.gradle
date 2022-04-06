@@ -1,6 +1,9 @@
 dependencies {
 
+
     api project(':inversion-context')
+
+    api group: "org.springframework", name: "spring-core", version: "${springCoreVersion}"
 
     api group: "javax.servlet", name: "javax.servlet-api", version: "${servletApiVersion}"
     api group: "javax.xml.bind", name: "jaxb-api", version: "${javaxJaxbVersion}"

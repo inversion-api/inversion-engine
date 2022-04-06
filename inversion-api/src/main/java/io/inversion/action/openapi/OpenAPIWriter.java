@@ -5,6 +5,7 @@ import io.inversion.utils.Task;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
@@ -15,6 +16,7 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public interface OpenAPIWriter<T extends OpenAPIWriter> {
@@ -296,22 +298,29 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
 
             List<String> requiredProps = new ArrayList<>();
             Index        primaryIndex  = coll.getResourceIndex();
-            if (primaryIndex != null)
-                requiredProps.addAll(primaryIndex.getJsonNames());
 
+            boolean requirePk = request && op.getFunction().toString().toLowerCase().startsWith("batch");//&& !op.getMethod().equalsIgnoreCase("GET")
+
+//            if (primaryIndex != null && !hidePk)
+//                requiredProps.addAll(primaryIndex.getJsonNames());
 
             //-- TODO filter excludes/includes
             for (Property prop : coll.getProperties()) {
+
+                if(!prop.isDocumented())
+                    continue;
+
                 String name = prop.getJsonName();
                 String type = prop.getJsonType();
+
+                if(primaryIndex != null && primaryIndex.getProperties().contains(prop)){
+                    if(requirePk)
+                        requiredProps.add(name);
+                }
 
                 Schema propSchema = newTypeSchema(type);
                 if (prop.getDescription() != null)
                     propSchema.setDescription(prop.getDescription());
-
-//                if (coll.getPrimaryIndex() == null || coll.getPrimaryIndex().getProperties().contains(prop)) {
-//                    propSchema.setReadOnly(true);
-//                }
 
                 if (prop.isNullable()) {
                     propSchema.setNullable(true);
@@ -325,12 +334,11 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
             schema.setRequired(requiredProps);
 
 
-            /*
             for (Relationship rel : coll.getRelationships()) {
-                for (Operation temp : opsToDoc) {
-                    if (temp.function.equalsIgnoreCase(doc.function) && temp.req.getCollection() == rel.getRelated()) {
+                for (Op temp : ops) {
+                    if (temp.getFunction() == op.getFunction() && temp.getCollection() == rel.getRelated()) {
 
-                        String childSchema = isRequest ? documentRequestSchema(openApi, temp) : documentResponseSchema(openApi, temp);
+                        String childSchema = request ? documentRequestSchema(docChain, openApi, ops, temp, schemas) : documentResponseSchema(docChain, openApi, ops, temp, schemas);
 
                         if (rel.isManyToOne()) {
                             schema.addProperties(rel.getName(), newComponentRefSchema(childSchema));
@@ -343,7 +351,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
                         break;
                     }
                 }
-            }*/
+            }
 
             schemas.put(op, schema);
         }
@@ -389,15 +397,15 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
 
         switch (op.getFunction()) {
             case GET:
-                return op.getName() + ": " + "Retrieve a specific " + coll.getSingularDisplayName() + " object";
+                return "Retrieve a specific " + coll.getSingularDisplayName() + " object. (" + op.getName() + ")";
             case FIND:
-                return op.getName() + ": " + "A pageable list of all " + coll.getSingularDisplayName() + " resources the user has access to and also match any query parameters.  The list may be empty.";
+                return "A pageable list of all " + coll.getSingularDisplayName() + " resources the user has access to and also match any query parameters.  The list may be empty. (" + op.getName() + ")";
             case RELATED:
-                return op.getName() + ": " + "Retrieves all of the " + op.getRelationship().getRelated().getPluralDisplayName() + " related to the " + op.getRelationship().getRelated().getSingularDisplayName();
+                return "Retrieves all of the " + op.getRelationship().getRelated().getPluralDisplayName() + " related to the " + op.getRelationship().getRelated().getSingularDisplayName() + ". (" + op.getName() + ")";
             case POST:
-                return op.getName() + ": " + "Creates a new " + coll.getSingularDisplayName() + " resource.";
+                return "Creates a new " + coll.getSingularDisplayName() + " resource. (" + op.getName() + ")";
             case PUT:
-                return op.getName() + ": " + "Updates an existing " + coll.getSingularDisplayName() + " resource.  Properties of the existing resource that are not supplied in the request body will not be updated.";
+                return "Updates an existing " + coll.getSingularDisplayName() + " resource.  Properties of the existing resource that are not supplied in the request body will not be updated. (" + op.getName() + ")";
             case PATCH:
                 return "";
             case DELETE:
@@ -409,7 +417,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
             case BATCH_PATCH:
                 return "";
             case BATCH_DELETE:
-                return op.getName() + ": " + "Deletes an existing " + coll.getSingularDisplayName() + " resource.";
+                return op.getName() + ": " + "Deletes an existing " + coll.getSingularDisplayName() + " resource. (" + op.getName() + ")";
         }
         return "";
     }

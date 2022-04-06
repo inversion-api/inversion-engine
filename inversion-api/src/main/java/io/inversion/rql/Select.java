@@ -95,7 +95,7 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
         }
 
         if (projection.size() == 0)
-            projection.put("*", Term.term(null, "*");
+            projection.put("*", Term.term(null, "*"));
 
         for (Term as : findAll("as")) {
             String name = as.getToken(1);
@@ -104,4 +104,5 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
 
         return projection;
     }
+
 }

@@ -878,7 +878,7 @@ public class Api {
 
             switch (method) {
                 case "GET":
-                    name = "findRelated" + Utils.capitalize(cleanNamePart(op.getPathParamValue(Request.RELATIONSHIP_KEY)));
+                    name = "find" + plural + "Related" + Utils.capitalize(cleanNamePart(op.getPathParamValue(Request.RELATIONSHIP_KEY)));
                     op.function = Op.OpFunction.RELATED;
                     break;
                 case "POST":
@@ -919,7 +919,7 @@ public class Api {
                     op.function = Op.OpFunction.FIND;
                     break;
                 case "POST":
-                    name = "create" + plural;
+                    name = "create" + singular;
                     op.function = Op.OpFunction.POST;
                     break;
                 case "PUT":

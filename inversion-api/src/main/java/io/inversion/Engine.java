@@ -169,12 +169,12 @@ public class Engine {
                 Map<String, String> properties = Config.getProperties();
                 Map<String, String> firstPassApplied = context.wire(properties, this);
 
-                autowire(context);
-
-                //-- remove props that were previously applied so configed classes don't get re-instantiated etc.
-                //properties.entrySet().removeIf(entry -> firstPassApplied.containsKey(entry.getKey()));
-                properties.entrySet().removeIf(entry -> entry.getKey().toLowerCase().endsWith(".class") || entry.getKey().toLowerCase().endsWith(".classname"));
-                Map<String, String> secondPassApplied = context.wire(properties, this);
+//                autowire(context);
+//
+//                //-- remove props that were previously applied so configed classes don't get re-instantiated etc.
+//                //properties.entrySet().removeIf(entry -> firstPassApplied.containsKey(entry.getKey()));
+//                properties.entrySet().removeIf(entry -> entry.getKey().toLowerCase().endsWith(".class") || entry.getKey().toLowerCase().endsWith(".classname"));
+//                Map<String, String> secondPassApplied = context.wire(properties, this);
             }
 
             started = true;

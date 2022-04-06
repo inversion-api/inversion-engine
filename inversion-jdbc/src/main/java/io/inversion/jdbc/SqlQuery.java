@@ -228,7 +228,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         String initialSelect = (String) find("_query", 0);
 
         if (Utils.empty(initialSelect)) {
-            String subquery = getFrom().getSubquery();
+            String subquery = null;//getFrom().getSubquery();
 
             String  alias    = quoteCol(getFrom().getAlias());
             boolean distinct = getSelect().isDistinct();
@@ -257,9 +257,14 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     protected String printTermsSelect(Parts parts, boolean preparedStmt) {
         StringBuilder cols = new StringBuilder();
         LinkedCaseInsensitiveMap<Term> projection = getSelect().getProjection();
+        int i=0;
         for (String column : projection.keySet()){
+            i+=1;
 
-            Term term = projection.get();
+            if("*".equals(column))
+                continue;
+
+            Term term = projection.get(column);
             if (term.hasToken("as")) {
                 Term function = term.getTerm(0);
                 cols.append(" ").append(printTerm(function, null, preparedStmt));
@@ -276,7 +281,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 cols.append(" ").append(printCol(term.getToken()));
             }
 
-            if (i < terms.size() - 1)
+            if (i != terms.size())
                 cols.append(", ");
         }
 
@@ -314,6 +319,12 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             int idx = parts.select.toLowerCase().indexOf("select") + 6;
             parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx);
         }
+
+        if(parts.select.trim().endsWith(",")){
+            parts.select = parts.select.trim();
+            parts.select = parts.select.substring(0, parts.select.length()-1) + " ";
+        }
+
 
         return parts.select;
     }
@@ -464,8 +475,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         List<Sort> sorts = new ArrayList<>();
 
         boolean    wildcard = false;
-        List<Term> columns  = getSelect().getProjection();
-        if (columns.size() == 0) //this is a "select *"
+        LinkedCaseInsensitiveMap<Term> columns  = getSelect().getProjection();
+
+        if (columns.size() == 1 && columns.containsKey("*")) //this is a "select *"
             wildcard = true;
 
         boolean aggregate = getSelect().findAggregateTerms().size() > 0;
@@ -921,12 +933,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
     public String printTableAlias() {
         String tableName = getFrom().getAlias();
-
         if (tableName != null) {
             return quoteCol(tableName);
         }
 
-        return "";
+        throw new ApiException("Unable to determine table name or alias.");
     }
 
     public String printCol(String columnName) {

@@ -38,6 +38,11 @@ public class DbPostAction<A extends DbPostAction> extends BatchAction<A> impleme
     protected boolean strictRest     = false;
     protected boolean getResponse    = true;
 
+    @Override
+    protected List<RuleMatcher> getDefaultIncludeMatchers(){
+        return Utils.asList(new RuleMatcher("POST", "{" + Request.COLLECTION_KEY + "}"));
+    }
+
 //    @Override
 //    protected List<RuleMatcher> getDefaultIncludeMatchers(){
 //        return Utils.asList(new RuleMatcher("POST", "{" + Request.COLLECTION_KEY + "}"));

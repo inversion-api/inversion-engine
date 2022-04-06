@@ -34,6 +34,7 @@ public class Property implements Serializable {
     protected boolean required = false;
     protected String jsonType = null;
     protected String regex = null;
+    protected boolean documented = true;
 
 
     public void setCollection(Collection collection) {
@@ -246,6 +247,15 @@ public class Property implements Serializable {
 
     public Property withRegex(String regex){
         this.regex = regex;
+        return this;
+    }
+
+    public boolean isDocumented() {
+        return documented;
+    }
+
+    public Property withDocumented(boolean documented) {
+        this.documented = documented;
         return this;
     }
 

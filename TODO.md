@@ -1,3 +1,13 @@
+
+# IMPORTANT
+Restore Order.getSorts()
+SqlQuery.getDefaultSorts()
+SqlQuery.printInitialSelect()
+SqlQuery.printTermsSelect()
+SqlQuery.printTableAlias()
+
+
+
 * DONE why is Op getting duplicate variables set?
 * Set server variables on chain like endpoint and action
 * DONE Make operationPath String on Op that starts with a "/" and remove use of getPath().toString() in OpenApiWriter  

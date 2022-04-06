@@ -39,21 +39,21 @@ public class From<T extends From, P extends Query> extends Builder<T, P> {
         return tableName;
     }
 
-//    public String getAlias() {
-//        String alias = (String) find("_alias", 0);
-//
-//        if (alias == null) {
-//            alias = (String) find("_table", 1);
-//        }
-//
-//        if (alias == null) {
-//            alias = (String) find("_subquery", 1);
-//        }
-//
-//        if (alias == null)
-//            alias = getTable();
-//
-//        return alias;
-//    }
+    public String getAlias() {
+        String alias = (String) find("_alias", 0);
+
+        if (alias == null) {
+            alias = (String) find("_table", 1);
+        }
+
+        if (alias == null) {
+            alias = (String) find("_subquery", 1);
+        }
+
+        if (alias == null)
+            alias = getTable();
+
+        return alias;
+    }
 
 }
