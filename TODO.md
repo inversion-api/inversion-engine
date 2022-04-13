@@ -1,11 +1,16 @@
 
 # IMPORTANT
-Restore Order.getSorts()
-SqlQuery.getDefaultSorts()
-SqlQuery.printInitialSelect()
-SqlQuery.printTermsSelect()
-SqlQuery.printTableAlias()
-
+Restore 
+- Order.getSorts()
+- SqlQuery.getDefaultSorts()
+- SqlQuery.printInitialSelect()
+- SqlQuery.printTermsSelect()
+- SqlQuery.printTableAlias()
+- DbPostAction
+  - swapRefsWithActualReferences
+  - swapLogicalDuplicateReferences
+  - collapse
+- Update json path to correct for querying arrays with text keys, algo working but not optimized for map vs list
 
 
 * DONE why is Op getting duplicate variables set?

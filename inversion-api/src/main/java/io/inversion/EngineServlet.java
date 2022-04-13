@@ -16,7 +16,6 @@
  */
 package io.inversion;
 
-import io.inversion.Upload;
 import io.inversion.json.JSNode;
 import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
@@ -154,30 +153,19 @@ public class EngineServlet extends HttpServlet {
 
             req.withUploader(() -> {
                 try {
-                    String      fileName    = null;
-                    long        fileSize    = 0;
-                    String      requestPath = null;
-                    InputStream inputStream = null;
-
-                    for (Part part : httpReq.getParts()) {
-                        if (part.getName() == null) {
-                            continue;
-                        }
-                        if (part.getName().equals("file")) {
-                            inputStream = part.getInputStream();
-                            fileName = part.getSubmittedFileName();
-                            fileSize = part.getSize();
-                        } else if (part.getName().equals("requestPath")) {
-                            requestPath = Utils.read(part.getInputStream());
-                            if (Utils.startsWith(requestPath, "/"))
-                                requestPath = requestPath.substring(1);
-                        }
-                    }
-
                     List uploads = new ArrayList<>();
+                    for (Part part : httpReq.getParts()) {
+                        String      partName    = part.getName();
+                        String      fileName    = part.getSubmittedFileName();
+                        InputStream inputStream = part.getInputStream();
+                        long        fileSize    = part.getSize();
+                        String      fileType    = part.getContentType();
 
-                    if (inputStream != null) {
-                        uploads.add(new Upload(fileName, fileSize, requestPath, inputStream));
+                        //application/octet-stream
+
+                        if (fileName != null && inputStream != null) {
+                            uploads.add(new Upload(partName, fileName, fileSize, fileType, inputStream));
+                        }
                     }
                     return uploads;
                 } catch (Exception ex) {

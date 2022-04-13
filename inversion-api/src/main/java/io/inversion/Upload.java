@@ -21,49 +21,62 @@ import java.io.InputStream;
 
 public class Upload {
 
+    String      partName;
     String      fileName;
     long        fileSize;
-    String      requestPath;
+    String      mimeType;
     InputStream inputStream;
 
-    public Upload(String fileName, long fileSize, String requestPath, InputStream inputStream) {
-        super();
+    public Upload(String partName, String fileName, long fileSize, String mimeType, InputStream inputStream) {
+        this.partName = partName;
         this.fileName = fileName;
         this.fileSize = fileSize;
-        this.requestPath = requestPath;
+        this.mimeType = mimeType;
         this.inputStream = inputStream;
+    }
+
+    public String getPartName() {
+        return partName;
+    }
+
+    public Upload withPartName(String partName) {
+        this.partName = partName;
+        return this;
     }
 
     public String getFileName() {
         return fileName;
     }
 
-    public void setFileName(String fileName) {
+    public Upload withFileName(String fileName) {
         this.fileName = fileName;
+        return this;
     }
 
     public long getFileSize() {
         return fileSize;
     }
 
-    public void setFileSize(long fileSize) {
+    public Upload withFileSize(long fileSize) {
         this.fileSize = fileSize;
+        return this;
     }
 
-    public String getRequestPath() {
-        return requestPath;
+    public String getMimeType() {
+        return mimeType;
     }
 
-    public void setRequestPath(String requestPath) {
-        this.requestPath = requestPath;
+    public Upload withMimeType(String mimeType) {
+        this.mimeType = mimeType;
+        return this;
     }
 
     public InputStream getInputStream() {
         return inputStream;
     }
 
-    public void setInputStream(InputStream inputStream) {
+    public Upload withInputStream(InputStream inputStream) {
         this.inputStream = inputStream;
+        return this;
     }
-
 }

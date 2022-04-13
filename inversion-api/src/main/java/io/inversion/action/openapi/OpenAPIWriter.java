@@ -5,6 +5,7 @@ import io.inversion.utils.Task;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
@@ -471,6 +472,13 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
         ApiResponse response = new ApiResponse();
         if (description != null)
             response.setDescription(description);
+
+        Header header = new Header();
+        header.setSchema(newTypeSchema("integer"));
+        header.setExample("301");
+        header.setDescription("The total number of records matching the query if known.");
+
+        response.addHeaderObject("x-total-count", header);
 
         if (schemaName != null)
             response.content(new Content().addMediaType("application/json",

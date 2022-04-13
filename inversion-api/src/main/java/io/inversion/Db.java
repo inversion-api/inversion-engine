@@ -16,12 +16,12 @@
  */
 package io.inversion;
 
+import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
 import io.inversion.json.JSReader;
 import io.inversion.rql.RqlParser;
 import io.inversion.rql.Term;
-import io.inversion.json.JSList;
 import io.inversion.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
  *  <li>then translate the results back from the Db columnName based data into the approperiate jsonName version for external consumption.
  * </ol>
  */
-public abstract class Db<T extends Db> extends Rule<T>{
+public abstract class Db<T extends Db> extends Rule<T> {
 
     /**
      * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves
@@ -77,21 +77,21 @@ public abstract class Db<T extends Db> extends Rule<T>{
      * @see #filterOutJsonProperty(Collection, String)
      */
     protected final        Set<String>           excludeColumns = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-    final transient Set<Api> runningApis  = new HashSet<>();
+    final transient        Set<Api>              runningApis    = new HashSet<>();
     /**
      * Indicates that this Db should reflectively create and configure Collections to represent its underlying tables.
      * <p>
      * This would be false when an Api designer wants to very specifically configure an Api probably when the underlying db does not support the type of
      * reflection required.  For example, you may want to put specific Property and Relationship structure on top of an unstructured JSON document store.
      */
-    protected       boolean  bootstrap    = true;
+    protected              boolean               bootstrap      = true;
 
     /**
      * A property that can be used to disambiguate different backends supported by a single subclass.
      * <p>
      * For example type might be "mysql" for a JdbcDb.
      */
-    protected       String   type         = null;
+    protected String  type         = null;
     /**
      * Used to differentiate which Collection is being referred by a Request when an Api supports Collections with the same name from different Dbs.
      */
@@ -99,9 +99,9 @@ public abstract class Db<T extends Db> extends Rule<T>{
     /**
      * When set to true the Db will do everything it can to "work offline" logging commands it would have run but not actually running them.
      */
-    protected       boolean  dryRun       = false;
-    transient       boolean  firstStartup = true;
-    transient       boolean  shutdown     = false;
+    protected boolean dryRun       = false;
+    transient boolean firstStartup = true;
+    transient boolean shutdown     = false;
 
     public Db() {
     }
@@ -325,7 +325,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
 
         for (String key : params.keySet()) {
             String value = params.get(key);
-            Term term = RqlParser.parse(key, value);
+            Term   term  = RqlParser.parse(key, value);
 
             List<Term> illegalTerms = term.stream().filter(t -> t.isLeaf() && reservedParams.contains(t.getToken())).collect(Collectors.toList());
             if (illegalTerms.size() > 0) {
@@ -434,10 +434,10 @@ public abstract class Db<T extends Db> extends Rule<T>{
                     //------------------------------------------------
                     // put any primary key fields at the top of the object
                     Index idx = collection.getResourceIndex();
-                    if(idx != null){
-                        for(int j=idx.size()-1; j>=0; j--){
+                    if (idx != null) {
+                        for (int j = idx.size() - 1; j >= 0; j--) {
                             Property prop = idx.getProperty(j);
-                            if(node.containsKey(prop.getJsonName()))
+                            if (node.containsKey(prop.getJsonName()))
                                 node.putFirst(prop.getJsonName(), node.getValue(prop.getJsonName()));
                         }
                     }
@@ -527,7 +527,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
      * @param collection  the collection being modified
      * @param indexValues the identifiers for the records to delete
      */
-    public final void delete(Collection collection, List<Map<String, Object>> indexValues) throws ApiException{
+    public final void delete(Collection collection, List<Map<String, Object>> indexValues) throws ApiException {
         doDelete(collection, mapToColumnNames(collection, indexValues));
     }
 
@@ -547,8 +547,8 @@ public abstract class Db<T extends Db> extends Rule<T>{
                 //-- this is an API behavior that we want to be "automatic" that
                 //-- may not be part of the data declaration.
                 Index index = coll.getResourceIndex();
-                if(index != null){
-                    for(Property property : index.getProperties()){
+                if (index != null) {
+                    for (Property property : index.getProperties()) {
                         property.withNullable(false);
                     }
                 }
@@ -578,24 +578,23 @@ public abstract class Db<T extends Db> extends Rule<T>{
     /**
      * Changes any property.jsonName that conflicts with a relationship name
      */
-    protected void deconflictNames(){
-        for(Collection coll : getCollections()){
-            for(Relationship rel : coll.getRelationships()){
-                String relName = rel.getName();
+    protected void deconflictNames() {
+        for (Collection coll : getCollections()) {
+            for (Relationship rel : coll.getRelationships()) {
+                String   relName  = rel.getName();
                 Property conflict = coll.getPropertyByJsonName(relName);
-                if(conflict != null){
-                    String newName = relName;
-                    Property pk = conflict.getPk();
-                    if(pk != null){
+                if (conflict != null) {
+                    String   newName = relName;
+                    Property pk      = conflict.getPk();
+                    if (pk != null) {
                         newName += Utils.capitalize(pk.getJsonName());
-                    }
-                    else{
+                    } else {
                         newName += "Id";
                     }
 
-                    for(int i=0; i<100; i++){
-                        String tempName = newName + (i==0 ? "" : i);
-                        if(coll.getPropertyByJsonName(tempName) != null){
+                    for (int i = 0; i < 100; i++) {
+                        String tempName = newName + (i == 0 ? "" : i);
+                        if (coll.getPropertyByJsonName(tempName) != null) {
                             newName = tempName;
                             break;
                         }
@@ -626,11 +625,15 @@ public abstract class Db<T extends Db> extends Rule<T>{
                 //collection has not already been specifically customized
                 String prettyName = beautifyCollectionName(coll.getTableName());
 
-                String pluralName = toPluralForm(prettyName);
-                String singularName = toSingularForm(prettyName);
+//                String pluralName = toPluralForm(prettyName);
+//                String singularName = toSingularForm(prettyName);
 
-                if(pluralName.equals(singularName))//-- algo did not handle pluralization "correctly"
-                    pluralName += "s";
+                String pluralName = prettyName;
+                String singularName = prettyName;
+
+
+//                if(pluralName.equals(singularName))//-- algo did not handle pluralization "correctly"
+//                    pluralName += "s";
 
                 coll.withName(pluralName);
                 coll.withSingularDispalyName(Utils.capitalize(singularName));
@@ -662,23 +665,23 @@ public abstract class Db<T extends Db> extends Rule<T>{
         }
     }
 
-    String toSingularForm(String str){
-        if(str.length() > 3 && str.toLowerCase().endsWith("ies")){
-            str = str.substring(0, str.length() -3);
-            if(Character.isLowerCase(str.charAt(str.length()-1)))
+    String toSingularForm(String str) {
+        if (str.length() > 3 && str.toLowerCase().endsWith("ies")) {
+            str = str.substring(0, str.length() - 3);
+            if (Character.isLowerCase(str.charAt(str.length() - 1)))
                 str += "y";
             else
                 str += "Y";
         }
 
-        if(str.toLowerCase().endsWith("s"))
-            str = str.substring(0, str.length() -1);
+        if (str.toLowerCase().endsWith("s"))
+            str = str.substring(0, str.length() - 1);
 
         return str;
     }
 
-    String toPluralForm(String str){
-        if(!(str.toLowerCase().endsWith("s")))
+    String toPluralForm(String str) {
+        if (!(str.toLowerCase().endsWith("s")))
             str = Pluralizer.plural(str);
 
         return str;
@@ -706,8 +709,8 @@ public abstract class Db<T extends Db> extends Rule<T>{
                         if (i == j || !idx1.getType().equals(Index.TYPE_FOREIGN_KEY))
                             continue;
 
-                         if(!idx2.getType().equals(Index.TYPE_FOREIGN_KEY))
-                             continue;
+                        if (!idx2.getType().equals(Index.TYPE_FOREIGN_KEY))
+                            continue;
 
                         Collection resource1 = idx1.getProperty(0).getPk().getCollection();
                         Collection resource2 = idx2.getProperty(0).getPk().getCollection();
@@ -728,7 +731,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
                         if (!fkIdx.getType().equals(Index.TYPE_FOREIGN_KEY))
                             continue;
 
-                        if(fkIdx.getProperty(0).getPk() == null)
+                        if (fkIdx.getProperty(0).getPk() == null)
                             continue;
 
                         Collection pkResource = fkIdx.getProperty(0).getPk().getCollection();
@@ -893,7 +896,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
             value = value.toString().trim();
 
         if (value instanceof Date && Utils.in(type, "date", "datetime", "timestamp")) {
-            value =Utils.formatIso8601((Date) value);
+            value = Utils.formatIso8601((Date) value);
         }
 
         return value;
@@ -997,7 +1000,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
         return terms;
     }
 
-    protected List<Map<String, Object>> mapToColumnNames(Collection collection, List<Map<String, Object>> records){
+    protected List<Map<String, Object>> mapToColumnNames(Collection collection, List<Map<String, Object>> records) {
         List<Map<String, Object>> rows = new ArrayList<>();
 
         for (Map<String, Object> node : records) {
@@ -1005,7 +1008,7 @@ public abstract class Db<T extends Db> extends Rule<T>{
             rows.add(row);
 
             for (String jsonProp : node.keySet()) {
-                Object value = node.get(jsonProp);
+                Object   value    = node.get(jsonProp);
                 Property collProp = collection.getProperty(jsonProp);
                 if (collProp != null) {
                     value = castJsonInput(collProp, value);
@@ -1077,11 +1080,11 @@ public abstract class Db<T extends Db> extends Rule<T>{
      * @param includeTables underlying data source tables that should be included as REST collections
      * @return this
      * @see #beautifyCollectionName(String)
-     *
+     * <p>
      * TODO: this should lazy init off a string config property
      */
     public T withIncludeTables(String... includeTables) {
-        for(String includeTable : includeTables) {
+        for (String includeTable : includeTables) {
             for (String pair : Utils.explode(",", includeTable)) {
                 String tableName      = pair.indexOf('|') < 0 ? pair : pair.substring(0, pair.indexOf("|"));
                 String collectionName = pair.indexOf('|') < 0 ? pair : pair.substring(pair.indexOf("|") + 1);
