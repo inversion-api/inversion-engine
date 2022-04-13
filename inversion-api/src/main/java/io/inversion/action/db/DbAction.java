@@ -70,21 +70,22 @@ public class DbAction<A extends DbAction> extends Action<A> implements OpenAPIWr
                     boolean matched = true;
                     if(colP != null){
                         String colNameMatch = op.getPathParamValue(Request.COLLECTION_KEY);
-                        colNameMatch = Path.unwrapOptional(colNameMatch);
-                        if(Path.isVar(colNameMatch)){
-                            String regex = Path.getRegex(colNameMatch);
-                            if (regex != null) {
-                                Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-                                if (!pattern.matcher(colName).matches()){
-                                    matched = false;
+                        if(colNameMatch != null) {
+                            colNameMatch = Path.unwrapOptional(colNameMatch);
+                            if (Path.isVar(colNameMatch)) {
+                                String regex = Path.getRegex(colNameMatch);
+                                if (regex != null) {
+                                    Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+                                    if (!pattern.matcher(colName).matches()) {
+                                        matched = false;
+                                    }
                                 }
+                            } else {
+                                matched = coll.getName().equalsIgnoreCase(colNameMatch);
                             }
+                            if (!matched)
+                                continue;
                         }
-                        else{
-                            matched = coll.getName().equalsIgnoreCase(colNameMatch);
-                        }
-                        if(!matched)
-                            continue;
                     }
 
                     Op clone = op.copy();
