@@ -631,10 +631,15 @@ public class Api {
 
         List<Op> apiOps = new ArrayList(operations);
         Collections.sort(apiOps);
-        for (Op op : apiOps) {
-            //System.out.println(op.getMethod() + " " + op.getPath() + " - " + op.toString());
-            System.out.println(op.toString());
+
+        List<List> table = new ArrayList<>();
+        for(Op op : apiOps){
+            List row = new ArrayList();
+            table.add(row);
+            Utils.add(row, op.getMethod(), op.getPath(), op.getName());
         }
+
+        System.out.println(Utils.printTable(table));
         System.out.println("\r\n--------------------------------------------");
 
 

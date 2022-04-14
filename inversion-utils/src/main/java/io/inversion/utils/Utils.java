@@ -1632,4 +1632,46 @@ public class Utils {
 
         return name;
     }
+
+    public static String printTable(List<List> table){
+        int cols = 0;
+        Map<Integer, Integer> columnLengths = new HashMap<>();
+        List<List> strings = new ArrayList<>();
+        for(int i=0; i<table.size(); i++){
+            List row = table.get(i);
+            List<String> strRow = new ArrayList();
+            strings.add(strRow);
+            for(int j=0; j<row.size(); j++){
+                Object col = row.get(j);
+                String str = col == null || col.toString() == null ? "" : col.toString();
+                strRow.add(str);
+                Integer len = columnLengths.get(j);
+                if(len == null || len < str.length())
+                    columnLengths.put(j, str.length());
+                cols = Math.max(cols, j);
+            }
+        }
+
+        StringBuilder buff = new StringBuilder();
+        for(int i=0; i<strings.size(); i++){
+            List<String> row = strings.get(i);
+            buff.append("|");
+            for(int j=0; j<=cols; j++){
+                String str = j < row.size() ? row.get(j) : "";
+                Integer len = columnLengths.get(j);
+                buff.append(" ").append(pad(str, len)).append(" |");
+                if(j == cols)
+                    buff.append("\n");
+            }
+        }
+        return buff.toString();
+    }
+
+    public static String pad(String input, int len){
+        while(input.length() < len){
+            input = input + " ";
+        }
+        return input;
+    }
+
 }
