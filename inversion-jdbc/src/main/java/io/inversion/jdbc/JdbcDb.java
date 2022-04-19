@@ -577,7 +577,7 @@ public class JdbcDb extends Db<JdbcDb> {
                             continue;
                     }
 
-                    if (includeTables.size() > 0 && !includeTables.containsKey(tableName))
+                    if(excludeTable(tableName))
                         continue;
 
                     Collection table = new Collection(tableName);
@@ -677,6 +677,9 @@ public class JdbcDb extends Db<JdbcDb> {
                 do {
                     String tableName = rs.getString("TABLE_NAME");
 
+                    if(excludeTable(tableName))
+                        continue;
+
                     //            System.out.println(tableName);
                     //
                     //            ResultSetMetaData rsmd = rs.getMetaData();
@@ -691,19 +694,19 @@ public class JdbcDb extends Db<JdbcDb> {
                     while (keyMd.next()) {
                         //String pkName = keyMd.getString("PK_NAME");
                         String fkName = keyMd.getString("FK_NAME");
-
                         String fkTableName  = keyMd.getString("FKTABLE_NAME");
-                        String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
-                        String pkTableName  = keyMd.getString("PKTABLE_NAME");
-                        String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
-
-                        Property fk = getProperty(fkTableName, fkColumnName);
-                        Property pk = getProperty(pkTableName, pkColumnName);
-                        fk.withPk(pk);
 
                         Collection coll = getCollectionByTableName(fkTableName);
                         if (coll != null) {
-                            //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
+
+                            String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
+                            String pkTableName  = keyMd.getString("PKTABLE_NAME");
+                            String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
+
+                            Property fk = getProperty(fkTableName, fkColumnName);
+                            Property pk = getProperty(pkTableName, pkColumnName);
+                            fk.withPk(pk);
+
                             coll.withIndex(fkName, Index.TYPE_FOREIGN_KEY, false, fk.getColumnName());
                         }
 

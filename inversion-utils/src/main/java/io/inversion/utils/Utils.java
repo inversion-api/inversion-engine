@@ -1577,6 +1577,30 @@ public class Utils {
         }
     }
 
+
+
+    public static String toSingularForm(String str) {
+        if (str.length() > 3 && str.toLowerCase().endsWith("ies")) {
+            str = str.substring(0, str.length() - 3);
+            if (Character.isLowerCase(str.charAt(str.length() - 1)))
+                str += "y";
+            else
+                str += "Y";
+        }
+
+        if (str.toLowerCase().endsWith("s"))
+            str = str.substring(0, str.length() - 1);
+
+        return str;
+    }
+
+    public static String toPluralForm(String str) {
+        if (!(str.toLowerCase().endsWith("s")))
+            str = Pluralizer.plural(str);
+
+        return str;
+    }
+
     public static String capitalize(String str){
         str =Character.toUpperCase(str.charAt(0)) + (str.length() > 0 ? str.substring(1, str.length()) : "");
         return str;

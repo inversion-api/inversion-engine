@@ -48,25 +48,28 @@ public class SdkAction extends HATEOASAction<SdkAction>{
             if(operation != null && schema instanceof ArraySchema){
                 ArraySchema as = (ArraySchema)schema;
 
-                Schema listWrapper = new Schema();
+                Schema paginationInfo = openApi.getComponents().getSchemas().get("PaginationInfo");
+                if(paginationInfo == null){
+                    paginationInfo = newTypeSchema("object", "Pagination and Sort Information");
+                    openApi.getComponents().addSchemas("PaginationInfo", paginationInfo);
+                    paginationInfo.addProperties("totalCount", newTypeSchema("number", "The number of items returned in this paginated response."));
+                    paginationInfo.addProperties("itemCount", newTypeSchema("number", "The number of items identified as matching the query."));
+                    paginationInfo.addProperties("lastKey", newTypeSchema("string", "The primary key of the last item returned in this page.  This can be returned as the 'after' query parameter to most efficiently continue pagination."));
+                    paginationInfo.addProperties("pageNumber", newTypeSchema("number", "The page number returned by this response being between 1 and pageCount."));
+                    paginationInfo.addProperties("pageSize", newTypeSchema("number", "The number of items that were requested to be returned."));
+                    paginationInfo.addProperties("pageCount", newTypeSchema("number", "The total number of pages available meaning  (itemCount / pageSize) rounded up."));
+                }
+
+                Schema listWrapper = newTypeSchema("object", null);
                 String wrapperName = op.getName() + "Result";
                 openApi.getComponents().addSchemas(wrapperName, listWrapper);
 
-                schema.setType("object");
+                listWrapper.addProperties("page", newComponentRefSchema("PaginationInfo"));
 
                 ArraySchema arr = new ArraySchema();
                 arr.setItems(as.getItems());
-
-                listWrapper.addProperties("itemCount", newTypeSchema("number"));
-                listWrapper.addProperties("totalCount", newTypeSchema("number"));
-                listWrapper.addProperties("lastKey", newTypeSchema("number"));
-                listWrapper.addProperties("pageNumber", newTypeSchema("number"));
-                listWrapper.addProperties("pageSize", newTypeSchema("number"));
-                listWrapper.addProperties("pageCount", newTypeSchema("number"));
-
                 listWrapper.addProperties("items", arr);
 
-                //addResponse(Operation operation, Op op, String status, String description, String schemaName)
                 addResponse(operation, op, "200", null, wrapperName);
             }
         }

@@ -100,6 +100,15 @@ public class OpenAPIAction<A extends OpenAPIAction> extends FileAction<A> {
 
         try {
 
+            File debug = new File("./openapi.json");
+            if(debug.exists()){
+                JSNode json = (JSNode)JSReader.parseJson(debug.toURI().toURL().openStream());
+                res.withJson(json);
+                return;
+            }
+
+
+
             OpenAPI openApi = generateOpenApi(req);
             JSNode  json    = writeOpenAPI(req, openApi);
             openApi = Json.mapper().readValue(json.toString(), OpenAPI.class);

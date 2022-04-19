@@ -1,11 +1,12 @@
 package io.inversion.action.openapi;
 
+import io.inversion.Collection;
 import io.inversion.*;
 import io.inversion.utils.Task;
+import io.inversion.utils.Utils;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.headers.Header;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
@@ -15,9 +16,7 @@ import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public interface OpenAPIWriter<T extends OpenAPIWriter> {
 
@@ -30,9 +29,9 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
             case FIND:
                 operation = documentOpFind(docChain, openApi, ops, op, schemas);
                 break;
-            case RELATED:
-                operation = documentOpRelated(docChain, openApi, ops, op, schemas);
-                break;
+//            case RELATED:
+//                operation = documentOpRelated(docChain, openApi, ops, op, schemas);
+//                break;
             case POST:
                 operation = documentOpPost(docChain, openApi, ops, op, schemas);
                 break;
@@ -71,7 +70,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
         if (operation == null) {
             String description = getDescription(op);
             String schemaName  = documentResponseSchema(docChain, openApi, ops, op, schemas);
-            operation = buildOperation(op, description, null, schemaName, "200", "404");
+            operation = buildOperation(op, description, null, "200", schemaName, "404", null);
             openApi.getPaths().get(op.getOperationPath()).setGet(operation);
         }
         documentQueryParams(docChain, openApi, operation, op);
@@ -83,7 +82,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
         if (operation == null) {
             String description    = getDescription(op);
             String responseSchema = documentResponseSchema(docChain, openApi, ops, op, schemas);
-            operation = buildOperation(op, description, null, responseSchema, "200");
+            operation = buildOperation(op, description, null, "200", responseSchema);
             openApi.getPaths().get(op.getOperationPath()).setGet(operation);
         }
         documentQueryParams(docChain, openApi, operation, op);
@@ -96,7 +95,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
         if (operation == null) {
             String description    = getDescription(op);
             String responseSchema = documentResponseSchema(docChain, openApi, ops, op, schemas);
-            operation = buildOperation(op, description, null, responseSchema, "200");
+            operation = buildOperation(op, description, null, "200", responseSchema);
             openApi.getPaths().get(op.getOperationPath()).setGet(operation);
         }
 
@@ -137,14 +136,14 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
 
 
     default void removeReadOnlyProperties(OpenAPI openApi, Collection coll, String schemaName) {
-        Schema schema = openApi.getComponents().getSchemas().get(schemaName);
-        if (schema != null) {
-            for (Property prop : coll.getProperties()) {
-                if (prop.isReadOnly()) {
-                    schema.getProperties().remove(prop.getName());
-                }
-            }
-        }
+//        Schema schema = openApi.getComponents().getSchemas().get(schemaName);
+//        if (schema != null) {
+//            for (Property prop : coll.getProperties()) {
+//                if (prop.isReadOnly()) {
+//                    schema.getProperties().remove(prop.getName());
+//                }
+//            }
+//        }
     }
 
     default Operation documentOpPost(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
@@ -157,7 +156,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
             removeReadOnlyProperties(openApi, coll, requestSchema);
 
             String responseSchema = documentResponseSchema(docChain, openApi, ops, op, schemas);
-            operation = buildOperation(op, description, requestSchema, responseSchema, "201");
+            operation = buildOperation(op, description, requestSchema, "201", responseSchema);
             openApi.getPaths().get(op.getOperationPath()).setPost(operation);
         }
         return operation;
@@ -170,7 +169,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
             String description    = getDescription(op);
             String requestSchema  = documentRequestSchema(docChain, openApi, ops, op, schemas);
             String responseSchema = documentResponseSchema(docChain, openApi, ops, op, schemas);
-            operation = buildOperation(op, description, requestSchema, responseSchema, "201", "404");
+            operation = buildOperation(op, description, requestSchema, "201", responseSchema, "404", null);
             openApi.getPaths().get(op.getOperationPath()).setPut(operation);
         }
 
@@ -189,7 +188,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
         Operation operation = openApi.getPaths().get(op.getOperationPath()).getPost();
         if (operation == null) {
             String description = getDescription(op);
-            operation = buildOperation(op, description, null, null, "204");
+            operation = buildOperation(op, description, null, "204", null);
             openApi.getPaths().get(op.getOperationPath()).setDelete(operation);
             addResponse(operation, op, "404");
         }
@@ -216,32 +215,29 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
         }
 
         boolean arrayWrap = false;
-        if(!request && op.getFunction().toString().toLowerCase().startsWith("find")){
+        if (!request && op.getFunction().toString().toLowerCase().startsWith("find")) {
             arrayWrap = true;
-        }
-        else if(!request && op.getFunction().toString().toLowerCase().startsWith("batch")){
+        } else if (!request && op.getFunction().toString().toLowerCase().startsWith("batch")) {
             arrayWrap = true;
         }
 
         String collSchema = documentResourceSchema(docChain, openApi, ops, op, schemas);
-        if(arrayWrap){
+        if (arrayWrap) {
             String schemaName = op.getName() + (request ? "Request" : "Response");
             Schema schema     = openApi.getComponents().getSchemas().get(schemaName);
-            if(schema == null){
+            if (schema == null) {
                 ArraySchema arr = new ArraySchema();
                 arr.setItems(newComponentRefSchema(collSchema));
                 openApi.getComponents().addSchemas(schemaName, arr);
                 schemas.put(schemaName, arr);
                 schemas.put(op, arr);
-            }
-            else{
+            } else {
                 schemas.put(op, schema);
                 schemas.put(collSchema, schema);
             }
             return schemaName;
-        }
-        else{
-            return  collSchema;
+        } else {
+            return collSchema;
         }
     }
 
@@ -253,9 +249,9 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
             return "unknown";
         }
 
-        Collection coll = op.getCollection();
+        Collection coll       = op.getCollection();
         String     schemaName = coll.getSingularDisplayName();
-        Schema schema     = openApi.getComponents().getSchemas().get(schemaName);
+        Schema     schema     = openApi.getComponents().getSchemas().get(schemaName);
 
         if (schema != null)
             return schemaName;
@@ -275,46 +271,67 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
 
             List<String> requiredProps = new ArrayList<>();
 
-            if(schemaName.equalsIgnoreCase("file"))
-                System.out.println("asdf");
-
             //-- TODO filter excludes/includes
-            for (Property prop : coll.getProperties()) {
-                if(!prop.isDocumented())
-                    continue;
+            LinkedHashMap<String, Object> toDoc  = new LinkedHashMap<>();
+            Map<Relationship, Op>         relOps = new HashMap<>();
+            Index                         pk     = coll.getResourceIndex() != null ? coll.getResourceIndex() : null;
 
-                String name = prop.getJsonName();
-                String type = prop.getJsonType();
-
-                Schema propSchema = newTypeSchema(type);
-                if (prop.getDescription() != null)
-                    propSchema.setDescription(prop.getDescription());
-
-                if (prop.isNullable()) {
-                    propSchema.setNullable(true);
+            //-- this pk is pulled out first, so it always appears at the top of the json
+            if (pk != null) {
+                for (Property prop : pk.getProperties()) {
+                    if (!prop.isDocumented())
+                        continue;
+                    toDoc.put(prop.getJsonName(), prop);
                 }
-
-                schema.addProperties(name, propSchema);
-                if (prop.isRequired() && !requiredProps.contains(name))
-                    requiredProps.add(name);
             }
-            schema.setRequired(requiredProps);
+            for (Property prop : coll.getProperties()) {
+                if (!prop.isDocumented())
+                    continue;
+                toDoc.put(prop.getJsonName(), prop);
+            }
 
             for (Relationship rel : coll.getRelationships()) {
-                for (Op temp : ops) {
-                    if (temp.getFunction() == op.getFunction() && temp.getCollection() == rel.getRelated()) {
-
-                        String childSchema = documentResourceSchema(docChain, openApi, ops, temp, schemas);
-
-                        if (rel.isManyToOne()) {
-                            schema.addProperties(rel.getName(), newComponentRefSchema(childSchema));
-                        } else {
-                            ArraySchema arr = new ArraySchema();
-                            arr.setItems(newComponentRefSchema(childSchema));
-                            schema.addProperties(rel.getName(), arr);
+                for (Op candiateOp : ops) {
+                    if (candiateOp.getCollection() != rel.getRelated())
+                        continue;
+                    boolean found = false;
+                    if (rel.isManyToOne() && candiateOp.getFunction() == Op.OpFunction.GET) {
+                        found = true;
+                    } else if (candiateOp.getFunction() == Op.OpFunction.FIND) {
+                        found = true;
+                    }
+                    if (found) {
+                        String name = rel.getName();
+                        while (toDoc.containsKey(name)) {
+                            name = name + "Rel";
                         }
-
+                        toDoc.put(name, rel);
+                        relOps.put(rel, candiateOp);
                         break;
+                    }
+                }
+            }
+
+
+            for (String name : toDoc.keySet()) {
+                Object propOrRel = toDoc.get(name);
+                if (propOrRel instanceof Property) {
+                    Property prop       = (Property) propOrRel;
+                    String   type       = prop.getJsonType();
+                    Schema   propSchema = newTypeSchema(type, null);
+                    if (prop.getDescription() != null)
+                        propSchema.setDescription(prop.getDescription());
+                    schema.addProperties(name, propSchema);
+                } else {
+                    Relationship rel         = (Relationship) propOrRel;
+                    Op           targetOp    = relOps.get(rel);
+                    String       childSchema = documentResourceSchema(docChain, openApi, ops, targetOp, schemas);
+                    if (rel.isManyToOne()) {
+                        schema.addProperties(name, newComponentRefSchema(childSchema));
+                    } else {
+                        ArraySchema arr = new ArraySchema();
+                        arr.setItems(newComponentRefSchema(childSchema));
+                        schema.addProperties(name, arr);
                     }
                 }
             }
@@ -413,7 +430,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
 //        return schemaName;
 //    }
 
-    default Operation buildOperation(Op op, String description, String requestSchema, String responseSchema, String... statuses) {
+    default Operation buildOperation(Op op, String description, String requestSchema, String... statusAndSchema) {
         Operation operation = new Operation().responses(new ApiResponses()).description(description);
         operation.setOperationId(op.getName());
         if (requestSchema != null) {
@@ -428,10 +445,10 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
             content.addMediaType("application/json", json);
         }
 
-        if (statuses != null) {
-            for (String status : statuses) {
-                addResponse(operation, op, status, null, responseSchema);
-            }
+        for (int i = 0; statusAndSchema != null && i < statusAndSchema.length - 1; i += 2) {
+            String status     = statusAndSchema[i];
+            String schemaName = statusAndSchema[i + 1];
+            addResponse(operation, op, status, null, schemaName);
         }
 
         Collection collection = op.getCollection();
@@ -486,6 +503,9 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
 
     default OpenAPIWriter addResponse(Operation operation, Op op, String status, String description, String schemaName) {
 
+        if ("404".equals(schemaName))
+            System.out.println("asdf");
+
         if (description == null) {
             switch (status) {
                 case "200":
@@ -527,18 +547,18 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
         if (description != null)
             response.setDescription(description);
 
-        Header header = new Header();
-        header.setSchema(newTypeSchema("integer"));
-        header.setExample("301");
-        header.setDescription("The total number of records matching the query if known.");
-        response.addHeaderObject("x-total-count", header);
+//        Header header = new Header();
+//        header.setSchema(newTypeSchema("integer"));
+//        header.setExample("301");
+//        header.setDescription("The total number of records matching the query if known.");
+//        response.addHeaderObject("x-total-count", header);
 
         if (schemaName != null)
             response.content(new Content().addMediaType("application/json",
                     new MediaType().schema(newComponentRefSchema(schemaName))));
 
         //if (operation.getResponses().get(status) == null)
-            operation.getResponses().addApiResponse(status, response);
+        operation.getResponses().addApiResponse(status, response);
 
         return this;
     }
@@ -558,7 +578,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
             return;
 
         Parameter parameter = new Parameter();
-        parameter.setSchema(newTypeSchema(param.getType()));
+        parameter.setSchema(newTypeSchema(param.getType(), null));
         parameter.setDescription(param.getDescription());
         parameter.setName(param.getKey());
         parameter.setIn(param.getIn().toString().toLowerCase());
@@ -577,15 +597,17 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
         return false;
     }
 
-    default Schema newTypeSchema(String type) {
+    default Schema newTypeSchema(String type, String description) {
         Schema schema = new Schema();
         schema.setType(type);
+        if(!Utils.empty(description))
+            schema.setDescription(description);
         return schema;
     }
 
     default Schema newHrefSchema() {
         Schema schema = new Schema();
-        schema.addProperties("href", newTypeSchema("string"));
+        schema.addProperties("href", newTypeSchema("string", null));
         return schema;
     }
 

@@ -39,7 +39,8 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 
 
     protected String getDescription() {
-        return Utils.read(Utils.findInputStream(this, "description.md"));
+        //return Utils.read(Utils.findInputStream(this, "description.md"));
+        return "";
     }
 
 
@@ -342,9 +343,9 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
         Schema schema = new Schema();
         openApi.getComponents().addSchemas("error", schema);
 
-        schema.addProperties("status", newTypeSchema("string"));
-        schema.addProperties("message", newTypeSchema("string"));
-        schema.addProperties("error", newTypeSchema("string"));
+        schema.addProperties("status", newTypeSchema("string", null));
+        schema.addProperties("message", newTypeSchema("string", null));
+        schema.addProperties("error", newTypeSchema("string", null));
     }
 //
 //    protected void documentCollectionLinksSchema(OpenAPI openApi) {
@@ -537,14 +538,14 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
                     if (prop != null) {
                         String type = prop.getJsonType();
                         if (type.equalsIgnoreCase("number"))
-                            schema = newTypeSchema("number");
+                            schema = newTypeSchema("number", null);
                         if (type.equalsIgnoreCase("boolean"))
-                            schema = newTypeSchema("boolean");
+                            schema = newTypeSchema("boolean", null);
                     }
                 }
 
                 if (schema == null) {
-                    schema = newTypeSchema("string");
+                    schema = newTypeSchema("string", null);
                     String regex = pathMatch.getRegex(i);
                     if (regex != null)
                         schema.setPattern(regex);

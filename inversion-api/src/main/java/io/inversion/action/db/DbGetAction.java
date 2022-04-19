@@ -39,26 +39,39 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
     protected int maxRows = 100;
 
     public DbGetAction() {
-        Param expand = new Param();
-        expand.withDescription("An optional comma separated lists of relationship names that should be expanded in the response. You can reference any number of nesting using 'dot' path notation.");
-        expand.withIn(Param.In.QUERY);
-        expand.withKey("expand");
-        withParam(expand);
+//        Param expand = new Param();
+//        expand.withDescription("An optional comma separated lists of relationship names that should be expanded in the response. You can reference any number of nesting using 'dot' path notation.");
+//        expand.withIn(Param.In.QUERY);
+//        expand.withKey("expand");
+//        withParam(expand);
+
+        Param after = new Param();
+        after.withDescription("An optional value used to retrieve the next page of a paginated result.  This should be the encoded primary key returned has 'lastKey' from a previous request. This method of pagination is more efficient than using the 'pageNumber' or 'offset' query parameters, however if 'pageNumber' or 'offset' are supplied as query parameters, then this value will be ignored.");
+        after.withKey("afterKey");
+        after.withIn(Param.In.QUERY);
+        withParam(after);
 
         Param page = new Param();
-        page.withDescription("The optional value used to compute the 'offset' of the first resource returned as 'offset'='page'*'limit'.  If an 'offset' parameter is also supplied it will be used instead of the 'page' parameter.");
-        page.withKey("page");
+        page.withDescription("An optional value used to compute the 'offset' of the first item returned as 'offset'='pageNumber'*'pageSize'.  If an 'offset' parameter is also supplied it will be used instead of the 'pageNumber' parameter.");
+        page.withKey("pageNumber");
         page.withIn(Param.In.QUERY);
         withParam(page);
 
         Param size = new Param();
-        size.withDescription("The optional number of resources to return.  Unless overridden by other configuration the default value is '100'");
-        size.withKey("size");
+        size.withDescription("An optional number of items to return.  Unless overridden by other configuration the default value is '100'");
+        size.withKey("pageSize");
         size.withIn(Param.In.QUERY);
         withParam(size);
 
+        Param offset = new Param();
+        offset.withDescription("An optional value used to compute the offset.  This value overrides both 'afterKey' and 'pageNumber' parameters.");
+        offset.withKey("offset");
+        offset.withIn(Param.In.QUERY);
+        withParam(offset);
+
+
         Param sort = new Param();
-        sort.withDescription("An optional comma separated list of json property names use to order the results.  Each property may optionally be prefixed with '-' to specify descending order.");
+        sort.withDescription("An optional comma separated list of json property names used to order the results.  Each property may optionally be prefixed with '-' to specify descending order.");
         sort.withKey("sort");
         sort.withIn(Param.In.QUERY);
         withParam(sort);
@@ -78,7 +91,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
         switch (op.getFunction()){
             case FIND:
             case RELATED:
-                if(Utils.in(param.getKey().toLowerCase(), "page", "size", "sort", "q"))
+                if(Utils.in(param.getKey().toLowerCase(), "afterKey", "pageNumber", "pageSize", "offset",  "sort", "q"))
                     op.withParam(param);
                 break;
         }
@@ -272,6 +285,22 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
             //-- copy data into the response
             res.withRecords(results.getRows());
 
+            if(res.data().size() > 0) {
+                Collection coll = null;
+                if (req.getOp().getFunction() == Op.OpFunction.RELATED) {
+                    if (req.getRelationship() != null)
+                        coll = req.getRelationship().getCollection();
+                } else if (req.getOp().getFunction() == Op.OpFunction.FIND) {
+                    if (req.getCollection() != null)
+                        coll = req.getCollection();
+                }
+                if(coll != null){
+                    String lastKey = coll.encodeKeyFromJsonNames((JSMap)res.data().last());
+                    if(lastKey != null)
+                        res.withLastKey(lastKey);
+                }
+            }
+
             //------------------------------------------------
             //-- setup all of the meta section
 
@@ -311,14 +340,14 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
                         res.withNext(next);
                     } else if (results.size() == limit && (foundRows < 0 || (offest + limit) < foundRows)) {
                         String next = req.getUrl().getOriginal();
-                        next = stripTerms(next, "offset", "page", "pageNum");
+                        next = stripTerms(next, "offset", "page", "pageNum", "pageNumber", "after", "afterKey");
 
                         if (!next.contains("?"))
                             next += "?";
                         if (!next.endsWith("?"))
                             next += "&";
 
-                        next += "pageNum=" + (page.getPageNum() + 1);
+                        next += "pageNumber=" + (page.getPageNum() + 1);
 
                         res.withNext(next);
                     }

@@ -328,6 +328,16 @@ public class Response implements JSFind {
         return getMeta().findInt("foundRows");
     }
 
+    public Response withLastKey(String lastKey) {
+        withMeta("lastKey", lastKey);
+        return this;
+    }
+
+    public String getLastKey(){
+        return getMeta().findString("lastKey");
+    }
+
+
     public Response withPageSize(int pageSize) {
         withMeta("pageSize", pageSize);
         return this;
