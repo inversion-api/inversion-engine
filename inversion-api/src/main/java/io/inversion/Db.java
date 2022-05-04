@@ -871,6 +871,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
      * @return <code>value</code> cast to <code>Property.type</code>
      */
     public Object castDbOutput(Property property, Object value) {
+        String type = property.getType();
         if (type == null || value == null)
             return value;
 
@@ -883,12 +884,18 @@ public abstract class Db<T extends Db> extends Rule<T> {
             return JSReader.parseJson(json);
         }
 
-        if (Utils.in(type, "char", "nchar", "clob"))
+        if(value instanceof byte[] && ((byte[])value).length == 16)
+            value = UUID.nameUUIDFromBytes((byte[])value);
+
+        else if("uuid".equalsIgnoreCase(type))
+            value = UUID.nameUUIDFromBytes((byte[])value);
+
+        else if (Utils.in(type, "char", "nchar", "clob"))
             value = value.toString().trim();
 
-        if (value instanceof Date && Utils.in(type, "date", "datetime", "timestamp")) {
+        else if (value instanceof Date && Utils.in(type, "date", "datetime", "timestamp"))
             value = Utils.formatIso8601((Date) value);
-        }
+
 
         return value;
     }
