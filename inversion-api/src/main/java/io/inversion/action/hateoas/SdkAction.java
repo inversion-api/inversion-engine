@@ -17,9 +17,10 @@
 
 package io.inversion.action.hateoas;
 
-import io.inversion.Action;
-import io.inversion.Op;
+import io.inversion.*;
 import io.inversion.action.db.DbAction;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Task;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -30,6 +31,47 @@ import java.util.List;
 import java.util.Map;
 
 public class SdkAction extends HATEOASAction<SdkAction>{
+
+    public void run(Request req, Response res) throws ApiException {
+        if (Chain.isRoot() && req.getCollection() != null){
+            req.getChain().go();
+
+            if (res.isSuccess() && res.getJson() != null){
+                updateResponse(req, res);
+            }
+        }
+    }
+
+    void updateResponse(Request req, Response res){
+
+        JSNode json = res.getJson();
+        JSMap meta = res.findMap("meta");
+        JSNode data = res.data();
+
+        int totalCount = res.getFoundRows();
+        int itemCount = res.data() != null ? res.data().size() : 0;
+        String lastKey = res.getLastKey();
+        int pageSize = res.getPageSize();
+        int pageCount = res.getPageCount();
+        int pageNumber = res.getPageNum();
+
+        JSMap page = res.findMap("page");
+        if(page == null){
+            page = new JSMap();
+        }
+
+        page.put("totalCount",totalCount );
+        page.put("itemCount",itemCount );
+        page.put("lastKey", lastKey);
+        page.put("pageSize",pageSize );
+        page.put("pageCount", pageCount);
+        page.put("pageNumber", pageNumber);
+
+        JSMap newJson = new JSMap();
+        newJson.put("page", page);
+        newJson.put("items", data);
+        res.withJson(newJson);
+    }
 
 
     @Override

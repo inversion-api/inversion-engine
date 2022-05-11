@@ -110,8 +110,21 @@ public class DbAction<A extends DbAction> extends Action<A> implements OpenAPIWr
             if (path.hasAllVars(Request.RESOURCE_KEY)) {
                 String name = null;
                 Index  idx  = c.getResourceIndex();
-                if (idx != null && idx.size() == 1) {
-                    name = idx.getJsonName(0);
+
+                List<String> props = new ArrayList();
+                if (idx != null){
+                    if(idx.size() == 1){
+                        props.add(idx.getJsonName(0));
+                    }
+                    else{
+                        for(Property prop : idx.getProperties()){
+                            if(!op.hasParams(Param.In.PATH, prop.getJsonName()))
+                                props.add(prop.getJsonName());
+                        }
+                    }
+                }
+                if (props.size() == 1) {
+                    name = props.get(0);
                 } else {
                     name = c.getSingularDisplayName() + "Id";
                     name = Character.toLowerCase(name.charAt(0)) + name.substring(1);

@@ -262,6 +262,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
 
         } else {
             schema = new Schema();
+            schema.setNullable(true);
             openApi.getComponents().addSchemas(schemaName, schema);
 
             if (coll.getDescription() != null) {
@@ -333,6 +334,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
                         arr.setItems(newComponentRefSchema(childSchema));
                         schema.addProperties(name, arr);
                     }
+
                 }
             }
         }
@@ -602,6 +604,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
         schema.setType(type);
         if(!Utils.empty(description))
             schema.setDescription(description);
+
         return schema;
     }
 

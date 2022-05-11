@@ -47,7 +47,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
 
         Param after = new Param();
         after.withDescription("An optional value used to retrieve the next page of a paginated result.  This should be the encoded primary key returned has 'lastKey' from a previous request. This method of pagination is more efficient than using the 'pageNumber' or 'offset' query parameters, however if 'pageNumber' or 'offset' are supplied as query parameters, then this value will be ignored.");
-        after.withKey("afterKey");
+        after.withKey("type");
         after.withIn(Param.In.QUERY);
         withParam(after);
 
@@ -64,7 +64,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
         withParam(size);
 
         Param offset = new Param();
-        offset.withDescription("An optional value used to compute the offset.  This value overrides both 'afterKey' and 'pageNumber' parameters.");
+        offset.withDescription("An optional value used to compute the offset.  This value overrides the 'pageNumber' parameters.");
         offset.withKey("offset");
         offset.withIn(Param.In.QUERY);
         withParam(offset);
@@ -91,7 +91,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
         switch (op.getFunction()){
             case FIND:
             case RELATED:
-                if(Utils.in(param.getKey().toLowerCase(), "afterKey", "pageNumber", "pageSize", "offset",  "sort", "q"))
+                if(Utils.in(param.getKey().toLowerCase(), "pagenumber", "pagesize", "offset",  "sort", "q"))
                     op.withParam(param);
                 break;
         }
@@ -340,7 +340,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
                         res.withNext(next);
                     } else if (results.size() == limit && (foundRows < 0 || (offest + limit) < foundRows)) {
                         String next = req.getUrl().getOriginal();
-                        next = stripTerms(next, "offset", "page", "pageNum", "pageNumber", "after", "afterKey");
+                        next = stripTerms(next, "offset", "page", "pageNum", "pageNumber", "after");
 
                         if (!next.contains("?"))
                             next += "?";
