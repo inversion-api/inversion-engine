@@ -26,7 +26,9 @@ import io.inversion.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -185,7 +187,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
                 case "binary":
                 case "varbinary":
                 case "longvarbinary":
-                    throw new UnsupportedOperationException("Binary types are currently unsupported");
+                    return Utils.hexToBytes(value.toString());
 
                 case "date":
                 case "datetime":
@@ -884,11 +886,8 @@ public abstract class Db<T extends Db> extends Rule<T> {
             return JSReader.parseJson(json);
         }
 
-        if(value instanceof byte[] && ((byte[])value).length == 16)
-            value = UUID.nameUUIDFromBytes((byte[])value);
-
-        else if("uuid".equalsIgnoreCase(type))
-            value = UUID.nameUUIDFromBytes((byte[])value);
+        if(value instanceof byte[])// && ((byte[])value).length == 16)
+            value = Utils.bytesToHex((byte[])value);
 
         else if (Utils.in(type, "char", "nchar", "clob"))
             value = value.toString().trim();

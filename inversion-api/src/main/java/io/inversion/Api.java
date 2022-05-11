@@ -97,17 +97,17 @@ public class Api {
         withName(name);
     }
 
-    public Api withIncludeOn(String ruleMatcherSpec) {
-        withServer(new Server().withIncludeOn(ruleMatcherSpec));
-        return this;
-    }
+//    public Api withIncludeOn(String ruleMatcherSpec) {
+//        withServer(new Server().withIncludeOn(ruleMatcherSpec));
+//        return this;
+//    }
 
-    public Server getServer() {
-        if (servers.size() == 0) {
-            servers.add(new Server());
-        }
-        return servers.get(0);
-    }
+//    public Server getServer() {
+//        if (servers.size() == 0) {
+//            servers.add(new Server());
+//        }
+//        return servers.get(0);
+//    }
 
     public boolean isStarted() {
         return started;
@@ -636,7 +636,7 @@ public class Api {
         for(Op op : apiOps){
             List row = new ArrayList();
             table.add(row);
-            Utils.add(row, op.getMethod(), op.getPath(), op.getName());
+            Utils.add(row, op.getMethod(), op.getPath(), op.getName(), op.getParams());
         }
 
         System.out.println(Utils.printTable(table));

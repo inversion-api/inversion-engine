@@ -99,7 +99,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         List    values  = getColValues();
 
         //-- for test cases and query explain
-        String debug = getClass().getSimpleName() + " " + getType() + ": " + sql + " args=" + values;
+        String debug = getClass().getSimpleName() + " " + getType() + ": " + sql + " args=" + getOriginalValues();
         //String debug = sql + " args=" + values;
         debug = debug.replaceAll("\r", "");
         debug = debug.replaceAll("\n", " ");
@@ -866,7 +866,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         }
 
         withColValue(col, val);
-        return asVariableName(values.size() - 1);
+        return asVariableName(castValues.size() - 1);
     }
 
     protected String concatAll(String connector, String function, List strings) {

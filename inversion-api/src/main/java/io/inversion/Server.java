@@ -68,7 +68,7 @@ public class Server extends Rule<Server> {
     }
 
     public Server() {
-
+        System.out.println("asdf");
     }
 
     public Server(String... urls) {

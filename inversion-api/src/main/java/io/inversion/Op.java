@@ -255,19 +255,6 @@ public class Op implements Comparable<Op> {
         return null;
     }
 
-
-    //    public List<String> getParamKeys(int pathIndex) {
-//        List<String> found = new ArrayList();
-//        for (Param p : params) {
-//            if (pathIndex != p.getIndex())
-//                continue;
-//            found.add(p.getKey());
-//        }
-//        if (found.size() > 1)
-//            Collections.sort(found);
-//        return found;
-//    }
-//
     public int getPathParamCount() {
         int params = 0;
         //-- TODO this is not correct, see Linker
