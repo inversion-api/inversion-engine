@@ -61,7 +61,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 if (method != null && method.equals("selectRows")) {
                     log.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
                 } else {
-                    log.warn(ex.getMessage(), ex);
+                    log.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
                 }
             }
 
