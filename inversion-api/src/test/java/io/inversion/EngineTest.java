@@ -36,7 +36,7 @@ public class EngineTest {
     @Test
     public void test_simple_request() {
         Engine   engine = new Engine();
-        Api      api    = new Api().withIncludeOn("GET");
+        Api      api    = new Api().withServer(new Server().withIncludeOn("GET"));
         Endpoint ep1    = new Endpoint().withIncludeOn("[{_collection}]/[{_resource}]/[{_relationship}]");
 
         MockAction dbA = new MockAction();
@@ -259,7 +259,7 @@ public class EngineTest {
 
     @Test
     public void testBuildOperations() {
-        Api api = new Api("api").withIncludeOn("api/*");
+        Api api = new Api("api").withServer(new Server().withIncludeOn("api/*"));
         api.withAction(new MockAction().withIncludeOn("a/b/{named1}/{named2}/*"));
         api.withAction(new MockAction().withIncludeOn("a/b/{named3}/{named4}/*"));
         api.withEndpoint("{endpointNamed1}/b/{endpointNamed2}/[{Ecoll]/[{Eent:e}]/[{Eid}]/*");
@@ -273,7 +273,7 @@ public class EngineTest {
 
     @Test
     public void test_actionPathVariablesAreAddedToQueryAndJson() {
-        Api api = new Api("api").withIncludeOn("api/*");
+        Api api = new Api("api").withServer(new Server().withIncludeOn("api/*"));
 
         api.withAction(new MockAction() {
 
@@ -648,8 +648,7 @@ public class EngineTest {
     @Test
     public void test_optional_collections_in_endpoints_endpoints_resolve() {
 
-        Api api1 = new Api("test")//
-                .withIncludeOn("test/*")
+        Api api1 = new Api("test").withServer(new Server().withIncludeOn("test/*"))
                 .withAction(new MockAction("mock1"))//
                 .withEndpoint(new Endpoint("[{_collection:collectionA}]/*").withName("epA"))
                 .withEndpoint(new Endpoint("[{_collection:collection1}]/*").withName("ep1"))
@@ -688,7 +687,7 @@ public class EngineTest {
         MockActionA mockActionA = new MockActionA().withIncludeOn("users");
 
         engine = new Engine()//
-                .withApi(new Api().withIncludeOn("testApi/*")
+                .withApi(new Api().withServer(new Server().withIncludeOn("testApi/*"))
                         .withEndpoint("get", mockActionA)//
                         .withDb(new MockDb()));
 

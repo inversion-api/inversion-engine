@@ -47,7 +47,7 @@ public interface AbstractEngineTest extends AbstractDbTest {
     default Api buildDefaultApi(Db db) {
 
         return new Api("northwind") //
-                .withIncludeOn("northwind/*")
+                .withServer(new Server().withIncludeOn("northwind/*"))
                 .withEndpoint("" + db.getType() + "/*", new LinksAction(), new DbAction())//
                 .withDb(db);
     }
