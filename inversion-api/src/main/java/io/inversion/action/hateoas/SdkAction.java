@@ -19,6 +19,7 @@ package io.inversion.action.hateoas;
 
 import io.inversion.*;
 import io.inversion.action.db.DbAction;
+import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
 import io.inversion.utils.Task;
@@ -33,16 +34,36 @@ import java.util.Map;
 public class SdkAction extends HATEOASAction<SdkAction>{
 
     public void run(Request req, Response res) throws ApiException {
-        if (Chain.isRoot() && req.getCollection() != null){
+        if (Chain.isRoot()
+                && req.getCollection() != null
+        ){
             req.getChain().go();
 
             if (res.isSuccess() && res.getJson() != null){
-                updateResponse(req, res);
+                if(req.getOp().getFunction() == Op.OpFunction.FIND){
+                    updateFindResponse(req, res);
+                }
+                else{
+                    removeMetaAndCollapseData(req, res);
+                }
             }
         }
     }
 
-    void updateResponse(Request req, Response res){
+    void removeMetaAndCollapseData(Request req, Response res){
+        res.getJson().removeValues("meta");
+        JSNode json = res.getJson();
+        JSList data = res.data();
+        if(data != json){
+            if(data.size() == 1 && data.get(0) instanceof JSMap)
+                res.withJson(data.getNode(0));
+            else{
+                res.withJson(new JSMap("items", data));
+            }
+        }
+    }
+
+    void updateFindResponse(Request req, Response res){
 
         JSNode json = res.getJson();
         JSMap meta = res.findMap("meta");
