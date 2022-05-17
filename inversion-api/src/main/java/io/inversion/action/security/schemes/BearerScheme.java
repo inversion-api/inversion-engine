@@ -34,15 +34,22 @@ import io.inversion.config.Config;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 
-public class BearerScheme extends AuthScheme {
+public class BearerScheme extends HttpAuthScheme {
 
-    RevokedTokenCache revokedTokenCache = null;
+    protected String         barerFormat = "JWT";
 
     public BearerScheme(){
-        withName("bearerAuth");
-        withType("http");
-        withScheme("bearer");
+        withHttpScheme(HttpAuthScheme.HttpScheme.bearer);
         withBarerFormat("JWT");
+    }
+
+    public String getBarerFormat() {
+        return barerFormat;
+    }
+
+    public AuthScheme withBarerFormat(String barerFormat) {
+        this.barerFormat = barerFormat;
+        return this;
     }
 
     @Override
@@ -58,10 +65,6 @@ public class BearerScheme extends AuthScheme {
             return null;
 
         token = token.substring(token.indexOf(" ") + 1);
-
-
-        if (revokedTokenCache != null && revokedTokenCache.isRevoked(token))
-            throw ApiException.new401Unauthroized();
 
         DecodedJWT jwt = null;
         for (String secret : getJwtSecrets(req)) {
@@ -179,30 +182,4 @@ public class BearerScheme extends AuthScheme {
         //return jwtBuilder.sign(Algorithm.HMAC256(secret));
         return null;
     }
-
-    public RevokedTokenCache getRevokedTokenCache() {
-        return revokedTokenCache;
-    }
-
-    public BearerScheme withRevokedTokenCache(RevokedTokenCache revokedTokenCache) {
-        this.revokedTokenCache = revokedTokenCache;
-        return this;
-    }
-
-    public interface RevokedTokenCache {
-        boolean isRevoked(String token);
-    }
-
-    public static class InMemoryRevokedTokenCache implements RevokedTokenCache {
-        final Set<String> revoked = new HashSet<>();
-
-        public void addRevokedToken(String token) {
-            revoked.add(token.toLowerCase());
-        }
-
-        public boolean isRevoked(String token) {
-            return revoked.contains(token);
-        }
-    }
-
 }

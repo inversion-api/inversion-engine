@@ -66,7 +66,7 @@ public class TestOverloadedDynamicTables {
 
         };
 
-        api = new Api("crm").withIncludeOn("crm/{tenant}/[{type}]/*") //
+        api = new Api("crm").withServer(new Server().withIncludeOn("crm/{tenant}/[{type}]/*")) //
                 .withEndpoint(new Action() {
                     public void run(Request req, Response res) throws ApiException {
                         //-- requires "type" param and forces to lower case

@@ -54,7 +54,8 @@ import java.util.List;
  * </ol>
  * See users-h2.ddl for full underlying schema
  */
-public class JdbcDbUserDao implements AuthAction.UserDao {
+public class JdbcDbUserDao //implements AuthAction.UserDao
+{
     /**
      * Optional name param that is used for $name.salt
      * parameter configuration.
@@ -67,11 +68,25 @@ public class JdbcDbUserDao implements AuthAction.UserDao {
 
     }
 
+//    public interface UserDao {
+//        User getUser(AuthAction action, String jwt, String apiName, String tenant) throws ApiException;
+//
+//        User getUser(AuthAction action, String username, String password, String apiName, String tenant) throws ApiException;
+//
+//        default User getGuest(String apiName, String tenant) {
+//            User user = new User();
+//            user.withUsername("Anonymous");
+//            user.withRoles("guest");
+//            user.withTenant(tenant);
+//            return user;
+//        }
+//    }
+
+
     public JdbcDbUserDao(JdbcDb db) {
         withDb(db);
     }
 
-    @Override
     public User getUser(AuthAction action, String jwt, String apiName, String tenant) throws ApiException {
         return null;
     }

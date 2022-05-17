@@ -21,6 +21,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.*;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -187,6 +188,185 @@ public class JdbcUtils {
    | SELECT UTILS
    +------------------------------------------------------------------------------+
     */
+
+    public static <T> T selectObject(Connection conn, String sql, Class<T> clazz, Object... vals) throws Exception
+    {
+        Row row = selectRow(conn, sql, vals);
+        if (row != null)
+        {
+            Object o = clazz.newInstance();
+            poplulate(o, row);
+            return (T) o;
+        }
+
+        return null;
+    }
+
+    public static <T> T selectObject(Connection conn, String sql, T o, Object... vals) throws Exception
+    {
+        Row row = selectRow(conn, sql, vals);
+        if (row != null)
+        {
+            poplulate(o, row);
+        }
+
+        return o;
+    }
+
+    public static List selectObjects(Connection conn, String sql, Class type, Object... vals) throws Exception
+    {
+        List objs = new ArrayList();
+        Rows rows = selectRows(conn, sql, vals);
+        for (Row row : rows)
+        {
+            Object o = type.newInstance();
+            poplulate(o, row);
+            objs.add(o);
+        }
+        return objs;
+    }
+
+    public static Object poplulate(Object o, Map<String, Object> row)
+    {
+        for (Field field : getFields(o.getClass()))
+        {
+            try
+            {
+                Object val = row.get(field.getName());
+                if (val != null)
+                {
+                    val = convert(val, field.getType());
+
+                    if (val != null && val instanceof Collection)
+                    {
+                        Collection coll = (Collection) field.get(o);
+                        coll.addAll((Collection) val);
+                    }
+                    else
+                    {
+                        field.set(o, val);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                //OK
+            }
+        }
+
+        return o;
+    }
+
+
+    public static List<Field> getFields(Class clazz)
+    {
+        List<Field> fields = new ArrayList();
+        do
+        {
+            if (clazz.getName().startsWith("java"))
+                break;
+
+            Field[] farr = clazz.getDeclaredFields();
+            if (farr != null)
+            {
+                for (Field f : farr)
+                {
+                    f.setAccessible(true);
+                }
+                fields.addAll(Arrays.asList(farr));
+            }
+            clazz = clazz.getSuperclass();
+        }
+        while (clazz != null && !Object.class.equals(clazz));
+
+        return fields;
+    }
+
+    public static <T> T convert(Object value, Class<T> type)
+    {
+        if (type.isAssignableFrom(value.getClass()))
+        {
+            return (T) value;
+        }
+
+        if (type.equals(boolean.class) || type.equals(Boolean.class))
+        {
+            if (Number.class.isAssignableFrom(value.getClass()))
+            {
+                long num = Long.parseLong(value + "");
+                if (num <= 0)
+                    return (T) Boolean.FALSE;
+                else
+                    return (T) Boolean.TRUE;
+            }
+            if (value instanceof Boolean)
+                return (T) value;
+        }
+        if (value instanceof Number)
+        {
+            if (type.equals(Long.class) || type.equals(long.class))
+            {
+                value = ((Number) value).longValue();
+                return (T) value;
+            }
+            else if (type.equals(Integer.class) || type.equals(int.class))
+            {
+                value = ((Number) value).intValue();
+                return (T) value;
+            }
+            else if (type.isAssignableFrom(long.class))
+            {
+                value = ((Number) value).longValue();
+                return (T) value;
+            }
+        }
+
+        if (value == null)
+            return null;
+
+        String str = value + "";
+
+        if (String.class.isAssignableFrom(type))
+        {
+            return (T) str;
+        }
+        else if (boolean.class.isAssignableFrom(type))
+        {
+            str = str.toLowerCase();
+            return (T) (Boolean) (str.equals("true") || str.equals("t") || str.equals("1"));
+        }
+        else if (int.class.isAssignableFrom(type))
+        {
+            return (T) (Integer) Integer.parseInt(str);
+        }
+        else if (long.class.isAssignableFrom(type))
+        {
+            return (T) (Long) Long.parseLong(str);
+        }
+        else if (float.class.isAssignableFrom(type))
+        {
+            return (T) (Float) Float.parseFloat(str);
+        }
+        else if (Collection.class.isAssignableFrom(type))
+        {
+            Collection list = new ArrayList();
+            String[] parts = str.split(",");
+            for (String part : parts)
+            {
+                part = part.trim();
+                list.add(part);
+            }
+            return (T) list;
+        }
+        else
+        {
+            System.err.println("Can't cast: " + str + " - class " + type.getName());
+        }
+
+        return (T) value;
+    }
+
+
 
     public static Rows selectRows(Connection conn, String sql, Object... vals) throws SQLException {
         if (vals != null && vals.length == 1 && vals[0] instanceof List)

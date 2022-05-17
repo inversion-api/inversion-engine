@@ -78,8 +78,8 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         sql = sql.replaceAll("\n", " ");
 
         SqlParameterCollection params = new SqlParameterCollection();
-        for (int i = 0; i < values.size(); i++) {
-            KeyValue kv      = values.get(i);
+        for (int i = 0; i < castValues.size(); i++) {
+            KeyValue kv      = castValues.get(i);
             String   varName = asVariableName(i);
             params.add(new SqlParameter(varName, kv.getValue()));
         }
@@ -233,7 +233,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
      */
     @Override
     protected String asVariableName(int valuesPairIdx) {
-        KeyValue kv = values.get(valuesPairIdx);
+        KeyValue kv = castValues.get(valuesPairIdx);
         return "@" + kv.getKey() + (valuesPairIdx + 1);
     }
 

@@ -18,19 +18,26 @@ package io.inversion;
 
 import io.inversion.utils.Utils;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
 public class User {
+
+    protected int    id          = 0;
+    protected String tenant      = null;
+    protected String username    = null;
+    protected String password    = null;
+    protected String displayName = null;
+    protected String accessKey   = null;
+    protected String secretKey   = null;
+
     protected final Set<String> groups      = new HashSet();
     protected final Set<String> roles       = new HashSet();
     protected final Set<String> permissions = new HashSet();
-    protected int    id       = 0;
-    protected String tenant   = null;
-    protected String username = null;
-    protected String password = null;
-    protected String displayName = null;
-    protected String accessKey = null;
-    protected String secretKey = null;
+    protected final Set<String> scopes      = new HashSet();
+
+    protected final Map<String, Object> properties = new HashMap();
+
 
     /**
      * the time of the last request
@@ -54,6 +61,39 @@ public class User {
         withUsername(username);
         withRoles(roles);
         withPermissions(permissions);
+    }
+
+    public User withProperty(String name, Object value) {
+        switch (name.toLowerCase()) {
+            case "group":
+                withGroups((String)value);
+                return this;
+            case "role":
+                withRoles((String)value);
+                return this;
+            case "permission":
+                withPermissions((String)value);
+                return this;
+            case "scope":
+                withScopes((String)value);
+                return this;
+        }
+
+        Field f = Utils.getField(name, this.getClass());
+        if (f == null) {
+            try {
+                f.set(this, value);
+                return this;
+            } catch (Exception ex) {
+                Utils.rethrow(ex);
+            }
+        }
+        properties.put(name, value);
+        return this;
+    }
+
+    public Map<String, Object> getProperties(){
+        return properties;
     }
 
     public String getUsername() {
@@ -214,5 +254,30 @@ public class User {
         this.displayName = displayName;
         return this;
     }
+
+
+    public List<String> getScopes() {
+        return new ArrayList(scopes);
+    }
+
+    public boolean hasScope(String... scopes) {
+        if (scopes == null)
+            return true;
+
+        for (String permission : Utils.explode(",", scopes)) {
+            if (!this.scopes.contains(scopes))
+                return false;
+        }
+        return true;
+    }
+
+    public User withScopes(String... scopes) {
+        if (scopes != null) {
+            this.scopes.addAll(Utils.explode(",", scopes));
+        }
+
+        return this;
+    }
+
 
 }

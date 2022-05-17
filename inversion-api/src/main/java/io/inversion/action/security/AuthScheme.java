@@ -23,11 +23,11 @@ import java.util.List;
 
 public abstract class AuthScheme {
 
-    String name = null;
-    String type = null;   //http,apiKey,openIdConnect,oauth2
-    String scheme = null;  //basic,bearer
-    String barerFormat = "JWT";
-    String description = null;
+    public enum AuthSchemeType {http, apiKey, openIdConnect, oauth2}
+
+    String         name        = null;
+    String         description = null;
+    AuthSchemeType type        = null;
 
     List<Param> params = new ArrayList();
 
@@ -42,30 +42,21 @@ public abstract class AuthScheme {
         return this;
     }
 
-    public String getType() {
+    public String getDescription() {
+        return description;
+    }
+
+    public AuthScheme withDescription(String description) {
+        this.description = description;
+        return this;
+    }
+
+    public AuthSchemeType getType() {
         return type;
     }
 
-    public AuthScheme withType(String type) {
+    public AuthScheme withType(AuthSchemeType type) {
         this.type = type;
-        return this;
-    }
-
-    public String getScheme() {
-        return scheme;
-    }
-
-    public AuthScheme withScheme(String scheme) {
-        this.scheme = scheme;
-        return this;
-    }
-
-    public String getBarerFormat() {
-        return barerFormat;
-    }
-
-    public AuthScheme withBarerFormat(String barerFormat) {
-        this.barerFormat = barerFormat;
         return this;
     }
 
@@ -79,17 +70,9 @@ public abstract class AuthScheme {
     }
 
     public AuthScheme withParameter(Param param) {
-        if(param != null && !params.contains(param))
+        if (param != null && !params.contains(param))
             this.params.add(param);
         return this;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public AuthScheme withDescription(String description) {
-        this.description = description;
-        return this;
-    }
 }

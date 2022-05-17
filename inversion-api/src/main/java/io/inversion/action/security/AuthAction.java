@@ -23,19 +23,7 @@ import java.util.*;
 public class AuthAction extends Action<AuthAction> {
     public static final int AUTH_ACTION_DEFAULT_ORDER_IS_100 = 100;
 
-    protected String collection = null;
-
-    protected String authenticatedPerm = null; // apply this perm to all authenticated users, allows ACL to target all authenticated users
-
-    //
-
-    //protected UserDao userDao = null;
-
-
-    List<AuthScheme> schemes = new ArrayList();
-
-
-
+    protected List<AuthScheme> schemes = new ArrayList();
 
     public AuthAction() {
         withOrder(AUTH_ACTION_DEFAULT_ORDER_IS_100);
@@ -209,90 +197,6 @@ public class AuthAction extends Action<AuthAction> {
 //        return userDao;
 //    }
 
-
-
-    public interface UserDao {
-        User getUser(AuthAction action, String jwt, String apiName, String tenant) throws ApiException;
-
-        User getUser(AuthAction action, String username, String password, String apiName, String tenant) throws ApiException;
-
-        default User getGuest(String apiName, String tenant) {
-            User user = new User();
-            user.withUsername("Anonymous");
-            user.withRoles("guest");
-            user.withTenant(tenant);
-            return user;
-        }
-    }
-
-
-
-//    /**
-//     * Override me to change out map/cache implementation
-//     *
-//     * @param sessionKey the session id of the user
-//     * @return the users if found
-//     */
-//    protected User doGet(String sessionKey) {
-//        return cache.get(sessionKey);
-//    }
-//
-//    @Override
-//    public String post(User user) {
-//        String sessionKey = newSessionId();
-//        put(sessionKey, user);
-//        return sessionKey;
-//    }
-//
-//    @Override
-//    public void put(String sessionKey, User user) {
-//        doPut(sessionKey, user);
-//    }
-//
-//    /**
-//     * Override me to change out map/cache implementation
-//     *
-//     * @param sessionKey the users session id
-//     * @param user       the user to store against the sessionKey
-//     */
-//    protected void doPut(String sessionKey, User user) {
-//        cache.put(sessionKey, user);
-//    }
-//
-//    @Override
-//    public void delete(String sessionKey) {
-//        doDelete(sessionKey);
-//    }
-//
-//    /**
-//     * Override me to change out map/cache implementation
-//     *
-//     * @param sessionKey the session to end
-//     */
-//    protected void doDelete(String sessionKey) {
-//        cache.remove(sessionKey);
-//    }
-//
-//    protected String newSessionId() {
-//        String id = UUID.randomUUID().toString();
-//        id = id.replace("-", "");
-//        return id;
-//    }
-//
-//    public SessionDao withSessionUpdate(long sessionUpdate) {
-//        this.sessionUpdate = sessionUpdate;
-//        return this;
-//    }
-//
-//    public SessionDao withSessionMax(int sessionMax) {
-//        this.sessionMax = sessionMax;
-//        return this;
-//    }
-//
-//    public SessionDao withSessionExp(long sessionExp) {
-//        this.sessionExp = sessionExp;
-//        return this;
-//    }
 
     public List<AuthScheme> getAuthSchemes() {
         return schemes;
