@@ -799,6 +799,7 @@ public class Utils {
      * Formats attempted:
      * <ol>
      *  <li>an ISO8601 data
+     *  <li>EEE MMM dd HH:mm:ss zzz yyyy
      *  <li>then yyyy-MM-dd
      *  <li>then MM/dd/yy
      *  <li>then MM/dd/yyyy
@@ -811,12 +812,19 @@ public class Utils {
     public static Date date(String date) {
         try {
             return parseIso8601(date);
-//            DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_DATE_TIME;
-//            TemporalAccessor  accessor      = timeFormatter.parse(date);
-//            return Date.from(Instant.from(accessor));
         } catch (Exception ex) {
             //do nothing
         }
+
+        try {
+            SimpleDateFormat f = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+            return f.parse(date);
+
+        } catch (Exception ex) {
+            //do nothing
+        }
+
+
         try {
             SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
             return f.parse(date);
@@ -842,9 +850,17 @@ public class Utils {
             SimpleDateFormat f = new SimpleDateFormat("yyyyMMdd");
             return f.parse(date);
         } catch (Exception ex) {
-            throw new RuntimeException("unsupported format: " + date);
+
         }
 
+        try{
+            SimpleDateFormat f = new SimpleDateFormat("yyyyMMdd");
+            return f.parse(date);
+        } catch (Exception ex){
+
+        }
+
+        throw new RuntimeException("Unsupported date format: " + date);
     }
 
     public static boolean testCompare(String expected, String actual) {
@@ -1372,7 +1388,7 @@ public class Utils {
                 return new FileInputStream(fileOrUrl);
             } else {
                 if(caller != null)
-                        return caller.getClass().getClassLoader().getResourceAsStream(fileOrUrl);
+                    return caller.getClass().getClassLoader().getResourceAsStream(fileOrUrl);
                 return Thread.currentThread().getContextClassLoader().getResourceAsStream(fileOrUrl);
             }
         } catch (IOException ioe) {
