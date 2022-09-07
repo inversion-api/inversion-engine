@@ -21,7 +21,7 @@ import io.inversion.Index;
 import io.inversion.*;
 import io.inversion.jdbc.SqlQuery;
 import io.inversion.json.JSMap;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.rql.Order.Sort;
 import io.inversion.rql.Term;
 import io.inversion.rql.Where;
@@ -150,7 +150,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
             for (Document doc : queryResults.getQueryIterable()) {
                 String json = doc.toJson();
-                JSMap  node = JSReader.asJSMap(json);
+                JSMap  node = JSParser.asJSMap(json);
 
                 //-- removes all cosmos applied system keys that start with "_"
                 //-- TODO: might want to make this a configuration option and/or

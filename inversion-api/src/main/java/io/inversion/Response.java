@@ -17,7 +17,8 @@
 package io.inversion;
 
 import io.inversion.json.*;
-import io.inversion.utils.*;
+import io.inversion.utils.MimeTypes;
+import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
@@ -80,6 +81,14 @@ public class Response implements JSFind {
         return this;
     }
 
+    public Response withJson(String json) {
+        if (json == null)
+            withJson((JSNode) null);
+        else
+            withJson((JSNode) JSParser.parseJson(json));
+        return this;
+    }
+
     public Response withText(String text) {
         this.text = text;
         this.json = null;
@@ -103,11 +112,11 @@ public class Response implements JSFind {
     public JSNode getJson() {
         if (stream != null) {
 
-            if(!MimeTypes.TYPE_APPLICATION_JSON.equalsIgnoreCase(getContentType()))
+            if (!MimeTypes.TYPE_APPLICATION_JSON.equalsIgnoreCase(getContentType()))
                 return null;
 
             try {
-                json = (JSNode) JSReader.parseJson(stream.getInputStream());
+                json = (JSNode) JSParser.parseJson(stream.getInputStream());
             } catch (Exception e) {
                 throw new ApiException(e);
             } finally {
@@ -333,7 +342,7 @@ public class Response implements JSFind {
         return this;
     }
 
-    public String getLastKey(){
+    public String getLastKey() {
         return getMeta().findString("lastKey");
     }
 
@@ -464,15 +473,18 @@ public class Response implements JSFind {
         if (json.getValue("_embedded") instanceof JSList)
             return json.getList("_embedded");
 
+        if (json.getValue("items") instanceof JSList)
+            return json.getList("items");
+
         //-- there is a single object in the payload without a meta or payload section
         //-- this could mess up some callers that try to add to the returned
         //-- JSList instead of calling withRecord
         return new JSList(json);
     }
 
-    public JSMap getFirstRecordAsMap(){
+    public JSMap getFirstRecordAsMap() {
         JSList data = data();
-        if(data == null || data.size() == 0)
+        if (data == null || data.size() == 0)
             return null;
         return data.getMap(0);
     }
@@ -707,7 +719,7 @@ public class Response implements JSFind {
         String message = getText();
         try {
             while (message != null && message.startsWith("{") && message.contains("\\\"message\\\"")) {
-                message = JSReader.asJSNode(message).getString("message");
+                message = JSParser.asJSNode(message).getString("message");
             }
         } catch (Exception ex) {
             //igore

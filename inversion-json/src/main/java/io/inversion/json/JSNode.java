@@ -1,5 +1,6 @@
 package io.inversion.json;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.inversion.utils.Utils;
 import org.apache.commons.lang3.tuple.Triple;
 
@@ -7,7 +8,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch{
+public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch {
+
+    protected static ObjectMapper mapper = new ObjectMapper();
 
     protected abstract JSProperty getProperty(Object key);
 
@@ -19,7 +22,7 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch{
 
     public abstract void clear();
 
-    public final int size(){
+    public final int size() {
         return getProperties().size();
     }
 
@@ -28,14 +31,14 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch{
         return getProperties().size() == 0;
     }
 
-    public Object getValue(Object key){
+    public Object getValue(Object key) {
         JSProperty property = getProperty(key);
-        if(property != null)
+        if (property != null)
             return property.getValue();
         return null;
     }
 
-    public List getValues(){
+    public List getValues() {
         return getProperties().stream().map(p -> p.getValue()).collect(Collectors.toList());
     }
 
@@ -45,13 +48,13 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch{
 
     public Object removeValues(Object... keys) {
         Object first = null;
-        for(int i=0; keys != null && i < keys.length; i++){
+        for (int i = 0; keys != null && i < keys.length; i++) {
             Object key = keys[i];
-            if(key != null){
+            if (key != null) {
                 JSProperty prop = getProperty(key);
-                if(prop != null){
+                if (prop != null) {
                     removeProperty(prop);
-                    if(first == null)
+                    if (first == null)
                         first = prop.getValue();
                 }
             }
@@ -59,26 +62,33 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch{
         return first;
     }
 
-    public Set<String> keySet(){
+    public Set<String> keySet() {
         LinkedHashSet keySet = new LinkedHashSet();
         getProperties().forEach(p -> keySet.add(p.getKey().toString()));
         return keySet;
     }
 
-    public final boolean isList() { return this instanceof JSList; };
+    public final boolean isList() {
+        return this instanceof JSList;
+    }
 
     public final JSList asList() {
-        if(this instanceof JSList)
-            return (JSList)this;
+        if (this instanceof JSList)
+            return (JSList) this;
 
         JSList list = new JSList();
         list.add(this);
         return list;
     }
 
-    public final List<JSMap> asMapList() { return (List<JSMap>) asList();};
+    public final List<JSMap> asMapList() {
+        return (List<JSMap>) asList();
+    }
 
-    public final List<JSNode> asNodeList() { return (List<JSNode>) asList();};
+
+    public final List<JSNode> asNodeList() {
+        return (List<JSNode>) asList();
+    }
 
 
 
@@ -91,7 +101,6 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch{
     public JSNode getJson() {
         return this;
     }
-
 
 
     //--------------------------------------------------------------------------------------
@@ -122,8 +131,8 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch{
     }
 
 
-    public JSNode copy(){
-        return JSReader.asJSNode(toString());
+    public JSNode copy() {
+        return JSParser.asJSNode(toString());
     }
 
     /**
@@ -133,7 +142,6 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch{
     public String toString() {
         return JSWriter.toJson(this, true, false);
     }
-
 
 
     /**
@@ -158,38 +166,99 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch{
     }
 
 
-
-    public void visit(JSNodeVisitor visitor) {
+    public void visit(JSVisitor visitor) {
         visit(visitor, this, new Stack<>(), new IdentityHashMap<>());
     }
 
-    public void visit(JSNodeVisitor visitor, JSNode node, Stack<Triple<JSNode, String, Object>> path, IdentityHashMap<JSNode, JSNode> visited) {
-
+    void visit(JSVisitor visitor, JSNode node, Stack<Triple<JSNode, JSProperty, Object>> path, IdentityHashMap<JSNode, JSNode> visited) {
         if (visited.containsKey(node))
             return;
+
         visited.put(node, node);
 
-        List<JSProperty> props = node.getProperties();
-        for (int i = 0; i < props.size(); i++) {
-            JSProperty prop  = props.get(i);
-            Object     name  = prop.getKey();
-            Object     value = prop.getValue();
-
-            Triple triple = Triple.of(node, name, value);
-            path.push(triple);
-            try {
-                if (visitor.visit(node, name, value, path)) {
+        if (node instanceof JSNode) {
+            if (visitor.visit(node, path)) {
+                List<JSProperty> props = node.getProperties();
+                for (int i = 0; i < props.size(); i++) {
+                    JSProperty prop  = props.get(i);
+                    Object     value = prop.getValue();
                     if (value instanceof JSNode) {
+                        Triple triple = Triple.of(node, prop, value);
+                        path.push(triple);
                         visit(visitor, (JSNode) value, path, visited);
+                        path.pop();
                     }
                 }
-            } finally {
-                path.pop();
             }
         }
     }
-
-
+//
+//
+//
+//    public void visitNodes(JSNodeVisitor visitor) {
+//        visit(visitor, this, new Stack<>(), new IdentityHashMap<>());
+//    }
+//
+//    void visit(JSNodeVisitor visitor, JSNode node, Stack<Triple<JSNode, JSProperty, Object>> path, IdentityHashMap<JSNode, JSNode> visited) {
+//
+//        if (visited.containsKey(node))
+//            return;
+//
+//        visited.put(node, node);
+//
+//        if (node instanceof JSNode) {
+//            if (!visitor.visit(node, path)) {
+//                return;
+//            }
+//
+//            List<JSProperty> props = node.getProperties();
+//            for (int i = 0; i < props.size(); i++) {
+//                JSProperty prop  = props.get(i);
+//                Object     value = prop.getValue();
+//
+//                Triple triple = Triple.of(node, prop, value);
+//                path.push(triple);
+//                try {
+//                    if (value instanceof JSNode) {
+//                        visit(visitor, (JSNode) value, path, visited);
+//                    }
+//                } finally {
+//                    path.pop();
+//                }
+//            }
+//        }
+//    }
+//
+//
+//    public void visitProperties(JSPropertyVisitor visitor) {
+//        visit(visitor, this, new Stack<>(), new IdentityHashMap<>());
+//    }
+//
+//    void visit(JSPropertyVisitor visitor, JSNode node, Stack<Triple<JSNode, JSProperty, Object>> path, IdentityHashMap<JSNode, JSNode> visited) {
+//
+//        if (visited.containsKey(node))
+//            return;
+//
+//        visited.put(node, node);
+//
+//        List<JSProperty> props = node.getProperties();
+//        for (int i = 0; i < props.size(); i++) {
+//            JSProperty prop  = props.get(i);
+//            Object     value = prop.getValue();
+//
+//            Triple triple = Triple.of(node, prop, value);
+//            path.push(triple);
+//            try {
+//                if (visitor.visit(node, prop, path)) {
+//                    if (value instanceof JSNode) {
+//                        visit(visitor, (JSNode) value, path, visited);
+//                    }
+//                }
+//            } finally {
+//                path.pop();
+//            }
+//        }
+//    }
 
 
 }

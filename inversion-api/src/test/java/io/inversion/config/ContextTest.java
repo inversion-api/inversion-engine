@@ -18,14 +18,13 @@ package io.inversion.config;
 
 import io.inversion.*;
 import io.inversion.action.misc.MockAction;
-import io.inversion.action.security.AuthAction;
+import io.inversion.action.security.AuthFilter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import java.net.URL;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -170,7 +169,7 @@ public class ContextTest {
 
         assertEquals("70", ((MockDb) prodApi.getDb("db")).getProperty1());
         assertEquals(1, prodApi.getActions().size());
-        assertTrue(prodApi.getActions().get(0) instanceof AuthAction);
+        assertTrue(prodApi.getActions().get(0) instanceof AuthFilter);
     }
 
     @Test

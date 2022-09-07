@@ -1,6 +1,6 @@
 package io.inversion.json;
 
-class JSProperty {
+public class JSProperty {
 
     final Object key;
     final Object value;

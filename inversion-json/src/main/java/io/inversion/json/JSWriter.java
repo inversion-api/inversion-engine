@@ -12,6 +12,19 @@ import java.util.IdentityHashMap;
 
 public class JSWriter {
 
+    public static String toJson(Object obj){
+        if(obj instanceof JSNode){
+            return toJson((JSNode)obj);
+        }
+        try{
+            return JSNode.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
+        }
+        catch(Exception ex){
+            Utils.rethrow(ex);
+        }
+        return null;
+    }
+
     static String toJson(JSNode node){
         return toJson(node, true, false);
     }

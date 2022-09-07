@@ -18,7 +18,7 @@ package io.inversion.script;
 
 import io.inversion.*;
 import io.inversion.json.JSMap;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.script.velocity.LayoutDirective;
 import io.inversion.script.velocity.SaveDirective;
 import io.inversion.script.velocity.SwitchDirective;
@@ -304,7 +304,7 @@ public class ScriptAction extends Action<ScriptAction> {
                 boolean setText = true;
                 if (content.startsWith("{") || content.startsWith("[")) {
                     try {
-                        JSNode obj = JSReader.asJSNode(content);
+                        JSNode obj = JSParser.asJSNode(content);
                         res.withJson(obj);
                         setText = false;
                     } catch (Exception ex) {

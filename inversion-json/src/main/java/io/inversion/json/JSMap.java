@@ -1,5 +1,9 @@
 package io.inversion.json;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import io.inversion.utils.Utils;
+
 import java.util.*;
 
 public class JSMap <T> extends JSNode implements Map<String, T> {
@@ -109,7 +113,7 @@ public class JSMap <T> extends JSNode implements Map<String, T> {
     @Override
     public T remove(Object key) {
         JSProperty prop = getProperty(key);
-        if (key != null)
+        if (prop != null)
             removeProperty(prop);
         return prop != null ? (T)prop.getValue() : null;
     }
@@ -158,5 +162,15 @@ public class JSMap <T> extends JSNode implements Map<String, T> {
         }
         clear();
         newProps.values().forEach(p -> putValue(p.getKey(), p.getValue()));
+    }
+
+    public T as(Class<T> type){
+        try{
+            return mapper.readValue(toString(), type);
+        }
+        catch(Exception ex){
+            Utils.rethrow(ex);
+        }
+        return null;
     }
 }

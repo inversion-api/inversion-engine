@@ -19,7 +19,7 @@ package io.inversion;
 import io.inversion.json.JSFind;
 import io.inversion.json.JSList;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -57,6 +57,7 @@ public class Request implements JSFind {
     Db         db         = null;
 
     Path serverPath     = null;
+    Path serverPathMatch = null;
     Path operationPath  = null;
     Path endpointPath   = null;
     Path dbPath         = null;
@@ -64,7 +65,7 @@ public class Request implements JSFind {
     Path actionPath     = null;
 
     List<Chain.ActionMatch> actionMatches = new ArrayList();
-    Map<String, String> pathParams = new HashMap<>();
+    Map<String, String>     pathParams    = new HashMap<>();
 
     String body = null;
     JSNode json = null;
@@ -110,6 +111,45 @@ public class Request implements JSFind {
         if (headers != null && headers.size() > 0)
             this.headers = new ArrayListValuedHashMap<>(headers);
     }
+
+    public String findParam(String name, Param.In... wheres) {
+
+        String value = null;
+        for (Param.In where : wheres) {
+            //HOST, SERVER_PATH, PATH, QUERY, BODY, COOKIE, HEADER, USER, CHAIN, CONTEXT, ENVIRONMENT, URL, REQUEST, ANY
+            switch (where) {
+                case URL:
+                case PATH:
+                    value = getUrl().getParam(name);
+                    //return op.getPathParamValue(name); TODO: fixme
+                    break;
+                case HEADER:
+                    value = getHeader(name);
+                    break;
+                case QUERY:
+                    value = getUrl().getParam(name);
+                    break;
+
+                case SERVER_PATH:
+                    Path path = getServerPathMatch();
+                    for(int i=0; i<path.size(); i++){
+                        if(path.isVar(i) && path.getVarName(i).equalsIgnoreCase(name)){
+                            value = getServerPath().get(i);
+                            break;
+                        }
+                    }
+                    break;
+
+                default:
+                    throw new UnsupportedOperationException();
+            }
+            if (value != null)
+                break;
+        }
+
+        return value;
+    }
+
 
     public Request withUrl(String url) {
         Url u = new Url(url);
@@ -250,6 +290,15 @@ public class Request implements JSFind {
         return this;
     }
 
+    public Path getServerPathMatch() {
+        return serverPathMatch;
+    }
+
+    public Request withServerPathMatch(Path serverPathMatch) {
+        this.serverPathMatch = serverPathMatch;
+        return this;
+    }
+
     public Path getOperationPath() {
         return operationPath;
     }
@@ -351,7 +400,7 @@ public class Request implements JSFind {
             return null;
 
         try {
-            json = JSReader.asJSNode(body);
+            json = JSParser.asJSNode(body);
         } catch (Exception ex) {
             throw ApiException.new400BadRequest("Unparsable JSON body");
         }

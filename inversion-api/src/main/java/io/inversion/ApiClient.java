@@ -17,9 +17,11 @@
 
 package io.inversion;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.inversion.config.Config;
 import io.inversion.config.Context;
 import io.inversion.json.JSNode;
+import io.inversion.json.JSWriter;
 import io.inversion.utils.Path;
 import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
@@ -308,7 +310,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @return a FutureResponse that will asynchronously resolve to a Response
@@ -318,7 +320,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @param queryString           additional query string params in name=value@amp;name2=value2 style
@@ -329,7 +331,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @param params                query strings passed in as a map
@@ -340,7 +342,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath     may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @param queryStringNameValuePairs additional query string name/value pairs
@@ -351,40 +353,40 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a POST request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a POST request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @param body                  the optional JSON to post
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
-    public FutureResponse post(String fullUrlOrRelativePath, JSNode body) {
+    public FutureResponse post(String fullUrlOrRelativePath, Object body) {
         return call("POST", fullUrlOrRelativePath, null, body, null);
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a PUT request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a PUT request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @param body                  the optional JSON to put
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
-    public FutureResponse put(String fullUrlOrRelativePath, JSNode body) {
+    public FutureResponse put(String fullUrlOrRelativePath, Object body) {
         return call("PUT", fullUrlOrRelativePath, null, body, null);
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a PATCH request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a PATCH request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @param body                  the optional JSON patch
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
-    public FutureResponse patch(String fullUrlOrRelativePath, JSNode body) {
+    public FutureResponse patch(String fullUrlOrRelativePath, Object body) {
         return call("PATCH", fullUrlOrRelativePath, null, body, null);
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, JSNode, ArrayListValuedHashMap)} to perform a DELETE request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a DELETE request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @return a FutureResponse that will asynchronously resolve to a Response
@@ -403,7 +405,7 @@ public class ApiClient {
      * @param headers               headers that will always be sent regardless of {@link #includeForwardHeaders}, {@link #excludeForwardHeaders} but may be overwritten by {@link #forcedHeaders}
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
-    public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, ArrayListValuedHashMap<String, String> headers) {
+    public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, Object body, ArrayListValuedHashMap<String, String> headers) {
         Request request = buildRequest(method, fullUrlOrRelativePath, params, body, headers);
         return call(request);
     }
@@ -439,7 +441,7 @@ public class ApiClient {
      * @param headers               - request headers to pass
      * @return the configure request
      */
-    public Request buildRequest(String method, String fullUrlOrRelativePath, Map<String, String> params, JSNode body, ArrayListValuedHashMap<String, String> headers) {
+    public Request buildRequest(String method, String fullUrlOrRelativePath, Map<String, String> params, Object body, ArrayListValuedHashMap<String, String> headers) {
 
         String url         = buildUrl(fullUrlOrRelativePath);
         String queryString = StringUtils.substringAfter(url, "?");
@@ -453,6 +455,17 @@ public class ApiClient {
             }
             params = newParams;
         }
+
+        String bodyStr = null;
+        if(body != null){
+            if(body instanceof String)
+                bodyStr = (String)body;
+            if(body instanceof JSNode)
+                bodyStr = ((JSNode) body).toString();
+            else
+                bodyStr = JSWriter.toJson(body);
+        }
+
 
         Request request = new Request(method, url, (body == null ? null : body.toString()), params, headers);
 
@@ -565,7 +578,7 @@ public class ApiClient {
 
         String   url      = request.getUrl().toString();
         Response response = new Response(url);
-        response.withJson(null);
+        response.withJson((JSNode)null);
         response.withRequest(request);
 
         for (RequestListener l : requestListeners) {
@@ -745,7 +758,7 @@ public class ApiClient {
         if (url == null)
             throw ApiException.new500InternalServerError("Unable to determine url for ApiClient.buildUrl().  Either pass the desired url in on your call or set configuration property {}.url=${url}.", getName());
 
-        if(!url.startsWith("http://") || url.startsWith("https://"))
+        if(!(url.startsWith("http://") || url.startsWith("https://")))
             throw ApiException.new500InternalServerError("The destination URL must start with 'http://' or 'https://', received '{}'", url);
 
         Request parentRequest = null;
@@ -799,12 +812,12 @@ public class ApiClient {
         else if(colonIdx > 0 && slashIdx > 0 && colonIdx < slashIdx){
             //--- localhost:8080/*
             host = url.substring(0, slashIdx);
-            url = url.substring(0, slashIdx);
+            url = url.substring(slashIdx);
         }
         else if(colonIdx > 0 && slashIdx > 0 && slashIdx < colonIdx){
             //--- localhost/{var:regex}
-            host = url.substring(0, slashIdx);
-            url = url.substring(0, slashIdx);
+            host = url.substring(0, slashIdx+1);
+            url = url.substring(slashIdx+1);
         }
 
         String path = url;

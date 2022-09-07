@@ -21,9 +21,7 @@ package io.inversion.utils;
 //import io.inversion.Request;
 //import io.inversion.Response;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -201,7 +199,6 @@ public class Path implements Comparable<Path> {
         }
         return fixed;
     }
-
 
     public Path copyFrom(Path path) {
         parts.clear();
@@ -419,7 +416,7 @@ public class Path implements Comparable<Path> {
 
     @Override
     public int compareTo(Path o) {
-        if(o == null)
+        if (o == null)
             return 1;
         return toString().toLowerCase().compareTo(o.toString().toLowerCase());
     }
@@ -478,7 +475,7 @@ public class Path implements Comparable<Path> {
         return isWildcard(get(index));
     }
 
-    public static boolean isWildcard(String part){
+    public static boolean isWildcard(String part) {
         return "*".equals(part);
     }
 
@@ -576,7 +573,7 @@ public class Path implements Comparable<Path> {
         return isOptional(part);
     }
 
-    public static boolean isOptional(String part){
+    public static boolean isOptional(String part) {
         if (part != null) {
             return part.startsWith("[") && part.endsWith("]");
         }
@@ -683,7 +680,6 @@ public class Path implements Comparable<Path> {
     }
 
 
-
     /**
      * Convenience overloading of {@link #extract(Map, Path, boolean)} with <code>greedy = true</code>.
      *
@@ -788,6 +784,25 @@ public class Path implements Comparable<Path> {
         return matchedPath;
     }
 
+    public int getVarIndex(String varName) {
+        if (varName == null)
+            return -1;
+
+        for (int i = 0; i < size(); i++) {
+            String temp = getVarName(i);
+            if (varName.equalsIgnoreCase(temp))
+                return i;
+        }
+        return -1;
+    }
+
+    public boolean hasVars() {
+        for (int i = 0; i < size(); i++)
+            if (isVar(i))
+                return true;
+        return false;
+    }
+
     public boolean hasAllVars(String... vars) {
         for (int i = 0; i < vars.length; i++) {
             boolean has = false;
@@ -888,7 +903,7 @@ public class Path implements Comparable<Path> {
                 joined.add(rightPart);
             else if (rightPath.isWildcard())
                 joined.add(leftPart);
-            else if (leftPath.isVar(0)){// && rightPath.isVar(0)) {
+            else if (leftPath.isVar(0)) {// && rightPath.isVar(0)) {
                 //joined.add(rightPart);
                 joined.add(leftPart);
             } else if (!leftPath.isVar(0) && !rightPath.isVar(0)) {

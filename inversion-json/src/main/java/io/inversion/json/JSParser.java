@@ -8,7 +8,7 @@ import io.inversion.utils.Utils;
 
 import java.io.InputStream;
 
-public class JSReader {
+public class JSParser {
     public static JsonFactory parserFactory = new JsonFactory();
 
     /**
@@ -127,7 +127,7 @@ public class JSReader {
     }
 
     /**
-     * Utility overloading of {@link JSReader#parseJson(String)} to cast the return as a JSNode
+     * Utility overloading of {@link JSParser#parseJson(String)} to cast the return as a JSNode
      *
      * @param json the json string to parse
      * @return the result of parsing the json document cast to a JSNode
@@ -150,7 +150,7 @@ public class JSReader {
     }
 
     /**
-     * Utility overloading of {@link JSReader#parseJson(String)} to cast the return as a JSList
+     * Utility overloading of {@link JSParser#parseJson(String)} to cast the return as a JSList
      *
      * @param json a json string containing an as the root element
      * @return the result of parsing the json document cast to a JSList

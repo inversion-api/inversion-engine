@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-public class Server extends Rule<Server> {
+public final class Server extends Rule<Server> {
 
     /**
      * The list of http(s) hosts not including a path component.
@@ -37,38 +37,7 @@ public class Server extends Rule<Server> {
 
     transient List<UrlMatcher> urlMatchers = new ArrayList();
 
-    class UrlMatcher {
-        String protocol = null;
-        int    port     = 0;
-        Path   host     = null;
-
-        public UrlMatcher(String url) {
-            if (Utils.empty(url) || "*".equalsIgnoreCase(url)) {
-                host = new Path("*");
-            } else {
-                Url u = new Url(url);
-                protocol = u.getProtocol();
-                port = u.getPort();
-                host = new Path(u.getHost().replace('.', '/'));
-            }
-        }
-
-        public boolean matches(Url url) {
-            if (this.protocol != null && url.getProtocol() != null && !this.protocol.equalsIgnoreCase(url.getProtocol()))
-                return false;
-
-            if (this.port > 0 && url.getPort() > 0 && this.port != url.getPort())
-                return false;
-
-            if (this.host != null && url.getHost() != null && !this.host.matches(new Path(url.getHost().replace('.', '/'))))
-                return false;
-
-            return true;
-        }
-    }
-
     public Server() {
-        System.out.println("asdf");
     }
 
     public Server(String... urls) {
@@ -81,8 +50,12 @@ public class Server extends Rule<Server> {
 
 
     public Path match(String method, Url url) {
+
+
+            checkLazyConfig();
+
         boolean match = urlMatchers.size() == 0;
-        if(!match) {
+        if (!match) {
             for (UrlMatcher matcher : urlMatchers) {
                 if (matcher.matches(url)) {
                     match = true;
@@ -106,8 +79,7 @@ public class Server extends Rule<Server> {
                             break;
                         }
                     }
-                }
-                else if(Param.In.SERVER_PATH == param.in){
+                } else if (Param.In.SERVER_PATH == param.in) {
                     for (Pattern p : param.getPatterns()) {
                         if (!p.matcher(url.getPath().get(param.getIndex())).matches()) {
                             matched = null;
@@ -138,17 +110,17 @@ public class Server extends Rule<Server> {
         return this;
     }
 
-
-    public void afterWiringComplete(Context context) {
-        hook_wiringComplete_mergeUrlPaths();
-        hook_wiringComplete_removeUrlPaths();
-        hook_wiringComplete_applyParams();
+    protected void doLazyConfig(){
+        super.doLazyConfig();
+        lazyConfig_mergeUrlPaths();
+        lazyConfig_removeUrlPaths();
+        lazyConfig_applyParams();
         for (String url : urls) {
             urlMatchers.add(new UrlMatcher(url));
         }
     }
 
-    protected void hook_wiringComplete_applyParams() {
+    protected void lazyConfig_applyParams() {
 
         String      expected   = null;
         List<Param> hostParams = null;
@@ -189,7 +161,7 @@ public class Server extends Rule<Server> {
     }
 
 
-    protected void hook_wiringComplete_removeUrlPaths() {
+    protected void lazyConfig_removeUrlPaths() {
         for (int i = 0; i < urls.size(); i++) {
             String url = urls.get(i);
             if (url.startsWith("http://") || url.startsWith("https://")) {
@@ -202,8 +174,7 @@ public class Server extends Rule<Server> {
         }
     }
 
-    protected void hook_wiringComplete_mergeUrlPaths() {
-
+    protected void lazyConfig_mergeUrlPaths() {
         ArrayListValuedHashMap<RuleMatcher, Path> updatedIncludePaths = new ArrayListValuedHashMap<>();
         ArrayListValuedHashMap<RuleMatcher, Path> updatedExcludePaths = new ArrayListValuedHashMap<>();
         for (String url : urls) {
@@ -215,7 +186,7 @@ public class Server extends Rule<Server> {
                     Url  u       = new Url(url);
                     Path urlPath = u.getPath();
 
-                    for (RuleMatcher matcher : getIncludeMatchers()) {
+                    for (RuleMatcher matcher : getIncludeMatchers()) { //don't call getIncludeMatcher() becuase it will recurse the initialziation
                         Set<Path> includePaths = matcher.getPaths();
                         for (Path path : includePaths) {
                             if (urlPath != null && urlPath.size() > 0) {
@@ -250,6 +221,7 @@ public class Server extends Rule<Server> {
             List<Path> paths = new ArrayList<>(updatedIncludePaths.get(matcher));
             matcher.clearPaths();
             matcher.withPaths(paths);
+            System.out.println(matcher);
         }
 
         for (RuleMatcher matcher : updatedExcludePaths.keySet()) {
@@ -278,6 +250,36 @@ public class Server extends Rule<Server> {
             }
         }
         return params;
+    }
+
+    class UrlMatcher {
+        String protocol = null;
+        int    port     = 0;
+        Path   host     = null;
+
+        public UrlMatcher(String url) {
+            if (Utils.empty(url) || "*".equalsIgnoreCase(url)) {
+                host = new Path("*");
+            } else {
+                Url u = new Url(url);
+                protocol = u.getProtocol();
+                port = u.getPort();
+                host = new Path(u.getHost().replace('.', '/'));
+            }
+        }
+
+        public boolean matches(Url url) {
+            if (this.protocol != null && url.getProtocol() != null && !this.protocol.equalsIgnoreCase(url.getProtocol()))
+                return false;
+
+            if (this.port > 0 && url.getPort() > 0 && this.port != url.getPort())
+                return false;
+
+            if (this.host != null && url.getHost() != null && !this.host.matches(new Path(url.getHost().replace('.', '/'))))
+                return false;
+
+            return true;
+        }
     }
 
 }

@@ -16,6 +16,8 @@
  */
 package io.inversion;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import io.inversion.utils.Utils;
 
 import java.lang.reflect.Field;
@@ -23,13 +25,13 @@ import java.util.*;
 
 public class User {
 
-    protected int    id          = 0;
-    protected String tenant      = null;
-    protected String username    = null;
-    protected String password    = null;
-    protected String displayName = null;
-    protected String accessKey   = null;
-    protected String secretKey   = null;
+    protected String    id       = null;
+    //    protected String tenant      = null;
+    protected String username = null;
+//    protected String password    = null;
+//    protected String displayName = null;
+//    protected String accessKey   = null;
+//    protected String secretKey   = null;
 
     protected final Set<String> groups      = new HashSet();
     protected final Set<String> roles       = new HashSet();
@@ -39,19 +41,19 @@ public class User {
     protected final Map<String, Object> properties = new HashMap();
 
 
-    /**
-     * the time of the last request
-     */
-    protected long   requestAt  = -1;
-    /**
-     * the remote host of the last request
-     */
-    protected String remoteAddr = null;
-
-    /**
-     * the number of consecutive failed logins
-     */
-    protected int failedNum = 0;
+//    /**
+//     * the time of the last request
+//     */
+//    protected long   requestAt  = -1;
+//    /**
+//     * the remote host of the last request
+//     */
+//    protected String remoteAddr = null;
+//
+//    /**
+//     * the number of consecutive failed logins
+//     */
+//    protected int failedNum = 0;
 
     public User() {
 
@@ -63,24 +65,39 @@ public class User {
         withPermissions(permissions);
     }
 
+    @JsonAnySetter
     public User withProperty(String name, Object value) {
-        switch (name.toLowerCase()) {
+
+        String lc = name.toLowerCase();
+        if (value instanceof List && Utils.in(name, "group", "role", "permission", "scope", "groups", "roles", "permissions", "scopes")) {
+            List list = (List) value;
+            for (Object listVal : list) {
+                withProperty(name, listVal);
+            }
+            return this;
+        }
+
+        switch (lc) {
             case "group":
-                withGroups((String)value);
+            case "groups":
+                withGroups((String) value);
                 return this;
             case "role":
-                withRoles((String)value);
+            case "roles":
+                withRoles((String) value);
                 return this;
             case "permission":
-                withPermissions((String)value);
+            case "permissions":
+                withPermissions((String) value);
                 return this;
             case "scope":
-                withScopes((String)value);
+            case "scopes":
+                withScopes((String) value);
                 return this;
         }
 
         Field f = Utils.getField(name, this.getClass());
-        if (f == null) {
+        if (f != null) {
             try {
                 f.set(this, value);
                 return this;
@@ -92,9 +109,23 @@ public class User {
         return this;
     }
 
-    public Map<String, Object> getProperties(){
+    @JsonAnyGetter
+    public Map<String, Object> getProperties() {
         return properties;
     }
+
+    public Object getProperty(String name) {
+        Field f = Utils.getField(name, this.getClass());
+        if (f != null) {
+            try {
+                return f.get(this);
+            } catch (Exception ex) {
+                Utils.rethrow(ex);
+            }
+        }
+        return properties.get(name);
+    }
+
 
     public String getUsername() {
         return username;
@@ -105,68 +136,68 @@ public class User {
         return this;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
-    public User withId(int id) {
+    public User withId(String id) {
         this.id = id;
         return this;
     }
 
-    public long getRequestAt() {
-        return requestAt;
-    }
+//    public long getRequestAt() {
+//        return requestAt;
+//    }
+//
+//    public User withRequestAt(long requestAt) {
+//        this.requestAt = requestAt;
+//        return this;
+//    }
+//
+//    public String getRemoteAddr() {
+//        return remoteAddr;
+//    }
+//
+//    public User withRemoteAddr(String remoteAddr) {
+//        this.remoteAddr = remoteAddr;
+//        return this;
+//    }
+//
+//    public int getFailedNum() {
+//        return failedNum;
+//    }
+//
+//    public User withFailedNum(int failedNum) {
+//        this.failedNum = failedNum;
+//        return this;
+//    }
 
-    public User withRequestAt(long requestAt) {
-        this.requestAt = requestAt;
-        return this;
-    }
-
-    public String getRemoteAddr() {
-        return remoteAddr;
-    }
-
-    public User withRemoteAddr(String remoteAddr) {
-        this.remoteAddr = remoteAddr;
-        return this;
-    }
-
-    public int getFailedNum() {
-        return failedNum;
-    }
-
-    public User withFailedNum(int failedNum) {
-        this.failedNum = failedNum;
-        return this;
-    }
-
-    public String getAccessKey() {
-        return accessKey;
-    }
-
-    public User withAccessKey(String accessKey) {
-        this.accessKey = accessKey;
-        return this;
-    }
-
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    public User withSecretKey(String secretKey) {
-        this.secretKey = secretKey;
-        return this;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public User withPassword(String password) {
-        this.password = password;
-        return this;
-    }
+//    public String getAccessKey() {
+//        return accessKey;
+//    }
+//
+//    public User withAccessKey(String accessKey) {
+//        this.accessKey = accessKey;
+//        return this;
+//    }
+//
+//    public String getSecretKey() {
+//        return secretKey;
+//    }
+//
+//    public User withSecretKey(String secretKey) {
+//        this.secretKey = secretKey;
+//        return this;
+//    }
+//
+//    public String getPassword() {
+//        return password;
+//    }
+//
+//    public User withPassword(String password) {
+//        this.password = password;
+//        return this;
+//    }
 
     public List<String> getPermissions() {
         return new ArrayList(permissions);
@@ -237,23 +268,23 @@ public class User {
         return this;
     }
 
-    public String getTenant() {
-        return tenant;
-    }
+//    public String getTenant() {
+//        return tenant;
+//    }
+//
+//    public User withTenant(String tenant) {
+//        this.tenant = tenant;
+//        return this;
+//    }
 
-    public User withTenant(String tenant) {
-        this.tenant = tenant;
-        return this;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public User withDisplayName(String displayName) {
-        this.displayName = displayName;
-        return this;
-    }
+//    public String getDisplayName() {
+//        return displayName;
+//    }
+//
+//    public User withDisplayName(String displayName) {
+//        this.displayName = displayName;
+//        return this;
+//    }
 
 
     public List<String> getScopes() {

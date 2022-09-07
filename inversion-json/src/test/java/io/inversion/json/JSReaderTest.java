@@ -13,7 +13,7 @@ public class JSReaderTest {
     public void test_read() throws Exception {
         URL    url    = getClass().getResource("reader_test1.json");
         String source = Utils.read(url.openStream());
-        JSNode read   = JSReader.asJSNode(source);
+        JSNode read   = JSParser.asJSNode(source);
 
         JSList array  = read.getList("array");
         JSMap  node   = read.getMap("node");
@@ -37,9 +37,9 @@ public class JSReaderTest {
                 continue;
             String source = Utils.read(url.openStream());
 
-            JSNode read1  = JSReader.asJSNode(source);
+            JSNode read1  = JSParser.asJSNode(source);
             String write1 = read1.toString();
-            JSNode read2  = JSReader.asJSNode(write1);
+            JSNode read2  = JSParser.asJSNode(write1);
             String write2 = read2.toString();
             assertEquals(write1, write2);
 

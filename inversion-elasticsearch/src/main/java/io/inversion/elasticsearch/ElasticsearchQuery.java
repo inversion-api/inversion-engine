@@ -20,7 +20,7 @@ import io.inversion.ApiException;
 import io.inversion.Chain;
 import io.inversion.Collection;
 import io.inversion.Results;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.rql.*;
 import io.inversion.rql.Order.Sort;
 import io.inversion.json.JSNode;
@@ -368,7 +368,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
     }
 
     public JSNode getJson() {
-        return JSReader.asJSNode(getSearchBuilder().toString());
+        return JSParser.asJSNode(getSearchBuilder().toString());
     }
 
     /**

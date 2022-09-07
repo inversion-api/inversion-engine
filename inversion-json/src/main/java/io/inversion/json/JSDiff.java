@@ -15,7 +15,7 @@ public interface JSDiff {
         JsonNode patch;
         try {
             patch = JsonDiff.asJson(mapper.readValue(source.toString(), JsonNode.class), mapper.readValue(getJson().toString(), JsonNode.class));
-            JSList patchesArray = JSReader.asJSList(patch.toPrettyString());
+            JSList patchesArray = JSParser.asJSList(patch.toPrettyString());
             return patchesArray;
         } catch (Exception e) {
             e.printStackTrace();

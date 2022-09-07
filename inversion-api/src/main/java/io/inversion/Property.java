@@ -23,7 +23,7 @@ import java.io.Serializable;
 /**
  *
  */
-public class Property implements Serializable {
+public final class Property implements Serializable {
 
     protected String  name          = null;
     protected String  columnName    = null;

@@ -8,13 +8,14 @@ import org.apache.commons.lang3.tuple.Triple;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class Op implements Comparable<Op> {
+public final class Op implements Comparable<Op> {
 
     public enum OpFunction {GET, FIND, RELATED, POST, PUT, PATCH, DELETE, BATCH_POST, BATCH_PUT, BATCH_PATCH, BATCH_DELETE}
 
-    String name   = null;
-    String method = null;
-    Path   path   = null;
+    String name        = null;
+    String method      = null;
+    Path   path        = null;
+    String description = null;
 
     boolean    internal = false;
     OpFunction function = null;
@@ -39,25 +40,25 @@ public class Op implements Comparable<Op> {
 
     List<Param> params = new ArrayList();
 
-    public Op copy() {
-        Op op = new Op();
-        op.method = method;
-        op.path = path.copy();
-        op.internal = internal;
-        op.function = function;
-        op.engine = engine;
-        op.api = api;
-        op.endpoint = endpoint;
-        op.endpointPathMatch = endpointPathMatch.copy();
-        op.actionPathMatches = new ArrayList<>(actionPathMatches);
-        op.db = db;
-        op.dbPathMatch = dbPathMatch.copy();
-        op.collection = collection;
-        op.collectionPathMatch = collectionPathMatch;
-        op.relationship = relationship;
-        op.params = new ArrayList<>(params);
-        return op;
-    }
+//    public Op copy() {
+//        Op op = new Op();
+//        op.method = method;
+//        op.path = path.copy();
+//        op.internal = internal;
+//        op.function = function;
+//        op.engine = engine;
+//        op.api = api;
+//        op.endpoint = endpoint;
+//        op.endpointPathMatch = endpointPathMatch.copy();
+//        op.actionPathMatches = new ArrayList<>(actionPathMatches);
+//        op.db = db;
+//        op.dbPathMatch = dbPathMatch.copy();
+//        op.collection = collection;
+//        op.collectionPathMatch = collectionPathMatch;
+//        op.relationship = relationship;
+//        op.params = new ArrayList<>(params);
+//        return op;
+//    }
 
     public Op() {
 
@@ -65,7 +66,7 @@ public class Op implements Comparable<Op> {
 
     public boolean matches(Request req, Path path) {
 
-        if(!getMethod().equalsIgnoreCase(req.getMethod()))
+        if (!getMethod().equalsIgnoreCase(req.getMethod()))
             return false;
 
         if (!getPath().matches(path))
@@ -113,20 +114,24 @@ public class Op implements Comparable<Op> {
         props.put("relationship", (relationship != null ? relationship.getName() : null));
 
         List<String> actStr = new ArrayList<>();
-        for(Action action : getActions()){
+        for (Action action : getActions()) {
             actStr.add(getActionNameString(action));
         }
         props.put("actions", actStr);
         props.put("params", getParams());
-        return props.toString();
+
+        String str = props.toString();
+        //str = str.replace("\r", "");
+        //str = str.replace("\n", " ");
+        return str;
     }
 
-    String getActionNameString(Action action){
+    String getActionNameString(Action action) {
         String name = action.getName();
-        if(name == null){
+        if (name == null) {
             name = action.getClass().getName();
-            if(name.indexOf(".") > 0)
-                name = name .substring(name.lastIndexOf(".") + 1);
+            if (name.indexOf(".") > 0)
+                name = name.substring(name.lastIndexOf(".") + 1);
         }
         return name;
     }
@@ -156,6 +161,30 @@ public class Op implements Comparable<Op> {
 
     public Op withActionMatch(Action action, Path actionMatchPath, Boolean isEpAction) {
         actionPathMatches.add(new MutableTriple<Action, Path, Boolean>(action, actionMatchPath, isEpAction));
+
+        int offset = 0;
+        if(isEpAction){
+            for(int i=0; i<endpointPathMatch.size(); i++){
+                if(endpointPathMatch.isOptional(i) || endpointPathMatch.isWildcard(i))
+                    break;
+                offset += 1;
+            }
+        }
+        for(int i=0; i<actionMatchPath.size(); i++){
+            if(offset + i >= path.size())
+                break;
+            if(actionMatchPath.isVar(i)){
+                Param p = new Param();
+                p.withIn(Param.In.PATH);
+                p.withIndex(i + offset);
+                p.withKey(actionMatchPath.getVarName(i));
+                String regex = actionMatchPath.getRegex(i);
+                if(regex != null)
+                    p.withRegex(regex);
+                withParam(p);
+            }
+        }
+
 
         Collections.sort(actionPathMatches, new Comparator<Triple<Action, Path, Boolean>>() {
             @Override
@@ -226,15 +255,15 @@ public class Op implements Comparable<Op> {
             }
         }
         params.add(param);
-
-        //-- updates the vars in the path for optimal display
-        if (path != null)
-            withPath(path);
         return this;
     }
 
     public List<Param> getParams() {
-        return params;
+        return new ArrayList(params);
+    }
+
+    public void removeParam(Param param) {
+        params.remove(param);
     }
 
     public List<Param> getPathParams(int pathIndex) {
@@ -268,14 +297,16 @@ public class Op implements Comparable<Op> {
         int val = o == null ? 1 : path.toString().compareTo(o.path.toString());
 
         if (val == 0) {
-            int func1 = functionAsInt(function);
-            int func2 = functionAsInt(o.function);
+            int func1 = functionAsInt(getFunction());
+            int func2 = functionAsInt(o.getFunction());
             val = func1 < func2 ? -1 : 1;
         }
         return val;
     }
 
     public static int functionAsInt(Op.OpFunction func) {
+        if (func == null)
+            return 0;
         switch (func) {
             case GET:
                 return 1;
@@ -304,7 +335,87 @@ public class Op implements Comparable<Op> {
     }
 
     public String getName() {
-        return name;
+
+        if (name != null)
+            return name;
+
+        Collection collection  = getCollection();
+
+        int pathLength = getPath().size();
+        String     defaultName = getPath().isVar(pathLength -1) ? getPath().getVarName(pathLength -1) : getPath().last();
+
+        if (getEndpoint().getName() != null) {
+            defaultName = getEndpoint().getName() + Utils.capitalize(defaultName);
+        }
+        defaultName = cleanNamePart(defaultName);
+        defaultName = Utils.beautifyName(defaultName);
+
+
+        String singular = Utils.capitalize(collection == null ? defaultName : collection.getSingularDisplayName());
+        String plural   = Utils.capitalize(collection == null ? defaultName : collection.getPluralDisplayName());
+
+        String builtName = null;
+
+        OpFunction function = getFunction();
+        if (function != null) {
+            switch (function) {
+                case GET:
+                    builtName = "get" + singular;
+                    break;
+                case FIND:
+                    builtName =  "find" + plural;
+                    break;
+                case RELATED:
+                    builtName =  "find" + plural + "Related" + Utils.capitalize(cleanNamePart(getPathParamValue(Request.RELATIONSHIP_KEY)));
+                    break;
+                case POST:
+                    builtName =  "create" + singular;
+                    break;
+                case PUT:
+                    builtName =  "update" + singular;
+                    break;
+                case PATCH:
+                    builtName =  "patch" + singular;
+                    break;
+                case DELETE:
+                    builtName =  "delete" + singular;
+                    break;
+                case BATCH_POST:
+                    builtName =  null;
+                    break;
+                case BATCH_PUT:
+                    builtName =  "batchUpdate" + plural;
+                    break;
+                case BATCH_PATCH:
+                    builtName =  "batchPatch" + plural;
+                    break;
+                case BATCH_DELETE:
+                    builtName =  "batchDelete" + plural;
+                    break;
+            }
+
+            if(builtName != null){
+                Path p = getPath();
+                for(int i=0; i<p.size(); i++){
+                    if(p.isVar(i)){
+                        String key = p.getVarName(i);
+                        builtName += "By" + Utils.capitalize(key);
+                    }
+                }
+            }
+        }
+        return builtName;
+    }
+
+
+    static String cleanNamePart(String part) {
+        if (part == null)
+            part = "Unknown";
+        part = part.replace("{", "");
+        part = part.replace("}", "");
+        part = part.replace(".", " ");
+        part = part.replace("_", "");
+        return part;
     }
 
     public Op withName(String name) {
@@ -322,7 +433,57 @@ public class Op implements Comparable<Op> {
     }
 
     public OpFunction getFunction() {
-        return function;
+        if (function != null)
+            return function;
+
+        String method = getMethod().toUpperCase();
+
+        if (hasParams(Param.In.PATH, Request.COLLECTION_KEY, Request.RESOURCE_KEY, Request.RELATIONSHIP_KEY)) {
+
+            switch (method) {
+                case "GET":
+                    return Op.OpFunction.RELATED;
+            }
+            return null;
+
+        } else if (hasParams(Param.In.PATH, Request.COLLECTION_KEY, Request.RESOURCE_KEY)) {
+            switch (method) {
+                case "GET":
+                    return Op.OpFunction.GET;
+                case "PUT":
+                    return Op.OpFunction.PUT;
+                case "PATCH":
+                    return Op.OpFunction.PATCH;
+                case "DELETE":
+                    return Op.OpFunction.DELETE;
+            }
+            return null;
+
+        } else if (hasParams(Param.In.PATH, Request.COLLECTION_KEY)) {
+            switch (method) {
+                case "GET":
+                    return Op.OpFunction.FIND;
+                case "POST":
+                    return Op.OpFunction.POST;
+                case "PUT":
+                    return Op.OpFunction.BATCH_PUT;
+                case "PATCH":
+                    return Op.OpFunction.BATCH_PATCH;
+                case "DELETE":
+                    return Op.OpFunction.BATCH_DELETE;
+            }
+            return null;
+        } else {
+            switch (method) {
+                case "GET":
+                case "POST":
+                case "PUT":
+                case "PATCH":
+                case "DELETE":
+                    return Op.OpFunction.valueOf(method);
+            }
+            return null;
+        }
     }
 
     public Op withFunction(OpFunction function) {
@@ -334,28 +495,33 @@ public class Op implements Comparable<Op> {
         return path;
     }
 
-    public Op withPath(Path requestPath) {
-        this.path = requestPath.copy();
+    public Op withPath(Path path) {
 
-        for (int i = 0; i < this.path.size(); i++) {
-            if (!this.path.isVar(i))
-                continue;
+        if (this.path == null)
+            this.path = path.copy();
 
-            if (this.path.isVar(i) && !this.path.getVarName(i).startsWith("_"))
-                continue;
+        if (this.path.size() != path.size())
+            throw ApiException.new500InternalServerError("Paths sizes are different '{}', '{}'", this.path, path);
 
-            List<Param> params = getPathParams(i);
-            Param       winner = null;
-            for (Param param : params) {
-                if (param.getKey() == null)
-                    continue;
-                if (winner == null)
-                    winner = param;
-                else if (winner.getKey().startsWith("_") && !param.getKey().startsWith("_"))
-                    winner = param;
+        for (int i = 0; i < path.size(); i++) {
+            boolean isVar = path.isVar(i);
+
+            if (isVar) {
+                Param  param = new Param(path.getVarName(i), i);
+                String regex = path.getRegex(i);
+                if (regex != null)
+                    param.withRegex(regex);
+                withParam(param);
             }
-            if (winner != null)
-                this.path.set(i, "{" + winner.getKey() + "}");
+
+            if (this.path.isVar(i) && !path.isVar(i)) {
+                this.path.set(i, path.get(i));
+            } else if (this.path.isVar(i) && isVar) {
+                String currentName = this.path.getVarName(i);
+                String newName     = this.path.getVarName(i);
+                if (currentName.startsWith("_") && !newName.startsWith("_"))
+                    this.path.set(i, newName);
+            }
         }
 
         return this;
@@ -378,7 +544,6 @@ public class Op implements Comparable<Op> {
         this.endpoint = endpoint;
         return this;
     }
-
 
 
     public Collection getCollection() {
@@ -450,4 +615,26 @@ public class Op implements Comparable<Op> {
         this.collectionPathMatch = collectionPathMatch;
         return this;
     }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public Op withDescription(String description) {
+        this.description = description;
+        return this;
+    }
+
+    public List<Triple<Action, Path, Boolean>> getActionPathMatches() {
+        return new ArrayList(actionPathMatches);
+    }
+
+    public boolean isEpAction(Action action){
+        for(Triple<Action, Path, Boolean> match : actionPathMatches){
+            if(match.getLeft() == action && match.getRight())
+                return true;
+        }
+        return false;
+    }
+
 }

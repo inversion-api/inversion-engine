@@ -57,6 +57,13 @@ public class UrlTest {
     }
 
     @Test
+    public void test_server_host_var(){
+        Url url = new Url("http://{host}:8080");
+        assertEquals("{host}", url.getHost());
+        assertEquals(8080, url.getPort());
+    }
+
+    @Test
     public void test_should_fail_parsing(){
         failUrl(".");
         failUrl("..");

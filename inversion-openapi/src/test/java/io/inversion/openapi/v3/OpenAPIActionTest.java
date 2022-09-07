@@ -41,17 +41,17 @@ public class OpenAPIActionTest {
                         "sa", //
                         "", //
                         JdbcDb.class.getResource("northwind-h2.ddl").toString()))
-                .withEndpoint(new Endpoint("asasd.text", new OpenAPIAction()).withName("ep1"))
+                //.withEndpoint(new Endpoint("asasd.text", new OpenAPIAction()).withName("ep1"))
                 //.withEndpoint(new Endpoint("GET", "aaaa.text", new OpenAPIAction()))
                 //.withEndpoint(new Endpoint("GET", "bbbb.text", new OpenAPIAction()))
-                //.withEndpoint(new Endpoint("GET", "openapi.json,openapi.yaml", new OpenAPIAction()))
-                //.withEndpoint(new Endpoint("GET", "rapidoc.html", new FileAction()))
+                .withEndpoint(new Endpoint("GET,openapi.json,openapi.yaml", new OpenAPIAction()))
+                .withEndpoint(new Endpoint("GET,rapidoc.html", new FileAction()))
 
 //                .withEndpoint(new Endpoint("*", "auth.json", new FileAction()))
 //                .withEndpoint(new Endpoint("*", "test/*", new HALAction(), new MockAction()))
 //                .withCollection(new Collection().withName("auths").withSchemaRef("http://localhost:8080/northwind/v1/us/auth.json").withProperty("id", "number").withIndex("pk", "primary", true, "id"));
 
-                .withEndpoint(new Endpoint("GET"
+                .withEndpoint(new Endpoint("*"
                         , new HALAction() //
                         //,new LinksAction() //
                         //,new AuthAction().withAuthScheme(new BearerScheme().withDescription("this is a JWT."))

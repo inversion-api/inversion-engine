@@ -3,7 +3,7 @@ package io.inversion.utils;
 import io.inversion.*;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.spring.main.InversionMain;
 import org.junit.jupiter.api.Test;
 
@@ -225,7 +225,7 @@ public class ApiClientLiveTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Utils.pipe(new GZIPInputStream(conn.getInputStream()), out);
         String str     = new String(out.toByteArray());
-        JSNode payload = JSReader.asJSNode(str);
+        JSNode payload = JSParser.asJSNode(str);
         assertEquals("world", payload.find("data.0.hello"));
 
         //-- now do the test again and the result should be the same

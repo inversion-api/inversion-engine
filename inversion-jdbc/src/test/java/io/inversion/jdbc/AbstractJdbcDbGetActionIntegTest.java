@@ -21,7 +21,7 @@ import io.inversion.Collection;
 import io.inversion.Engine;
 import io.inversion.Response;
 import io.inversion.action.db.AbstractDbGetActionIntegTest;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.jupiter.api.Test;
 
@@ -281,7 +281,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
         String collectionPath = collectionPath();
 
-        String toMatch = JSReader.parseJson("[{\"employee\":{\"reportsto\":{\"territories\":\"http://127.0.0.1/COLLECTION_PATHemployees/2/territories\"}}}]").toString();
+        String toMatch = JSParser.parseJson("[{\"employee\":{\"reportsto\":{\"territories\":\"http://127.0.0.1/COLLECTION_PATHemployees/2/territories\"}}}]").toString();
         toMatch = toMatch.replace("COLLECTION_PATH", collectionPath);
 
         assertEquals(toMatch.toLowerCase(), res.data().toString().toLowerCase());

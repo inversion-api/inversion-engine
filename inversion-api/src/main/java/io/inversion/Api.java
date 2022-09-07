@@ -28,7 +28,7 @@ import java.util.*;
 /**
  * Contains the Servers, Dbs, Collections, Endpoints and Actions that make up a REST API.
  */
-public class Api {
+public final class Api {
 
     protected final transient Logger log = LoggerFactory.getLogger(getClass().getName());
 
@@ -72,7 +72,7 @@ public class Api {
      */
     protected final transient List<ApiListener> listeners = new ArrayList<>();
 
-    protected transient Linker linker = new Linker(this);
+    protected transient Linker linker = new Linker();
 
     protected transient List<Op> ops = new ArrayList();
 
@@ -97,18 +97,6 @@ public class Api {
         withName(name);
     }
 
-//    public Api withIncludeOn(String ruleMatcherSpec) {
-//        withServer(new Server().withIncludeOn(ruleMatcherSpec));
-//        return this;
-//    }
-
-//    public Server getServer() {
-//        if (servers.size() == 0) {
-//            servers.add(new Server());
-//        }
-//        return servers.get(0);
-//    }
-
     public boolean isStarted() {
         return started;
     }
@@ -131,7 +119,8 @@ public class Api {
 
             removeExcludes();
 
-            this.ops = Collections.unmodifiableList(buildOps());
+            configureServers();
+            configureOps();
 
             started = true;
 
@@ -229,7 +218,6 @@ public class Api {
     }
 
     public Api withCollection(Collection coll) {
-        //if (coll.isLinkTbl() || coll.isExclude())
         if (coll.isExclude())
             return this;
 
@@ -493,8 +481,6 @@ public class Api {
 
     public Api withLinker(Linker linker) {
         this.linker = linker;
-        if (linker.getApi() != this) ;
-        linker.withApi(this);
         return this;
     }
 
@@ -534,6 +520,23 @@ public class Api {
         }
     }
 
+    public Db matchDb(String method, Path requestPath) {
+        //-- find the db with the most specific (longest) path match
+        Db   winnerDb      = null;
+        Path winnerDbMatch = null;
+        for (Db db : getDbs()) {
+            Path dbMatch = db.match(method, requestPath);
+            if (dbMatch != null) {
+                if (winnerDbMatch == null || dbMatch.size() > winnerDbMatch.size()) {
+                    winnerDb = db;
+                    winnerDbMatch = dbMatch;
+                }
+            }
+        }
+
+        return winnerDb;
+    }
+
 
     public List<Op> getOps() {
         return ops;
@@ -547,75 +550,14 @@ public class Api {
         return null;
     }
 
-
-    List<Op> buildOps() {
-
-        if (servers.size() == 0)
-            servers.add(new Server());
-
-        List<Op>                             operations = new ArrayList<>();
-        ArrayListValuedHashMap<String, Path> allPaths   = buildRequestPaths();
-        for (String method : allPaths.keySet()) {
-            List<Path> requestPaths = allPaths.get(method);
-            for (Path requestPath : requestPaths) {
-
-                //-- there is a template variable here that was not bound by an action.
-                if (requestPath.toString().indexOf("{_") < -1)
-                    continue;
-
-                List<Op> ops = buildOp(method, requestPath);
-                operations.addAll(ops);
-            }
-        }
-
-        operations.removeIf(o -> o.getActions().size() == 0);
-        operations.removeIf(o -> o.getActions().parallelStream().allMatch(a -> a.isDecoration()));
-
-        for (int i = 0; i < operations.size(); i++) {
-            Op o = operations.get(i);
-            if (o.getRelationship() != null) {
-                boolean found = false;
-                for (Op candiate : operations) {
-                    //TODO: probably need to distinguish between GET and FIND methods here
-                    if ("GET".equalsIgnoreCase(candiate.getMethod())) {
-                        if (candiate.getCollection() == o.getRelationship().getRelated()) {
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found) {
-                    operations.remove(i);
-                    i--;
-                }
-            }
-        }
-
-        operations.removeIf(op -> setOpFunctionAndName(op) == null);
-
-
-        deduplicateOperationNames(operations);
-        Collections.sort(operations);
-
-        for (Op op : operations) {
-            List<Rule> rules = new ArrayList();
-            Utils.add(rules, op.getEngine(), op.getApi(), op.getEndpoint(), op.getCollection());
-            rules.addAll(op.getActions());
-            Task.buildTask(rules, "hook_configureOp", op).go();
-        }
-
-
+    void configureServers() {
         ArrayListValuedHashMap<Server, Path> servers = new ArrayListValuedHashMap();
         for (Server server : getServers()) {
             servers.putAll(server, server.getAllIncludePaths());
         }
-
-        System.out.println("\r\n--------------------------------------------");
-
         System.out.println("SERVERS: ");
         for (Server server : servers.keySet()) {
             List<Path> serverPaths = new ArrayList(new LinkedHashSet(servers.get(server)));
-
             for (Path serverPath : serverPaths) {
                 List<String> serverUrls = server.getUrls();
                 if (serverUrls.size() == 0)
@@ -626,127 +568,125 @@ public class Api {
                 }
             }
         }
-
-        System.out.println("\r\nOPERATIONS:");
-
-        List<Op> apiOps = new ArrayList(operations);
-        Collections.sort(apiOps);
-
-        List<List> table = new ArrayList<>();
-        for(Op op : apiOps){
-            List row = new ArrayList();
-            table.add(row);
-            Utils.add(row, op.getMethod(), op.getPath(), op.getName(), op.getParams());
-        }
-
-        System.out.println(Utils.printTable(table));
-        System.out.println("\r\n--------------------------------------------");
-
-
-        return operations;
     }
 
-//    public Op findOperation(Op.OpFunction function, String... pathParams){
-//        for(Op op : ops){
-//            if(function != null && function != op.getFunction())
-//                continue;
-//
-//            for(String )
-//        }
-//    }
+    List<Op> configureOps() {
 
-    List<Op> buildOp(String method, Path requestPath) {
+        Map<String, Map<Endpoint, List<List<Path>>>> allPaths = generatePaths();
+        List<Op>                                     ops      = new ArrayList<>();
 
-        Path     requestPathCopy = requestPath.copy();
-        List<Op> ops             = new ArrayList<>();
+        for (String method : allPaths.keySet()) {
+            Map<Endpoint, List<List<Path>>> epMap = allPaths.get(method);
+            for (Endpoint ep : epMap.keySet()) {
+                List<List<Path>> groupedPaths = epMap.get(ep);
 
-        requestPath = requestPathCopy.copy();
-        int offset = 0;
-
-        for (Endpoint ep : getEndpoints()) {
-            requestPath = requestPathCopy.copy();
-
-            Op op = new Op();
-            op.withEngine(engine);
-            op.withApi(this);
-            op.withMethod(method);
-            op.withPath(requestPath.copy());
-
-            Path endpointMatch = ep.match(method, requestPath);
-            if (endpointMatch == null)
-                continue;
-
-            op.withEndpoint(ep);
-            op.withEndpointPathMatch(endpointMatch.copy());
-
-            //-- find the db with the most specific (longest) path match
-            Db   winnerDb      = null;
-            Path winnerDbMatch = null;
-            for (Db db : getDbs()) {
-                Path dbMatch = db.match(method, requestPath);
-                if (dbMatch != null) {
-                    if (winnerDbMatch == null || dbMatch.size() > winnerDbMatch.size()) {
-                        winnerDb = db;
-                        winnerDbMatch = dbMatch;
+                for (List<Path> paths : groupedPaths) {
+                    Op op = new Op();
+                    op.withMethod(method);
+                    op.withApi(this);
+                    op.withEngine(engine);
+                    paths.forEach(p -> op.withPath(p));
+                    if (matchOp(ep, op)) {
+                        ops.add(op);
+                        //System.out.println(op.getMethod() + " - " + op.getPath() + " - " + op);
                     }
                 }
             }
-            if (winnerDb != null) {
-                op.withDb(winnerDb);
-                op.withDbMatchPath(winnerDbMatch);
-                addParams(op, winnerDbMatch, requestPath, offset, false);
-            }
-
-            //-- pull out api action match paths before consuming the
-            //-- request path for the endpoint action matches
-            for (Action action : getActions()) {
-                Path actionMatch = action.match(method, requestPath, true);
-                if (actionMatch != null) {
-                    op.withActionMatch(action, actionMatch.copy(), false);
-                    addParams(op, actionMatch, requestPath, offset, false);
-                }
-            }
-
-            //-- consume the requestPath for Endpoint Actions to match.
-            offset = addParams(op, endpointMatch, requestPath, offset, true);
-
-            op.withActionPathMatch(requestPath.copy());
-
-            for (Action action : ep.getActions()) {
-                Path actionMatch = action.match(method, requestPath, true);
-                if (actionMatch != null) {
-                    op.withActionMatch(action, actionMatch.copy(), true);
-                    addParams(op, actionMatch, requestPath, offset, false);
-                }
-            }
-
-            List<Op> fixed = new ArrayList();
-            fixed.add(op);
-            Task.buildTask(op.getActions(), "hook_enumerateOps", fixed).go();
-            ops.addAll(fixed);
         }
-        return ops;
-    }
 
-    public void assignDefaultCollections(Op op) {
-        String collectionKey = op.getPathParamValue("_collection");
-        if (collectionKey == null) {
-
+        for (Op op : ops) {
+            Task.buildTask(op.getActions(), "configureOp", op).go();
         }
+
+        ops.removeIf(o -> o.getFunction() == null);
+        ops.removeIf(o -> o.getPath().toString().indexOf("{_") > 0);
+        ops.removeIf(o -> o.getActions().size() == 0);
+        ops.removeIf(o -> o.getActions().parallelStream().allMatch(a -> a.isDecoration()));
+        ops.removeIf(o -> o.getName() == null);
+
+        Collections.sort(ops);
+        deduplicateOperationNames(ops);
+
+        System.out.println("\r\n--------------------------------------------");
+        //System.out.println("\r\nOPERATIONS:");
+        List<List> table = new ArrayList<>();
+
+        List header = new ArrayList();
+        table.add(header);
+        Utils.add(header, "METHOD", "PATH", "OPERATION", "ENDPOINT", "COLLECTION", "ACTIONS", "PARAMS");
+
+        for (Op op : ops) {
+            List row = new ArrayList();
+            table.add(row);
+
+            List actionNames = new ArrayList();
+            op.getActions().forEach(a -> actionNames.add(a.getName() != null ? a.getName() : a.getClass().getSimpleName()));
+            Utils.add(row, op.getMethod(), op.getPath(), op.getName(), op.getEndpoint().getName(), op.getCollection() != null ? op.getCollection().getName() : null, actionNames, op.getParams());
+        }
+        System.out.println(Utils.printTable(table));
+        System.out.println("\r\n--------------------------------------------");
+
+        this.ops = Collections.unmodifiableList(ops);
+        return new ArrayList(ops);
     }
 
 
-    public ArrayListValuedHashMap<String, Path> buildRequestPaths() {
+    boolean matchOp(Endpoint ep, Op op) {
 
-        ArrayListValuedHashMap<String, Path> paths   = new ArrayListValuedHashMap<>();
-        Set<String>                          methods = new HashSet();
+        String method          = op.getMethod();
+        Path   requestPath     = op.getPath().copy();
+
+        Path endpointMatch = ep.match(method, requestPath);
+        if (endpointMatch == null)
+            return false;
+
+        op.withEndpoint(ep);
+        op.withEndpointPathMatch(endpointMatch.copy());
+
+        //-- pull out api action match paths before consuming the
+        //-- request path for the endpoint action matches
+        for (Action action : getActions()) {
+            Path actionMatch = action.match(method, requestPath, true);
+            if (actionMatch != null) {
+                op.withActionMatch(action, actionMatch.copy(), false);
+            }
+        }
+
+        //-- consume the endpoint part of the request path to relative match the actions
+        for (int i = 0; i < endpointMatch.size(); i++) {
+            if (endpointMatch.isOptional(i) || endpointMatch.isWildcard(i))
+                break;
+            requestPath.remove(0);
+        }
+
+        op.withActionPathMatch(requestPath.copy());
+
+        for (Action action : ep.getActions()) {
+            Path actionMatch = action.match(method, requestPath, true);
+            if (actionMatch != null) {
+                op.withActionMatch(action, actionMatch.copy(), true);
+            }
+        }
+
+        return true;
+    }
+
+
+    Map<String, Map<Endpoint, List<List<Path>>>> generatePaths() {
+        LinkedHashMap<String, Map<Endpoint, List<List<Path>>>> paths = new LinkedHashMap<>();
+        Set<String> methods = new LinkedHashSet();
         Utils.add(methods, "GET", "POST", "PUT", "PATCH", "DELETE");
         for (String method : methods) {
-            for (Endpoint ep : getEndpoints()) {
+            List<Endpoint> eps = new ArrayList(getEndpoints());
+            Collections.sort(eps);
+            for (Endpoint ep : eps) {
+                List<Path> endpointPaths = new ArrayList();
                 for (Rule.RuleMatcher epMatcher : ep.getIncludeMatchers()) {
                     if (!epMatcher.hasMethod(method))
                         continue;
                     for (Path epPath : epMatcher.getPaths()) {
+
+                        Db db = matchDb(method, epPath);
 
                         List<Action> epActions  = ep.getActions();
                         List<Action> allActions = new ArrayList(ep.getActions());
@@ -756,214 +696,123 @@ public class Api {
                         }
                         Collections.sort(allActions);
 
-                        List<Path> allPathsForEndpoint = new ArrayList<>();
-                        allPathsForEndpoint.add(epPath.copy());
+                        List<Path> allPathsForSingleEpMatcherPath = new ArrayList<>();
+                        //allPathsForSingleEpMatcherPath.add(epPath.copy());
 
                         for (Action action : allActions) {
-                            for (Rule.RuleMatcher actionMatcher : (List<Rule.RuleMatcher>) action.getIncludeMatchers()) {
-                                if (!actionMatcher.hasMethod(method))
-                                    continue;
-                                for (Path actionPath : actionMatcher.getPaths()) {
-                                    Path fullActionPath = null;
-                                    if (epActions.contains(action)) {
-                                        fullActionPath = Path.joinPaths(epPath, actionPath, true);
-
-                                    } else {
-                                        if (actionPath.matches(epPath, true)) {
-                                            fullActionPath = Path.joinPaths(epPath, actionPath, false);
-                                        }
-                                    }
-                                    if (fullActionPath == null)
-                                        continue;
-
-                                    allPathsForEndpoint.add(fullActionPath);
-                                    //paths.put(method, fullActionPath);
-                                }
+                            for(Path fullActionPath : (List<Path>)action.getFullIncludePaths(this, db, method, epPath, epActions.contains(action))){
+                                allPathsForSingleEpMatcherPath.add(fullActionPath);
                             }
                         }
-                        allPathsForEndpoint = Path.expandOptionals(allPathsForEndpoint);
-                        allPathsForEndpoint = Path.materializeTrivialRegexes(allPathsForEndpoint);
-                        allPathsForEndpoint = Path.filterDuplicates(allPathsForEndpoint);
-                        allPathsForEndpoint = Path.mergePaths(new ArrayList(), allPathsForEndpoint);
-                        paths.putAll(method, allPathsForEndpoint);
+                        allPathsForSingleEpMatcherPath = Path.filterDuplicates(allPathsForSingleEpMatcherPath);
+                        for(Path p : allPathsForSingleEpMatcherPath){
+                            if(p.endsWithWildcard())
+                                p.removeTrailingWildcard();
+                        }
+                        allPathsForSingleEpMatcherPath.removeIf(p -> p.size() == 0);
+                        endpointPaths.addAll(allPathsForSingleEpMatcherPath);
                     }
                 }
-            }
-        }
 
-
-        for (String key : new ArrayList<String>(paths.keySet())) {
-            List<Path> ps = new ArrayList(paths.get(key));
-            for (Path p : ps) {
-                if (p.endsWithWildcard()) {
-                    p.removeTrailingWildcard();
+                endpointPaths = Path.filterDuplicates(endpointPaths);
+                if(endpointPaths.size() > 0){
+                    List<List<Path>> groupedPaths = groupPaths(endpointPaths);
+                    Map<Endpoint, List<List<Path>>> epMap = paths.get(method);
+                    if (epMap == null) {
+                        epMap = new LinkedHashMap<>();
+                        paths.put(method, epMap);
+                    }
+                    epMap.put(ep, groupedPaths);
                 }
-                if (p.size() == 0)
-                    paths.removeMapping(key, p);
             }
         }
 
-        //-- endpoints could have produced identical paths. Filter out duplicates
-        ArrayListValuedHashMap<String, Path> merged = new ArrayListValuedHashMap<>();
-        for (String method : paths.keySet()) {
-            List<Path> before = paths.get(method);
-            List<Path> after  = Path.filterDuplicates(before);
-            merged.putAll(method, after);
-        }
-        paths = merged;
+//TODO: this still needs to be here but the algorithm has changed
+//        //-- endpoints could have produced identical paths. Filter out duplicates
+//        ArrayListValuedHashMap<String, Path> merged = new ArrayListValuedHashMap<>();
+//        for (String method : paths.keySet()) {
+//            List<Path> before = paths.get(method);
+//            List<Path> after  = Path.filterDuplicates(before);
+//            merged.putAll(method, after);
+//        }
+//        paths = merged;
 
 
-        System.out.println("\r\nPATHS ------------------------");
-        List<String> methodsList = new ArrayList(paths.keySet());
-        Collections.sort(methodsList);
-        for (String method : methodsList) {
-            List<Path> pathList = new ArrayList(paths.get(method));
-            for (Path path : pathList) {
-                System.out.println(method + " " + path);
-            }
-        }
-        System.out.println("END PATHS --------------------\r\n");
+//        System.out.println("\r\nPATHS ------------------------");
+//        List<String> methodsList = new ArrayList(paths.keySet());
+//        Collections.sort(methodsList);
+//        for (String method : methodsList) {
+//            List<Path> pathList = new ArrayList(paths.get(method));
+//            for (Path path : pathList) {
+//                System.out.println(method + " " + path);
+//            }
+//        }
+//        System.out.println("END PATHS --------------------\r\n");
 
         return paths;
     }
 
-    protected int addParams(Op op, Path matchedPath, Path requestPath, int offset, boolean consume) {
+    /**
+     * Groups into lists of compatible potentially variablized paths
+     * based on bidirectional matching.
+     *
+     * @param paths
+     * @return
+     */
+    List<List<Path>> groupPaths(List<Path> paths) {
 
-        for (int i = 0; i < matchedPath.size() && i < requestPath.size(); i++) {
-            if (matchedPath.isVar(i)) {
-                String key   = matchedPath.getVarName(i);
-                Param  param = new Param(key, i + offset);
-                param.withRequired(true);
-                String regex = matchedPath.getRegex(i);
-                if (regex != null)
-                    param.withRegex(regex);
-                op.withParam(param);
+        paths = Path.filterDuplicates(paths);
+
+        //System.out.println(paths);
+
+        List<List<Path>> groups   = new ArrayList<>();
+        List<Path>       dynamics = new ArrayList();
+        List<Path>       statics  = new ArrayList();
+        List<Path>       unbounds = new ArrayList();
+
+        for (Path p : paths) {
+            if (p.hasVars()) {
+                boolean unbound = false;
+                for (int i = 0; i < p.size(); i++) {
+                    String name = p.getVarName(i);
+                    if (name != null && name.startsWith("_")) {
+                        unbound = true;
+                        break;
+                    }
+                }
+                if (unbound)
+                    unbounds.add(p);
+                else
+                    dynamics.add(p);
+            } else
+                statics.add(p);
+        }
+
+        statics.forEach(p -> groups.add(Utils.add(new ArrayList(), p)));
+        dynamics.forEach(p -> groups.add(Utils.add(new ArrayList(), p)));
+
+        for (Path unbound : unbounds) {
+            for (List<Path> group : groups) {
+                boolean matches = true;
+                for (Path p : group) {
+                    if (!p.matches(unbound, true)) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches)
+                    group.add(unbound);
             }
         }
 
-        if (consume) {
-            for (int i = 0; i < matchedPath.size(); i++) {
-                if (matchedPath.isOptional(i) || matchedPath.isWildcard(i))
-                    break;
-                requestPath.remove(0);
-                offset += 1;
-            }
-        }
-        return offset;
-    }
+        //System.out.println(groups);
 
-    static String cleanNamePart(String part) {
-        if (part == null)
-            part = "Unknown";
-        part = part.replace("{", "");
-        part = part.replace("}", "");
-        part = part.replace(".", " ");
-        part = part.replace("_", "");
-        return part;
-    }
-
-    public String setOpFunctionAndName(Op op) {
-
-        String name = null;
-
-        Collection collection  = op.getCollection();
-        String     defaultName = op.getEndpoint().getName();
-        if (defaultName == null) {
-            defaultName = op.getPath().last();
-            defaultName = cleanNamePart(defaultName);
-            defaultName = Utils.beautifyName(defaultName);
-        }
-
-        String singular = Utils.capitalize(collection == null ? defaultName : collection.getSingularDisplayName());
-        String plural   = Utils.capitalize(collection == null ? defaultName : collection.getPluralDisplayName());
-
-        String method = op.getMethod().toUpperCase();
-
-        if (op.hasParams(Param.In.PATH, Request.COLLECTION_KEY, Request.RESOURCE_KEY, Request.RELATIONSHIP_KEY)) {
-
-            switch (method) {
-                case "GET":
-                    name = "find" + plural + "Related" + Utils.capitalize(cleanNamePart(op.getPathParamValue(Request.RELATIONSHIP_KEY)));
-                    op.function = Op.OpFunction.RELATED;
-                    break;
-                case "POST":
-                case "PUT":
-                case "PATCH":
-                case "DELETE":
-                    return null;//-- unsupported operations
-            }
-
-        } else if (op.hasParams(Param.In.PATH, Request.COLLECTION_KEY, Request.RESOURCE_KEY)) {
-            switch (method) {
-                case "GET":
-                    name = "get" + singular;
-                    op.function = Op.OpFunction.GET;
-                    break;
-//                case "POST":
-//                    name = "createIdentified" + singular;
-//                    op.function = Op.OpFunction.POST;
-//                    break;
-                case "PUT":
-                    name = "update" + singular;
-                    op.function = Op.OpFunction.PUT;
-                    break;
-                case "PATCH":
-                    name = "patch" + singular;
-                    op.function = Op.OpFunction.PATCH;
-                    break;
-                case "DELETE":
-                    name = "delete" + singular;
-                    op.function = Op.OpFunction.DELETE;
-                    break;
-            }
-
-        } else if (op.hasParams(Param.In.PATH, Request.COLLECTION_KEY)) {
-            switch (method) {
-                case "GET":
-                    name = "find" + plural;
-                    op.function = Op.OpFunction.FIND;
-                    break;
-                case "POST":
-                    name = "create" + singular;
-                    op.function = Op.OpFunction.POST;
-                    break;
-                case "PUT":
-                    name = "batchUpdate" + plural;
-                    op.function = Op.OpFunction.BATCH_PUT;
-                    break;
-                case "PATCH":
-                    name = "batchPatch" + plural;
-                    op.function = Op.OpFunction.BATCH_PATCH;
-                    break;
-                case "DELETE":
-                    name = "batchDelete" + plural;
-                    op.function = Op.OpFunction.BATCH_DELETE;
-                    break;
-            }
-        } else {
-            switch (method) {
-                case "GET":
-                case "POST":
-                case "PUT":
-                case "PATCH":
-                case "DELETE":
-                    name = Utils.beautifyName(method.toLowerCase() + " " + defaultName);
-                    op.function = Op.OpFunction.valueOf(method);
-                    break;
-            }
-        }
-
-        for (int i = 0; i < op.getPath().size(); i++) {
-            if (op.getPath().isVar(i))
-                name += "By" + Utils.capitalize(cleanNamePart(op.getPath().getVarName(i)));
-        }
-
-        op.withName(name);
-        return name;
+        return groups;
     }
 
 
     void deduplicateOperationNames(List<Op> ops) {
+        Collections.sort(ops);
         ArrayListValuedHashMap<String, Op> map = new ArrayListValuedHashMap<>();
         ops.forEach(op -> map.put(op.getName(), op));
 

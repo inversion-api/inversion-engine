@@ -16,8 +16,8 @@
  */
 package io.inversion.action.openapi;
 
-import io.inversion.*;
 import io.inversion.Collection;
+import io.inversion.*;
 import io.inversion.action.security.AuthScheme;
 import io.inversion.utils.Path;
 import io.inversion.utils.Task;
@@ -26,6 +26,8 @@ import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.servers.ServerVariable;
 import io.swagger.v3.oas.models.servers.ServerVariables;
@@ -48,21 +50,6 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 
         List<Op> opsToDoc = new ArrayList(req.getApi().getOps());
 
-//        //-- important, this sorts so that GET is processed first so a
-//        //-- FIND can reference this schema created by the GET
-//        Collections.sort(opsToDoc, new Comparator<Op>() {
-//            @Override
-//            public int compare(Op o1, Op o2) {
-//
-//                int val1 = Op.functionAsInt(o1.getFunction());
-//                int val2 = Op.functionAsInt(o2.getFunction());
-//                if(val1 != val2){
-//                    return val1 > val2 ? 1 : -1;
-//                }
-//                return o1.getOperationPath().compareTo(o2.getOperationPath());
-//            }
-//        });
-
         //-- remove any endpoints that end with the ignoredSuffixes
         opsToDoc.removeIf(o -> ignoredSuffixes.parallelStream().anyMatch(suffix -> o.getPath().toString().endsWith(suffix)));
 
@@ -82,23 +69,23 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
     //TODO: change this so internal ops are not documented in the first place...
     //...requires related functions to internal endpoints be able to lazy create
     //their ops...need to think about this more
-    protected void removeInternalOps(OpenAPI openApi, List<Op> ops){
-        for(Op op : ops){
-            if(op.isInternal()){
-                switch(op.getMethod().toUpperCase()){
-                    case "GET" :
+    protected void removeInternalOps(OpenAPI openApi, List<Op> ops) {
+        for (Op op : ops) {
+            if (op.isInternal()) {
+                switch (op.getMethod().toUpperCase()) {
+                    case "GET":
                         openApi.getPaths().get(op.getOperationPath()).setGet(null);
                         break;
-                    case "POST" :
+                    case "POST":
                         openApi.getPaths().get(op.getOperationPath()).setPost(null);
                         break;
-                    case "PUT" :
+                    case "PUT":
                         openApi.getPaths().get(op.getOperationPath()).setPut(null);
                         break;
-                    case "PATCH" :
+                    case "PATCH":
                         openApi.getPaths().get(op.getOperationPath()).setPatch(null);
                         break;
-                    case "DELETE" :
+                    case "DELETE":
                         openApi.getPaths().get(op.getOperationPath()).setDelete(null);
                         break;
                 }
@@ -129,16 +116,11 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 
     protected void documentServers(OpenAPI openApi, List<Op> ops, Request req) {
         if (openApi.getServers() == null) {
-//            Server server = new Server();
-//            String url    = req.getServerPath().toString();
-//            server.setUrl("/" + url);
-//            openApi.setServers(Utils.add(new ArrayList(), server));
-
             List<Server> apiServers = new ArrayList();
 
             ArrayListValuedHashMap<io.inversion.Server, Path> serversMap = new ArrayListValuedHashMap<>();
-            Api api = ops.get(0).getApi();
-            for(io.inversion.Server server : api.getServers()){
+            Api                                               api        = ops.get(0).getApi();
+            for (io.inversion.Server server : api.getServers()) {
                 serversMap.putAll(server, server.getAllIncludePaths());
             }
 
@@ -156,7 +138,7 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
                         Server apiServer = new Server();
                         apiServers.add(apiServer);
 
-                        if(server.getDescription() != null){
+                        if (server.getDescription() != null) {
                             apiServer.setDescription(server.getDescription());
                         }
 
@@ -164,19 +146,25 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
                         path.removeTrailingWildcard();
                         apiServer.setUrl(host + "/" + path);
 
-                        if(server.getParams().size() > 0){
+                        if (server.getParams().size() > 0) {
                             ServerVariables variables = apiServer.getVariables();
-                            if(variables == null) {
+                            if (variables == null) {
                                 variables = new ServerVariables();
                                 apiServer.setVariables(variables);
                             }
-                            for(Param param : server.getParams()){
-                                String key = param.getKey();
+                            for (Param param : server.getParams()) {
+                                String key  = param.getKey();
                                 String desc = param.getDescription();
-                                desc = desc != null ? desc : key;
+
                                 ServerVariable var = new ServerVariable();
-                                var.setDefault("asdf");
-                                var.setDescription(desc);
+
+                                String defaultValue = req.findParam(key, Param.In.SERVER_PATH);
+                                if (!Utils.empty(defaultValue))
+                                    var.setDefault(defaultValue);
+
+                                if(!Utils.empty(desc))
+                                    var.setDescription(desc);
+
                                 variables.put(key, var);
                             }
                         }
@@ -191,7 +179,6 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
     }
 
     protected void documentSchemas(OpenAPI openApi, Request req) {
-
         Components comps = openApi.getComponents();
         if (comps == null) {
             comps = new Components();
@@ -205,22 +192,9 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
         }
 
         documentErrorSchema(openApi);
-
-//        //TODO: change this to HAL Links
-//        //TODO: inspect op to make sure we are using HAL
-//        documentCollectionLinksSchema(openApi);
-//
-//        for (Collection coll : req.getApi().getCollections()) {
-//            if(ignoreCollection(coll))
-//                continue;
-//
-//            //TODO: only document collections with an op
-//            documentResourceSchemas(openApi, coll);
-//            documentCollectionSchemas(openApi, coll);
-//        }
     }
 
-    protected void documentSecurity(OpenAPI openApi, List<Operation> opsToDoc) {
+//    protected void documentSecurity(OpenAPI openApi, List<Op> opsToDoc) {
 //        Components                  components      = openApi.getComponents();
 //        Map<String, SecurityScheme> securitySchemes = new HashMap();
 //
@@ -320,7 +294,7 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 //                    op.operation.setSecurity(op.securityRequirements);
 //            }
 //        }
-    }
+//    }
 
     protected String getDescription(AuthScheme scheme, Param param) {
         String schemeDesc = scheme.getDescription();
@@ -587,8 +561,8 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
         }
     }
 
-    public void hook_documentOp(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
-        OpenAPIWriter.super.hook_documentOp(docChain, openApi, ops, op, schemas);
+    public Operation hook_documentOp(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
+        return OpenAPIWriter.super.hook_documentOp(docChain, openApi, ops, op, schemas);
 //        PathItem pathItem = openApi.getPaths().get(op.getPath());
 //        if (pathItem != null) {
 //            Operation op = pathItem.getGet();

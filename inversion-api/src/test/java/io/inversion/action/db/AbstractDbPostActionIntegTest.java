@@ -21,7 +21,7 @@ import io.inversion.Response;
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
@@ -41,12 +41,12 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res = engine.get(url("employees?employeeId=5&expands=employees,territories,territories.region"));
 
         JSNode employee5 = res.findNode("data.0");
-        JSNode employee5Copy = JSReader.asJSNode(employee5.toString());
+        JSNode employee5Copy = JSParser.asJSNode(employee5.toString());
 
         //-- this adds a logical duplicate
         JSList territories = res.findList("data.0.territories");
         territories.add(territories.get(territories.size()-1));                                   //-- this adds a referential duplicate
-        territories.add(JSReader.parseJson(territories.get(territories.size()-1).toString()));      //--this adds a copy duplicate
+        territories.add(JSParser.parseJson(territories.get(territories.size()-1).toString()));      //--this adds a copy duplicate
         territories.getNode(1).putValue("region", new JSMap("regionId", 1)); //-- this is another duplicate
 
         res = engine.put(employee5.getString("href"), employee5);
@@ -102,7 +102,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         JSNode employee5 = res.findNode("data.0");
 
         String comp1 = res.getJson().toString();
-        String comp2 = JSReader.parseJson(comp1).toString();
+        String comp2 = JSParser.parseJson(comp1).toString();
         assertEquals(comp1, comp2);
 
         System.out.println(employee5);
@@ -133,7 +133,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         assertEquals(4, res.findInt("data.0.region.regionId"));
         assertEquals("Southern", res.findString("data.0.region.regionDescription"));
 
-        JSNode updateTo30346 = JSReader.asJSNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/put_with_nested_one_to_many_post.json")));
+        JSNode updateTo30346 = JSParser.asJSNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/put_with_nested_one_to_many_post.json")));
         res = engine.put(url("territories"), updateTo30346);
         res.dump();
 
@@ -219,7 +219,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         Response res;
         Engine   engine = engine();
 
-        JSNode john = JSReader.asJSNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/upsert001-1.json")));
+        JSNode john = JSParser.asJSNode(Utils.read(AbstractDbPostActionIntegTest.class.getResourceAsStream("upsert001/upsert001-1.json")));
 
         res = engine.get(url("employees?employeeId=5&expands=employees"));
         JSNode steve = res.findNode("data.0");

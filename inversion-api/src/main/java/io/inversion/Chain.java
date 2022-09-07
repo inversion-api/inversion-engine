@@ -25,7 +25,7 @@ import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import java.util.*;
 
-public class Chain {
+public final class Chain {
 
     public static final Set<String> APPEND_PARAMS = Collections.unmodifiableSet(Utils.add(new HashSet(), "include", "exclude", "collapse"));
 
@@ -178,119 +178,7 @@ public class Chain {
 
     public static String buildLink(Collection collection, String resourceKey, String relationshipKey) {
         Request req       = top().getRequest();
-        Request linkedReq = req.getApi().getLinker().buildRequest(req, null, "GET", collection, resourceKey, relationshipKey, null);
-        //if (linkedReq == null)
-        //    throw ApiException.new400BadRequest("Unable to find a valid operation.");
-
-        if (linkedReq == null)
-            return null;
-
-        Url    url = linkedReq.getUrl();
-        String str = url.toString();
-        //System.out.println(str);
-        return str;
-
-//        Request req = top().getRequest();
-//
-//
-//        if(subCollectionKey != null)
-//        Operation op = req.getApi().findOperation(req, null, null, resourceKey, relationship
-//
-//
-//        Request req = top().getRequest();
-//
-//        String collectionKey = collection.getName();
-//
-//        if (req.getCollection() == collection)
-//            collectionKey = req.getCollectionKey();
-//
-//        StringBuilder url = new StringBuilder(Utils.empty(req.getApiUrl()) ? "" : req.getApiUrl());
-//
-//        if (!Utils.endsWith(url, "/"))
-//            url.append("/");
-//
-//        if (req.getCollection() != null && (collection == req.getCollection() || collection.getDb() == req.getCollection().getDb()))//
-//        {
-//            //going after the same collection...so must be going after the same endpoint
-//            //so get the endpoint path from the current request and ame sure it is on the url.
-//
-//            Path epp = req.getEndpointPath();
-//
-//            if (epp != null && epp.size() > 0) {
-//                url.append(epp).append("/");
-//            }
-//        } else if (collection.getDb().getEndpointPath() != null) {
-//            Path epP = collection.getDb().getEndpointPath();
-//
-//            for (int i = 0; i < epP.size(); i++) {
-//                if (epP.isWildcard(i))
-//                    break;
-//
-//                if (epP.isVar(i)) {
-//                    String value;
-//                    String name = epP.getVarName(i);
-//                    switch (name.toLowerCase()) {
-//                        case "_collection":
-//                            value = collection.getName();
-//                            break;
-//                        case "_resource":
-//                            value = resourceKey + "";
-//                            break;
-//                        case "_relationship":
-//                            value = subCollectionKey;
-//                            break;
-//                        default:
-//                            value = req.getUrl().getParam(name);
-//                    }
-//                    if (value == null)
-//                        throw ApiException.new500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
-//
-//                    url.append(epP.get(i)).append("/");
-//                } else {
-//                    url.append(epP.get(i)).append("/");
-//                }
-//            }
-//
-//            url.append(collection.getDb().getEndpointPath()).append("/");
-//        }
-//
-//        if (!Utils.empty(collectionKey)) {
-//            if (!Utils.endsWith(url, "/"))
-//                url.append("/");
-//
-//            url.append(collectionKey);
-//        }
-//
-//        if (!Utils.empty(resourceKey)){
-//            if (!Utils.endsWith(url, "/"))
-//                url.append("/");
-//            url.append(resourceKey.toString());
-//        }
-//
-//
-//        if (!Utils.empty(subCollectionKey)){
-//            if (!Utils.endsWith(url, "/"))
-//                url.append("/");
-//            url.append(subCollectionKey);
-//        }
-//
-//        if (req.getApi().getUrl() != null && !Utils.startsWith(url, req.getApi().getUrl())) {
-//            String newUrl = req.getApi().getUrl();
-//            while (newUrl.endsWith("/"))
-//                newUrl = newUrl.substring(0, newUrl.length() - 1);
-//
-//            url = new StringBuilder(newUrl).append(url.substring(url.indexOf("/", 8)));
-//        }
-//
-//        if (req.getApi() != null) {
-//            if (Utils.empty(req.getApi().getUrl())) {
-//                String proto = req.getHeader("x-forwarded-proto");
-//                if (!Utils.empty(proto)) {
-//                    url = new StringBuilder(proto).append(url.substring(url.indexOf(":")));
-//                }
-//            }
-//        }
-//        return new Url(url.toString()).toString();
+        return req.getApi().getLinker().buildLink(req, collection, resourceKey, relationshipKey);
     }
 
     public Chain withUser(User user) {

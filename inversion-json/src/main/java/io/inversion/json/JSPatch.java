@@ -31,7 +31,7 @@ public interface JSPatch {
 
         try {
             JsonNode target  = JsonPatch.apply(mapper.readValue(patches.toString(), JsonNode.class), mapper.readValue(getJson().toString(), JsonNode.class));
-            JSNode   patched = JSReader.asJSNode(target.toString());
+            JSNode   patched = JSParser.asJSNode(target.toString());
             getJson().clear();
             patched.getProperties().forEach(p -> getJson().putValue(p.getKey(), p.getValue()));
 

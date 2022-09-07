@@ -78,7 +78,7 @@ public class RqlParserTest {
             for (int j = 1; j < test.size(); j++) {
                 Object query = test.get(j).toString();
                 if (query instanceof String)
-                    query = RqlParser.parse(query.toString()).toString();
+                    query = Rql.parse(query.toString()).toString();
                 else
                     query = query.toString();
 
@@ -92,17 +92,17 @@ public class RqlParserTest {
 
     @Test
     public void test2() throws Exception {
-        Term t = RqlParser.parse("w(name,'BANANA KG (RESEAU')");
+        Term t = Rql.parse("w(name,'BANANA KG (RESEAU')");
 
         assertEquals("BANANA KG (RESEAU", t.getTerm(1).getToken());
 
-        t = RqlParser.parse("w(name,'BANANA KG (RESEAU)')");
+        t = Rql.parse("w(name,'BANANA KG (RESEAU)')");
         assertEquals("BANANA KG (RESEAU)", t.getTerm(1).getToken());
     }
 
     @Test void testMultipleCommaSeparateTerms(){
 
-        Term t = RqlParser.parse("fx(1,2),fx(3,4)");
+        Term t = Rql.parse("fx(1,2),fx(3,4)");
         System.out.println(t);
 
     }

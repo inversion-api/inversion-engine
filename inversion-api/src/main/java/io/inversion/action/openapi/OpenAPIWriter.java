@@ -20,7 +20,7 @@ import java.util.*;
 
 public interface OpenAPIWriter<T extends OpenAPIWriter> {
 
-    default void hook_documentOp(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
+    default Operation hook_documentOp(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
         Operation operation = null;
         switch (op.getFunction()) {
             case GET:
@@ -63,6 +63,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
                     operation.addTagsItem(tag);
             }
         }
+        return operation;
     }
 
     default Operation documentOpGet(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
@@ -463,6 +464,10 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
 
     default String getDescription(Op op) {
 
+        String desc = op.getDescription();
+        if(desc != null)
+            return desc;
+
         if (op.getCollection() == null)
             return "";
 
@@ -504,10 +509,6 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
     }
 
     default OpenAPIWriter addResponse(Operation operation, Op op, String status, String description, String schemaName) {
-
-        if ("404".equals(schemaName))
-            System.out.println("asdf");
-
         if (description == null) {
             switch (status) {
                 case "200":

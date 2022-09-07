@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ServerTest {
 
     @Test
-    public void hook_wiringComplete_conflictingPathParams_throwsException() {
+    public void lazyConfig_conflictingPathParams_throwsException() {
 
         try {
             Server s = new Server("http://127.0.0.1/dev/{version}/{tenant}/*",
@@ -21,7 +21,7 @@ public class ServerTest {
     }
 
     @Test
-    public void hook_wiringComplete_conflictingHostParams_throwsException() {
+    public void lazyConfig_conflictingHostParams_throwsException() {
 
         try {
             Server s = new Server("http://{tenant}.api.com/dev/{version}/{tenant}/*",
@@ -34,7 +34,7 @@ public class ServerTest {
     }
 
     @Test
-    public void hook_wiringComplete_multipleCompatibleUrlsAndPaths() {
+    public void lazyConfig_multipleCompatibleUrlsAndPaths() {
 
         Server s = new Server("http://{tenant}.dev.api.com/dev/{version}/{tenant}/*",
                 "http://{tenant}.stage.api.com/stage/{version}/{tenant}/*",
@@ -47,7 +47,7 @@ public class ServerTest {
 
 
     @Test
-    public void hook_wiringComplete_mergeUrlPaths() {
+    public void lazyConfig_mergeUrlPaths() {
 
         Server server = new Server("http://localhost/urlPath")
                 .withIncludeOn("GET,path1/path1.1,path2/*")
@@ -56,9 +56,10 @@ public class ServerTest {
                 .withExcludeOn("POST,path3/excluded/*");
 
 
-        server.hook_wiringComplete_mergeUrlPaths();
+        server.checkLazyConfig();//doLazyConfig();//lazyConfig_mergeUrlPaths();
 
         String actualIncludes = "[[GET,urlPath/path1/path1.1,urlPath/path2/*], [POST,urlPath/path3/*]]";
+                                //""
         String actualExcludes = "[[PUT,urlPath/path2/excluded/*], [POST,urlPath/path3/excluded/*]]";
 
         assertEquals(actualIncludes, server.getIncludeMatchers().toString());
@@ -66,7 +67,7 @@ public class ServerTest {
     }
 
     @Test
-    public void hook_wiringComplete_removeUrlPaths() {
+    public void lazyConfig_removeUrlPaths() {
         Server server = new Server("http://localhost/urlPath/toRemove",
                 "http://localhost:8080/urlPath/toRemove",
                 "https://localhost/urlPath/toRemove",
@@ -74,7 +75,7 @@ public class ServerTest {
                 "some/path",
                 null);
 
-        server.hook_wiringComplete_removeUrlPaths();
+        server.checkLazyConfig();//lazyConfig_removeUrlPaths();
 
         String expected = "[http://localhost, http://localhost:8080, https://localhost, *, some/path]";
         String actual   = server.getUrls().toString();
@@ -82,7 +83,7 @@ public class ServerTest {
     }
 
     @Test
-    public void hook_wiringComplete_applyParams() {
+    public void lazyConfig_applyParams() {
         Server server = new Server().withUrls("http://{host}:8080/",
                 "http://{host}.acme.com",
                 "https://{host}.secure_acme.com")
@@ -90,7 +91,7 @@ public class ServerTest {
                 .withIncludeOn("stage/{tenant}")
                 .withIncludeOn("prod/{tenant}");
 
-        server.hook_wiringComplete_applyParams();
+        server.checkLazyConfig();//lazyConfig_applyParams();
         System.out.println(server.getParams());
     }
 

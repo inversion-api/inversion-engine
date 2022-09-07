@@ -16,12 +16,51 @@
  */
 package io.inversion.action.security.schemes;
 
+import io.inversion.Param;
+import io.inversion.Request;
 import io.inversion.action.security.AuthScheme;
+
+import javax.naming.OperationNotSupportedException;
+import java.util.List;
 
 public abstract class ApiKeyScheme extends AuthScheme {
 
-    public ApiKeyScheme(){
+    protected Param.In in  = Param.In.HEADER;
+    protected String   key = "X-API-KEY";
+
+    public ApiKeyScheme() {
         withType(AuthSchemeType.apiKey);
     }
 
+    public synchronized List<Param> getParams(){
+        if(super.getParams().size() == 0){
+            Param p = new Param();
+            p.withIn(in);
+            p.withKey(key);
+            withParam(p);
+        }
+        return super.getParams();
+    }
+
+    protected String getApiKey(Request req){
+        return req.findParam(key, in);
+    }
+
+    public Param.In getIn() {
+        return in;
+    }
+
+    public ApiKeyScheme withIn(Param.In in) {
+        this.in = in;
+        return this;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public ApiKeyScheme withKey(String key) {
+        this.key = key;
+        return this;
+    }
 }

@@ -18,7 +18,7 @@ package io.inversion;
 
 
 import io.inversion.json.JSMap;
-import io.inversion.rql.RqlParser;
+import io.inversion.rql.Rql;
 import io.inversion.rql.Term;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
@@ -34,7 +34,7 @@ import java.util.*;
  * <p>
  * A number of different utility methods are provided to make it simple to find or remove different query string keys.
  */
-public class Url {
+public final class Url {
     /**
      * The url string as supplied to the constructor, with 'http://localhost/' prepended if the constructor url arg did not contain a host
      */
@@ -307,6 +307,9 @@ public class Url {
     }
 
     public Path getPath() {
+        if(path == null)
+            return null;
+
         return new Path(path);
     }
 
@@ -355,6 +358,12 @@ public class Url {
         return this;
     }
 
+    public Url withParam(Term term){
+        params.put(term.toString(), null);
+        return this;
+    }
+
+
     /**
      * Adds name/value to <code>params</code> overwriting any preexisting key/value pair
      * on a key case insensitive basis.
@@ -379,7 +388,7 @@ public class Url {
         if (!Utils.empty(name)) {
             if ("q".equalsIgnoreCase(name)) {
                 value = "and(" + value + ")";
-                Term term = RqlParser.parse(value);
+                Term term = Rql.parse(value);
                 for (Term child : term.getTerms())
                     withParam(child.toString(), null);
             } else {

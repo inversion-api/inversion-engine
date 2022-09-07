@@ -22,7 +22,7 @@ import io.inversion.Response;
 import io.inversion.action.misc.FileAction;
 import io.inversion.json.JSList;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 import io.swagger.parser.OpenAPIParser;
@@ -102,7 +102,7 @@ public class OpenAPIAction<A extends OpenAPIAction> extends FileAction<A> {
 
             File debug = new File("./openapi.json");
             if(debug.exists()){
-                JSNode json = (JSNode)JSReader.parseJson(debug.toURI().toURL().openStream());
+                JSNode json = (JSNode) JSParser.parseJson(debug.toURI().toURL().openStream());
                 res.withJson(json);
                 return;
             }
@@ -114,7 +114,7 @@ public class OpenAPIAction<A extends OpenAPIAction> extends FileAction<A> {
             openApi = Json.mapper().readValue(json.toString(), OpenAPI.class);
 
             if (file.toLowerCase().endsWith(".yaml")) {
-                res.withJson(null);
+                res.withJson((JSNode)null);
                 res.withContentType("application/yaml");
                 res.withText(Yaml.pretty(openApi));
             }
@@ -139,7 +139,7 @@ public class OpenAPIAction<A extends OpenAPIAction> extends FileAction<A> {
      */
     public JSNode writeOpenAPI(Request req, OpenAPI openApi) {
         String  string  = Json.pretty(openApi);
-        JSNode  json    = JSReader.asJSNode(string);
+        JSNode  json    = JSParser.asJSNode(string);
         JSList patches = findPatches(req);
         if (patches.size() > 0)
             json.patch(patches);
@@ -186,7 +186,7 @@ public class OpenAPIAction<A extends OpenAPIAction> extends FileAction<A> {
                     String      patchPath = new Path(patchesBaseDir, pathString, "openapi.patch" + (j == 0 ? "" : ("." + j)) + ".json").toString();
                     InputStream stream    = Utils.findInputStream(this, patchPath);
                     if (stream != null) {
-                        patches.add(JSReader.asJSNode(Utils.read(stream)));
+                        patches.add(JSParser.asJSNode(Utils.read(stream)));
                     }
                 }
             }

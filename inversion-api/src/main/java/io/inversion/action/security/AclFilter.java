@@ -30,30 +30,30 @@ import java.util.List;
  * specific method/path combinations and can also specify input/output
  * parameters that are either required or restricted
  */
-public class AclAction extends Action<AclAction> {
+public class AclFilter extends Filter<AclFilter> {
     protected final List<AclRule> aclRules = new ArrayList<>();
 
-    public AclAction orRequireAllPerms(String ruleMatcherSpec, String permission1, String... permissionsN) {
+    public AclFilter orRequireAllPerms(String ruleMatcherSpec, String permission1, String... permissionsN) {
         withAclRules(AclRule.requireAllPerms(ruleMatcherSpec, permission1, permissionsN));
         return this;
     }
 
-    public AclAction orRequireOnePerm(String ruleMatcherSpec, String permission1, String... permissionsN) {
+    public AclFilter orRequireOnePerm(String ruleMatcherSpec, String permission1, String... permissionsN) {
         withAclRules(AclRule.requireOnePerm(ruleMatcherSpec, permission1, permissionsN));
         return this;
     }
 
-    public AclAction orRequireAllRoles(String ruleMatcherSpec, String role1, String... rolesN) {
+    public AclFilter orRequireAllRoles(String ruleMatcherSpec, String role1, String... rolesN) {
         withAclRules(AclRule.requireAllRoles(ruleMatcherSpec, role1, rolesN));
         return this;
     }
 
-    public AclAction orRequireOneRole(String ruleMatcherSpec, String role1, String... rolesN) {
+    public AclFilter orRequireOneRole(String ruleMatcherSpec, String role1, String... rolesN) {
         withAclRules(AclRule.requireOneRole(ruleMatcherSpec, role1, rolesN));
         return this;
     }
 
-    public AclAction withAclRules(AclRule... acls) {
+    public AclFilter withAclRules(AclRule... acls) {
         for (AclRule acl : acls) {
             if (!aclRules.contains(acl)) {
                 aclRules.add(acl);

@@ -19,19 +19,15 @@ package io.inversion;
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSReader;
-import io.inversion.rql.RqlParser;
+import io.inversion.json.JSParser;
+import io.inversion.rql.Rql;
 import io.inversion.rql.Term;
 import io.inversion.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -200,7 +196,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
                     if (value instanceof JSList)
                         return value;
                     else
-                        return JSReader.asJSList(value + "");
+                        return JSParser.asJSList(value + "");
 
                 case "object":
                     if (value instanceof JSNode)
@@ -210,7 +206,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
                         if (json.length() > 0) {
                             char c = json.charAt(0);
                             if (c == '[' || c == '{')
-                                return JSReader.parseJson(value + "");
+                                return JSParser.parseJson(value + "");
                         }
                         return json;
                     }
@@ -333,7 +329,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
 
         for (String key : params.keySet()) {
             String value = params.get(key);
-            Term   term  = RqlParser.parse(key, value);
+            Term   term  = Rql.parse(key, value);
 
             List<Term> illegalTerms = term.stream().filter(t -> t.isLeaf() && reservedParams.contains(t.getToken())).collect(Collectors.toList());
             if (illegalTerms.size() > 0) {
@@ -630,21 +626,11 @@ public abstract class Db<T extends Db> extends Rule<T> {
 
         for (Collection coll : getCollections()) {
             if (coll.getName().equals(coll.getTableName())) {
-                //collection has not already been specifically customized
+                //-- collection has not already been specifically customized
                 String prettyName = beautifyCollectionName(coll.getTableName());
-
-//                String pluralName = toPluralForm(prettyName);
-//                String singularName = toSingularForm(prettyName);
-
                 String pluralName =  Utils.toPluralForm(prettyName);
                 String singularName = prettyName;
-
-
-//                if(pluralName.equals(singularName))//-- algo did not handle pluralization "correctly"
-//                    pluralName += "s";
-
-                coll.withName(singularName);
-                //coll.withName(pluralName);
+                coll.withName(pluralName);
                 coll.withSingularDispalyName(Utils.capitalize(singularName));
                 coll.withPluralDisplayName(Utils.capitalize(pluralName));
             }
@@ -652,9 +638,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
             for (Property prop : coll.getProperties()) {
                 if (prop.getColumnName().equals(prop.getJsonName())) {
                     //-- json name has not already been specifically customized
-
                     String prettyName = beautifyName(prop.getColumnName());
-
 //                    if(prop.getPk() != null) {
 //                        String pkCol = prop.getPk().getColumnName();
 //                        pkCol = capitalize(pkCol);
@@ -768,7 +752,6 @@ public abstract class Db<T extends Db> extends Rule<T> {
             return includeTables.get(tableName);
 
         String collectionName = beautifyName(tableName);
-
         return collectionName;
     }
 
@@ -883,7 +866,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
             String json = value.toString().trim();
             if (json.isEmpty())
                 return new JSMap();
-            return JSReader.parseJson(json);
+            return JSParser.parseJson(json);
         }
 
         if(value instanceof byte[])// && ((byte[])value).length == 16)

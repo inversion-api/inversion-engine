@@ -18,21 +18,20 @@ package io.inversion.action.db;
 
 import io.inversion.*;
 import io.inversion.Collection;
-import io.inversion.action.openapi.OpenAPIWriter;
 import io.inversion.json.JSMap;
 import io.inversion.Url;
 import io.inversion.utils.Utils;
 
 import java.util.*;
 
-public class DbDeleteAction<A extends DbDeleteAction> extends Action<A> implements OpenAPIWriter<A> {
+class DbDeleteAction<A extends DbDeleteAction> extends Action<A> {
 
     @Override
     protected List<RuleMatcher> getDefaultIncludeMatchers(){
         return Utils.asList(new RuleMatcher("DELETE", "{" + Request.COLLECTION_KEY + "}/[{" + Request.RESOURCE_KEY + "}]"));
     }
 
-    @Override
+
     public void run(Request req, Response res) throws ApiException {
         String resourceKey     = req.getResourceKey();
         String relationshipKey = req.getRelationshipKey();

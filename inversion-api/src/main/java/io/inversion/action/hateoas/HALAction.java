@@ -34,7 +34,7 @@ public class HALAction extends HATEOASAction<HALAction> {
 
 //
 //
-//    public void hook_documentOp(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
+//    public Operation hook_documentOp(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
 //        docChain.go();
 //        HALAction.super.hook_documentOp(docChain, openApi, ops, op, schemas);
 //        updateResponseSchema(docChain, openApi, ops, op, schemas);

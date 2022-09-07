@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * A single Endpoint, bundling one or more Path match relative Actions, is selected to service a Request.
  */
-public class Endpoint extends Rule<Endpoint> {
+public final class Endpoint extends Rule<Endpoint> {
     /**
      * The Actions that are 'local' to this request.
      * <p>
@@ -59,6 +59,11 @@ public class Endpoint extends Rule<Endpoint> {
             for (Action action : actions)
                 withAction(action);
         }
+    }
+
+    @Override
+    public int compareTo(Endpoint o) {
+        return toString().compareTo(o.toString());
     }
 
     public Api getApi() {

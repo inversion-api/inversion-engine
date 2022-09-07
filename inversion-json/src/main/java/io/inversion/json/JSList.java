@@ -1,5 +1,6 @@
 package io.inversion.json;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.inversion.utils.Utils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
@@ -199,5 +200,34 @@ public class JSList<T extends Object> extends JSNode implements List<T> {
         if(size() > 0)
             return get(size() -1);
         return null;
+    }
+
+    public JSMap lastMap(){
+        if(size() > 0)
+            return (JSMap)get(size() -1);
+        return null;
+    }
+
+    public T lastAs(Class<T> type){
+        if(size() > 0){
+            try{
+                return mapper.readValue(get(size() -1).toString(), type);
+            }
+            catch(Exception ex){
+                Utils.rethrow(ex);
+            }
+        }
+        return null;
+    }
+
+    public List<T> as(Class<T> type){
+        try{
+            return mapper.readValue(toString(), mapper.getTypeFactory().constructCollectionType(List.class, type));
+        }
+        catch(Exception ex){
+            Utils.rethrow(ex);
+        }
+        return null;
+
     }
 }

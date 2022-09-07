@@ -20,7 +20,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.utils.Utils;
 
 import java.io.*;
@@ -39,7 +39,7 @@ public class EchoRequestStreamHandler implements RequestStreamHandler {
         try {
             String input = Utils.read(new BufferedInputStream(inputStream));
             context.getLogger().log(input);
-            JSNode request = JSReader.asJSNode(input);
+            JSNode request = JSParser.asJSNode(input);
             responseBody.putValue("request", request);
 
         } catch (Exception ex) {

@@ -228,7 +228,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         String initialSelect = (String) find("_query", 0);
 
         if (Utils.empty(initialSelect)) {
-            String subquery = null;//getFrom().getSubquery();
+            String subquery = getFrom().getSubquery();
 
             String  alias    = quoteCol(getFrom().getAlias());
             boolean distinct = getSelect().isDistinct();
@@ -239,7 +239,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
                 String table = getFrom().getTable();
                 if (Utils.empty(table))
-                    throw ApiException.new400BadRequest("Your requested url '{}' could not be mapped to a table to query.", Chain.peek().getRequest().getUrl());
+                    throw ApiException.new400BadRequest("Your requested url '{}' could not be mapped to a table to query for operation {}", Chain.peek().getRequest().getUrl(), Chain.peek().getRequest().getOp().getName());
 
                 subquery = quoteCol(getFrom().getTable());
                 initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM " + subquery;

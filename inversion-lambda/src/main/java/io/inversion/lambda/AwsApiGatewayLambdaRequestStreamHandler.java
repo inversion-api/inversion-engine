@@ -24,7 +24,7 @@ import io.inversion.Request;
 import io.inversion.Response;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.Url;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
@@ -54,7 +54,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
         Exception ex           = null;
 
         try {
-            JSNode json = JSReader.asJSNode(input);
+            JSNode json = JSParser.asJSNode(input);
 
             debug("Request Event");
             debug(json.toString(false));
@@ -123,7 +123,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
 
                 responseBody.putValue("error", Utils.getShortCause(ex));
 
-                responseBody.putValue("request", JSReader.asJSNode(input));
+                responseBody.putValue("request", JSParser.asJSNode(input));
 
                 JSNode responseJson = new JSMap();
                 responseJson.putValue("isBase64Encoded", false);

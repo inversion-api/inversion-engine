@@ -18,7 +18,6 @@ package io.inversion.action.db;
 
 import io.inversion.Collection;
 import io.inversion.*;
-import io.inversion.action.openapi.OpenAPIWriter;
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
@@ -34,7 +33,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.util.*;
 
-public class DbGetAction<A extends DbGetAction> extends Action<A> implements OpenAPIWriter<A> {
+class DbGetAction<A extends DbGetAction> extends Action<A>  {
 
     protected int maxRows = 100;
 
@@ -44,12 +43,6 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
 //        expand.withIn(Param.In.QUERY);
 //        expand.withKey("expand");
 //        withParam(expand);
-
-        Param after = new Param();
-        after.withDescription("An optional value used to retrieve the next page of a paginated result.  This should be the encoded primary key returned has 'lastKey' from a previous request. This method of pagination is more efficient than using the 'pageNumber' or 'offset' query parameters, however if 'pageNumber' or 'offset' are supplied as query parameters, then this value will be ignored.");
-        after.withKey("type");
-        after.withIn(Param.In.QUERY);
-        withParam(after);
 
         Param page = new Param();
         page.withDescription("An optional value used to compute the 'offset' of the first item returned as 'offset'='pageNumber'*'pageSize'.  If an 'offset' parameter is also supplied it will be used instead of the 'pageNumber' parameter.");
@@ -86,15 +79,15 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
         withParam(q);
     }
 
-    @Override
-    public void hook_configureOpParam(Task task, Op op, Param param){
-        switch (op.getFunction()){
-            case FIND:
-            case RELATED:
-                if(Utils.in(param.getKey().toLowerCase(), "pagenumber", "pagesize", "offset",  "sort", "q"))
-                    op.withParam(param);
-                break;
-        }
+    /**
+     * This task has been selected to run as part of the supplied operation, this
+     * callback allows actions to perform any custom configuration on the op.
+     * @param task
+     * @param op
+     */
+    public void configureOp(Task task, Op op) {
+        if(Op.OpFunction.FIND == op.getFunction())
+            getParams().forEach(p -> op.withParam(p));
     }
 
     @Override
@@ -153,7 +146,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
     }
 
 
-    @Override
+
     public void run(Request req, Response res) throws ApiException {
         if (req.getRelationshipKey() != null) {
             //-- all URLs with a subcollection key will be rewritten and
@@ -279,11 +272,14 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
         Results results = select(req, req.getCollection(), req.getApi());
 
         if (results.size() == 0 && req.getResourceKey() != null && req.getCollectionKey() != null) {
-            res.withJson(null);
+            res.withJson((JSNode)null);
             res.withStatus(Status.SC_404_NOT_FOUND);
         } else {
             //-- copy data into the response
             res.withRecords(results.getRows());
+
+            System.out.println(res.data());
+            System.out.println("asdasdfasdf");
 
             if(res.data().size() > 0) {
                 Collection coll = null;

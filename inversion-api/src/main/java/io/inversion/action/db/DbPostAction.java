@@ -18,18 +18,15 @@ package io.inversion.action.db;
 
 import io.inversion.Collection;
 import io.inversion.*;
-import io.inversion.action.misc.BatchAction;
-import io.inversion.action.openapi.OpenAPIWriter;
 import io.inversion.json.*;
 import io.inversion.rql.Term;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.keyvalue.MultiKey;
 import org.apache.commons.collections4.map.MultiKeyMap;
-import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.*;
 
-public class DbPostAction<A extends DbPostAction> extends BatchAction<A> implements OpenAPIWriter<A> {
+class DbPostAction<A extends DbPostAction> extends Action<A>  {
     protected boolean collapseAll = false;
 
     /**
@@ -39,7 +36,7 @@ public class DbPostAction<A extends DbPostAction> extends BatchAction<A> impleme
     protected boolean getResponse    = true;
 
     @Override
-    protected List<RuleMatcher> getDefaultIncludeMatchers(){
+    protected List<Rule.RuleMatcher> getDefaultIncludeMatchers(){
         return Utils.asList(new RuleMatcher("POST", "{" + Request.COLLECTION_KEY + "}"));
     }
 
@@ -47,7 +44,7 @@ public class DbPostAction<A extends DbPostAction> extends BatchAction<A> impleme
         return Utils.empty(path) ? next : path + "." + next;
     }
 
-    @Override
+
     public void run(Request req, Response res) throws ApiException {
         if (req.isMethod("PUT", "POST")) {
             upsert(req, res);
@@ -153,7 +150,7 @@ public class DbPostAction<A extends DbPostAction> extends BatchAction<A> impleme
         Set<String> collapses   = collapseStr == null ? new HashSet<>() : Utils.asSet(Utils.explode(",", collapseStr));
 
         if (collapseAll || collapses.size() > 0) {
-            body = JSReader.asJSNode(body.toString());
+            body = JSParser.asJSNode(body.toString());
             collapse(body, collapseAll, collapses, "");
         }
 
@@ -183,10 +180,11 @@ public class DbPostAction<A extends DbPostAction> extends BatchAction<A> impleme
         for (Object key : resourceKeys) {
             String resourceKey = key + "";
             String href        = Chain.buildLink(collection, resourceKey);
-            res.data().add(new JSMap("href", href));
-
-            String nextId = href.substring(href.lastIndexOf("/") + 1);
-            buff.append(",").append(nextId);
+            if(href != null){
+                res.data().add(new JSMap("href", href));
+                String nextId = href.substring(href.lastIndexOf("/") + 1);
+                buff.append(",").append(nextId);
+            }
         }
 
         if (buff.length() > 0) {

@@ -30,7 +30,7 @@ import java.util.Map;
  * Dbs are not responsible for mapping from column names to json names so a Results rows
  * and terms will use column names until they are potentially transformed by an Action.
  */
-public class Results<M extends Map<String, ?>> implements Iterable<M> {
+public final class Results<M extends Map<String, ?>> implements Iterable<M> {
     public static String LAST_QUERY = null;
     /**
      * The RQL terms that will get the next page of results the DB things there are more results.

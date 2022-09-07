@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 public class Param{
 
-    public enum In {HOST, SERVER_PATH, PATH, QUERY, BODY, COOKIE, USER, CHAIN, CONTEXT, ENVIRONMENT}
+    public enum In {HOST, SERVER_PATH, PATH, QUERY, BODY, COOKIE, HEADER, USER, CHAIN, CONTEXT, ENVIRONMENT, URL, REQUEST, ANY}
 
     String        name        = null;
     String        key         = null;

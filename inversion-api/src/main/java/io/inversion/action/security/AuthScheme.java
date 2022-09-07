@@ -60,16 +60,16 @@ public abstract class AuthScheme {
         return this;
     }
 
-    public List<Param> getParameters() {
+    public List<Param> getParams() {
         return params;
     }
 
-    public AuthScheme withParameters(List<Param> params) {
+    public AuthScheme withParams(List<Param> params) {
         this.params = params;
         return this;
     }
 
-    public AuthScheme withParameter(Param param) {
+    public AuthScheme withParam(Param param) {
         if (param != null && !params.contains(param))
             this.params.add(param);
         return this;

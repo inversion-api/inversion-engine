@@ -126,7 +126,7 @@ public class MockAction extends Action<MockAction> {
             }
 
             if (stream != null) {
-                json = JSReader.asJSNode(Utils.read(stream));
+                json = JSParser.asJSNode(Utils.read(stream));
             } else {
                 throw ApiException.new500InternalServerError("Unable to locate jsonUrl '{}'. Please check your configuration", jsonUrl);
             }

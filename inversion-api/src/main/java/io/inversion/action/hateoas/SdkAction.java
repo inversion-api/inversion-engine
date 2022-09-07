@@ -64,11 +64,9 @@ public class SdkAction extends HATEOASAction<SdkAction>{
     }
 
     void updateFindResponse(Request req, Response res){
-
-        JSNode json = res.getJson();
-        JSMap meta = res.findMap("meta");
         JSNode data = res.data();
-
+        System.out.println(res.getMeta());
+        String next = res.getNext();
         int totalCount = res.getFoundRows();
         int itemCount = res.data() != null ? res.data().size() : 0;
         String lastKey = res.getLastKey();
@@ -81,12 +79,27 @@ public class SdkAction extends HATEOASAction<SdkAction>{
             page = new JSMap();
         }
 
-        page.put("totalCount",totalCount );
-        page.put("itemCount",itemCount );
-        page.put("lastKey", lastKey);
-        page.put("pageSize",pageSize );
-        page.put("pageCount", pageCount);
-        page.put("pageNumber", pageNumber);
+        if(next != null)
+            page.put("next", next);
+
+        if(totalCount > -1)
+            page.put("totalCount",totalCount );
+
+        if(itemCount > -1)
+            page.put("itemCount",itemCount );
+
+        if(lastKey != null)
+            page.put("lastKey", lastKey);
+
+        if(pageSize > -1)
+            page.put("pageSize",pageSize );
+
+        if(pageCount > -1)
+            page.put("pageCount", pageCount);
+
+        if(pageNumber > -1)
+            page.put("pageNumber", pageNumber);
+
 
         JSMap newJson = new JSMap();
         newJson.put("page", page);
@@ -115,6 +128,7 @@ public class SdkAction extends HATEOASAction<SdkAction>{
                 if(paginationInfo == null){
                     paginationInfo = newTypeSchema("object", "Pagination and Sort Information");
                     openApi.getComponents().addSchemas("PaginationInfo", paginationInfo);
+                    paginationInfo.addProperties("next", newTypeSchema("string", "The GET URL to return the next page of results."));
                     paginationInfo.addProperties("totalCount", newTypeSchema("number", "The number of items returned in this paginated response."));
                     paginationInfo.addProperties("itemCount", newTypeSchema("number", "The number of items identified as matching the query."));
                     paginationInfo.addProperties("lastKey", newTypeSchema("string", "The primary key of the last item returned in this page.  This can be returned as the 'after' query parameter to most efficiently continue pagination."));

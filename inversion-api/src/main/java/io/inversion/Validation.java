@@ -19,7 +19,7 @@ package io.inversion;
 
 import io.inversion.json.JSList;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.utils.Utils;
 
 import java.util.regex.Pattern;
@@ -267,7 +267,7 @@ public class Validation {
             return null;
 
         if (value instanceof String)
-            value = JSReader.parseJson(value.toString());
+            value = JSParser.parseJson(value.toString());
 
         return ((JSNode) value);
     }
@@ -277,7 +277,7 @@ public class Validation {
             return null;
 
         if (value instanceof String)
-            value = JSReader.asJSList(value.toString());
+            value = JSParser.asJSList(value.toString());
 
         return ((JSList) value);
     }

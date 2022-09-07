@@ -580,8 +580,8 @@ public class JdbcDb extends Db<JdbcDb> {
                     if(excludeTable(tableName))
                         continue;
 
-                    Collection table = new Collection(tableName);
-                    withCollection(table);
+                    Collection collection = new Collection(tableName);
+                    withCollection(collection);
 
                     ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
 
@@ -598,7 +598,7 @@ public class JdbcDb extends Db<JdbcDb> {
                         if (autoincrement)
                             column.withReadOnly(true);
 
-                        table.withProperties(column);
+                        collection.withProperties(column);
                     }
                     colsRs.close();
 
@@ -637,7 +637,7 @@ public class JdbcDb extends Db<JdbcDb> {
                         //this looks like it only supports single column indexes but if
                         //an index with this name already exists, that means this is another
                         //column in that index.
-                        table.withIndex(idxName, idxType, unique, colName);
+                        collection.withIndex(idxName, idxType, unique, colName);
 
                     }
                     indexMd.close();
@@ -647,11 +647,11 @@ public class JdbcDb extends Db<JdbcDb> {
                         String   idxName = pkMd.getString("PK_NAME");
                         String   idxType = Index.TYPE_PRIMARY_KEY;
                         String   colName = pkMd.getString("COLUMN_NAME");
-                        Property column  = table.getProperty(colName);
+                        Property column  = collection.getProperty(colName);
 
                         int   keySeq = pkMd.getInt("KEY_SEQ");
 
-                        table.withIndex(idxName, idxType, true, colName);
+                        collection.withIndex(idxName, idxType, true, colName);
                         //System.out.println("Primary key: " + colName);
                     }
                     pkMd.close();

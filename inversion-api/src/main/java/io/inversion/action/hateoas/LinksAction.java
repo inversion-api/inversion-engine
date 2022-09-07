@@ -16,9 +16,8 @@
  */
 package io.inversion.action.hateoas;
 
-import io.inversion.*;
 import io.inversion.Collection;
-import io.inversion.json.JSList;
+import io.inversion.*;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
 
@@ -46,27 +45,26 @@ public class LinksAction extends HATEOASAction<LinksAction> {
         String resourceKey = coll.encodeKeyFromJsonNames(node);
         LinkedHashMap<String, String> toAdd = new LinkedHashMap<>();
 
-        if(coll != null && resourceKey != null){
-            for(Relationship rel : coll.getRelationships()){
+        if (coll != null && resourceKey != null) {
+            for (Relationship rel : coll.getRelationships()) {
 
                 Object value = node.getValue(rel.getName());
-                if(value instanceof JSNode){
-                    ((JSNode)value).asMapList().forEach(child -> addLinks(rel.getRelated(), child));
-                }
-                else{
+                if (value instanceof JSNode) {
+                    ((JSNode) value).asMapList().forEach(child -> addLinks(rel.getRelated(), child));
+                } else {
                     String link = null;
-                    if(rel.isManyToOne()){
+                    if (rel.isManyToOne()) {
 
                         Map<String, Object> primaryKey = rel.buildPrimaryKeyFromForeignKey(node);
-                        String key = primaryKey == null ? null : Collection.encodeKey(primaryKey, rel.getRelated().getResourceIndex(), true);
+                        String              key        = primaryKey == null ? null : Collection.encodeKey(primaryKey, rel.getRelated().getResourceIndex(), true);
 
-                        if(key != null)
+                        if (key != null)
                             link = Chain.buildLink(rel.getRelated(), key);
                         else
                             continue;
                     }
 
-                    if(link == null)
+                    if (link == null)
                         link = Chain.buildLink(coll, resourceKey, rel.getName());
 
                     toAdd.put(rel.getName(), link);
@@ -77,10 +75,10 @@ public class LinksAction extends HATEOASAction<LinksAction> {
         //-- you can't change the properties in the above loop because you may be
         //-- modifying data that you need for the creation of additional MANY_TO_ONE
         //-- optimized links...meaning you may be overwriting data fields that are still important.
-        if(toAdd.size() > 0){
+        if (toAdd.size() > 0) {
             List<String> keys = new ArrayList(toAdd.keySet());
             Collections.reverse(keys);
-            for(String key : keys){
+            for (String key : keys) {
                 node.putFirst(key, toAdd.get(key));
             }
         }

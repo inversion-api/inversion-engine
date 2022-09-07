@@ -21,7 +21,7 @@ import io.inversion.action.db.DbAction;
 import io.inversion.action.misc.MockAction;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
@@ -183,6 +183,20 @@ public class EngineTest {
     }
 
 
+    public static void assertOp(String method, String url, int statusCode, String opName, Api... apis) {
+        Engine e = new Engine();
+        for (Api api : apis) {
+            if (api != null)
+                e.withApi(api);
+        }
+
+        Response resp = e.service(method, url);
+        if(opName != null)
+            assertEquals(opName, resp.getRequest().getOp().getName(), "Your call matched the wrong Op.");
+
+        if (statusCode > 0 && statusCode != resp.getStatusCode())
+            fail("status code mismatch");
+    }
 
     public static void assertEndpointMatch(String method, String url, int statusCode, Api... apis) {
         assertEndpointMatch(method, url, statusCode, null, null, null, null, null, apis);
@@ -228,6 +242,7 @@ public class EngineTest {
                 System.err.println();
                 System.err.println(endpointName + "," + endpointPath + "," + collectionKey + "," + resourceKey + "," + subCollectionKey);
                 System.err.println("url              :" + chain.getRequest().getUrl());
+                System.err.println("op               :" + chain.getRequest().getOp().getName());
                 System.err.println("apiUrl           :" + chain.getRequest().getApiUrl());
                 System.err.println("endpoint         :" + chain.getRequest().getEndpoint().getName() + " - " + chain.getRequest().getEndpoint());
                 System.err.println("ep path          :" + chain.getRequest().getEndpointPath());
@@ -646,17 +661,18 @@ public class EngineTest {
 
 
     @Test
-    public void test_optional_collections_in_endpoints_endpoints_resolve() {
+    public void test_resolveOp_conflicting_paths_resove_on_regex() {
 
         Api api1 = new Api("test").withServer(new Server().withIncludeOn("test/*"))
                 .withAction(new MockAction("mock1"))//
-                .withEndpoint(new Endpoint("[{_collection:collectionA}]/*").withName("epA"))
-                .withEndpoint(new Endpoint("[{_collection:collection1}]/*").withName("ep1"))
-                .withEndpoint(new Endpoint("[{_collection:collection2}]/*").withName("ep2"));
+                .withEndpoint(new Endpoint("[{collection:collectionA}]/*").withName("epA"))
+                .withEndpoint(new Endpoint("[{collection:collection1}]/*").withName("ep1"))
+                .withEndpoint(new Endpoint("[{collection:collection2}]/*").withName("ep2"));
 
-        assertEndpointMatch("GET", "http://127.0.0.1/test/collectionA", 200, "epA", "", "collectionA", null, null, api1);
-        assertEndpointMatch("GET", "http://127.0.0.1/test/collection1", 200, "ep1", "", "collection1", null, null, api1);
-        assertEndpointMatch("GET", "http://127.0.0.1/test/collection2", 200, "ep2", "", "collection2", null, null, api1);
+
+        assertOp("GET", "http://127.0.0.1/test/collectionA", 200, "getEpACollectionByCollection", api1);
+        assertOp("GET", "http://127.0.0.1/test/collection1", 200, "getEp1CollectionByCollection", api1);
+        assertOp("GET", "http://127.0.0.1/test/collection2", 200, "getEp2CollectionByCollection", api1);
     }
 
 
@@ -851,7 +867,7 @@ public class EngineTest {
     public void test_exclude() {
         Engine engine;
 
-        MockAction action = new MockAction().withJson(JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("EngineTest_test_excludes.response.json"))));
+        MockAction action = new MockAction().withJson(JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("EngineTest_test_excludes.response.json"))));
 
         engine = new Engine()//
                 .withApi(new Api()//
@@ -861,7 +877,7 @@ public class EngineTest {
         resp = engine.get("/test?include=val1,val3|val4,rel1.val1|val2,rel1.rel1_1.rel1_1_1.*&excludes(rel1.rel1_1.rel1_1_1.val1|val3,rel1.rel1_1.rel1_1_1.rel1_1_1_1.val3)");
 
         String actual   = resp.getJson().toString();
-        String expected = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("EngineTest_test_excludes.expected.json"))).toString();
+        String expected = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("EngineTest_test_excludes.expected.json"))).toString();
 
         assertEquals(expected, actual);
     }

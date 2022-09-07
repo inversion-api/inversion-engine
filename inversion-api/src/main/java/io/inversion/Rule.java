@@ -109,7 +109,6 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     protected void doLazyConfig() {
-
         if (includeOn != null)
             withIncludeOn(includeOn);
 
@@ -123,22 +122,6 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
                 withIncludeOn(m);
         }
     }
-
-
-    public Rule<R> hook_configureOp(Task task, Op op) {
-        hook_configureOpParams(task, op);
-        return (R) this;
-    }
-
-    public void hook_configureOpParams(Task task, Op op) {
-        for (Param param : getParams())
-            hook_configureOpParam(task, op, param);
-    }
-
-    public void hook_configureOpParam(Task task, Op op, Param param) {
-        op.withParam(param);
-    }
-
 
     /**
      * Designed to allow subclasses to provide a default match behavior
