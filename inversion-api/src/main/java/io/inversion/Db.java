@@ -420,7 +420,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
                             //if (!node.containsKey(attrName))
                             {
                                 val = castDbOutput(attr, val);
-                                node.putValue(attrName, val);
+                                node.put(attrName, val);
                             }
                         }
                     }
@@ -431,7 +431,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
                     for (String key : row.keySet()) {
                         if (!key.equalsIgnoreCase("href") && !node.containsKey(key)) {
                             Object value = row.get(key);
-                            node.putValue(key, value);
+                            node.put(key, value);
                         }
                     }
 
@@ -442,7 +442,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
                         for (int j = idx.size() - 1; j >= 0; j--) {
                             Property prop = idx.getProperty(j);
                             if (node.containsKey(prop.getJsonName()))
-                                node.putFirst(prop.getJsonName(), node.getValue(prop.getJsonName()));
+                                node.putFirst(prop.getJsonName(), node.get(prop.getJsonName()));
                         }
                     }
 
@@ -576,39 +576,66 @@ public abstract class Db<T extends Db> extends Rule<T> {
             buildCollections();
             buildRelationships();
         }
-        deconflictNames();
     }
 
-    /**
-     * Changes any property.jsonName that conflicts with a relationship name
-     */
-    protected void deconflictNames() {
-        for (Collection coll : getCollections()) {
-            for (Relationship rel : coll.getRelationships()) {
-                String   relName  = rel.getName();
-                Property conflict = coll.getPropertyByJsonName(relName);
-                if (conflict != null) {
-                    String   newName = relName;
-                    Property pk      = conflict.getPk();
-                    if (pk != null) {
-                        newName += Utils.capitalize(pk.getJsonName());
-                    } else {
-                        newName += "Id";
-                    }
+//    /**
+//     * Changes any property.jsonName that conflicts with a relationship name
+//     */
+//    protected void deconflictNames() {
+//        for (Collection coll : getCollections()) {
+//            for (Relationship rel : coll.getRelationships()) {
+//                String   relName  = rel.getName();
+//                Property conflict = coll.getPropertyByJsonName(relName);
+//                if (conflict != null) {
+//                    String   newName = relName;
+//
+//                    String relatedColName = rel.getRelated().getName();
+//                    if(rel.isManyToOne())
+//                        relatedColName = rel.getRelated().getSingularDisplayName();
+//
+//                    newName += Utils.capitalize(relatedColName);
+//
+//                    for (int i = 0; i < 100; i++) {
+//                        String tempName = newName + (i == 0 ? "" : i);
+//                        if (coll.getPropertyByJsonName(tempName) != null) {
+//                            newName = tempName;
+//                            break;
+//                        }
+//                    }
+//                    System.out.println("changing conflicting property name " + coll.getName() + "." + relName + " to " + newName);
+//                    rel.withName(newName);
+//                }
+//            }
+//        }
+//    }
 
-                    for (int i = 0; i < 100; i++) {
-                        String tempName = newName + (i == 0 ? "" : i);
-                        if (coll.getPropertyByJsonName(tempName) != null) {
-                            newName = tempName;
-                            break;
-                        }
-                    }
-                    //System.out.println("changing conflicting property name " + coll.getName() + "." + relName + " to " + newName);
-                    conflict.withJsonName(newName);
-                }
-            }
-        }
-    }
+//    protected void deconflictNames() {
+//        for (Collection coll : getCollections()) {
+//            for (Relationship rel : coll.getRelationships()) {
+//                String   relName  = rel.getName();
+//                Property conflict = coll.getPropertyByJsonName(relName);
+//                if (conflict != null) {
+//                    String   newName = relName;
+//                    Property pk      = conflict.getPk();
+//                    if (pk != null) {
+//                        newName += Utils.capitalize(pk.getJsonName());
+//                    } else {
+//                        newName += "Id";
+//                    }
+//
+//                    for (int i = 0; i < 100; i++) {
+//                        String tempName = newName + (i == 0 ? "" : i);
+//                        if (coll.getPropertyByJsonName(tempName) != null) {
+//                            newName = tempName;
+//                            break;
+//                        }
+//                    }
+//                    //System.out.println("changing conflicting property name " + coll.getName() + "." + relName + " to " + newName);
+//                    conflict.withJsonName(newName);
+//                }
+//            }
+//        }
+//    }
 
     /**
      * Creates a collection for every table name in <code>includeTables</code> giving the Collections and Properties beautified JSON names.

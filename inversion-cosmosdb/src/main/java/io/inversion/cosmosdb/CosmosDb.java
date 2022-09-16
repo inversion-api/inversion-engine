@@ -21,7 +21,6 @@ import io.inversion.Index;
 import io.inversion.*;
 import io.inversion.json.JSMap;
 import io.inversion.rql.Term;
-import io.inversion.json.JSNode;
 import io.inversion.utils.Utils;
 
 import java.util.ArrayList;
@@ -165,7 +164,7 @@ public class CosmosDb extends Db<CosmosDb> {
                 Map<String, Object> existingRow = existing.getRow(0);
                 for (String key : existingRow.keySet()) {
                     if (!doc.containsKey(key))
-                        doc.putValue(key, existingRow.get(key));
+                        doc.put(key, existingRow.get(key));
                 }
             }
 

@@ -16,10 +16,6 @@
  */
 package io.inversion.utils;
 
-import com.fasterxml.jackson.databind.util.ISO8601Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -432,15 +428,15 @@ public class Utils {
 
 
 
-    public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap<String, String> multiMap, String... kvPairs) {
-        if (kvPairs != null && kvPairs.length % 2 > 0)
-            throw new RuntimeException("kvPairs.length must be evenly divisible by 2.");
-
-        for (int i = 0; kvPairs != null && i < kvPairs.length - 1; i += 2)
-            multiMap.put(kvPairs[i], kvPairs[i + 1]);
-
-        return multiMap;
-    }
+//    public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap<String, String> multiMap, String... kvPairs) {
+//        if (kvPairs != null && kvPairs.length % 2 > 0)
+//            throw new RuntimeException("kvPairs.length must be evenly divisible by 2.");
+//
+//        for (int i = 0; kvPairs != null && i < kvPairs.length - 1; i += 2)
+//            multiMap.put(kvPairs[i], kvPairs[i + 1]);
+//
+//        return multiMap;
+//    }
 
     public static <M extends Map<String, String>> M addToMap(M map, String... keyValuePairs) {
         if (keyValuePairs != null && keyValuePairs.length % 2 > 0)
@@ -496,6 +492,22 @@ public class Utils {
         }
         return map;
     }
+
+
+    /**
+     * Returns the items of 'a' that are not in 'b' and the items of
+     * 'b' that are not in 'a'.
+     */
+    public static Set disjunction(Collection a, Collection b) {
+        HashSet setA = new HashSet(a);
+        HashSet setB = new HashSet(b);
+        setA.removeIf(o -> {if(setB.contains(o)){setB.remove(o); return true;} return false;});
+        setA.addAll(setB);
+        return setA;
+    }
+
+
+
 
     /**
      * Checks for a whole word case insensitive match of <code>findThisToken</code>
@@ -735,7 +747,7 @@ public class Utils {
             MessageDigest digest = MessageDigest.getInstance(algorithm);
             digest.update(bytes);
             bytes = digest.digest();
-            return (new HexBinaryAdapter()).marshal(bytes);
+            return bytesToHex(bytes);
         } catch (Exception ex) {
             rethrow(ex);
         }

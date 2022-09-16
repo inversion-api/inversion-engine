@@ -51,7 +51,7 @@ public class SdkAction extends HATEOASAction<SdkAction>{
     }
 
     void removeMetaAndCollapseData(Request req, Response res){
-        res.getJson().removeValues("meta");
+        res.getJson().remove("meta");
         JSNode json = res.getJson();
         JSList data = res.data();
         if(data != json){

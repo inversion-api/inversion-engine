@@ -88,7 +88,7 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
             String href = body.getString("href");
             if (req.getResourceKey() != null) {
                 if (href == null)
-                    body.putValue("href", Utils.substringBefore(req.getUrl().toString(), "?"));
+                    body.put("href", Utils.substringBefore(req.getUrl().toString(), "?"));
                 else if (!req.getUrl().toString().startsWith(href))
                     throw ApiException.new400BadRequest("You are PATCHING-ing an resource with a different href property than the resource URL you are PATCHING-ing to.");
             }
@@ -103,7 +103,7 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
 
             if(isGetResponse()){
                 Response getResponse = req.getChain().getEngine().service("GET", location);
-                res.getJson().putValue("data", getResponse.data());
+                res.getJson().put("data", getResponse.data());
             }
         }
         else
@@ -194,7 +194,7 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
 
             if(isGetResponse()){
                 Response getResponse = req.getChain().getEngine().service("GET", location);
-                res.getJson().putValue("data", getResponse.data());
+                res.getJson().put("data", getResponse.data());
             }
         }
         else
@@ -249,12 +249,12 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
             JSMap node = nodes.get(i);
             Map<String, Object> row = collection.decodeKeyToJsonNames(returnList.get(i));
             for(String key : row.keySet()){
-                node.putValue(key, row.get(key));
+                node.put(key, row.get(key));
             }
 
             //-- makes sure any ONE_TO_MANY child nodes that need a key reference back to the parent get it set on them
             for (Relationship rel : collection.getRelationships()) {
-                if(rel.isOneToMany() && node.getValue(rel.getName()) instanceof JSList){
+                if(rel.isOneToMany() && node.get(rel.getName()) instanceof JSList){
                     Map foreignKey = rel.getInverse().buildForeignKeyFromPrimaryKey(node);
                     node.getList(rel.getName()).asMapList().forEach(child -> child.putAll(foreignKey));
                 }
@@ -273,7 +273,7 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
             Relationship                  inverse    = rel.getInverse();
             LinkedHashMap<String, JSMap> childMap = new LinkedHashMap<>();
             for (JSNode node : nodes.asMapList()) {
-                Object value = node.getValue(rel.getName());
+                Object value = node.get(rel.getName());
 
                 if (value instanceof JSNode) {
                     for (JSMap child : ((JSNode) value).asMapList()) {
@@ -336,7 +336,7 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
             if (rel.isManyToOne())//this means we have a FK to the related element's PK
             {
                 for (JSNode node : nodes.asMapList()) {
-                    Object childObj = node.getValue(rel.getName());
+                    Object childObj = node.get(rel.getName());
                     if(!(childObj instanceof JSNode))
                         continue;
 
@@ -347,7 +347,7 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
                     Map<String, Object> primaryKey = new LinkedHashMap();
 
                     for(String name : collection.getResourceIndex().getJsonNames()){
-                        Object value = node.getValue(name);
+                        Object value = node.get(name);
                         if(value == null)
                             throw new ApiException("Primary key field should not be null at this point");
                         primaryKey.put(name, value);
@@ -379,7 +379,7 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
                 continue;
 
             for (JSNode node : nodes.asMapList()) {
-                if (!(node.getValue(rel.getName()) instanceof JSList))
+                if (!(node.get(rel.getName()) instanceof JSList))
                     continue;//-- this property was not passed back in or was not an array of related nodes
 
                 LinkedHashMap<String, Object> foreignKey = buildKey(node, collection.getResourceIndex(), rel.getFkIndex1());
@@ -488,7 +488,7 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
                 if (rel.isOneToMany()) {
                     for (JSNode node : toUnlink.data().asMapList()) {
                         for (String prop : rel.getFkIndex1().getJsonNames()) {
-                            node.putValue(prop, null);
+                            node.put(prop, null);
                         }
                     }
                     req.getEngine().patch(Chain.buildLink(coll), toUnlink.data()).assertOk();
@@ -517,15 +517,11 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
         return returnList;
     }
 
-
-
-
-
     LinkedHashMap<String,Object> buildKey(JSNode node, Index index){
         //TODO add support for keys of different lengths
         LinkedHashMap<String, Object> key = new LinkedHashMap<>();
         for(int i=0; i<index.size(); i++){
-            Object value = node.getValue(index.getJsonName(i));
+            Object value = node.get(index.getJsonName(i));
             if(value == null)
                 throw new ApiException("Foreign key component can not be null.");
             key.put(index.getJsonName(i), value);
@@ -542,7 +538,7 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
 
         LinkedHashMap<String, Object> foreignKey = new LinkedHashMap<>();
         for(int i=0; i<fromIndex.size(); i++){
-            Object value = node.getValue(fromIndex.getJsonName(i));
+            Object value = node.get(fromIndex.getJsonName(i));
             if(value == null)
                 throw new ApiException("Foreign key component can not be null.");
             foreignKey.put(toIndex.getJsonName(i), value);
@@ -551,67 +547,67 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
     }
 
 
+    /**
+     * Copies a JSNode reference (not a duplicate the actual same JSNode) from its source to where
+     * it is referenced as a $ref property.
+     *
+     * @param root
+     */
     protected void swapRefsWithActualReferences(JSNode root){
-//        root.visit(new JSNodeVisitor() {
-//            public boolean visit(JSNode node, String key, Object value, Stack<Triple<JSNode, String, Object>> path) {
-//                if(key.equals("$ref") && value instanceof String){
-//                    if(((String)value).startsWith("#")){
-//                        Object found = root.find((String)value);
-//                        if(found instanceof JSNode){
-//
-//                            Triple<JSNode, String, Object> triple = path.get(path.size()-2);
-//                            JSNode parent = triple.getLeft();
-//                            //System.out.println(parent);
-//                            String property = triple.getMiddle();
-//                            parent.putValue(property, found);
-//                            //System.out.println(parent);
-//                            String strPath = "";
-//                            for(int i =0; i<path.size(); i++){
-//                                strPath += path.get(i).getMiddle() + "/";
-//                            }
-//                            //System.out.println("SETTING REF: " + strPath + " -> " + value);
-//                            return false;
-//                        }
-//                    }
-//                }
-//                return true;
-//            }
-//        });
+        root.visit(path -> {
+            JSNode node = path.getNode();
+            Object refObj = node.get("$ref");
+            if(refObj instanceof String){
+                String ref = (String)refObj;
+                if(ref.startsWith("#")){
+                    Object found = root.find(ref);
+                    if(found == null)
+                        throw ApiException.new400BadRequest("Unable to find $ref ''", ref);
+                    path.getParent().getNode().put(path.getProperty(), found);
+                }
+            }
+            return true;
+        });
     }
 
+    /**
+     * Copies a JSNode body (not a duplicate the actual same JSNode) to a property reference to that body
+     * if it exists elsewhere in the document.  For example "author" = "http://host/authors/1234 would be swapped
+     * with the body of author 1234 if it existed in the doc.
+     */
     protected void swapLogicalDuplicateReferences(Collection childColl, JSNode child, JSNode parent, String parentProp, Map<Collection, Map<String, JSNode>> visited){
-//        if(child == null)
-//            return;
-//
-//        String resourceKey = childColl.encodeKeyFromColumnNames(child);
-//        if(resourceKey != null){
-//            Map<String, JSNode> keys = visited.get(childColl);
-//            if(keys == null){
-//                keys = new HashMap<>();
-//                visited.put(childColl, keys);
-//            }
-//
-//            JSNode existing = keys.get(resourceKey);
-//            if(existing != null){
-//                parent.putValue(parentProp, existing);
-//                return;
-//            }else{
-//                keys.put(resourceKey, child);
-//            }
-//        }
-//
-//        for(Relationship rel : childColl.getRelationships()){
-//            Object grandchild = child.getValue(rel.getName());
-//            if(grandchild instanceof JSList){
-//                JSList arr = (JSList)grandchild;
-//                for(int i=0; i<arr.size(); i++){
-//                    swapLogicalDuplicateReferences(rel.getRelated(), arr.getMap(i), arr, i + "", visited);
-//                }
-//            }
-//            else if(grandchild instanceof JSMap){
-//                swapLogicalDuplicateReferences(rel.getRelated(), (JSMap)grandchild, child, rel.getName(), visited);
-//            }
-//        }
+        if(child == null)
+            return;
+
+        String resourceKey = childColl.encodeKeyFromColumnNames((JSMap)child);
+        if(resourceKey != null){
+            Map<String, JSNode> keys = visited.get(childColl);
+            if(keys == null){
+                keys = new HashMap<>();
+                visited.put(childColl, keys);
+            }
+
+            JSNode existing = keys.get(resourceKey);
+            if(existing != null){
+                parent.put(parentProp, existing);
+                return;
+            }else{
+                keys.put(resourceKey, child);
+            }
+        }
+
+        for(Relationship rel : childColl.getRelationships()){
+            Object grandchild = child.get(rel.getName());
+            if(grandchild instanceof JSList){
+                JSList arr = (JSList)grandchild;
+                for(int i=0; i<arr.size(); i++){
+                    swapLogicalDuplicateReferences(rel.getRelated(), arr.getMap(i), arr, i + "", visited);
+                }
+            }
+            else if(grandchild instanceof JSMap){
+                swapLogicalDuplicateReferences(rel.getRelated(), (JSMap)grandchild, child, rel.getName(), visited);
+            }
+        }
     }
 
 

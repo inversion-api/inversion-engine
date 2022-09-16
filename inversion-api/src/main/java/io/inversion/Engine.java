@@ -646,7 +646,8 @@ public class Engine {
             res.debug("");
             res.debug(">> request --------------");
             res.debug(req.getMethod() + ": " + url);
-            res.debug("OPERATION: " + req.getOp());
+            String opString = req.getOp().toString();//.replace("\r", " ").replace("\n", " ").replace("  ", " ");
+            res.debug("OPERATION: " + opString);
 
             ArrayListValuedHashMap<String, String> headers = req.getHeaders();
             for (String key : headers.keys()) {
@@ -850,7 +851,7 @@ public class Engine {
 
         JSNode json = new JSMap("status", status, "message", message);
         if (error != null)
-            json.putValue("error", error);
+            json.put("error", error);
 
         return json;
     }
@@ -1091,7 +1092,7 @@ public class Engine {
         for (String key : node.keySet()) {
             String attrPath = (path != null ? (path + "." + key) : key).toLowerCase();
 
-            Object value = node.getValue(key);
+            Object value = node.get(key);
             if (exclude(attrPath, includes, excludes)) {
                 node.remove(key);
             } else {

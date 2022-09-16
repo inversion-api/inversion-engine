@@ -159,10 +159,10 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
                 //-- by the user
                 for (String key : node.keySet()) {
                     if (key.startsWith("_"))
-                        node.removeValues(key);
+                        node.remove(key);
                 }
                 //-- the JSON returned from cosmos looks crazy, keys are all jumbled up.
-                node.sortKeys();
+                node.sort();
                 results.withRow(node);
 
             }

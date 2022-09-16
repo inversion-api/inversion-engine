@@ -105,24 +105,24 @@ public class TestOverloadedDynamicTables {
                             for (JSNode node : json.asMapList()) {
                                 //-- not necessary for RDBMS stores but prevents
                                 //-- unintended props in document stores
-                                node.removeValues("_collection", "_resource", "_relationship");
+                                node.remove("_collection", "_resource", "_relationship");
 
                                 //-- forces correct case
-                                node.putValue("tenant", tenant);
-                                node.putValue("type", type);
+                                node.put("tenant", tenant);
+                                node.put("type", type);
 
                                 //-- creates a unique id for each record
-                                if (Utils.empty(node.getValue("id")))
-                                    node.putValue("id", UUID.randomUUID().toString());
+                                if (Utils.empty(node.get("id")))
+                                    node.put("id", UUID.randomUUID().toString());
 
                                 switch (req.getCollection().getName()) {
                                     case "customers":
-                                        node.putValue("partition", node.getValue("id"));
+                                        node.put("partition", node.get("id"));
                                         break;
                                     case "addresses":
 
                                         Object customerId = null;
-                                        Object customerNode = node.getValue("customer");
+                                        Object customerNode = node.get("customer");
 
                                         if (customerNode instanceof JSNode)
                                             customerId = ((JSNode) customerNode).getString("id");
@@ -138,7 +138,7 @@ public class TestOverloadedDynamicTables {
                                         if (customerId == null)
                                             throw ApiException.new400BadRequest("An address must have an associated customer");
 
-                                        node.putValue("partition", customerId);
+                                        node.put("partition", customerId);
 
                                         break;
                                     default:
@@ -215,7 +215,7 @@ public class TestOverloadedDynamicTables {
         JSNode apartment = new JSMap("alias", "apartment", "address1", "1234 downtown rd.");
         e.post("crm/acmeco/addresses", apartment).assertStatus(400);
 
-        apartment.putValue("customer", customerKey);
+        apartment.put("customer", customerKey);
         e.post("crm/acmeco/addresses", apartment).assertOk();
 
         res = e.get(customerHref + "/addresses").assertOk();

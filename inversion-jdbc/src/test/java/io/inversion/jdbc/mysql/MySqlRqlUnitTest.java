@@ -49,12 +49,12 @@ public class MySqlRqlUnitTest extends AbstractSqlQueryRqlTest {
         withExpectedResult("or", "SELECT `orders`.* FROM `orders` WHERE (`orders`.`shipCity` = ? OR `orders`.`shipCity` = ?) ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[Reims, Charleroi]");
         withExpectedResult("not", "SELECT `orders`.* FROM `orders` WHERE NOT ((`orders`.`shipCity` = ? OR `orders`.`shipCity` = ?)) ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[Reims, Charleroi]");
         withExpectedResult("as", "SELECT `orders`.*, `orders`.`orderid` AS 'order_identifier' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
-        withExpectedResult("includes", "SELECT `orders`.`shipCountry`, `orders`.`shipCity` FROM `orders` ORDER BY `orders`.`shipCity` ASC, `orders`.`shipCountry` ASC LIMIT 100 args=[]");
+        withExpectedResult("includes", "SELECT `orders`.`shipCountry`, `orders`.`shipCity` FROM `orders` ORDER BY `orders`.`shipCountry` ASC, `orders`.`shipCity` ASC LIMIT 100 args=[]");
         withExpectedResult("distinct", "SELECT DISTINCT `orders`.`shipCountry` FROM `orders` ORDER BY `orders`.`shipCountry` ASC LIMIT 100 args=[]");
-        withExpectedResult("count1", "SELECT `orders`.*, COUNT(*) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
-        withExpectedResult("count2", "SELECT `orders`.*, COUNT(?) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[1]");
+        withExpectedResult("count1", "SELECT `orders`.*, COUNT(*) FROM `orders` LIMIT 100 args=[]");
+        withExpectedResult("count2", "SELECT `orders`.*, COUNT(?) FROM `orders` LIMIT 100 args=[1]");
         withExpectedResult("count3", "SELECT `orders`.*, COUNT(`orders`.`shipRegion`) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
-        withExpectedResult("countAs", "SELECT `orders`.*, COUNT(*) AS 'countOrders' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
+        withExpectedResult("countAs", "SELECT `orders`.*, COUNT(*) AS 'countOrders' FROM `orders` LIMIT 100 args=[]");
         withExpectedResult("sum", "SELECT `orders`.*, SUM(`orders`.`freight`) FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
         withExpectedResult("sumAs", "SELECT `orders`.*, SUM(`orders`.`freight`) AS 'Sum Freight' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[]");
         withExpectedResult("sumIf", "SELECT `orders`.*, SUM(IF(`orders`.`shipCountry` = ?, 1, 0)) AS 'French Orders' FROM `orders` ORDER BY `orders`.`orderId` ASC LIMIT 100 args=[France]");

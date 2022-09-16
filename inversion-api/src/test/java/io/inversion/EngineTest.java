@@ -304,12 +304,12 @@ public class EngineTest {
                 assertNull(req.getUrl().getParam("named4"));
 
                 if (req.getJson() != null) {
-                    assertEquals("a", req.getJson().getValue("endpointNamed1"));
-                    assertEquals("c", req.getJson().getValue("endpointNamed2"));
-                    assertEquals("c", req.getJson().getValue("named1"));
-                    assertEquals("d", req.getJson().getValue("named2"));
-                    assertNull(req.getJson().getValue("named3"));
-                    assertNull(req.getJson().getValue("named4"));
+                    assertEquals("a", req.getJson().get("endpointNamed1"));
+                    assertEquals("c", req.getJson().get("endpointNamed2"));
+                    assertEquals("c", req.getJson().get("named1"));
+                    assertEquals("d", req.getJson().get("named2"));
+                    assertNull(req.getJson().get("named3"));
+                    assertNull(req.getJson().get("named4"));
                 }
             }
         }.withIncludeOn("a/b/{named1}/{named2}/*"));
@@ -328,12 +328,12 @@ public class EngineTest {
                 assertEquals("d", req.getUrl().getParam("named4"));
 
                 if (req.getJson() != null) {
-                    assertEquals("a", req.getJson().getValue("endpointNamed1"));
-                    assertEquals("c", req.getJson().getValue("endpointNamed2"));
-                    assertEquals("c", req.getJson().getValue("named1"));
-                    assertEquals("d", req.getJson().getValue("named2"));
-                    assertEquals("c", req.getJson().getValue("named3"));
-                    assertEquals("d", req.getJson().getValue("named4"));
+                    assertEquals("a", req.getJson().get("endpointNamed1"));
+                    assertEquals("c", req.getJson().get("endpointNamed2"));
+                    assertEquals("c", req.getJson().get("named1"));
+                    assertEquals("d", req.getJson().get("named2"));
+                    assertEquals("c", req.getJson().get("named3"));
+                    assertEquals("d", req.getJson().get("named4"));
                 }
             }
         }.withIncludeOn("a/b/{named3}/{named4}/*"));

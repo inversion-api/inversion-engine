@@ -81,7 +81,7 @@ public class AuthFilter extends Filter<AuthFilter> {
         Operation operation = super.hook_documentOp(docChain, openApi, ops, op, schemas);
 
         if (op.isEpAction(this)) {
-            System.out.println("asdf");
+            //System.out.println("asdf");
         } else {
             documentSecurity(openApi, null);
         }

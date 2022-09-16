@@ -152,7 +152,7 @@ public final class Chain {
                 fkval = toHere.getCollection().encodeKeyFromJsonNames(fromHere, toHere.getFkIndex1());
             } else {
                 //this value is already an encoded resourceKey
-                Object obj = fromHere.getValue(toHere.getFk1Col1().getJsonName());
+                Object obj = fromHere.get(toHere.getFk1Col1().getJsonName());
                 if (obj != null)
                     fkval = obj.toString();
             }
@@ -262,7 +262,7 @@ public final class Chain {
             json.streamAll()
                     .filter(node -> node instanceof JSNode && !(node instanceof JSList))
                     .forEach(node -> {
-                        pathParamsToRemove.forEach(key -> ((JSNode) node).removeValues(key));
+                        pathParamsToRemove.forEach(key -> ((JSNode) node).remove(key));
                     });
         }
         return this;
@@ -308,7 +308,7 @@ public final class Chain {
         if (json != null) {
             json.stream()
                     .filter(node -> node instanceof JSMap)
-                    .forEach(node -> pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null && !e.getKey().startsWith("_"))).forEach(e -> ((JSNode) node).putValue(e.getKey(), e.getValue())));
+                    .forEach(node -> pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null && !e.getKey().startsWith("_"))).forEach(e -> ((JSNode) node).put(e.getKey(), e.getValue())));
         }
 
         pathParamsToRemove.addAll(pathParamsToAdd.keySet());

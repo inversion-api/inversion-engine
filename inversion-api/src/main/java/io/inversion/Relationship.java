@@ -298,7 +298,6 @@ public final class Relationship implements Serializable {
         }else if(fkIdx.size() > 1 && pkIdx.size() == 0){
             //-- this is compressed primary key and a composite foreign key
             //TODO: map a compressed primary key to a composite foreign key
-            System.out.println("asdf");
         }else if(fkIdx.size() == pkIdx.size()){
             for(int i=0; i<fkIdx.size(); i++){
                 Property prop = fkIdx.getProperty(i);

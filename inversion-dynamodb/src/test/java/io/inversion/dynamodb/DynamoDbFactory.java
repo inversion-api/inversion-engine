@@ -164,8 +164,8 @@ public class DynamoDbFactory {
                     total += 1;
                     JSNode js = (JSNode) o;
 
-                    js.removeValues("href");
-                    js.putValue("type", "ORDER");
+                    js.remove("href");
+                    js.put("type", "ORDER");
 
                     if (Utils.empty(js.findString("shipregion"))) {
                         empShipRegion += 1;
@@ -175,12 +175,12 @@ public class DynamoDbFactory {
                         String value = js.getString(key);
                         if (value != null && (value.startsWith("http://") || value.startsWith("https://"))) {
                             value = value.substring(value.lastIndexOf("/") + 1);
-                            js.removeValues(key);
+                            js.remove(key);
 
                             if (!key.toLowerCase().endsWith("id"))
                                 key = key + "Id";
 
-                            js.putValue(key, value);
+                            js.put(key, value);
                         }
                     }
                     toPost.add(js);

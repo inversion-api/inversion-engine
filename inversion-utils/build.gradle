@@ -1,14 +1,14 @@
 dependencies {
 
-    api group: "org.apache.commons", name: "commons-lang3", version: "${commonsLang3Version}"
-
+    //api group: "org.apache.commons", name: "commons-lang3", version: "${commonsLang3Version}"
+    //api group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
     //JSON parsing
-    api group: "com.fasterxml.jackson.core", name: "jackson-core", version: "${jacksonCoreVersion}"
-    api group: "com.fasterxml.jackson.core", name: "jackson-databind", version: "${jacksonDatabindVersion}"
-    api group: "javax.xml.bind", name: "jaxb-api", version: "${javaxJaxbVersion}"
+    //api group: "com.fasterxml.jackson.core", name: "jackson-core", version: "${jacksonCoreVersion}"
+    //api group: "com.fasterxml.jackson.core", name: "jackson-databind", version: "${jacksonDatabindVersion}"
+    //api group: "javax.xml.bind", name: "jaxb-api", version: "${javaxJaxbVersion}"
 
     //JSON Patch
-    api group: "com.flipkart.zjsonpatch",    name: "zjsonpatch", version: "${zjsonpatchVersion}"
+    //api group: "com.flipkart.zjsonpatch",    name: "zjsonpatch", version: "${zjsonpatchVersion}"
 
 
 }

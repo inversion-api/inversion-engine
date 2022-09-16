@@ -871,146 +871,86 @@ public class Path implements Comparable<Path> {
     }
 
 
-    public static Path joinPaths(Path inLeftPath, Path inRightPath, boolean relative) {
-
-        Path    leftPath     = new Path(inLeftPath);
-        Path    rightPath    = new Path(inRightPath);
-        String  leftPart     = null;
-        String  rightPart    = null;
-        Path    joined       = new Path();
-        boolean leftOptional = false;
-
-        while (relative && leftPath.size() > 0) {
-            leftPart = leftPath.get(0);
-
-            if (!leftPath.isOptional(0) && !leftPath.isWildcard(0))
-                joined.add(leftPart);
-
-            if (leftPath.isOptional(0) || leftPath.isWildcard(0))
-                leftOptional = true;
-
-            if (!leftOptional)
-                leftPath.remove(0);
-            else
-                break;
-        }
-
-        while (leftPath.size() > 0 && rightPath.size() > 0) {
-            leftPart = leftPath.get(0);
-            rightPart = rightPath.get(0);
-
-            if (leftPath.isWildcard(0))
-                joined.add(rightPart);
-            else if (rightPath.isWildcard())
-                joined.add(leftPart);
-            else if (leftPath.isVar(0)) {// && rightPath.isVar(0)) {
-                //joined.add(rightPart);
-                joined.add(leftPart);
-            } else if (!leftPath.isVar(0) && !rightPath.isVar(0)) {
-                String leftVal  = Path.unwrapOptional(leftPath.get(0));
-                String rightVal = Path.unwrapOptional(rightPath.get(0));
-                if (!leftVal.equalsIgnoreCase(rightVal))
-                    return null;
-                joined.add(rightVal);
-//            } else if (!rightPath.isVar(0)) {
-//                joined.add(rightPart);
-            } else {
-                joined.add(leftPart);
-            }
-
-            leftPath.remove(0);
-            rightPath.remove(0);
-        }
-
-        while (leftPath.size() > 0)
-            joined.add(leftPath.remove(0));
-
-        while (rightPath.size() > 0)
-            joined.add(rightPath.remove(0));
-
-        return joined;
-    }
-
-    public static List<Path> mergePaths(List<Path> mPaths, List<Path> aPaths) {
-
-        for (Path aPath : aPaths) {
-
-            boolean exists = false;
-            for (int m = 0; m < mPaths.size(); m++) {
-
-                Path mPath = mPaths.get(m);
-                if (aPath == mPath)
-                    continue;
-
-                if (!compatible(aPath, mPath))
-                    continue;
-
-                for (int i = 0; i < aPath.size(); i++) {
-
-                    if (i >= mPath.size()) {
-                        break;
-                    }
-
-                    //the old rule consumes the new one  a/b consumes a/*
-                    if (aPath.isWildcard(i) && !mPath.isWildcard(i)) {
-                        exists = true;
-                        break;
-                    }
-
-                    //the new rule will consume the old one....a/* consumed by a/b or a/b/c
-                    if (mPath.isWildcard(i)) {
-                        mPaths.remove(m);
-                        m--;
-                        break;
-                    }
-
-                    if (!mPath.isVar(i) && aPath.isVar(i))
-                        aPath.set(i, mPath.get(i));
-
-                    if (mPath.isVar(i) && !aPath.isVar(i)) {
-                        mPath.set(i, aPath.get(i));
-                    }
-
-//                    if (!mPath.isVar(i) && !aPath.isVar(i)) {
-//                        if (!mPath.get(i).equalsIgnoreCase(aPath.get(i)))
-//                            throw ApiException.new500InternalServerError("Endpoint configuration error.  Actions have incompatible paths.");
+//    public static List<Path> mergePaths(List<Path> mPaths, List<Path> aPaths) {
+//
+//        for (Path aPath : aPaths) {
+//
+//            boolean exists = false;
+//            for (int m = 0; m < mPaths.size(); m++) {
+//
+//                Path mPath = mPaths.get(m);
+//                if (aPath == mPath)
+//                    continue;
+//
+//                if (!compatible(aPath, mPath))
+//                    continue;
+//
+//                for (int i = 0; i < aPath.size(); i++) {
+//
+//                    if (i >= mPath.size()) {
+//                        break;
 //                    }
-
-
-                    if (aPath.size() == mPath.size() && i == mPath.size() - 1)
-                        exists = true;
-                }
-            }
-
-            if (!exists) {
-                mPaths.add(aPath);
-            }
-        }
-
-        //-- removes "a" if "a/*" is in the list.
-        for (int i = 0; i < mPaths.size(); i++) {
-            for (int j = 0; j < mPaths.size(); j++) {
-                if (i == j)
-                    continue;
-
-                Path p1 = mPaths.get(i);
-                Path p2 = mPaths.get(j);
-
-                if (p1.size() == p2.size() + 1 && p1.endsWithWildcard()) {
-                    mPaths.remove(j);
-                    j--;
-                    continue;
-                }
-                if (p2.size() == p1.size() + 1 && p2.endsWithWildcard()) {
-                    mPaths.remove(i);
-                    i--;
-                    break;
-                }
-            }
-        }
-
-        return mPaths;
-    }
+//
+//                    //the old rule consumes the new one  a/b consumes a/*
+//                    if (aPath.isWildcard(i) && !mPath.isWildcard(i)) {
+//                        exists = true;
+//                        break;
+//                    }
+//
+//                    //the new rule will consume the old one....a/* consumed by a/b or a/b/c
+//                    if (mPath.isWildcard(i)) {
+//                        mPaths.remove(m);
+//                        m--;
+//                        break;
+//                    }
+//
+//                    if (!mPath.isVar(i) && aPath.isVar(i))
+//                        aPath.set(i, mPath.get(i));
+//
+//                    if (mPath.isVar(i) && !aPath.isVar(i)) {
+//                        mPath.set(i, aPath.get(i));
+//                    }
+//
+////                    if (!mPath.isVar(i) && !aPath.isVar(i)) {
+////                        if (!mPath.get(i).equalsIgnoreCase(aPath.get(i)))
+////                            throw ApiException.new500InternalServerError("Endpoint configuration error.  Actions have incompatible paths.");
+////                    }
+//
+//
+//                    if (aPath.size() == mPath.size() && i == mPath.size() - 1)
+//                        exists = true;
+//                }
+//            }
+//
+//            if (!exists) {
+//                mPaths.add(aPath);
+//            }
+//        }
+//
+//        //-- removes "a" if "a/*" is in the list.
+//        for (int i = 0; i < mPaths.size(); i++) {
+//            for (int j = 0; j < mPaths.size(); j++) {
+//                if (i == j)
+//                    continue;
+//
+//                Path p1 = mPaths.get(i);
+//                Path p2 = mPaths.get(j);
+//
+//                if (p1.size() == p2.size() + 1 && p1.endsWithWildcard()) {
+//                    mPaths.remove(j);
+//                    j--;
+//                    continue;
+//                }
+//                if (p2.size() == p1.size() + 1 && p2.endsWithWildcard()) {
+//                    mPaths.remove(i);
+//                    i--;
+//                    break;
+//                }
+//            }
+//        }
+//
+//        return mPaths;
+//    }
 
 
     public static boolean compatible(Path a, Path b) {

@@ -429,9 +429,9 @@ public class Request implements JSFind {
         if (node != null) {
             if (node instanceof JSList) {
                 return (JSList) node;
-            } else if (node.getValue("data") instanceof JSList) {
+            } else if (node.get("data") instanceof JSList) {
                 return node.getList("data");
-            } else if (node.getValue("_embedded") instanceof JSList) {
+            } else if (node.get("_embedded") instanceof JSList) {
                 return node.getList("_embedded");
             } else {
                 return new JSList(node);

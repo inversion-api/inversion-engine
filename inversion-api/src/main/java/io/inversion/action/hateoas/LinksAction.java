@@ -40,59 +40,14 @@ public class LinksAction extends HATEOASAction<LinksAction> {
         }
     }
 
-    protected void addLinks(Collection coll, JSMap node){
-
-        String resourceKey = coll.encodeKeyFromJsonNames(node);
-        LinkedHashMap<String, String> toAdd = new LinkedHashMap<>();
-
-        if (coll != null && resourceKey != null) {
-            for (Relationship rel : coll.getRelationships()) {
-
-                Object value = node.getValue(rel.getName());
-                if (value instanceof JSNode) {
-                    ((JSNode) value).asMapList().forEach(child -> addLinks(rel.getRelated(), child));
-                } else {
-                    String link = null;
-                    if (rel.isManyToOne()) {
-
-                        Map<String, Object> primaryKey = rel.buildPrimaryKeyFromForeignKey(node);
-                        String              key        = primaryKey == null ? null : Collection.encodeKey(primaryKey, rel.getRelated().getResourceIndex(), true);
-
-                        if (key != null)
-                            link = Chain.buildLink(rel.getRelated(), key);
-                        else
-                            continue;
-                    }
-
-                    if (link == null)
-                        link = Chain.buildLink(coll, resourceKey, rel.getName());
-
-                    toAdd.put(rel.getName(), link);
-                }
-            }
-        }
-
-        //-- you can't change the properties in the above loop because you may be
-        //-- modifying data that you need for the creation of additional MANY_TO_ONE
-        //-- optimized links...meaning you may be overwriting data fields that are still important.
-        if (toAdd.size() > 0) {
-            List<String> keys = new ArrayList(toAdd.keySet());
-            Collections.reverse(keys);
-            for (String key : keys) {
-                node.putFirst(key, toAdd.get(key));
-            }
-        }
-
-        if(node.getValue("href") == null){
-            String href = Chain.buildLink(coll, resourceKey, null);
-            node.putFirst("href", href);
-        }
+    public void addSelfLink(JSMap entityNode, String link){
+        addLink(entityNode, "href", link);
     }
 
 
     protected void removeLinks(Collection coll, final JSMap node) {
 
-        if (node.getValue("href") instanceof String){
+        if (node.get("href") instanceof String){
             String href = (String)node.remove("href");
 
             if(href.startsWith("http://") || href.startsWith("https://")){
@@ -101,13 +56,13 @@ public class LinksAction extends HATEOASAction<LinksAction> {
 
             Map<String, Object> row = coll.decodeKeyToJsonNames((String) href);
             for (String key : row.keySet()) {
-                node.putValue(key, row.get(key));
+                node.put(key, row.get(key));
             }
         }
 
         for (Relationship rel : coll.getRelationships()) {
             if (node.containsKey(rel.getName())) {
-                Object value = node.getValue(rel.getName());
+                Object value = node.get(rel.getName());
 
                 if (value instanceof JSNode) {
                     ((JSNode)value).asMapList().forEach(child -> removeLinks(rel.getRelated(), child));
@@ -122,7 +77,7 @@ public class LinksAction extends HATEOASAction<LinksAction> {
                                 Map<String, Object> foreignKey = rel.buildForeignKeyFromPrimaryKey(primaryKey);
                                 for(String key : foreignKey.keySet()){
                                     if(!node.containsKey(key)){
-                                        node.putValue(key, foreignKey.get(key));
+                                        node.put(key, foreignKey.get(key));
                                     }
                                 }
                             }

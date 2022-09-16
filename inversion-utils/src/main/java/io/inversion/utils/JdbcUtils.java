@@ -17,7 +17,6 @@
 package io.inversion.utils;
 
 import io.inversion.utils.Rows.Row;
-import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -599,7 +598,7 @@ public class JdbcUtils {
                 cols = row.keySet();
             }
 
-            if (batch.size() > 0 && CollectionUtils.disjunction(cols, row.keySet()).size() > 0) {
+            if (batch.size() > 0 && Utils.disjunction(cols, row.keySet()).size() > 0) {
                 updatedCounts.addAll(updateBatch(conn, tableName, primaryKeyCols, batch));
                 batch.clear();
             }
@@ -704,7 +703,7 @@ public class JdbcUtils {
                 cols = row.keySet();
             }
 
-            if (batch.size() > 0 && (hadKey != hasKey) || CollectionUtils.disjunction(cols, row.keySet()).size() > 0) {
+            if (batch.size() > 0 && (hadKey != hasKey) || Utils.disjunction(cols, row.keySet()).size() > 0) {
                 if (hadKey == 0)
                     generatedKeys.addAll(insertBatch(conn, tableName, primaryKeyCols, batch));
                 else {

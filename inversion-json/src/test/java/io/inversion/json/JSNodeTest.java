@@ -197,7 +197,7 @@ public class JSNodeTest {
 
         found1 = doc.findAll("$..[?(@.*.*.color)]", -1);
         assertEquals(1, found1.size());
-        assertNotNull(found1.getMap(0).getValue("store"));
+        assertNotNull(found1.getMap(0).get("store"));
 
         found1 = doc.findAll("$..[?(@.*.bicycle.price)]", -1);
         assertEquals(1, found1.size());
@@ -209,25 +209,25 @@ public class JSNodeTest {
         assertEquals(1, found1.size());
 
         found1 = doc.findAll("$.store.book[(@.length-1)]");
-        assertEquals("J. R. R. Tolkien", found1.getMap(0).getValue("author"));
+        assertEquals("J. R. R. Tolkien", found1.getMap(0).get("author"));
 
         found1 = doc.findAll("$.store.book[-1:]");
-        assertEquals("J. R. R. Tolkien", found1.getMap(0).getValue("author"));
+        assertEquals("J. R. R. Tolkien", found1.getMap(0).get("author"));
 
         found1 = doc.findAll("$.store.book[-2:]");
-        assertEquals("Herman Melville", found1.getMap(0).getValue("author"));
+        assertEquals("Herman Melville", found1.getMap(0).get("author"));
 
         found1 = doc.findAll("$.store.book[(@.length-2)]");
-        assertEquals("Herman Melville", found1.getMap(0).getValue("author"));
+        assertEquals("Herman Melville", found1.getMap(0).get("author"));
 
         found1 = doc.findAll("$.store.book[:3]");
         assertEquals(3, found1.size());
 
         found1 = doc.findAll("$.store.book[1:3]");
         assertEquals(3, found1.size());
-        assertEquals("Evelyn Waugh", found1.getMap(0).getValue("author"));
-        assertEquals("Herman Melville", found1.getMap(1).getValue("author"));
-        assertEquals("J. R. R. Tolkien", found1.getMap(2).getValue("author"));
+        assertEquals("Evelyn Waugh", found1.getMap(0).get("author"));
+        assertEquals("Herman Melville", found1.getMap(1).get("author"));
+        assertEquals("J. R. R. Tolkien", found1.getMap(2).get("author"));
 
 
         //JSList categories = doc.findAll("**.category");
@@ -310,7 +310,7 @@ public class JSNodeTest {
 
         JSList patches = body.diff(stateDoc.getNode("data"));
         if (patches.size() > 0) {
-            apiEvent.putValue("patches", patches);
+            apiEvent.put("patches", patches);
             stateDoc.getNode("data").patch(patches);
         }
 

@@ -33,20 +33,20 @@ public class EchoRequestStreamHandler implements RequestStreamHandler {
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
         JSNode responseBody = new JSMap();
         JSNode responseJson = new JSMap();
-        responseJson.putValue("isBase64Encoded", false);
-        responseJson.putValue("statusCode", "200");
-        responseJson.putValue("headers", new JSMap("Access-Control-Allow-Origin", "*"));
+        responseJson.put("isBase64Encoded", false);
+        responseJson.put("statusCode", "200");
+        responseJson.put("headers", new JSMap("Access-Control-Allow-Origin", "*"));
         try {
             String input = Utils.read(new BufferedInputStream(inputStream));
             context.getLogger().log(input);
             JSNode request = JSParser.asJSNode(input);
-            responseBody.putValue("request", request);
+            responseBody.put("request", request);
 
         } catch (Exception ex) {
-            responseBody.putValue("error", Utils.getShortCause(ex));
+            responseBody.put("error", Utils.getShortCause(ex));
         }
 
-        responseJson.putValue("body", responseBody.toString());
+        responseJson.put("body", responseBody.toString());
         OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
         writer.write(responseJson.toString());
         writer.close();

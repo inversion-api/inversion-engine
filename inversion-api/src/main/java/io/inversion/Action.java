@@ -98,7 +98,7 @@ public class Action<A extends Action> extends Rule<A> implements OpenAPIWriter<A
 
     public static Path joinPaths(Path endpointPath, Path actionPath, boolean relative) {
         Path val = joinPaths0(endpointPath, actionPath, relative);
-        System.out.println("joinPaths(" + endpointPath + ", " + actionPath + ", " + relative + ") -> " + val);
+        //System.out.println("joinPaths(" + endpointPath + ", " + actionPath + ", " + relative + ") -> " + val);
         return val;
     }
 

@@ -12,18 +12,18 @@ public interface JSPatch {
     default void patch(JSList patches) {
         //-- migrate legacy "." based paths to JSONPointer
         for (JSNode patch : patches.asMapList()) {
-            Object pathVal = patch.getValue("path");
+            Object pathVal = patch.get("path");
             String path = pathVal != null ? pathVal.toString() : null;
             if (path != null && !path.startsWith("/")) {
                 path = "/" + path.replace(".", "/");
             }
-            patch.putValue("path", path);
+            patch.put("path", path);
 
-            Object fromVal = patch.getValue("from");
+            Object fromVal = patch.get("from");
             path = fromVal != null ? fromVal.toString() : null;
             if (path != null && !path.startsWith("/")) {
                 path = "/" + path.replace(".", "/");
-                patch.putValue("from", path);
+                patch.put("from", path);
             }
         }
 
@@ -33,7 +33,7 @@ public interface JSPatch {
             JsonNode target  = JsonPatch.apply(mapper.readValue(patches.toString(), JsonNode.class), mapper.readValue(getJson().toString(), JsonNode.class));
             JSNode   patched = JSParser.asJSNode(target.toString());
             getJson().clear();
-            patched.getProperties().forEach(p -> getJson().putValue(p.getKey(), p.getValue()));
+            patched.getProperties().forEach(p -> getJson().put(p.getKey(), p.getValue()));
 
             if (getJson().isList()) {
                 JSList arr = (JSList)getJson();

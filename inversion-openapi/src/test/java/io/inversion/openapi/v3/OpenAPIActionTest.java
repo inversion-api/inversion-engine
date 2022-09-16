@@ -20,6 +20,7 @@ import io.inversion.Api;
 import io.inversion.Endpoint;
 import io.inversion.action.db.DbAction;
 import io.inversion.action.hateoas.HALAction;
+import io.inversion.action.hateoas.LinksAction;
 import io.inversion.action.misc.FileAction;
 import io.inversion.action.openapi.OpenAPIAction;
 import io.inversion.jdbc.JdbcDb;
@@ -52,8 +53,8 @@ public class OpenAPIActionTest {
 //                .withCollection(new Collection().withName("auths").withSchemaRef("http://localhost:8080/northwind/v1/us/auth.json").withProperty("id", "number").withIndex("pk", "primary", true, "id"));
 
                 .withEndpoint(new Endpoint("*"
-                        , new HALAction() //
-                        //,new LinksAction() //
+                        //, new HALAction() //
+                        ,new LinksAction() //
                         //,new AuthAction().withAuthScheme(new BearerScheme().withDescription("this is a JWT."))
                         //                .withAuthScheme(new ApiKeyScheme().withParameter(new Parameter("username", "username", "query", false))
                         //                        .withParameter(new Parameter("password", "password", "query", false)))//

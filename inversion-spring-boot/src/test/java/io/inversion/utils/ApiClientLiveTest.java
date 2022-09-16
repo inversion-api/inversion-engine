@@ -65,7 +65,7 @@ public class ApiClientLiveTest {
         for(int i=0; i<5000; i++){
             buff.append("x");
         }
-        json.putValue("x", buff.toString());
+        json.put("x", buff.toString());
 
         InversionMain.run(new Api("testme").withEndpoint(new Action() {
 

@@ -67,7 +67,7 @@ public final class Url {
      * implementation here simply because it is an affective case insensitive map that preserves
      * the original key case key iteration order.
      */
-    protected JSMap<String> params = new JSMap();
+    protected JSMap params = new JSMap();
 
 
     /**
@@ -503,7 +503,7 @@ public final class Url {
     public String findKeyValue(String... tokens) {
         String key = findKey(tokens);
         if (key != null)
-            return params.get(key);
+            return (String)params.get(key);
 
         return null;
     }

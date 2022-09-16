@@ -52,7 +52,7 @@ public class JSParser {
                     if(isArray)
                         ((JSList)node).add(childNode);
                     else
-                        node.putValue(name, childNode);
+                        node.put(name, childNode);
                     break;
                 case END_OBJECT:
                     return node;
@@ -63,7 +63,7 @@ public class JSParser {
                     if(isArray)
                         ((JSList)node).add(childArr);
                     else
-                        node.putValue(name, childArr);
+                        node.put(name, childArr);
                     break;
                 case END_ARRAY:
                     return (JSList)node;
@@ -76,21 +76,21 @@ public class JSParser {
                     if(isArray)
                         ((JSList)node).add(parser.getValueAsString());
                     else
-                        node.putValue(name, parser.getValueAsString());
+                        node.put(name, parser.getValueAsString());
                     break;
                 case VALUE_NUMBER_INT:
                     try{
                         if(isArray)
                             ((JSList)node).add(parser.getValueAsInt());
                         else
-                            node.putValue(name, parser.getValueAsInt());
+                            node.put(name, parser.getValueAsInt());
                         break;
                     }
                     catch(InputCoercionException ex){
                         if(isArray)
                             ((JSList)node).add(parser.getValueAsLong());
                         else
-                            node.putValue(name, parser.getValueAsLong());
+                            node.put(name, parser.getValueAsLong());
                         break;
                     }
 
@@ -98,25 +98,25 @@ public class JSParser {
                     if(isArray)
                         ((JSList)node).add(parser.getValueAsDouble());
                     else
-                        node.putValue(name, parser.getValueAsDouble());
+                        node.put(name, parser.getValueAsDouble());
                     break;
                 case VALUE_TRUE:
                     if(isArray)
                         ((JSList)node).add(true);
                     else
-                        node.putValue(name, true);
+                        node.put(name, true);
                     break;
                 case VALUE_FALSE:
                     if(isArray)
                         ((JSList)node).add(false);
                     else
-                        node.putValue(name, false);
+                        node.put(name, false);
                     break;
                 case VALUE_NULL:
                     if(isArray)
                         ((JSList)node).add(null);
                     else
-                        node.putValue(name, null);
+                        node.put(name, null);
                     break;
 
                 default:

@@ -13,20 +13,18 @@ Restore
 - Update json path to correct for querying arrays with text keys, algo working but not optimized for map vs list
 
 
-* DONE why is Op getting duplicate variables set?
+
 * Set server variables on chain like endpoint and action
-* DONE Make operationPath String on Op that starts with a "/" and remove use of getPath().toString() in OpenApiWriter  
 * Add support for Server (including adding all servers to a single api) in Wirer
 * Add param support to Server & check on request matching
 * Add server params to openapi
 * Check that all servers have the same variables
 * Add global route connection restriction and retry/backoff to RestClient
-* Rename RestClient API Client...should it be its own project?  
 * Add default 404 handling to springboot
 * Add url scrubbing to Engine
 
 
-*  Get all H2 tests passing
+
 
 * Engine 
   * Operation Construction
@@ -45,7 +43,6 @@ Restore
 
 * Rows / JSNode
   * Get rid of Rows, it is inefficient since everything is transformed to json
-  * Get rid of extra map in JSNode and just use case-insensitive string comparison when key not found
 
 * Url
   * Reject special characters in path
@@ -62,8 +59,8 @@ Restore
 * Make all objects reject a "name" field with special characters in it (ones that would be Collection.encodedStr)
 
 
-* Parameter
-  * Change "in" to an enum
+* Path
+ * Add constructor to take in and join multiple paths not just strings  
     
 
 Wirer

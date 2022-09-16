@@ -66,7 +66,7 @@ public class CsvAction extends Action<CsvAction> {
                 JSNode obj = (JSNode) arr.get(i);
                 if (obj != null) {
                     for (String key : obj.keySet()) {
-                        Object val = obj.getValue(key);
+                        Object val = obj.get(key);
                         if (!(val instanceof JSList) && !(val instanceof JSNode))
                             keys.add(key);
                     }
@@ -83,7 +83,7 @@ public class CsvAction extends Action<CsvAction> {
 
             for (int i = 0; i < arr.size(); i++) {
                 for (String key : keysList) {
-                    Object val = ((JSNode) arr.get(i)).getValue(key);
+                    Object val = ((JSNode) arr.get(i)).get(key);
                     if (val != null) {
                         printer.print(val);
                     } else {

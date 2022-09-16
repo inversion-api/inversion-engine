@@ -1,12 +1,8 @@
 package io.inversion.json;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import io.inversion.utils.Utils;
-
 import java.util.*;
 
-public class JSMap <T> extends JSNode implements Map<String, T> {
+public class JSMap extends JSNode implements Map {
 
     /**
      * Maps the lower case JSProperty.name to the property for case
@@ -28,10 +24,10 @@ public class JSMap <T> extends JSNode implements Map<String, T> {
      * The first and every other element in <code>nameValuePairs</code> should be a string.
      *
      * @param nameValuePairs the name value pairs to add
-     * @see #with(Object...)
+     * @see #putAll(Object...)
      */
     public JSMap(Object... nameValuePairs) {
-        with(nameValuePairs);
+        putAll(nameValuePairs);
     }
 
     /**
@@ -74,24 +70,55 @@ public class JSMap <T> extends JSNode implements Map<String, T> {
     }
 
 
+
+
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
-    //-- Map Implementations
+    //-- START Additional Map Interface Specific Methods
+
 
     @Override
-    public T get(Object key) {
-        return (T)this.getValue(key);
+    public Object remove(Object key) {
+        JSProperty prop = getProperty(key);
+        if (prop != null)
+            removeProperty(prop);
+        return prop != null ? prop.getValue() : null;
     }
 
-    @Override
-    public Object put(String key, Object value) {
-        return putValue(key, value);
+
+
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //-- END Additional Map Interface Methods
+
+
+
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //-- Utility Methods
+
+
+
+    /**
+     * Changes the property name iteration order from insertion order to alphabetic order.
+     */
+    public void sort() {
+        List<String> keys = new ArrayList(keySet());
+        Collections.sort(keys);
+        LinkedHashMap<String, JSProperty> newProps = new LinkedHashMap();
+        for (String key : keys) {
+            newProps.put(key, getProperty(key));
+        }
+        clear();
+        newProps.values().forEach(p -> put(p.getKey(), p.getValue()));
     }
 
     public Object putFirst(String key, Object value){
         JSProperty oldProp = getProperty(key);
-        properties.remove(key);
+        remove(key);
 
         LinkedHashMap<String, JSProperty> oldMap = properties;
         properties = new LinkedHashMap<>();
@@ -103,74 +130,4 @@ public class JSMap <T> extends JSNode implements Map<String, T> {
         return oldProp != null ? oldProp.getValue() : null;
     }
 
-    @Override
-    public void putAll(Map<? extends String, ? extends T> map) {
-        for (String key : map.keySet()) {
-            put(key, map.get(key));
-        }
-    }
-
-    @Override
-    public T remove(Object key) {
-        JSProperty prop = getProperty(key);
-        if (prop != null)
-            removeProperty(prop);
-        return prop != null ? (T)prop.getValue() : null;
-    }
-
-    @Override
-    public boolean containsKey(Object key) {
-        if (key == null)
-            return false;
-        return getProperty(key.toString()) != null;
-    }
-
-    @Override
-    public boolean containsValue(Object value) {
-        for (JSProperty p : getProperties()) {
-            if (value == null && p.getValue() == null
-                    || value != null && value.equals(p.getValue()))
-                return true;
-        }
-        return false;
-    }
-
-    /**
-     * @return all property name / value pairs
-     */
-    @Override
-    public Set<Map.Entry<String, T>> entrySet() {
-        Map map = new LinkedHashMap();
-        getProperties().forEach(p -> map.put(p.getKey(), p.getValue()));
-        return map.entrySet();
-    }
-
-    @Override
-    public Collection<T> values() {
-        return getValues();
-    }
-
-    /**
-     * Changes the property name iteration order from insertion order to alphabetic order.
-     */
-    public void sortKeys() {
-        List<String> keys = new ArrayList(keySet());
-        Collections.sort(keys);
-        LinkedHashMap<String, JSProperty> newProps = new LinkedHashMap();
-        for (String key : keys) {
-            newProps.put(key, getProperty(key));
-        }
-        clear();
-        newProps.values().forEach(p -> putValue(p.getKey(), p.getValue()));
-    }
-
-    public T as(Class<T> type){
-        try{
-            return mapper.readValue(toString(), type);
-        }
-        catch(Exception ex){
-            Utils.rethrow(ex);
-        }
-        return null;
-    }
 }

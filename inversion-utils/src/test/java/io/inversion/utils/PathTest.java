@@ -25,29 +25,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class PathTest {
 
 
-    void join(String expected, String leftPath, String rightPath, boolean relative){
-        Path path =  Path.joinPaths(new Path(leftPath), new Path(rightPath), relative);
-        assertEquals(expected, path != null ? path.toString() : null);
-    }
-
-    @Test
-    public void test_expandOptionalsAndFilterDuplicates() {
-        List<Path> paths = new ArrayList();
-        paths.add(new Path("{_collection}/[{_resource}]/[{_relationship}]"));
-        paths.add(new Path("books/[{bookId}]/[{author}]"));
-        paths.add(new Path("author/[{authorId}]/[{books}]"));
-
-        paths = Path.expandOptionals(paths);
-        paths = Path.filterDuplicates(paths);
-        assertEquals("[{_collection}, {_collection}/{_resource}, {_collection}/{_resource}/{_relationship}, books, books/{bookId}, books/{bookId}/{author}, author, author/{authorId}, author/{authorId}/{books}]", paths.toString());
-
-        List<Path> merged = Path.mergePaths(new ArrayList<>(), paths);
-        assertEquals("[books, books/{_resource}, books/{_resource}/{_relationship}, author, author/{authorId}, author/{authorId}/{books}]", merged.toString());
-
-        System.out.println(merged);
-        System.out.println("-----");
-    }
-
     @Test
     public  void test_expandOptionals(){
         Path apiPath = new Path("base/*");
@@ -68,53 +45,21 @@ public class PathTest {
 
 
     @Test
-    public void test_joinPaths(){
-        join("servlet/path/api/v1/*", "/servlet/path/*", "api/v1/*", true);
-        join("servlet/path/api/v1/[books]/*", "/servlet/path/*", "api/v1/[books]/*", true);
-        join("api/v1/[{collection}]/[{resource}]/[{relationship}]", "/api/v1/[{collection}]/[{resource}]/[{relationship}]", "/*", true);
-        join("api/v1/*", "/*", "api/v1/*", true);
-        join(null, "servlet/[api1]/*", "api2/*", true);
-
-        join("catalog/books/*", "catalog/*", "catalog/books/*", false);
-
-        join("catalog/books/abook", "catalog/[books]/*", "catalog/books/abook", false);
-        join(null, "catalog/[cars]/*", "catalog/books/abook", false);
-
-    }
-
-
-    @Test
     public void getSubPaths(){
 
         Path path = null;
         List<Path> paths = null;
 
-//        path = new Path("part1/{var1}/part2/[optional1]/{something}/[optional2]/{var2}/*");
-//        paths = path.getSubPaths();
-//        System.out.println(paths);
-//        assertTrue(paths.size() == 3);
-//        assertEquals("part1/{var1}/part2", paths.get(0).toString());
-//        assertEquals("part1/{var1}/part2/optional1/{something}", paths.get(1).toString());
-//        assertEquals("part1/{var1}/part2/optional1/{something}/optional2/{var2}/*", paths.get(2).toString());
-//
-//
-//        paths = new Path("/*").getSubPaths();
-//        System.out.println(paths);
-//        assertTrue(paths.size() == 1);
-//        assertEquals("*", paths.get(0).toString());
-
-        path = new Path("api/endpoint/[collection]/[resource]/[relationship]/*");
+        path = new Path("api/endpoint/[collection]/resource/[relationship]/[almost]/[almost]/final/*");
         paths = path.getSubPaths();
         System.out.println(paths);
-        assertTrue(paths.size() == 4);
-        assertEquals("api/endpoint", paths.get(0).toString());
-        assertEquals("api/endpoint/collection", paths.get(1).toString());
-        assertEquals("api/endpoint/collection/resource", paths.get(2).toString());
-        assertEquals("api/endpoint/collection/resource/relationship/*", paths.get(3).toString());
 
-
-
-
+        String actual = paths.toString();
+        String expected = "[api/endpoint, api/endpoint/collection/resource, " +
+                "api/endpoint/collection/resource/relationship, " +
+                "api/endpoint/collection/resource/relationship/almost, " +
+                "api/endpoint/collection/resource/relationship/almost/almost/final/*]";
+        assertEquals(expected, actual);
     }
 
     @Test
@@ -276,51 +221,51 @@ public class PathTest {
         assertTrue(new Path("{collection:players|locations|ads}/[{resource:[0-9]{1,12}}]/{relationship:[a-z]*}").matches("Locations/698/players"));
     }
 
-    @Test
-    public void mergePaths() {
+//    @Test
+//    public void mergePaths() {
+//
+//        merge("[a/*]", "a/*", "a");
+//        merge("[a/*]", "a", "a/*");
+//
+//        merge("[a/b]", "a/*", "a/b");
+//        merge("[a/b]", "a/b", "a/*");
+//        merge("[a, a/b]", "a", "a/b");
+//
+//        merge("[a, a/b/c]", "a", "a/b/c");
+//
+//        merge("[a/b/c]", "a/*", "a/b/c");
+//        merge("[a/b/c]", "a/b/c", "a/*");
+//
+//        merge("[a/b/c/*]", "a/*", "a/b/c/*");
+//        merge("[a/b/c/*]", "a/b/c/*", "a/*");
+//
+//        merge("[a/b, a/b/c]", "a/b", "a/b/c");
+//        merge("[a/b]", "a/{asdf}", "a/b");
+//        merge("[a/b/c]", "a/{asdf}/c", "a/b/c");
+//
+//
+//        merge("[a/b/c]", "a/b/c", "a/{asdf}/c");
+//
+//        merge("[a/b/c]", "a/b/c", "a/{asdf}/*");
+//        merge("[a/b/c/*]", "a/b/c/*", "a/{asdf}/c");
+//
+//
+//        merge("[1/2/3/4]", "{v1}/{v1}/{v1}/{v1}", "1/{a}/{b}/{c}/", "{a}/2/{b}/{c}/", "{a}/{b}/3/{c}/", "{a}/{b}/{c}/4");
+//        merge("[1/2/3/4]", "{v1}/{v1}/{v1}/{v1}", "1/*", "{a}/2/*", "{a}/{b}/3/*", "{a}/{b}/{c}/4");
+//
+//
+//        merge("[1/2/3/4]","{v1}/{v1}/{v1}/{v1}", "1/*", "{a}/2/3/4");
+//
+//    }
 
-        merge("[a/*]", "a/*", "a");
-        merge("[a/*]", "a", "a/*");
-
-        merge("[a/b]", "a/*", "a/b");
-        merge("[a/b]", "a/b", "a/*");
-        merge("[a, a/b]", "a", "a/b");
-
-        merge("[a, a/b/c]", "a", "a/b/c");
-
-        merge("[a/b/c]", "a/*", "a/b/c");
-        merge("[a/b/c]", "a/b/c", "a/*");
-
-        merge("[a/b/c/*]", "a/*", "a/b/c/*");
-        merge("[a/b/c/*]", "a/b/c/*", "a/*");
-
-        merge("[a/b, a/b/c]", "a/b", "a/b/c");
-        merge("[a/b]", "a/{asdf}", "a/b");
-        merge("[a/b/c]", "a/{asdf}/c", "a/b/c");
-
-
-        merge("[a/b/c]", "a/b/c", "a/{asdf}/c");
-
-        merge("[a/b/c]", "a/b/c", "a/{asdf}/*");
-        merge("[a/b/c/*]", "a/b/c/*", "a/{asdf}/c");
-
-
-        merge("[1/2/3/4]", "{v1}/{v1}/{v1}/{v1}", "1/{a}/{b}/{c}/", "{a}/2/{b}/{c}/", "{a}/{b}/3/{c}/", "{a}/{b}/{c}/4");
-        merge("[1/2/3/4]", "{v1}/{v1}/{v1}/{v1}", "1/*", "{a}/2/*", "{a}/{b}/3/*", "{a}/{b}/{c}/4");
-
-
-        merge("[1/2/3/4]","{v1}/{v1}/{v1}/{v1}", "1/*", "{a}/2/3/4");
-
-    }
-
-    static void merge(String expected, String... paths) {
-        List<Path> list = new ArrayList<>();
-        for (String p : paths) {
-            list.add(new Path(p));
-        }
-        List<Path> merged = new ArrayList();
-        Path.mergePaths(merged, list);
-        System.out.println("MERGING: " + expected + " vs " + merged + " - " + list);
-        assertEquals(expected, merged.toString());
-    }
+//    static void merge(String expected, String... paths) {
+//        List<Path> list = new ArrayList<>();
+//        for (String p : paths) {
+//            list.add(new Path(p));
+//        }
+//        List<Path> merged = new ArrayList();
+//        Path.mergePaths(merged, list);
+//        System.out.println("MERGING: " + expected + " vs " + merged + " - " + list);
+//        assertEquals(expected, merged.toString());
+//    }
 }

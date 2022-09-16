@@ -24,7 +24,7 @@ public class JSReaderTest {
         assertEquals("c", array.get(2));
 
         assertEquals("value", string);
-        assertEquals("world", node.getValue("hello"));
+        assertEquals("world", node.get("hello"));
     }
 
     @Test

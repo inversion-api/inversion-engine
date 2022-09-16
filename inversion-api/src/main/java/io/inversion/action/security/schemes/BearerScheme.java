@@ -124,7 +124,7 @@ public class BearerScheme extends HttpAuthScheme {
         payload = new String(Base64.getDecoder().decode(payload.getBytes()));
         JSNode node = JSParser.asJSNode(payload);
         for (String key : node.keySet()) {
-            Object value = node.getValue(key);
+            Object value = node.get(key);
             user.withProperty(key, value);
         }
 

@@ -119,18 +119,18 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
         } finally {
             if (ex != null) {
                 if (config != null)
-                    responseBody.putValue("config", config);
+                    responseBody.put("config", config);
 
-                responseBody.putValue("error", Utils.getShortCause(ex));
+                responseBody.put("error", Utils.getShortCause(ex));
 
-                responseBody.putValue("request", JSParser.asJSNode(input));
+                responseBody.put("request", JSParser.asJSNode(input));
 
                 JSNode responseJson = new JSMap();
-                responseJson.putValue("isBase64Encoded", false);
-                responseJson.putValue("statusCode", "500");
-                responseJson.putValue("headers", new JSMap("Access-Control-Allow-Origin", "*"));
+                responseJson.put("isBase64Encoded", false);
+                responseJson.put("statusCode", "500");
+                responseJson.put("headers", new JSMap("Access-Control-Allow-Origin", "*"));
 
-                responseJson.putValue("body", responseBody.toString());
+                responseJson.put("body", responseBody.toString());
                 OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
                 writer.write(responseJson.toString());
                 writer.close();

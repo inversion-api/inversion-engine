@@ -81,7 +81,7 @@ public class Validation {
 
         if (childProps != null && value instanceof JSNode && !((JSNode) value).isList()) {
             for (String childProp : childProps) {
-                if (Utils.empty(((JSNode) value).getValue(childProp))) {
+                if (Utils.empty(((JSNode) value).get(childProp))) {
                     fail("Required field '" + propOrPath + "." + childProp + "' is missing.");
                 }
             }

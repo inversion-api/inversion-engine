@@ -138,7 +138,7 @@ public interface JSFind {
 
         if ("*".equals(nextSegment)) {
             if (path.size() == 1) {
-                Collection values = json.getValues();
+                Collection values = json.values();
 
                 for (Object value : values) {
                     if (!collected.contains(value) && (qty < 1 || collected.size() < qty))
@@ -146,7 +146,7 @@ public interface JSFind {
                 }
             } else {
                 List<String> nextPath = path.subList(1, path.size());
-                for (Object value : json.getValues()) {
+                for (Object value : json.values()) {
                     if (value instanceof JSNode) {
                         ((JSNode) value).findAll0(nextPath, qty, collected, visited);
                     }
@@ -156,7 +156,7 @@ public interface JSFind {
             if (path.size() != 1) {
                 List<String> nextPath = path.subList(1, path.size());
                 this.findAll0(nextPath, qty, collected, visited);
-                for (Object value : json.getValues()) {
+                for (Object value : json.values()) {
                     if (value instanceof JSNode) {
                         ((JSNode) value).findAll0(path, qty, collected, visited);
                     }
@@ -211,7 +211,7 @@ public interface JSFind {
                         value = token;
 
                         if (json.isList()) {
-                            for (Object child : json.getValues()) {
+                            for (Object child : json.values()) {
                                 if (child instanceof JSNode) {
                                     List found = ((JSNode) child).findAll0(subpath, -1, new ArrayList(), visited);
                                     for (Object val : found) {
@@ -247,7 +247,7 @@ public interface JSFind {
                     }
 
                     if (json.isList()) {
-                        for (Object child : json.getValues()) {
+                        for (Object child : json.values()) {
                             if (child instanceof JSNode) {
                                 List found = ((JSNode) child).findAll0(subpath, -1, new ArrayList(), visited);
                                 for (Object val : found) {
@@ -277,24 +277,24 @@ public interface JSFind {
                     if (expr.startsWith("(@_length-")) {
                         int index = Integer.parseInt(expr.substring(expr.indexOf("-") + 1, expr.length() - 1).trim());
                         if (length - index > 0) {
-                            found.add(json.getValue(length - index));
+                            found.add(json.get(length - index));
                         }
                     } else if (expr.startsWith(":")) {
                         int count = Integer.parseInt(expr.substring(1).trim());
                         for (int i = 0; i < length && i < count; i++) {
-                            found.add(json.getValue(count));
+                            found.add(json.get(count));
                         }
                     } else if (expr.endsWith(":")) {
                         int idx = Integer.parseInt(expr.substring(0, expr.length() - 1).trim()) * -1;
                         if (idx <= length)
-                            found.add(json.getValue(length - idx));
+                            found.add(json.get(length - idx));
                     } else {
                         try {
 
                             int start = Integer.parseInt(expr.substring(0, expr.indexOf(":")).trim());
                             int end   = Integer.parseInt(expr.substring(expr.indexOf(":") + 1).trim());
                             for (int i = start; i <= end && i < length; i++) {
-                                found.add(json.getValue(i));
+                                found.add(json.get(i));
                             }
                         } catch (Exception ex) {
                             System.out.println(expr);
@@ -303,6 +303,7 @@ public interface JSFind {
                     }
                     if (found.size() > 0) {
                         if (path.size() > 1) {
+                            //TODO: this is a dead assignment...need a test case here
                             List<String> nextPath = path.subList(1, path.size());
                         } else {
                             collected.addAll(found);
@@ -312,14 +313,7 @@ public interface JSFind {
             }
 
         } else {
-            Object found = null;
-            try {
-                if(json instanceof JSList && Utils.atoi(nextSegment) < 0)
-                    System.out.println("asdf");
-                found = json.getValue(nextSegment);
-            } catch (NumberFormatException ex) {
-                //trying to access an array with a prop name...ignore
-            }
+            Object found = json.get(nextSegment);
             if (found != null) {
                 if (path.size() == 1) {
                     if (!collected.contains(found) && (qty < 1 || collected.size() < qty))

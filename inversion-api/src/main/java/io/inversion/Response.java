@@ -315,7 +315,7 @@ public class Response implements JSFind {
         JSNode meta = json.getMap("meta");
         if (meta == null)
             meta = json;
-        meta.putValue(key, value);
+        meta.put(key, value);
         return this;
     }
 
@@ -387,9 +387,9 @@ public class Response implements JSFind {
     public Response withLink(String name, String url) {
         JSNode links = getJson().findMap("_links");
         if (links != null) {
-            links.putValue(name, new JSMap("href", url));
+            links.put(name, new JSMap("href", url));
         } else {
-            getMeta().putValue(name, url);
+            getMeta().put(name, url);
         }
         return this;
     }
@@ -401,7 +401,7 @@ public class Response implements JSFind {
             if (link != null)
                 return link.getString("href");
         } else {
-            Object link = getMeta().getValue(name);
+            Object link = getMeta().get(name);
             if (link instanceof String)
                 return (String) link;
         }
@@ -467,13 +467,13 @@ public class Response implements JSFind {
         if (json instanceof JSList)
             return (JSList) json;
 
-        if (json.getValue("data") instanceof JSList)
+        if (json.get("data") instanceof JSList)
             return json.getList("data");
 
-        if (json.getValue("_embedded") instanceof JSList)
+        if (json.get("_embedded") instanceof JSList)
             return json.getList("_embedded");
 
-        if (json.getValue("items") instanceof JSList)
+        if (json.get("items") instanceof JSList)
             return json.getList("items");
 
         //-- there is a single object in the payload without a meta or payload section
@@ -493,7 +493,7 @@ public class Response implements JSFind {
         JSList data = data();
         if (data == null) {
             data = new JSList();
-            getJson().putValue("data", data);
+            getJson().put("data", data);
         }
         data.add(record);
         return this;

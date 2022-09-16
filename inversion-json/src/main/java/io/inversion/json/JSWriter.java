@@ -2,28 +2,29 @@ package io.inversion.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import io.inversion.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.IdentityHashMap;
 
 public class JSWriter {
 
-    public static String toJson(Object obj){
-        if(obj instanceof JSNode){
-            return toJson((JSNode)obj);
-        }
-        try{
-            return JSNode.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
-        }
-        catch(Exception ex){
-            Utils.rethrow(ex);
-        }
-        return null;
-    }
+//    public static String toJson(Object obj){
+//        if(obj instanceof JSNode){
+//            return toJson((JSNode)obj);
+//        }
+//        try{
+//            return JSNode.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
+//        }
+//        catch(Exception ex){
+//            if(ex instanceof RuntimeException)
+//                throw ((RuntimeException)ex);
+//            throw new RuntimeException("Error writing json: " + ex.getMessage(), ex);
+//        }
+//    }
 
     static String toJson(JSNode node){
         return toJson(node, true, false);
@@ -95,7 +96,10 @@ public class JSWriter {
             } else if (value instanceof BigDecimal) {
                 json.writeNumberField(name, (BigDecimal) value);
             } else if (value instanceof Date) {
-                json.writeStringField(name, Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
+                String dateFormat = "yyyy-MM-dd'T'HH:mmZ";
+                SimpleDateFormat f = new SimpleDateFormat(dateFormat);
+                String dateString = f.format((Date) value);
+                json.writeStringField(name, dateString);
             } else {
                 String strVal = value + "";
                 if ("null".equals(strVal)) {
@@ -138,7 +142,10 @@ public class JSWriter {
                 } else if (value instanceof BigDecimal) {
                     json.writeNumber((BigDecimal) value);
                 } else if (value instanceof Date) {
-                    json.writeString(Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
+                    String dateFormat = "yyyy-MM-dd'T'HH:mmZ";
+                    SimpleDateFormat f = new SimpleDateFormat(dateFormat);
+                    String dateString = f.format((Date) value);
+                    json.writeString(dateString);
                 } else {
                     json.writeString(encodeStringValue(value.toString()));
                 }

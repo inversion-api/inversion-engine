@@ -33,6 +33,7 @@ import io.swagger.v3.oas.models.servers.ServerVariable;
 import io.swagger.v3.oas.models.servers.ServerVariables;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
+import java.io.InputStream;
 import java.util.*;
 
 public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
@@ -41,7 +42,9 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 
 
     protected String getDescription() {
-        //return Utils.read(Utils.findInputStream(this, "description.md"));
+        InputStream is = Utils.findInputStream(this, "description.md");
+        if(is != null)
+            return Utils.read(is);
         return "";
     }
 

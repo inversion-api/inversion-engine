@@ -22,13 +22,6 @@ public class JSProperty {
         return key;
     }
 
-//    /**
-//     * @param key the name to set
-//     */
-//    public void setKey(Object key) {
-//        this.key = key;
-//    }
-
     /**
      * @return the value
      */
@@ -36,10 +29,4 @@ public class JSProperty {
         return value;
     }
 
-//    /**
-//     * @param value the value to set
-//     */
-//    public void setValue(Object value) {
-//        this.value = value;
-//    }
 }

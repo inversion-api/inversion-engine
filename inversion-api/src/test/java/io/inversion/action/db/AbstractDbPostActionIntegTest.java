@@ -47,7 +47,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         JSList territories = res.findList("data.0.territories");
         territories.add(territories.get(territories.size()-1));                                   //-- this adds a referential duplicate
         territories.add(JSParser.parseJson(territories.get(territories.size()-1).toString()));      //--this adds a copy duplicate
-        territories.getNode(1).putValue("region", new JSMap("regionId", 1)); //-- this is another duplicate
+        territories.getNode(1).put("region", new JSMap("regionId", 1)); //-- this is another duplicate
 
         res = engine.put(employee5.getString("href"), employee5);
 
@@ -202,7 +202,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res.dump();
         assertTrue(res.findString("data.0.reportsTo").endsWith("/2"));
 
-        res.findNode("data.0").putValue("reportsTo", null);
+        res.findNode("data.0").put("reportsTo", null);
         res = engine.put(res.findString("data.0.href"), res.getJson());
         res.dump();
         res.assertOk();

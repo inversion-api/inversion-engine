@@ -98,7 +98,7 @@ class DbGetAction<A extends DbGetAction> extends Action<A>  {
 
     protected static String getForeignKey(Relationship rel, JSMap node) {
         Index idx = rel.getFkIndex1();
-        if (idx.size() == 1 && node.getValue(idx.getJsonName(0)) != null)
+        if (idx.size() == 1 && node.get(idx.getJsonName(0)) != null)
             return node.getString(idx.getJsonName(0));
 
         String key = rel.getCollection().encodeKeyFromJsonNames(node, rel.getFkIndex1());
@@ -277,9 +277,6 @@ class DbGetAction<A extends DbGetAction> extends Action<A>  {
         } else {
             //-- copy data into the response
             res.withRecords(results.getRows());
-
-            System.out.println(res.data());
-            System.out.println("asdasdfasdf");
 
             if(res.data().size() > 0) {
                 Collection coll = null;
@@ -482,7 +479,7 @@ class DbGetAction<A extends DbGetAction> extends Action<A>  {
                     for (JSMap parentObj : parentObjs) {
                         String parentEk = getResourceKey(collection, parentObj);
                         if (!toMatchEks.contains(parentEk)) {
-                            if (parentObj.getValue(rel.getName()) instanceof JSList)
+                            if (parentObj.get(rel.getName()) instanceof JSList)
                                 throw ApiException.new500InternalServerError("This relationship seems to have already been expanded.");//-- this is an implementation logic error. If it ever happens...FIX IT.
 
                             toMatchEks.add(parentEk);
@@ -490,7 +487,7 @@ class DbGetAction<A extends DbGetAction> extends Action<A>  {
                             if (rel.isManyToOne()) {
                                 parentObj.remove(rel.getName());
                             } else {
-                                parentObj.putValue(rel.getName(), new JSList());
+                                parentObj.put(rel.getName(), new JSList());
                             }
                         }
                     }
@@ -525,7 +522,7 @@ class DbGetAction<A extends DbGetAction> extends Action<A>  {
                     JSNode childObj  = (JSNode) pkCache.get(relatedCollection, relatedEk);
 
                     if (rel.isManyToOne()) {
-                        parentObj.putValue(rel.getName(), childObj);
+                        parentObj.put(rel.getName(), childObj);
                     } else {
                         if (childObj != null) {
                             parentObj.getList(rel.getName()).add(childObj);
@@ -562,7 +559,7 @@ class DbGetAction<A extends DbGetAction> extends Action<A>  {
             List idxToMatchVals = new ArrayList<>();
 
             for (String property : idxToMatch.getJsonNames()) {
-                Object propVal = node.getValue(property);
+                Object propVal = node.get(property);
 
                 if (propVal instanceof String) {
                     propVal = Utils.substringAfter(propVal.toString(), "/");
@@ -577,7 +574,7 @@ class DbGetAction<A extends DbGetAction> extends Action<A>  {
 
             List idxToRetrieveVals = new ArrayList<>();
             for (String property : idxToRetrieve.getJsonNames()) {
-                Object propVal = node.getValue(property);
+                Object propVal = node.get(property);
 
                 propVal = Utils.substringAfter(propVal.toString(), "/");
                 if (((String) propVal).contains("~")) {

@@ -463,7 +463,8 @@ public class ApiClient {
             if(body instanceof JSNode)
                 bodyStr = ((JSNode) body).toString();
             else
-                bodyStr = JSWriter.toJson(body);
+                //TODO: put back maybe?
+                body = bodyStr;//bodyStr.toString();//e = JSWriter.toJson(body);
         }
 
 
