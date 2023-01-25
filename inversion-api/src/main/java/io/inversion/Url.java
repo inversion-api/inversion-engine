@@ -18,6 +18,7 @@ package io.inversion;
 
 
 import io.inversion.json.JSMap;
+import io.inversion.json.JSParser;
 import io.inversion.rql.Rql;
 import io.inversion.rql.Term;
 import io.inversion.utils.Path;
@@ -38,27 +39,29 @@ public final class Url {
     /**
      * The url string as supplied to the constructor, with 'http://localhost/' prepended if the constructor url arg did not contain a host
      */
-    protected final String original;
+    private String original;
 
     /**
      * The url protocol, either http or https
      */
-    protected String protocol = "http";
+    private String protocol = "http";
 
     /**
      * The url host.
      */
-    protected String host = null;
+    private String hostAsString = null;
+
+    private Path hostAsPath = null;
 
     /**
      * The url port number if a custom port was provided
      */
-    protected int port = 0;
+    private int port = 0;
 
     /**
      * The part of the url after the host/port before the query string.
      */
-    protected Path path = null;
+    private Path path = null;
 
     /**
      * A case insensitive map of query string name/value pairs that preserves iteration order
@@ -67,8 +70,24 @@ public final class Url {
      * implementation here simply because it is an affective case insensitive map that preserves
      * the original key case key iteration order.
      */
-    protected JSMap params = new JSMap();
+    private JSMap params = new JSMap();
 
+
+    public Url copy(){
+        Url url = new Url();
+        url.original = original;
+        url.protocol = protocol;
+        url.hostAsString = hostAsString;
+        url.hostAsPath = hostAsPath == null ? null : new Path(hostAsPath);
+        url.port = port;
+        url.path = path == null ? null : new Path(path);
+        url.params = params.size() == 0 ? url.params : JSParser.asJSMap(params.toString());
+        return url;
+    }
+
+    private Url(){
+
+    }
 
     /**
      * Parses <code>url</code> into its protocol, host, port, path and query string param parts.
@@ -83,15 +102,6 @@ public final class Url {
 
         try {
 
-            //-- start by cleaning leading and trailing slashes
-            while (url.startsWith("/"))
-                url = url.substring(1);
-            while (url.endsWith("/"))
-                url = url.substring(0, url.length() - 1);
-
-            if (url.startsWith(":"))//legacy Path syntax could have started with ':' but should not have ended up as a Url.
-                throw new RuntimeException();
-
             //-- chopping out querystring is easy so start there
             int queryIndex = url.indexOf('?');
             if (queryIndex >= 0) {
@@ -100,57 +110,61 @@ public final class Url {
                 withQueryString(query);
             }
 
-            if (url.startsWith("https:")) {
-                protocol = "https";
-                url = url.substring(6);
-            } else if (url.startsWith("http:")) {
-                protocol = "http";
-                url = url.substring(5);
-            } else {
-                protocol = "http";
-                url = "127.0.0.1:8080" + (url.length() > 0 ? ("/" + url) : "");
-            }
 
-            while (url.startsWith("/"))
-                url = url.substring(1);
-            while (url.endsWith("/"))
-                url = url.substring(0, url.length() - 1);
+            if(url.startsWith("//") || url.startsWith("http:/") || url.startsWith("https:/")){
 
-            int hostEnd = url.length();
-            int slash   = url.indexOf("/");
-            int colon   = url.indexOf(":");
-
-            if (colon > -1 && (colon < slash || slash < 0))
-                hostEnd = colon;
-            else if (slash > -1)
-                hostEnd = slash;
-
-            if (hostEnd < 0)
-                hostEnd = url.length();
-            host = url.substring(0, hostEnd);
-            url = url.substring(hostEnd);
-
-            String path = url;
-            if (url.startsWith(":")) {
-                int portEnd = url.indexOf("/");
-                if (portEnd < 0)
-                    portEnd = url.length();
-                port = Integer.parseInt(url.substring(1, portEnd));
-                path = url.substring(portEnd);
-            }
-
-            if (!Utils.empty(path)) {
-                Path p = new Path(path);
-                for (int i = 0; i < p.size(); i++) {
-                    if (p.isVar(i))
-                        continue;
-                    String part = p.get(i);
-                    if (part.startsWith("."))
-                        throw Utils.ex("Your requested URL '{}' is malformed.", origionalUrl);
+                if(url.startsWith("//")) {
+                    withProtocol("//");
                 }
-                this.path = new Path(path);
+                else if(url.startsWith("http://")){
+                    withProtocol("http");
+                    url = url.substring(5);
+                }
+                else if(url.startsWith("https://")){
+                    withProtocol("https");
+                    url = url.substring(6);
+                }
+                else{
+                    throw Utils.ex("Your requested URL '{}' is malformed.", origionalUrl);
+                }
+
+                //-- trim off any type extra "/" characters
+                while(url.startsWith("/"))
+                    url = url.substring(1);
+
+                int slash = url.indexOf("/");
+                int colon = url.indexOf(":");
+
+                if(colon > 0 && (slash < 0 || colon < slash)){
+                    withHost(url.substring(0, colon));
+                    url = url.substring(colon);
+                }
+                else if(slash > 0){
+                    withHost(url.substring(0, slash));
+                    url = url.substring(slash);
+                }
+
+                if(url.startsWith(":")){
+                    slash = url.indexOf("/");
+                    if(slash > 0){
+                        withPort(Integer.parseInt(url.substring(1, slash)));
+                        url = url.substring(slash);
+                    }
+                }
             }
 
+            while(url.startsWith("/"))
+                url = url.substring(1);
+
+            if(url.length() > 0){
+                Path path = new Path(url);
+                for(int i=0; i<path.size(); i++){
+                    if(path.get(i).startsWith(".")){
+                        throw Utils.ex("Your requested URL '{}' is malformed.", origionalUrl);
+                    }
+                }
+                withPath(path);
+            }
         } catch (Exception ex) {
             throw Utils.ex(ex, "Your requested URL '{}' is malformed.", origionalUrl);
         } finally {
@@ -223,11 +237,18 @@ public final class Url {
      * @return the string representation of this url
      */
     public String toString() {
-        String url = protocol + "://" + host;
+        String url = protocol;
+        if(!protocol.equals("//"))
+            url += "://";
+
+        url += hostAsString != null ? hostAsString : "127.0.0.1";
 
         if (port > 0) {
             if (!((port == 80 && "http".equalsIgnoreCase(protocol)) || (port == 443 && "https".equalsIgnoreCase(protocol))))
                 url += ":" + port;
+        }
+        else if(hostAsString == null){
+            url += ":8080";
         }
 
         if (path != null && path.size() > 0) {
@@ -258,7 +279,7 @@ public final class Url {
     }
 
     public String getDomain() {
-        String domain = host;
+        String domain = hostAsString;
 
         if (domain.lastIndexOf('.') > domain.indexOf('.')) {
             domain = domain.substring(domain.indexOf('.') + 1);
@@ -280,12 +301,17 @@ public final class Url {
     }
 
     public String getHost() {
-        return host;
+        return hostAsString;
     }
 
     public Url withHost(String host) {
-        this.host = host;
+        this.hostAsString = host;
+        this.hostAsPath = new Path(hostAsString.replace('.', '/'));
         return this;
+    }
+
+    public Path getHostAsPath(){
+        return hostAsPath;
     }
 
     public int getPort() {
@@ -308,7 +334,7 @@ public final class Url {
 
     public Path getPath() {
         if(path == null)
-            return null;
+            return new Path();
 
         return new Path(path);
     }
@@ -459,7 +485,7 @@ public final class Url {
     public String clearParams(String... tokens) {
         String oldValue = null;
         for (String token : tokens) {
-            for (String key : params.keySet()) {
+            for (String key : new LinkedHashSet<>(params.keySet())) {
                 String value = (String) params.get(key);
                 if (Utils.containsToken(token, key)) {
                     String removed = (String) params.remove(key);

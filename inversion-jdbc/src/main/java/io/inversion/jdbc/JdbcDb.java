@@ -474,7 +474,7 @@ public class JdbcDb extends Db<JdbcDb> {
             }
         }
 
-        System.out.println("CREATING CONNECTION POOL: " + getUser() + "@" + getUrl());
+        //System.out.println("CREATING CONNECTION POOL: " + getUser() + "@" + getUrl());
 
         HikariConfig config = new HikariConfig();
         String       driver = getDriver();
@@ -592,6 +592,8 @@ public class JdbcDb extends Db<JdbcDb> {
 
                         boolean nullable      = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
                         boolean autoincrement = Utils.in((colsRs.getObject("IS_AUTOINCREMENT") + "").toLowerCase(), "yes", "true", "1");
+
+                        
 
                         Property column = new Property(colName, colType, nullable);
 

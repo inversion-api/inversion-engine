@@ -16,24 +16,6 @@
  */
 package io.inversion.jdbc;
 
-import io.inversion.ApiException;
-import io.inversion.User;
-import io.inversion.action.security.AuthFilter;
-import io.inversion.config.Config;
-import io.inversion.utils.JdbcUtils;
-import io.inversion.utils.Rows;
-import io.inversion.utils.Rows.Row;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
-
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * Looks up a <code>User</code> from the configured <code>JdbcDb</code> supporting user/group/role permissioning.
  * <p>

@@ -19,7 +19,7 @@ package io.inversion;
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
-import io.inversion.utils.*;
+import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
@@ -177,7 +177,7 @@ public final class Chain {
     }
 
     public static String buildLink(Collection collection, String resourceKey, String relationshipKey) {
-        Request req       = top().getRequest();
+        Request req = top().getRequest();
         return req.getApi().getLinker().buildLink(req, collection, resourceKey, relationshipKey);
     }
 
@@ -236,8 +236,8 @@ public final class Chain {
         boolean root = next == 0;
         try {
             //TODO: this is not correct, the Params in the op should have a source and get applied from the op params based on the source not being an action
-            if (root)
-                applyRuleParams(getRequest().getUrl(), getServer(), getEndpoint());
+////////            if (root)
+////////                applyRuleParams(getRequest().getUrl(), getServer(), getEndpoint());
 
 
             while (next()) {
@@ -246,7 +246,14 @@ public final class Chain {
 
         } finally {
             if (root) {
-                filterPathParams(response.getJson());
+                JSNode json = null;
+                try{
+                    json = request.getJson();
+                }
+                catch(Exception ex){
+                    //response not json, OK
+                }
+                filterPathParams(json);
             }
         }
     }
@@ -287,9 +294,16 @@ public final class Chain {
             Map<String, String> pathParams = new HashMap<>();
             if (actionMatch.path != null) {
                 actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
-                applyPathParams(pathParams, request.getUrl(), request.getJson());
+                JSNode json = null;
+                try {
+                    json = request.getJson();
+                } catch (Exception ex) {
+                    //--body might not be json, OK to be null below
+                    //ex.printStackTrace();
+                }
+                applyPathParams(pathParams, request.getUrl(), json);
             }
-            applyRuleParams(request.getUrl(), actionMatch.action);
+////////            applyRuleParams(request.getUrl(), actionMatch.action);
             actionMatch.action.run(request, response);
             return true;
         }
@@ -306,7 +320,7 @@ public final class Chain {
         pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> url.withParam(e.getKey(), e.getValue()));
 
         if (json != null) {
-            json.stream()
+            json.asList().stream()
                     .filter(node -> node instanceof JSMap)
                     .forEach(node -> pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null && !e.getKey().startsWith("_"))).forEach(e -> ((JSNode) node).put(e.getKey(), e.getValue())));
         }
@@ -315,26 +329,26 @@ public final class Chain {
     }
 
 
-    public Chain applyRuleParams(Url url, Rule... rules) {
-        for (Rule rule : rules) {
-            if (rule == null)
-                continue;
-            String query = rule.getQuery();
-            if (query != null) {
-                Url temp = new Url("http://127.0.0.1?" + query);
-                for (String name : temp.getParams().keySet()) {
-                    String value = temp.getParam(name);
-                    if (APPEND_PARAMS.contains(name.toLowerCase())) {
-                        String previous = url.getParam(name);
-                        if (previous != null)
-                            value = value + "," + previous;
-                    }
-                    url.withParam(name, value);
-                }
-            }
-        }
-        return this;
-    }
+//    public Chain applyRuleParams(Url url, Rule... rules) {
+//        for (Rule rule : rules) {
+//            if (rule == null)
+//                continue;
+//            String query = rule.getQuery();
+//            if (query != null) {
+//                Url temp = new Url("http://127.0.0.1?" + query);
+//                for (String name : temp.getParams().keySet()) {
+//                    String value = temp.getParam(name);
+//                    if (APPEND_PARAMS.contains(name.toLowerCase())) {
+//                        String previous = url.getParam(name);
+//                        if (previous != null)
+//                            value = value + "," + previous;
+//                    }
+//                    url.withParam(name, value);
+//                }
+//            }
+//        }
+//        return this;
+//    }
 
     public boolean hasNext() {
         return !isCanceled() && next < actions.size();

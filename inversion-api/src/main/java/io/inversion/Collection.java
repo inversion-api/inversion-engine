@@ -16,8 +16,6 @@
  */
 package io.inversion;
 
-import io.inversion.json.JSNode;
-import io.inversion.json.JSNode;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 import org.apache.commons.codec.binary.Hex;

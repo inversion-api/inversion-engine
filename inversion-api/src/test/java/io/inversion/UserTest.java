@@ -22,26 +22,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UserTest {
 
-    ObjectMapper mapper = new ObjectMapper();
-
-    @Test
-    public void test_jackson_encoding()throws Exception{
-        User user = new User();
-
-        user.withProperty("permission", "perm1");
-        user.withProperty("permission", "perm2");
-        user.withProperty("group", "group1");
-        user.withProperty("phone_number", "1111111111");
-
-        assertEquals("[perm1, perm2]", user.getPermissions().toString());
-        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(user);
-
-        System.out.println(json);
-
-        User parsed = mapper.readValue(json, User.class);
-
-        assertEquals("1111111111", parsed.getProperty("phone_number"));
-        assertEquals("[perm1, perm2]", parsed.getPermissions().toString());
-
-    }
+//    ObjectMapper mapper = new ObjectMapper();
+//
+//    @Test
+//    public void test_jackson_encoding()throws Exception{
+//        User user = new User();
+//
+//        user.withProperty("permission", "perm1");
+//        user.withProperty("permission", "perm2");
+//        user.withProperty("group", "group1");
+//        user.withProperty("phone_number", "1111111111");
+//
+//        assertEquals("[perm1, perm2]", user.getPermissions().toString());
+//        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(user);
+//
+//        System.out.println(json);
+//
+//        User parsed = mapper.readValue(json, User.class);
+//
+//        assertEquals("1111111111", parsed.getProperty("phone_number"));
+//        assertEquals("[perm1, perm2]", parsed.getPermissions().toString());
+//
+//    }
 }

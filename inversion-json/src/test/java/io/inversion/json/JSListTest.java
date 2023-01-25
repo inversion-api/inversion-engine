@@ -19,13 +19,22 @@ package io.inversion.json;
 import io.inversion.json.JSList;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  *
  */
 public class JSListTest {
+
+    @Test
+    public void test_put_expands_size(){
+        JSList list = new JSList();
+        list.put(5, "asdf");
+        assertEquals(6, list.size());
+        assertEquals("asdf", list.get(5));
+    }
+
+
     @Test
     public void testIsEmpty() {
         assertTrue(new JSList().isEmpty());

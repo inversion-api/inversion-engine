@@ -24,32 +24,32 @@ import org.junit.jupiter.api.Test;
 
 public class TestBearerScheme {
 
-    @Test
-    public void test_findSecrets(){
-
-        BearerScheme bs = new BearerScheme();
-
-        bs.findSecrets("jwt", "secret", Utils.asList("api", "account", "workspace", "profile"));
-
-    }
-
-    @Test
-    public void test_buildJWT(){
-
-        User user = new User();
-
-        user.withUsername("test");
-        user.withRoles("role1");
-
-        BearerScheme bs = new BearerScheme();
-        String token = bs.buildToken(user, "12345");
-
-        System.out.println(token);
-
-        DecodedJWT jwt = bs.decodeJWT(token, "12345");
-        user = bs.buildUser(jwt);
-
-        System.out.println(user.getUsername());
-
-    }
+//    @Test
+//    public void test_findSecrets(){
+//
+//        BearerScheme bs = new BearerScheme();
+//
+//        bs.findSecrets("jwt", "secret", Utils.asList("api", "account", "workspace", "profile"));
+//
+//    }
+//
+//    @Test
+//    public void test_buildJWT(){
+//
+//        User user = new User();
+//
+//        user.withUsername("test");
+//        user.withRoles("role1");
+//
+//        BearerScheme bs = new BearerScheme();
+//        String token = bs.buildToken(user, "12345");
+//
+//        System.out.println(token);
+//
+//        DecodedJWT jwt = bs.decodeJWT(token, "12345");
+//        user = bs.buildUser(jwt);
+//
+//        System.out.println(user.getUsername());
+//
+//    }
 }

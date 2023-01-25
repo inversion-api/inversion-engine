@@ -2,6 +2,7 @@ package io.inversion.action.openapi;
 
 import io.inversion.Collection;
 import io.inversion.*;
+import io.inversion.utils.Path;
 import io.inversion.utils.Task;
 import io.inversion.utils.Utils;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -56,15 +57,26 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
         }
 
         if (operation != null) {
-            if (op.getCollection() != null) {
-                String tag  = beautifyTag(op.getCollection().getSingularDisplayName());
-                List   tags = operation.getTags();
-                if (tags != null && !tags.contains(tag))
-                    operation.addTagsItem(tag);
+            String tag = null;
+            if (op.getCollection() != null)
+                tag = op.getCollection().getSingularDisplayName();
+            else {
+                Path p = op.getPath();
+                for(int i=p.size()-1; i>=0; i--){
+                    if(!p.isVar(i) && !p.isWildcard(i)){
+                        tag = Utils.capitalize(p.get(i));
+                        break;
+                    }
             }
+            tag = beautifyTag(tag);
+
+            List tags = operation.getTags();
+            if (tags == null || !tags.contains(tag))
+                operation.addTagsItem(tag);
         }
-        return operation;
     }
+        return operation;
+}
 
     default Operation documentOpGet(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
         Operation operation = openApi.getPaths().get(op.getOperationPath()).getGet();
@@ -160,6 +172,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
             operation = buildOperation(op, description, requestSchema, "201", responseSchema);
             openApi.getPaths().get(op.getOperationPath()).setPost(operation);
         }
+        documentQueryParams(docChain, openApi, operation, op);
         return operation;
     }
 
@@ -173,7 +186,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
             operation = buildOperation(op, description, requestSchema, "201", responseSchema, "404", null);
             openApi.getPaths().get(op.getOperationPath()).setPut(operation);
         }
-
+        documentQueryParams(docChain, openApi, operation, op);
         //--TODO: add this operation as a link to GET
 
         return operation;
@@ -328,7 +341,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
                     Relationship rel         = (Relationship) propOrRel;
                     Op           targetOp    = relOps.get(rel);
                     String       childSchema = documentResourceSchema(docChain, openApi, ops, targetOp, schemas);
-                    if (rel.isManyToOne()) {
+                    if (rel.isManyToOne() || rel.isOneToOneParent() || rel.isOneToOneChild()) {
                         schema.addProperties(name, newComponentRefSchema(childSchema));
                     } else {
                         ArraySchema arr = new ArraySchema();
@@ -434,7 +447,9 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
 //    }
 
     default Operation buildOperation(Op op, String description, String requestSchema, String... statusAndSchema) {
-        Operation operation = new Operation().responses(new ApiResponses()).description(description);
+        Operation operation = new Operation().responses(new ApiResponses());
+        //operation.description(description);
+
         operation.setOperationId(op.getName());
         if (requestSchema != null) {
             RequestBody body = new RequestBody();
@@ -465,7 +480,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
     default String getDescription(Op op) {
 
         String desc = op.getDescription();
-        if(desc != null)
+        if (desc != null)
             return desc;
 
         if (op.getCollection() == null)
@@ -569,6 +584,8 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
     default void documentQueryParams(Task docChain, OpenAPI openApi, Operation operation, Op op) {
         for (Param param : op.getParams()) {
             if (param.getIn() == Param.In.QUERY) {
+                if((param.getMethods().size() == 0 && op.getMethod().equalsIgnoreCase("GET"))
+                    || param.hasMethod(op.getMethod()))
                 documentParam(docChain, openApi, operation, op, param);
             }
         }
@@ -603,7 +620,7 @@ public interface OpenAPIWriter<T extends OpenAPIWriter> {
     default Schema newTypeSchema(String type, String description) {
         Schema schema = new Schema();
         schema.setType(type);
-        if(!Utils.empty(description))
+        if (!Utils.empty(description))
             schema.setDescription(description);
 
         return schema;

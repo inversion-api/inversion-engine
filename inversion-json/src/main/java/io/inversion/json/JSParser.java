@@ -4,12 +4,46 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.exc.InputCoercionException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.inversion.utils.Utils;
 
 import java.io.InputStream;
 
 public class JSParser {
-    public static JsonFactory parserFactory = new JsonFactory();
+    public static JsonFactory  parserFactory = new JsonFactory();
+    public static ObjectMapper objectMapper  = new ObjectMapper();
+
+    public static <T> T parseJson(String json, Class<T> clazz) {
+        try {
+            return (T) objectMapper.readValue(json.getBytes(), clazz);
+
+        } catch (Exception e) {
+            throw Utils.ex("Invalid JSON.", e);
+        }
+    }
+
+    public static <T> T parseJson(InputStream json, Class<T> clazz) {
+        try {
+            return (T) objectMapper.readValue(json, clazz);
+
+        } catch (Exception e) {
+            throw Utils.ex("Invalid JSON.", e);
+        }
+    }
+
+    public static <T> T parseJson(JSNode json, Class<T> clazz) {
+        return parseJson(json.toString(false), clazz);
+    }
+
+    public static Object asJson(Object object) {
+        try {
+            String json = objectMapper.writer().writeValueAsString(object);
+            return parseJson(json);
+        } catch (Exception e) {
+            throw Utils.ex("Invalid JSON.", e);
+        }
+    }
+
 
     /**
      * Turns a JSON string in to JSNode (maps), JSList (lists), String numbers and booleans.
@@ -31,7 +65,7 @@ public class JSParser {
 
     public static Object parseJson(InputStream json) {
         try {
-            JsonParser  parser       = parserFactory.createParser(json);
+            JsonParser parser = parserFactory.createParser(json);
             return parseJson(parser, null);
 
         } catch (Exception e) {
@@ -39,82 +73,100 @@ public class JSParser {
         }
     }
 
-    static JSNode parseJson(JsonParser parser, JSNode node) throws Exception {
+    public static JSNode parseJson(JsonParser parser, JSNode node) throws Exception {
         JsonToken token;
-        String    name  = null;
+        String    name = null;
+
+        if (node == null) {
+            JsonToken startToken = parser.currentToken();
+            if (startToken != null) {
+                if (startToken == JsonToken.START_OBJECT)
+                    node = new JSMap();
+                else if (startToken == JsonToken.START_ARRAY)
+                    node = new JSList();
+            }
+        }
+
         boolean isArray = node != null && node.isList();
-        while ((token = parser.nextToken()) != JsonToken.END_OBJECT) {
+
+        while (true) {
+
+            token = parser.nextToken();
+            //System.out.println(token + " -     " + parser.getCurrentName() + " - " + parser.getValueAsString());
+
+            if (token == null)
+                return node;
+
             switch (token) {
+
+                case END_OBJECT:
+                case END_ARRAY:
+                    return node;
                 case START_OBJECT:
                     JSNode childNode = parseJson(parser, new JSMap());
-                    if(node == null)
+                    if (node == null)
                         return childNode;
-                    if(isArray)
-                        ((JSList)node).add(childNode);
+                    if (isArray)
+                        ((JSList) node).add(childNode);
                     else
                         node.put(name, childNode);
                     break;
-                case END_OBJECT:
-                    return node;
                 case START_ARRAY:
                     JSNode childArr = parseJson(parser, new JSList());
-                    if(node == null)
+                    if (node == null)
                         return childArr;
-                    if(isArray)
-                        ((JSList)node).add(childArr);
+                    if (isArray)
+                        ((JSList) node).add(childArr);
                     else
                         node.put(name, childArr);
                     break;
-                case END_ARRAY:
-                    return (JSList)node;
                 case FIELD_NAME:
                     name = parser.getCurrentName();
                     break;
                 case VALUE_EMBEDDED_OBJECT:
                     break;
                 case VALUE_STRING:
-                    if(isArray)
-                        ((JSList)node).add(parser.getValueAsString());
+                    if (isArray)
+                        ((JSList) node).add(parser.getValueAsString());
                     else
                         node.put(name, parser.getValueAsString());
                     break;
                 case VALUE_NUMBER_INT:
-                    try{
-                        if(isArray)
-                            ((JSList)node).add(parser.getValueAsInt());
+                    try {
+                        if (isArray)
+                            ((JSList) node).add(parser.getValueAsInt());
                         else
                             node.put(name, parser.getValueAsInt());
                         break;
-                    }
-                    catch(InputCoercionException ex){
-                        if(isArray)
-                            ((JSList)node).add(parser.getValueAsLong());
+                    } catch (InputCoercionException ex) {
+                        if (isArray)
+                            ((JSList) node).add(parser.getValueAsLong());
                         else
                             node.put(name, parser.getValueAsLong());
                         break;
                     }
 
                 case VALUE_NUMBER_FLOAT:
-                    if(isArray)
-                        ((JSList)node).add(parser.getValueAsDouble());
+                    if (isArray)
+                        ((JSList) node).add(parser.getValueAsDouble());
                     else
                         node.put(name, parser.getValueAsDouble());
                     break;
                 case VALUE_TRUE:
-                    if(isArray)
-                        ((JSList)node).add(true);
+                    if (isArray)
+                        ((JSList) node).add(true);
                     else
                         node.put(name, true);
                     break;
                 case VALUE_FALSE:
-                    if(isArray)
-                        ((JSList)node).add(false);
+                    if (isArray)
+                        ((JSList) node).add(false);
                     else
                         node.put(name, false);
                     break;
                 case VALUE_NULL:
-                    if(isArray)
-                        ((JSList)node).add(null);
+                    if (isArray)
+                        ((JSList) node).add(null);
                     else
                         node.put(name, null);
                     break;
@@ -123,7 +175,6 @@ public class JSParser {
                     throw Utils.ex("Unknown token {}", token);
             }
         }
-        return node;
     }
 
     /**

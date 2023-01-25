@@ -19,9 +19,9 @@ package io.inversion;
 import java.util.*;
 import java.util.regex.Pattern;
 
-public class Param{
+public class Param {
 
-    public enum In {HOST, SERVER_PATH, PATH, QUERY, BODY, COOKIE, HEADER, USER, CHAIN, CONTEXT, ENVIRONMENT, URL, REQUEST, ANY}
+    public enum In {HOST, SERVER_PATH, PATH, QUERY, BODY, COOKIE, HEADER, USER, CHAIN, CONTEXT, ENVIRONMENT, URL, REQUEST}
 
     String        name        = null;
     String        key         = null;
@@ -33,8 +33,15 @@ public class Param{
     Set<String>   regexes     = new HashSet();
     int           index       = 0;
 
+    Set<String> methods = new LinkedHashSet<>();
+
     public Param() {
 
+    }
+
+    public Param(String key, In in) {
+        withIn(in);
+        withKey(key);
     }
 
     public Param(String key, int index) {
@@ -52,7 +59,7 @@ public class Param{
     }
 
     public String toString() {
-        return "[" + in + ": {" + key + "}," + index + (regexes.size() > 0 ? (", " + regexes)  : "") + "]";
+        return "[" + in + ": {" + key + "}," + index + (regexes.size() > 0 ? (", " + regexes) : "") + "]";
     }
 
     public String getName() {
@@ -133,6 +140,19 @@ public class Param{
 
     public List<Pattern> getPatterns() {
         return patterns;
+    }
+
+    public Param withMethod(String method){
+        methods.add(method.toUpperCase());
+        return this;
+    }
+
+    public Set<String> getMethods(){
+        return new LinkedHashSet<>(methods);
+    }
+
+    public boolean hasMethod(String method){
+        return methods.contains(method.toUpperCase());
     }
 
 }

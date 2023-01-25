@@ -28,7 +28,6 @@ import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.utils.LimitInputStream;
 import io.inversion.utils.Path;
-import io.inversion.utils.Utils;
 import org.apache.commons.io.input.CountingInputStream;
 
 import java.io.IOException;
@@ -37,7 +36,7 @@ import java.math.BigInteger;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 
 /**
  * Sends browser multi-part file uploads to a defined S3 location
@@ -73,6 +72,10 @@ public class S3UploadAction extends Action<S3UploadAction> {
     protected String s3Bucket   = null;
     protected String s3BasePath = "uploads";
     protected String s3DatePath = "yyyy/MM/dd";
+
+    protected long maxUploadLength = 1024 * 1000 * 100;
+
+    protected AmazonS3 s3Client = null;
 
     protected String allowedCharactersRegex = "^[\\. \\(\\)\\'a-zA-Z0-9_-]*$";
 
@@ -142,34 +145,63 @@ public class S3UploadAction extends Action<S3UploadAction> {
         String type;
     }
 
-    private S3File saveFile(Request req, Upload upload) throws Exception {
+    protected S3File saveFile(Request req, Upload upload) throws ApiException {
         AmazonS3 s3     = buildS3Client();
         String   bucket = this.s3Bucket;
         String   path   = buildPath(req, upload);
 
+        return uploadFile(bucket, path, upload.getInputStream(), upload.getFileSize());
+    }
 
-        InputStream in = upload.getInputStream();
-        if(upload.getFileSize() > 0)
-            in = new LimitInputStream(in, upload.getFileSize(), true);
+    protected S3File uploadFile(String bucket, String key, InputStream in, long size) throws ApiException{
+        return uploadFile(bucket, key, in, size, null, null);
+    }
 
-        CountingInputStream countIn  = new CountingInputStream(in);
-        DigestInputStream   digestIn = new DigestInputStream(countIn, MessageDigest.getInstance("SHA-256"));
-        PutObjectResult     s3Resp   = s3.putObject(new PutObjectRequest(bucket, path, digestIn, new ObjectMetadata()));
+    protected S3File uploadFile(String bucket, String key, InputStream in, long size, Map<String, String> metadataProps, Map<String, String> tags) throws ApiException {
 
-        String hash  = byteToHexString(digestIn.getMessageDigest().digest());
-        long   bytes = countIn.getByteCount();
+        try {
+            long limit = size > 0 ? size : maxUploadLength;
+            if (limit > maxUploadLength)
+                throw ApiException.new400BadRequest("Your upload size is larger that maximum allowed size.");
 
-        S3File file = new S3File();
-        file.url = "http://" + bucket + ".s3.amazonaws.com/" + path;
-        file.path = path;
-        file.hash = hash;
-        file.bytes = bytes;
-        return file;
+            if (size > 0) {
+                in = new LimitInputStream(in, size, true);
+            } else {
+                in = new LimitInputStream(in, limit, false);
+            }
+
+            ObjectMetadata metadata = new ObjectMetadata();
+            if(tags != null){
+                tags.keySet().forEach(tag -> metadata.setHeader(tag, tags.get(tag)));
+            }
+            if(metadataProps != null){
+                metadata.setUserMetadata(metadataProps);
+            }
+
+            CountingInputStream countIn  = new CountingInputStream(in);
+            DigestInputStream   digestIn = new DigestInputStream(countIn, MessageDigest.getInstance("SHA-256"));
+            PutObjectResult     s3Resp   = getS3Client().putObject(new PutObjectRequest(bucket, key, digestIn, metadata));
+
+            String hash  = byteToHexString(digestIn.getMessageDigest().digest());
+            long   bytes = countIn.getByteCount();
+
+            S3File file = new S3File();
+            file.url = "http://" + bucket + ".s3.amazonaws.com/" + key;
+            file.path = key;
+            file.hash = hash;
+            file.bytes = bytes;
+            return file;
+        } catch (Exception ex) {
+            if (ex instanceof ApiException)
+                throw (ApiException) ex;
+            else
+                throw ApiException.new500InternalServerError(ex);
+        }
     }
 
     public String byteToHexString(byte[] input) {
         String output = "";
-        for (int i=0; i<input.length; ++i) {
+        for (int i = 0; i < input.length; ++i) {
             output += String.format("%02x", input[i]);
         }
         return output;
@@ -201,6 +233,22 @@ public class S3UploadAction extends Action<S3UploadAction> {
                 return false;
         }
         return true;
+    }
+
+    public AmazonS3 getS3Client() {
+        if (s3Client == null) {
+            synchronized (this) {
+                if (s3Client == null) {
+                    s3Client = buildS3Client();
+                }
+            }
+        }
+        return s3Client;
+    }
+
+    public S3UploadAction withS3Client(AmazonS3 s3Client) {
+        this.s3Client = s3Client;
+        return this;
     }
 
     private AmazonS3 buildS3Client() {

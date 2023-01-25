@@ -56,7 +56,7 @@ multiple back end data sources including Relational Database Systems (RDBMS) suc
         - [Collections, Entities, Attributes and Relationships](#collections-entities-attributes-and-relationships)
         - [Endpoints and Actions](#endpoints-and-actions)
         - [AclAction and AclRules](#aclaction-and-aclrules)
-        - [Path Matching](#path-matching)
+        - [Path Matching](#codecPath-matching)
     - [Security Model](#security-model)
         - [Account Roles](#account-roles)
         - [Api Permissions](#api-permissions)
@@ -225,7 +225,7 @@ db.pass=${YOUR_JDBC_PASSWORD}
 
 ep.class=io.inversion.Endpoint
 ep.methods=GET,PUT,POST,DELETE
-ep.path=/*
+ep.codecPath=/*
 ep.actions=rest
 
 rest.class=io.inversion.action.db.DbAction
@@ -241,7 +241,7 @@ java -jar build/libs/rocket-inversion-master.jar
 
 ## URL Structure
 
-Inversion is designed to host multiple APIs potentially owned by different tenants.  All URLs are prefixed with an accountCode and apiCode path components.  The accountCode uniquely identifies the organization that owns the API and is unique to the host server. The apiCode uniquely identifies the Api within the namespace created by the accountCode.
+Inversion is designed to host multiple APIs potentially owned by different tenants.  All URLs are prefixed with an accountCode and apiCode codecPath components.  The accountCode uniquely identifies the organization that owns the API and is unique to the host server. The apiCode uniquely identifies the Api within the namespace created by the accountCode.
 
 Valid based URL formats are:
 * http(s)://host.com/[${servletPath}]/${accountCode}/${apiCode}/
@@ -306,7 +306,7 @@ This process allows the user supplied configuration to be kept to a minimum whil
 of configing up the entire db-to-api mapping, all you have to supply are the changes you want to make to the generated defaults.  This reflective config generation
 happens in memory at runtime NOT development time.
 
-If you set the config property "inversion.configOut=some/file/path/merged.properties" Inversion will output the final merged properites file so you can inpspect any keys to find
+If you set the config property "inversion.configOut=some/file/codecPath/merged.properties" Inversion will output the final merged properites file so you can inpspect any keys to find
 any that you may want to customize.
 
 The wiring parser is made to be as forgiving as possible and knows about the expected relationships between different object types.  For instance if you do NOT
@@ -433,7 +433,7 @@ RQL is the set of HTTP query string parameters that allows developers to "slice 
 
 * **explain** - if you include an 'explain' param (any value other than 'explain=false' is exactly the same as not providing a value) the response will include additional debug information including the SQL run.  The response body will NOT be valid JSON.  For security reasons, Api.debug must be true or the request must be to "localhost" for this to work.
 * **expands** - A comma separated list of relationships that should be expanded into nested documents instead of referenced by URL in the response body.  For example, if a db 'Order' table has a foreign key to the 'Customer' table, you could query "/orders?expands=customer" or "/customers?expands=orders" to pre expand the relationship and avoid haveing to execute multiple requrests.
-* **includes** - A comma separted list of collection attributes (including dotted.path.references for nested document attributes )that should be included in the response.  All attributes are included if this param is empty...unless they are excluded as below.
+* **includes** - A comma separted list of collection attributes (including dotted.codecPath.references for nested document attributes )that should be included in the response.  All attributes are included if this param is empty...unless they are excluded as below.
 * **excludes** - A comma separated list of collection attributes to exclude.
 
 
@@ -474,7 +474,7 @@ Example of aliased collection: ``api.collections.db_users.alias=profile`` Notice
 
 ### Endpoints and Actions
 
-An Endpoint maps one or more HTTP methods and URL pattern to an ordered list of one or more Actions via [path matching](#path-matching).  Actions are where the work actually gets done.  If an API needs custom business logic that can not be achieved by configuring an existing Action, a custom Action subclass is the answer.
+An Endpoint maps one or more HTTP methods and URL pattern to an ordered list of one or more Actions via [codecPath matching](#codecPath-matching).  Actions are where the work actually gets done.  If an API needs custom business logic that can not be achieved by configuring an existing Action, a custom Action subclass is the answer.
 
 An Action can be set directly on an Endpoint to be 'private' to that endpoint, or an Action can be added directly to the Api and be eligible to be run across multiple Endpoints.  An example of an Action that would normaly be configured to run across multiple Endpoints would be something like the security AclAction or LogAction.
 
@@ -493,19 +493,19 @@ Example [Handlers](https://rocketpartners.github.io/rckt_inversion/0.3.x/javadoc
 
 ### AclAction and AclRules
 
-AclRules allow you to declare that a User must have specified roles and permissions to access resources at a given url path and http method.
+AclRules allow you to declare that a User must have specified roles and permissions to access resources at a given url codecPath and http method.
 
 Generally AuthHandler and AclHandler will
-be setup (in that order) to protect resources according to configed AclRules.  AclRules are matched to urls via [path matching](#path-matching) just like Endpoints and Actions.
+be setup (in that order) to protect resources according to configed AclRules.  AclRules are matched to urls via [codecPath matching](#codecPath-matching) just like Endpoints and Actions.
 
 
 ### Path Matching
 
-Endpoints, Actions and AclRules are selected when they can be matched to a request url path.  Each one of these objects contains an "includesPaths" and "excludesPaths" configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used to match any arbitrary path ending.  Regular expressions can be used to match specific path requirements.  If a path is both included and excluded, the exclusion will "win" and the path will not be considered a match.
-Leading and trailing '/' characters are not considered when path matching.
+Endpoints, Actions and AclRules are selected when they can be matched to a request url codecPath.  Each one of these objects contains an "includesPaths" and "excludesPaths" configuration property that takes a comma separated list of paths definitions.  The wildcard character "*" can be used to match any arbitrary codecPath ending.  Regular expressions can be used to match specific codecPath requirements.  If a codecPath is both included and excluded, the exclusion will "win" and the codecPath will not be considered a match.
+Leading and trailing '/' characters are not considered when codecPath matching.
 
-Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-parameters) regex path matching.  A regex-based match component follows the pattern "{optionalParamName:regex}".  If you surround any path part with [] it makes that part and all subsequent
-path parts optional.  Regular expression matches can not match across a '/'.
+Regular expression matches are modeled off of [angular-ui](https://github.com/angular-ui/ui-router/wiki/URL-Routing#url-parameters) regex codecPath matching.  A regex-based match component follows the pattern "{optionalParamName:regex}".  If you surround any codecPath part with [] it makes that part and all subsequent
+codecPath parts optional.  Regular expression matches can not match across a '/'.
 
 Here are some examples:
 
@@ -513,15 +513,15 @@ Here are some examples:
 * endpoint1.excludePaths=dir1/dir2/hidden/*
 * endpoint2.includePath=something/{collection:[a-z]}/*
 
-One easy way to restrict the underlying tables exposed by an Api is to use regex path matching on your Endopoint.
+One easy way to restrict the underlying tables exposed by an Api is to use regex codecPath matching on your Endopoint.
 
 * endpoint3.includesPaths={collection:customers|books|albums}/[{resource:[0-9]}]/{relationship:[a-z]}
 
-If path params are given names {like_this:regex} then the path value will be added as a name/value pair to the Request params overriding any matching key that may
+If codecPath params are given names {like_this:regex} then the codecPath value will be added as a name/value pair to the Request params overriding any matching key that may
 have been supplied by the query string.
 
-The names "component", "resource", and "relationship" are special.  If you configure a path match to them, Inversion will use those values when configuring the Request object.
-If you don't supply them the parser will assume the pattern .../[endpoint.path]/[collection]/[resource]/[relationship].
+The names "component", "resource", and "relationship" are special.  If you configure a codecPath match to them, Inversion will use those values when configuring the Request object.
+If you don't supply them the parser will assume the pattern .../[endpoint.codecPath]/[collection]/[resource]/[relationship].
 
 
 ## Security Model
@@ -583,7 +583,7 @@ Authorization is managed by the AclHandler. If you want to use Role and Permissi
 you must configure an instance of the AclHandler (or create your own implementation) and associate it to
 the desired Endpoints through an Action.
 
-The AclHandler matches configured AclRules objects against the Url path and HTTP method of the request.
+The AclHandler matches configured AclRules objects against the Url codecPath and HTTP method of the request.
 
 AclHandler processes AclRules in sorted order and the first rule to allow access "wins".  If no rule allows access,
 then a 403 Forbidden HTTP status code is returned.
@@ -594,7 +594,7 @@ then a 403 Forbidden HTTP status code is returned.
 
 Apis can be flagged as 'multiTenant'.  If so, a tenantCode must immediately follow the apiCode in the URL.
 
-Ex: ```http://localhost/accountCode/apiCode/tenantCode/[endpoint.path]/collectionKey/[resourceKey]```
+Ex: ```http://localhost/accountCode/apiCode/tenantCode/[endpoint.codecPath]/collectionKey/[resourceKey]```
 
 If the AuthAction is being used, it will enforce that the Url tenantCode matches the logged in users tenantCode (if there is a logged in user).
 
@@ -689,7 +689,7 @@ elasticdb.url=https://yourElasticSearchDB.amazonaws.com
 
 elasticH.class=io.rcktapp.api.handler.elastic.ElasticDbRestHandler
 elasticEp.class=io.rcktapp.api.Endpoint
-elasticEp.path=desiredPath
+elasticEp.codecPath=desiredPath
 elasticEp.methods=GET
 elasticEp.handler=elasticH
 ```

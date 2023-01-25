@@ -1,76 +1,66 @@
 package io.inversion.json;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch {
+@JsonDeserialize(using = JSNodeDeserializer.class)
+public interface JSNode extends JSGet, JSFind, JSDiff, JSPatch {
 
-    protected abstract JSProperty getProperty(Object key);
+    Object get(Object key);
 
-    protected abstract List<JSProperty> getProperties();
+    Object put(Object key, Object value);
 
-    protected abstract JSProperty putProperty(JSProperty property);
+    Object removeProp(Object key);
 
-    protected abstract boolean removeProperty(JSProperty property);
+    Collection<Object> values();
 
-    public abstract void clear();
+    Set<String> keySet();
+
+    int size();
+
+    boolean isEmpty();
+
+    void clear();
 
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
     //-- START Methods implemented off of the above abstract methods
 
-    public final int size() {
-        return getProperties().size();
-    }
 
-    public final boolean isEmpty() {
-        return getProperties().size() == 0;
-    }
-
-    public Object get(Object key) {
-        JSProperty property = getProperty(key);
-        if (property != null)
-            return property.getValue();
+    /**
+     * @param key
+     * @param additionalKeys
+     * @return the first non null value from key or addionalKeys
+     */
+    default Object get(Object key, Object... additionalKeys) {
+        Object result = get(key);
+        if (result != null)
+            return result;
+        if (additionalKeys != null && additionalKeys.length > 0) {
+            for (int i = 0; i < additionalKeys.length; i++) {
+                result = get(additionalKeys[i]);
+                if (result != null)
+                    return result;
+            }
+        }
         return null;
     }
 
-    public Object get(String key) {
-        return get((Object) key);
-    }
 
-    public Object get(int key) {
-        return get((Object) key);
-    }
-
-    public Object put(Object key, Object value) {
-        return putProperty(new JSProperty(key, value));
-    }
-
-    public Object put(String key, Object value) {
-        return putProperty(new JSProperty(key, value));
-    }
-
-    public Object put(int key, Object value) {
-        return putProperty(new JSProperty(key, value));
-    }
-
-    public void putAll(Map map){
-        for(Object key : map.keySet()){
+    default void putAll(Map map) {
+        for (Object key : map.keySet()) {
             put(key, map.get(key));
         }
     }
 
-    public void putAll(Object... nvPairs) {
+    default void put(Object key, Object value, Object... nvPairs) {
+
+        put(key, value);
 
         if (nvPairs == null || nvPairs.length == 0)
             return;
-
-        if(nvPairs.length == 1 && nvPairs[0] instanceof Map){
-            putAll((Map)nvPairs[0]);
-            return;
-        }
 
         if (nvPairs.length % 2 != 0)
             throw new RuntimeException("You must supply an even number of arguments to JSNode.with()");
@@ -81,75 +71,43 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch {
         }
     }
 
-//    public Object remove(Object key) {
-//        JSProperty prop = getProperty(key);
-//        if (prop != null) {
-//            removeProperty(prop);
-//            return prop.value;
-//        }
-//        return null;
-//    }
 
-    public Object remove(Object... keys) {
+    default Object remove(Object... keys) {
         Object first = null;
         for (int i = 0; keys != null && i < keys.length; i++) {
             Object key = keys[i];
             if (key != null) {
-                JSProperty prop = getProperty(key);
-                if (prop != null) {
-                    removeProperty(prop);
-                    if (first == null)
-                        first = prop.getValue();
-                }
+                Object removed = removeProp(key);
+                if (first == null && removed != null)
+                    first = removed;
             }
         }
         return first;
     }
 
-    public Collection values() {
-        return getProperties().stream().map(p -> p.getValue()).collect(Collectors.toList());
-    }
-
-    public Set keySet() {
-        LinkedHashSet keySet = new LinkedHashSet();
-        getProperties().forEach(p -> keySet.add(p.getKey()));
-        return keySet;
-    }
-
-    public boolean containsKey(Object key) {
-        if (key == null)
-            return false;
-        return getProperty(key.toString()) != null;
-    }
-
-    public boolean containsValue(Object value) {
-        for (JSProperty p : getProperties()) {
-            if (value == null && p.getValue() == null
-                    || value != null && value.equals(p.getValue()))
-                return true;
-        }
-        return false;
-    }
-
-    /**
-     * @return all property name / value pairs
-     */
-    public Set<Map.Entry<String, Object>> entrySet() {
-        Map map = new LinkedHashMap();
-        getProperties().forEach(p -> map.put(p.getKey(), p.getValue()));
-        return map.entrySet();
-    }
 
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
     //-- Utility Methods
 
-    public final boolean isList() {
-        return this instanceof JSList;
+    default JSNode getJson() {
+        return this;
     }
 
-    public final JSList asList() {
+    default boolean isList() {
+        return this instanceof List;
+    }
+
+    default boolean isMap() {
+        return this instanceof Map;
+    }
+
+    default <T> T as(Class<T> type){
+        return JSParser.parseJson(this, type);
+    }
+
+    default JSList asList() {
         if (this instanceof JSList)
             return (JSList) this;
 
@@ -158,43 +116,17 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch {
         return list;
     }
 
-
-    public JSNode getJson() {
-        return this;
-    }
-
-    public final List<JSMap> asMapList() {
+    default List<JSMap> asMapList() {
         return (List<JSMap>) asList();
     }
 
-
-    public final List<JSNode> asNodeList() {
+    default List<JSNode> asNodeList() {
         return (List<JSNode>) asList();
     }
 
 
-    /**
-     * Convenience method that calls asList().stream().
-     *
-     * @return asList().stream()
-     */
-    public Stream stream() {
-        return asList().stream();
-    }
-
-
-
-
-    public JSNode copy() {
+    default JSNode copy() {
         return JSParser.asJSNode(toString());
-    }
-
-    /**
-     * @return json string, pretty printed with properties written out in their original case.
-     */
-    @Override
-    public String toString() {
-        return JSWriter.toJson(this, true, false);
     }
 
 
@@ -204,7 +136,7 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch {
      * @param pretty should spaces and carriage returns be added to the doc for readability
      * @return json string, with properties written out in their original case optional pretty printed.
      */
-    public String toString(boolean pretty) {
+    default String toString(boolean pretty) {
         return JSWriter.toJson(this, pretty, false);
     }
 
@@ -215,36 +147,107 @@ public abstract class JSNode implements JSGet, JSFind, JSDiff, JSPatch {
      * @param lowercasePropertyNames when true all property names are printed in lower case instead of their original case
      * @return a json string
      */
-    public String toString(boolean pretty, boolean lowercasePropertyNames) {
+    default String toString(boolean pretty, boolean lowercasePropertyNames) {
         return JSWriter.toJson(this, pretty, lowercasePropertyNames);
     }
 
-    public void visit(JSVisitor visitor) {
-        visit0(visitor, new IdentityHashMap<>(), new JSPath(null, null, this));
+    default void visit(JSVisitor visitor) {
+        visit0(visitor, new IdentityHashMap<>(), new JSPointer(null, null, this));
     }
 
-    boolean visit0(JSVisitor visitor, IdentityHashMap<JSNode, JSNode> visited, JSPath path) {
+    default boolean visit0(JSVisitor visitor, IdentityHashMap<JSNode, JSNode> visited, JSPointer currentPath) {
+        JSNode node = currentPath.getNode();
+        if (!visitor.visit(currentPath))
+            return false;
 
-        JSNode node = path.getNode();
         if (visited.containsKey(node))
             return true;
 
         visited.put(node, node);
 
-        if (!visitor.visit(path))
-            return false;
-
-        List<JSProperty> props = node.getProperties();
-        for (int i = 0; i < props.size(); i++) {
-            JSProperty prop  = props.get(i);
-            Object     value = prop.getValue();
+        for (String key : keySet()) {
+            Object value = get(key);
             if (value instanceof JSNode) {
-                JSPath child = new JSPath(path, prop.getKey(), (JSNode) value);
-                if (!((JSNode) value).visit0(visitor, visited, path))
+                JSPointer child = new JSPointer(currentPath, key, (JSNode) value);
+                if (!((JSNode) value).visit0(visitor, visited, child))
                     return false;
             }
         }
         return true;
+    }
+
+
+    /**
+     * @return an iterator created off of calling visitIterator();
+     * @see #visitIterator()
+     */
+    default Iterable<JSPointer> visit() {
+        return () -> visitIterator();
+    }
+
+    /**
+     * This is the best way to iterate through all nodes in a document.  The first JSPointer returned
+     * is to this node then its childern in depth first traversal order recursively.  If a circular
+     * reference exists, the repeated node will be returned but its children will not be traversed
+     * a second time.
+     *
+     * @return iterator that returns this node then all child nodes recursively.
+     * @see #visit()
+     */
+    default Iterator<JSPointer> visitIterator() {
+        final Map<JSPointer, Iterator> keysMap = new IdentityHashMap<>();
+        final Map<JSNode, JSNode>      visited = new IdentityHashMap();
+
+        Iterator it = new Iterator() {
+
+            JSPointer last = null;
+            JSPointer next = new JSPointer(null, null, JSNode.this);
+
+            @Override
+            public boolean hasNext() {
+                if (next != null)
+                    return true;
+                next = findNext(last);
+                return next != null;
+            }
+
+            @Override
+            public Object next() {
+                if (next == null)
+                    next = findNext(last);
+                last = next;
+                next = null;
+                return last;
+            }
+
+            JSPointer findNext(JSPointer parent) {
+                JSPointer next = null;
+                while (next == null && parent != null) {
+                    Iterator keys = keysMap.get(parent);
+                    if (keys == null && !visited.containsKey(parent.getNode())) {
+                        keys = parent.node.keySet().iterator();
+                        keysMap.put(parent, keys);
+                        visited.put(parent.getNode(), parent.getNode());
+                    }
+
+                    if (keys != null) {
+                        while (keys.hasNext()) {
+                            Object key   = keys.next();
+                            Object child = parent.node.get(key);
+                            if (child instanceof JSNode) {
+                                next = new JSPointer(parent, key, (JSNode) child);
+                                break;
+                            }
+                        }
+                    }
+                    if (next == null) {
+                        parent = parent.getParent();
+                    }
+                }
+                return next;
+            }
+        };
+        return it;
     }
 
 }

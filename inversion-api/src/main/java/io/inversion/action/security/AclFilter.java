@@ -53,6 +53,16 @@ public class AclFilter extends Filter<AclFilter> {
         return this;
     }
 
+    public AclFilter orRequireAllScopes(String ruleMatcherSpec, String scope1, String... scopeN) {
+        withAclRules(AclRule.requireAllRoles(ruleMatcherSpec, scope1, scopeN));
+        return this;
+    }
+
+    public AclFilter orRequireOneScope(String ruleMatcherSpec, String scope1, String... scopeN) {
+        withAclRules(AclRule.requireOneRole(ruleMatcherSpec, scope1, scopeN));
+        return this;
+    }
+
     public AclFilter withAclRules(AclRule... acls) {
         for (AclRule acl : acls) {
             if (!aclRules.contains(acl)) {

@@ -16,51 +16,51 @@
  */
 package io.inversion.action.security.schemes;
 
-import io.inversion.Param;
-import io.inversion.Request;
+import io.inversion.*;
 import io.inversion.action.security.AuthScheme;
+import io.inversion.utils.Utils;
 
-import javax.naming.OperationNotSupportedException;
 import java.util.List;
 
-public abstract class ApiKeyScheme extends AuthScheme {
-
-    protected Param.In in  = Param.In.HEADER;
-    protected String   key = "X-API-KEY";
+public class ApiKeyScheme extends AuthScheme {
 
     public ApiKeyScheme() {
         withType(AuthSchemeType.apiKey);
     }
 
-    public synchronized List<Param> getParams(){
-        if(super.getParams().size() == 0){
-            Param p = new Param();
-            p.withIn(in);
-            p.withKey(key);
-            withParam(p);
+    protected UserDao userDao = null;
+
+    @Override
+    public User getUser(Request req, Response res) throws ApiException {
+
+        List<Param> params = getParams();
+        if (params.size() == 1) {
+            Param  apiKeyParam = params.get(0);
+            String apiKey      = req.findParam(apiKeyParam.getKey(), apiKeyParam.getIn());
+            if (apiKey != null) {
+                return userDao.getUserByApiKey(req, apiKey);
+            }
+        } else {
+            Param usernameParam = params.get(0).getKey().toLowerCase().indexOf("pass") < 0 ? params.get(0) : params.get(1);
+            Param passwordParam = params.get(0).getKey().toLowerCase().indexOf("pass") >= 0 ? params.get(0) : params.get(1);
+
+            String username = req.findParam(usernameParam.getKey(), usernameParam.getIn());
+            String password = req.findParam(passwordParam.getKey(), passwordParam.getIn());
+
+            if (username != null && password != null) {
+                return userDao.getUserByUsernameAndPassword(req, username, password);
+            }
         }
-        return super.getParams();
+        return null;
     }
 
-    protected String getApiKey(Request req){
-        return req.findParam(key, in);
+    public UserDao getUserDao() {
+        return userDao;
     }
 
-    public Param.In getIn() {
-        return in;
-    }
-
-    public ApiKeyScheme withIn(Param.In in) {
-        this.in = in;
+    public ApiKeyScheme withUserDao(UserDao userDao) {
+        this.userDao = userDao;
         return this;
     }
 
-    public String getKey() {
-        return key;
-    }
-
-    public ApiKeyScheme withKey(String key) {
-        this.key = key;
-        return this;
-    }
 }

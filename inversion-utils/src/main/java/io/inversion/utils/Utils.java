@@ -82,14 +82,19 @@ public class Utils {
 
     /**
      * @param arr an array of objects to check and see if any are not empty
-     * @return true if any args are not null with a toString().length() @gt; 0
+     * @return false if any args are not null with a null safe toString().trim().length() @gt; 0
      */
     public static boolean empty(Object... arr) {
         boolean empty = true;
         for (int i = 0; empty && arr != null && i < arr.length; i++) {
             Object obj = arr[i];
-            if (obj != null && obj.toString().length() > 0)
-                empty = false;
+            if (obj != null) {
+                String toString = obj.toString();
+                if (toString != null && toString.trim().length() > 0) {
+                    empty = false;
+                    break;
+                }
+            }
         }
         return empty;
     }
@@ -110,9 +115,9 @@ public class Utils {
     /**
      * Fluent override of Collections.addAll()
      *
-     * @param collection  the collection to add items to
-     * @param items the items to add
-     * @param <T>   a subclass of Collection
+     * @param collection the collection to add items to
+     * @param items      the items to add
+     * @param <T>        a subclass of Collection
      * @return the collection passed in
      * @see Collections#addAll(Collection, Object[])
      */
@@ -290,18 +295,18 @@ public class Utils {
         return string;
     }
 
-    public static RuntimeException ex(Throwable ex){
+    public static RuntimeException ex(Throwable ex) {
         Throwable cause = getCause(ex);
-        if(cause instanceof RuntimeException)
+        if (cause instanceof RuntimeException)
             return (RuntimeException) cause;
         return new RuntimeException(cause);
     }
 
-    public static RuntimeException ex(String messageFormat, Object... args){
+    public static RuntimeException ex(String messageFormat, Object... args) {
         return new RuntimeException(format(messageFormat, args));
     }
 
-    public static RuntimeException ex(Throwable cause, String messageFormat, Object... args){
+    public static RuntimeException ex(Throwable cause, String messageFormat, Object... args) {
         return new RuntimeException(format(messageFormat, args), getCause(cause));
     }
 
@@ -321,38 +326,35 @@ public class Utils {
      * useful out of this message if not exactly to the format spec.
      *
      * @param format a string containing "{}" arg placeholders of formatted per java.util.Formatter
-     * @param args objects that will be replaced into their <code>format</code> placeholders.
+     * @param args   objects that will be replaced into their <code>format</code> placeholders.
      * @return the formatted string
      */
     public static String format(String format, Object... args) {
 
-        if(format == null)
+        if (format == null)
             format = "";
 
-        if(args != null && args.length == 1 && args[0] != null && args[0].getClass().isArray())
-        {
+        if (args != null && args.length == 1 && args[0] != null && args[0].getClass().isArray()) {
             Object arg0 = args[0];
-            int size = Array.getLength(arg0);
+            int    size = Array.getLength(arg0);
             args = new Object[size];
-            for(int i=0; i<size; i++) {
+            for (int i = 0; i < size; i++) {
                 try {
                     args[i] = Array.get(arg0, i);
-                }
-                catch(Exception ex) {
+                } catch (Exception ex) {
                     args[i] = ex.getMessage();
                 }
             }
         }
 
-        if(args == null || args.length < 1)
+        if (args == null || args.length < 1)
             return format;
 
         format = format.trim();
-        if(format.isEmpty())
-        {
-            for(int i=0; i<args.length; i++) {
+        if (format.isEmpty()) {
+            for (int i = 0; i < args.length; i++) {
                 format += "{}";
-                if(i<args.length-1)
+                if (i < args.length - 1)
                     format += ", ";
             }
         }
@@ -361,35 +363,30 @@ public class Utils {
 
         try {
 
-            for(int i=0; i<args.length; i++) {
-                try{
-                    if(args[i] == null) {
+            for (int i = 0; i < args.length; i++) {
+                try {
+                    if (args[i] == null) {
                         args[i] = "null";
-                    }
-                    else if (args[i] instanceof Throwable) {
-                        String cause = Utils.getShortCause((Throwable)args[i]);
-                        if(cause == null)
+                    } else if (args[i] instanceof Throwable) {
+                        String cause = Utils.getShortCause((Throwable) args[i]);
+                        if (cause == null)
                             cause = "UNKNOWN NULL CAUSE";
 
                         String message = cause;
-                        if(cause.indexOf("\n") > 1){
+                        if (cause.indexOf("\n") > 1) {
                             message = cause.substring(0, cause.indexOf("\n")).trim();
                         }
                         errors.add(cause);
                         args[i] = message;
-                    }
-                    else if (args[i] instanceof byte[]) {
+                    } else if (args[i] instanceof byte[]) {
                         args[i] = new String((byte[]) args[i]);
-                    }
-                    else if (args[i].getClass().isArray()) {
+                    } else if (args[i].getClass().isArray()) {
                         args[i] = "[" + format(null, args[i]) + "]";
-                    }
-                    else{
+                    } else {
                         //the objects to string could throw an error
                         args[i] = args[i] + "";
                     }
-                }
-                catch(Exception ex) {
+                } catch (Exception ex) {
                     args[i] = "ERROR: " + ex.getMessage();
                 }
             }
@@ -400,32 +397,26 @@ public class Utils {
             format = String.format(format, args);
 
             //the user could have supplied more args than there were {} so be friendly and add them to the output
-            for(int i=0; i<args.length; i++)
-            {
+            for (int i = 0; i < args.length; i++) {
                 String arg = (String) args[i];
-                if(format.indexOf(arg) < 0)
+                if (format.indexOf(arg) < 0)
                     format += ", " + arg;
             }
-        }
-        catch(Exception ex)
-        {
+        } catch (Exception ex) {
             //probably a format error or incorrect number of args...attempt to do something useful anyway and not error
-            for(int i=0; args != null && i<args.length; i++)
-            {
-                try{
+            for (int i = 0; args != null && i < args.length; i++) {
+                try {
                     format += ", {" + args[i] + "}";
-                }
-                catch(Exception ex2){
+                } catch (Exception ex2) {
                     format += ", {" + ex2.getMessage() + "}";
                 }
             }
         }
-        for(String error : errors)
+        for (String error : errors)
             format += "\r\n" + error;
 
         return format;
     }
-
 
 
 //    public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap<String, String> multiMap, String... kvPairs) {
@@ -438,7 +429,7 @@ public class Utils {
 //        return multiMap;
 //    }
 
-    public static <M extends Map<String, String>> M addToMap(M map, String... keyValuePairs) {
+    public static Map addToMap(Map map, Object... keyValuePairs) {
         if (keyValuePairs != null && keyValuePairs.length % 2 > 0)
             throw new RuntimeException("keyValuePairs.length must be evenly divisible by 2.");
 
@@ -501,13 +492,31 @@ public class Utils {
     public static Set disjunction(Collection a, Collection b) {
         HashSet setA = new HashSet(a);
         HashSet setB = new HashSet(b);
-        setA.removeIf(o -> {if(setB.contains(o)){setB.remove(o); return true;} return false;});
+        setA.removeIf(o -> {
+            if (setB.contains(o)) {
+                setB.remove(o);
+                return true;
+            }
+            return false;
+        });
         setA.addAll(setB);
         return setA;
     }
 
 
-
+    /**
+     * Replaces '{mapKeyName}' with 'mapValue' in the supplied string.
+     *
+     * @param string
+     * @param replacements
+     * @return
+     */
+    public static String replaceVars(String string, Map<String, Object> replacements) {
+        for (String key : replacements.keySet()) {
+            string = string.replace("{" + key + "}", replacements.get(key) + "");
+        }
+        return string;
+    }
 
     /**
      * Checks for a whole word case insensitive match of <code>findThisToken</code>
@@ -521,7 +530,7 @@ public class Utils {
      * @return true if findThisToken exists as a whole world in inThisString
      */
     public static boolean containsToken(String findThisToken, String inThisString) {
-        if(inThisString == null)
+        if (inThisString == null)
             return findThisToken == null;
 
         findThisToken = findThisToken.toLowerCase();
@@ -534,16 +543,17 @@ public class Utils {
 
     /**
      * Removes any keys that contain a whole word token contained in tokensToRemove
+     *
      * @param map
      * @param tokensToRemove
      * @param <M>
      * @return the same map instance, filtered
      */
-    public static <M extends Map<String, ?>> M filter(M map, String... tokensToRemove){
-        for(String key : new ArrayList<String>(map.keySet())){
-            for(String token : tokensToRemove){
-                if(token != null)
-                    if(containsToken(key, token)){
+    public static <M extends Map<String, ?>> M filter(M map, String... tokensToRemove) {
+        for (String key : new ArrayList<String>(map.keySet())) {
+            for (String token : tokensToRemove) {
+                if (token != null)
+                    if (containsToken(key, token)) {
                         map.remove(token);
                     }
             }
@@ -865,10 +875,10 @@ public class Utils {
 
         }
 
-        try{
+        try {
             SimpleDateFormat f = new SimpleDateFormat("yyyyMMdd");
             return f.parse(date);
-        } catch (Exception ex){
+        } catch (Exception ex) {
 
         }
 
@@ -1016,6 +1026,9 @@ public class Utils {
     }
 
     public static String getStackTraceString(Throwable stackTrace) {
+        if (stackTrace == null)
+            return null;
+
         ByteArrayOutputStream baos   = new ByteArrayOutputStream();
         PrintWriter           writer = new PrintWriter(baos);
 
@@ -1110,8 +1123,8 @@ public class Utils {
         return buffer.toString();
     }
 
-    public static boolean checkSame(String str1, String str2){
-        if(str1.equals(str2)) {
+    public static boolean checkSame(String str1, String str2) {
+        if (str1.equals(str2)) {
             System.out.println("SAME");
             return true;
         }
@@ -1127,16 +1140,42 @@ public class Utils {
         System.out.println(str1);
         System.out.println(str2);
 
-        for(int i=0; i<str1.length(); i++){
-            if(i > str2.length()-1){
+        for (int i = 0; i < str1.length(); i++) {
+            if (i > str2.length() - 1) {
                 System.out.println("^");
                 break;
-            }
-            else if(str1.charAt(i) == str2.charAt(i))
+            } else if (str1.charAt(i) == str2.charAt(i))
                 System.out.print(" ");
         }
         System.out.println("^");
         return false;
+    }
+
+
+    public static Object cast(Class clazz, String string) {
+
+        if (String.class.isAssignableFrom(clazz)) {
+            return string;
+        } else if (boolean.class.isAssignableFrom(clazz) || Boolean.class.isAssignableFrom(clazz)) {
+            string = string.toLowerCase();
+            return string.equals("true") || string.equals("t") || string.equals("1");
+        } else if (byte.class.isAssignableFrom(clazz) || Byte.class.isAssignableFrom(clazz)) {
+            return Byte.parseByte(string);
+        } else if (char.class.isAssignableFrom(clazz) || Character.class.isAssignableFrom(clazz)) {
+            return string.charAt(0);
+        } else if (short.class.isAssignableFrom(clazz) || Short.class.isAssignableFrom(clazz)) {
+            return Short.parseShort(string);
+        } else if (int.class.isAssignableFrom(clazz) || Integer.class.isAssignableFrom(clazz)) {
+            return Integer.parseInt(string);
+        } else if (long.class.isAssignableFrom(clazz) || Long.class.isAssignableFrom(clazz)) {
+            return Long.parseLong(string);
+        } else if (float.class.isAssignableFrom(clazz) || Float.class.isAssignableFrom(clazz)) {
+            return Float.parseFloat(string);
+        } else if (double.class.isAssignableFrom(clazz) || Double.class.isAssignableFrom(clazz)) {
+            return Double.parseDouble(string);
+        }
+
+        throw new UnsupportedOperationException("Unable to cast a String to type " + clazz.getName());
     }
 
 
@@ -1214,11 +1253,10 @@ public class Utils {
         //System.out.println("looking for " + name + " ---------------------------------");
         while (clazz != null && !Object.class.equals(clazz)) {
             for (Method m : clazz.getMethods()) {
-                if (m.getName().equalsIgnoreCase(name)){
+                if (m.getName().equalsIgnoreCase(name)) {
                     //System.out.println("FOUND: " + m.getName());
                     return m;
-                }
-                else {
+                } else {
                     //System.out.println(name + " != " + m.getName());
                 }
             }
@@ -1336,7 +1374,8 @@ public class Utils {
         pipe(in, out, true, true);
     }
 
-    public static void pipe(InputStream in, OutputStream out, boolean closeInputStream, boolean closeOutputStream) throws IOException {
+    public static void pipe(InputStream in, OutputStream out, boolean closeInputStream, boolean closeOutputStream) throws
+            IOException {
         int    read;
         byte[] buffer = new byte[1024];
         while ((read = in.read(buffer)) > -1) {
@@ -1344,31 +1383,31 @@ public class Utils {
         }
         out.flush();
 
-        if(closeInputStream)
+        if (closeInputStream)
             in.close();
 
-        if(closeOutputStream)
+        if (closeOutputStream)
             out.close();
     }
 
 
     public static File createTempFile(String fileName) throws IOException {
 
-        if (empty(fileName)){
+        if (empty(fileName)) {
             fileName = "working.tmp";
-        } else{
+        } else {
             int idx = fileName.lastIndexOf("/");
-            if(idx > -1)
-                fileName = fileName.substring(idx +1);
+            if (idx > -1)
+                fileName = fileName.substring(idx + 1);
 
             idx = fileName.lastIndexOf("\\");
-            if(idx > -1)
-                fileName = fileName.substring(idx +1);
+            if (idx > -1)
+                fileName = fileName.substring(idx + 1);
 
             fileName = slugify(fileName.trim());
         }
 
-        if(fileName.length() < 3){
+        if (fileName.length() < 3) {
             fileName += "___";
         }
 
@@ -1399,7 +1438,7 @@ public class Utils {
             } else if (new File(fileOrUrl).exists()) {
                 return new FileInputStream(fileOrUrl);
             } else {
-                if(caller != null)
+                if (caller != null)
                     return caller.getClass().getClassLoader().getResourceAsStream(fileOrUrl);
                 return Thread.currentThread().getContextClassLoader().getResourceAsStream(fileOrUrl);
             }
@@ -1410,13 +1449,14 @@ public class Utils {
 
     /**
      * Checks <code>string</code> for wildcard control characters.
+     *
      * @param string
      * @return true when <code>string</code> contains a regex control character
      */
-    public static boolean isRegex(String string){
+    public static boolean isRegex(String string) {
         String controlChars = "<([{\\^-=$!|]})?*+.>";
-        for(int i=0; i<controlChars.length(); i++){
-            if(string.indexOf(controlChars.charAt(i)) > 0)
+        for (int i = 0; i < controlChars.length(); i++) {
+            if (string.indexOf(controlChars.charAt(i)) > 0)
                 return true;
         }
         return false;
@@ -1545,7 +1585,7 @@ public class Utils {
 
     public static String getSysEnvProp(String name, String defaultValue) {
         String found = getSysEnvProp(name);
-        if(!Utils.empty(found))
+        if (!Utils.empty(found))
             return found.trim();
         return defaultValue;
     }
@@ -1607,7 +1647,6 @@ public class Utils {
     }
 
 
-
     public static String toSingularForm(String str) {
         if (str.length() > 3 && str.toLowerCase().endsWith("ies")) {
             str = str.substring(0, str.length() - 3);
@@ -1630,12 +1669,13 @@ public class Utils {
         return str;
     }
 
-    public static String capitalize(String str){
-        str =Character.toUpperCase(str.charAt(0)) + (str.length() > 0 ? str.substring(1, str.length()) : "");
+    public static String capitalize(String str) {
+        str = Character.toUpperCase(str.charAt(0)) + (str.length() > 0 ? str.substring(1, str.length()) : "");
         return str;
     }
 
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+
     public static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
         for (int j = 0; j < bytes.length; j++) {
@@ -1646,7 +1686,7 @@ public class Utils {
         return new String(hexChars);
     }
 
-    public static byte[] hexToBytes(String hexString){
+    public static byte[] hexToBytes(String hexString) {
         return new BigInteger(hexString, 16).toByteArray();
     }
 
@@ -1695,48 +1735,48 @@ public class Utils {
 
         //-- special case for names like 'orderID'
         name = buff.toString();
-        if(name.length() > 2 && name.endsWith("ID") && Character.isLowerCase(name.charAt(name.length()-3)))
-            name = name.substring(0, name.length() -2) + "Id";
+        if (name.length() > 2 && name.endsWith("ID") && Character.isLowerCase(name.charAt(name.length() - 3)))
+            name = name.substring(0, name.length() - 2) + "Id";
 
         return name;
     }
 
-    public static String printTable(List<List> table){
-        int cols = 0;
+    public static String printTable(List<List> table) {
+        int                   cols          = 0;
         Map<Integer, Integer> columnLengths = new HashMap<>();
-        List<List> strings = new ArrayList<>();
-        for(int i=0; i<table.size(); i++){
-            List row = table.get(i);
+        List<List>            strings       = new ArrayList<>();
+        for (int i = 0; i < table.size(); i++) {
+            List         row    = table.get(i);
             List<String> strRow = new ArrayList();
             strings.add(strRow);
-            for(int j=0; j<row.size(); j++){
+            for (int j = 0; j < row.size(); j++) {
                 Object col = row.get(j);
                 String str = col == null || col.toString() == null ? "" : col.toString();
                 strRow.add(str);
                 Integer len = columnLengths.get(j);
-                if(len == null || len < str.length())
+                if (len == null || len < str.length())
                     columnLengths.put(j, str.length());
                 cols = Math.max(cols, j);
             }
         }
 
         StringBuilder buff = new StringBuilder();
-        for(int i=0; i<strings.size(); i++){
+        for (int i = 0; i < strings.size(); i++) {
             List<String> row = strings.get(i);
             buff.append("|");
-            for(int j=0; j<=cols; j++){
-                String str = j < row.size() ? row.get(j) : "";
+            for (int j = 0; j <= cols; j++) {
+                String  str = j < row.size() ? row.get(j) : "";
                 Integer len = columnLengths.get(j);
                 buff.append(" ").append(pad(str, len)).append(" |");
-                if(j == cols)
+                if (j == cols)
                     buff.append("\n");
             }
         }
         return buff.toString();
     }
 
-    public static String pad(String input, int len){
-        while(input.length() < len){
+    public static String pad(String input, int len) {
+        while (input.length() < len) {
             input = input + " ";
         }
         return input;

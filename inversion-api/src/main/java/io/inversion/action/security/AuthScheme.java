@@ -25,11 +25,12 @@ public abstract class AuthScheme {
 
     public enum AuthSchemeType {http, apiKey, openIdConnect, oauth2}
 
+
     String         name        = null;
     String         description = null;
     AuthSchemeType type        = null;
+    List<Param>    params      = new ArrayList();
 
-    List<Param> params = new ArrayList();
 
     public abstract User getUser(Request req, Response res) throws ApiException;
 

@@ -26,8 +26,6 @@ import io.swagger.v3.oas.models.*;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.parameters.Parameter;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.servers.ServerVariable;
 import io.swagger.v3.oas.models.servers.ServerVariables;
@@ -43,7 +41,7 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 
     protected String getDescription() {
         InputStream is = Utils.findInputStream(this, "description.md");
-        if(is != null)
+        if (is != null)
             return Utils.read(is);
         return "";
     }
@@ -123,59 +121,89 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 
             ArrayListValuedHashMap<io.inversion.Server, Path> serversMap = new ArrayListValuedHashMap<>();
             Api                                               api        = ops.get(0).getApi();
-            for (io.inversion.Server server : api.getServers()) {
-                serversMap.putAll(server, server.getAllIncludePaths());
-            }
+            for (io.inversion.Server serv : api.getServers()) {
+                if(!serv.isDocumented())
+                    continue;
+                //serversMap.putAll(server, server.getAllIncludePaths());
+                for (Url url : serv.getUrls()) {
+                    Server server = new Server();
+                    apiServers.add(server);
 
-            for (io.inversion.Server server : serversMap.keySet()) {
-                List<String> urls = server.getUrls();
-                if (urls.size() == 0) {
-                    String host = req.getUrl().toString();
-                    host = host.substring(0, host.indexOf("/", 8));
-                    urls.add(host);
-                }
-                for (String host : urls) {
-                    List<Path> serverPaths = new ArrayList<>(new LinkedHashSet(serversMap.get(server)));
-                    //Collections.sort(serverPaths);
-                    for (Path path : serverPaths) {
-                        Server apiServer = new Server();
-                        apiServers.add(apiServer);
+                    String urlStr = url.toString();
+                    if(urlStr.startsWith("http://127.0.0.1:8080")) {
+                        urlStr = urlStr.substring("http://localhost:8080".length());
+                    }
 
-                        if (server.getDescription() != null) {
-                            apiServer.setDescription(server.getDescription());
-                        }
 
-                        path = path.copy();
-                        path.removeTrailingWildcard();
-                        apiServer.setUrl(host + "/" + path);
 
-                        if (server.getParams().size() > 0) {
-                            ServerVariables variables = apiServer.getVariables();
-                            if (variables == null) {
-                                variables = new ServerVariables();
-                                apiServer.setVariables(variables);
-                            }
-                            for (Param param : server.getParams()) {
-                                String key  = param.getKey();
-                                String desc = param.getDescription();
+                    server.setUrl(urlStr);
 
+                    Path host = url.getHostAsPath();
+                    if (host != null) {
+                        for (int i = 0; i < host.size(); i++) {
+                            if (host.isVar(i)) {
+                                ServerVariables variables = server.getVariables();
+                                if (variables == null) {
+                                    variables = new ServerVariables();
+                                    server.setVariables(variables);
+                                }
                                 ServerVariable var = new ServerVariable();
-
-                                String defaultValue = req.findParam(key, Param.In.SERVER_PATH);
-                                if (!Utils.empty(defaultValue))
-                                    var.setDefault(defaultValue);
-
-                                if(!Utils.empty(desc))
-                                    var.setDescription(desc);
-
-                                variables.put(key, var);
+                                variables.put(host.getVarName(i), var);
                             }
                         }
                     }
                 }
-
-
             }
+
+//            for (io.inversion.Server server : serversMap.keySet()) {
+//                List<String> urls = server.getUrls();
+//                if (urls.size() == 0) {
+//                    String host = req.getUrl().toString();
+//                    host = host.substring(0, host.indexOf("/", 8));
+//                    urls.add(host);
+//                }
+//                for (String host : urls) {
+//                    List<Path> serverPaths = new ArrayList<>(new LinkedHashSet(serversMap.get(server)));
+//                    //Collections.sort(serverPaths);
+//                    for (Path path : serverPaths) {
+//                        Server apiServer = new Server();
+//                        apiServers.add(apiServer);
+//
+//                        if (server.getDescription() != null) {
+//                            apiServer.setDescription(server.getDescription());
+//                        }
+//
+//                        path = path.copy();
+//                        path.removeTrailingWildcard();
+//                        apiServer.setUrl(host + "/" + path);
+//
+//                        if (server.getParams().size() > 0) {
+//                            ServerVariables variables = apiServer.getVariables();
+//                            if (variables == null) {
+//                                variables = new ServerVariables();
+//                                apiServer.setVariables(variables);
+//                            }
+//                            for (Param param : server.getParams()) {
+//                                String key  = param.getKey();
+//                                String desc = param.getDescription();
+//
+//                                ServerVariable var = new ServerVariable();
+//
+//                                String defaultValue = req.findParam(key, Param.In.SERVER_PATH);
+//                                if (!Utils.empty(defaultValue))
+//                                    var.setDefault(defaultValue);
+//
+//                                if(!Utils.empty(desc))
+//                                    var.setDescription(desc);
+//
+//                                variables.put(key, var);
+//                            }
+//                        }
+//                    }
+//                }
+//
+//
+//            }
 
             openApi.setServers(apiServers);
         }

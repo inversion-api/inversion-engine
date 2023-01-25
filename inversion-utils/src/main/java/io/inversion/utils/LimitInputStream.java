@@ -42,8 +42,8 @@ public final class LimitInputStream extends FilterInputStream {
         if (result != -1) {
             --left;
         } else {
-            if (left != 0) {
-                throw new IOException("The input stream is less than its expected size");
+            if (exact && left != 0) {
+                throw new IOException("The input stream is less than its expected size, you should have " + left + " bytes remaining");
             }
         }
 
@@ -60,8 +60,8 @@ public final class LimitInputStream extends FilterInputStream {
         if (result != -1) {
             left -= result;
         } else {
-            if (left != 0) {
-                throw new IOException("The input stream is less than its expected size");
+            if (exact && left != 0) {
+                throw new IOException("The input stream is less than its expected size, you should have " + left + " bytes remaining");
             }
         }
 

@@ -1,15 +1,12 @@
 package io.inversion.json;
 
+import io.inversion.utils.Utils;
+import org.springframework.util.LinkedCaseInsensitiveMap;
+
 import java.util.*;
 
-public class JSMap extends JSNode implements Map {
+public class JSMap extends LinkedCaseInsensitiveMap implements JSNode {
 
-    /**
-     * Maps the lower case JSProperty.name to the property for case
-     * insensitive lookup with the ability to preserve the original
-     * case.
-     */
-    LinkedHashMap<String, JSProperty> properties = new LinkedHashMap<>();
 
     /**
      * Creates an empty JSNode.
@@ -18,81 +15,98 @@ public class JSMap extends JSNode implements Map {
 
     }
 
+    public JSMap(Map map) {
+        putAll(map);
+    }
+
     /**
      * Creates a JSNode with <code>nameValuePairs</code> as the initial properties.
      * <p>
      * The first and every other element in <code>nameValuePairs</code> should be a string.
      *
      * @param nameValuePairs the name value pairs to add
-     * @see #putAll(Object...)
      */
     public JSMap(Object... nameValuePairs) {
-        putAll(nameValuePairs);
+        putAll(Utils.asMap(nameValuePairs));
+    }
+
+    public Object put(Object key, Object value){
+        if(key == null)
+            return null;
+
+        values();
+        return put(key.toString(), value);
+    }
+
+    @Override
+    public Object removeProp(Object key) {
+        return remove(key);
+    }
+
+
+
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //-- Map superclass methods required to override for compatibality
+
+    /**
+     * Override required to avoid concurrent modification exception
+     * @return
+     */
+    @Override
+    public Object get(Object obj) {
+        if(obj == null)
+            return null;
+        if(!(obj instanceof String))
+            obj = obj.toString();
+
+        return super.get(obj);
+    }
+
+
+
+    /**
+     * Override required to avoid concurrent modification exception
+     * @return
+     */
+    @Override
+    public Set<String> keySet() {
+        return super.keySet();
     }
 
     /**
-     * Creates a JSNode with <code>nameValuePairs</code> as the initial properties.
-     *
-     * @param nameValuePairs the name value pairs to add
-     * @see #putAll(Map)
+     * Override required to convert keys to strings
+     * @param map
      */
-    public JSMap(Map nameValuePairs) {
-        putAll(nameValuePairs);
+    @Override
+    public void putAll(Map map){
+        for(Object key : map.keySet()){
+            if(key != null){
+                put(key.toString(), map.get(key));
+            }
+        }
+    }
+
+
+    public JSMap with(Object key, Object value, Object... nvPairs){
+        put(key, value, nvPairs);
+        return this;
+    }
+
+
+    /**
+     * @return json string, pretty printed with properties written out in their original case.
+     */
+    @Override
+    public String toString() {
+        return JSWriter.toJson(this, true, false);
     }
 
     @Override
-    protected JSProperty getProperty(Object key) {
-        if (key == null)
-            return null;
-        return this.properties.get(key.toString().toLowerCase());
+    public int hashCode(){
+        return System.identityHashCode(this);
     }
-
-    @Override
-    protected List<JSProperty> getProperties() {
-        return new ArrayList(properties.values());
-    }
-
-    @Override
-    protected JSProperty putProperty(JSProperty property) {
-        JSProperty old = this.properties.put(property.getKey().toString().toLowerCase(), property);
-        return old;
-    }
-
-    @Override
-    protected boolean removeProperty(JSProperty property) {
-        JSProperty old = properties.remove(property.getKey().toString().toLowerCase());
-        return old != null;
-    }
-
-    @Override
-    public void clear() {
-        properties.clear();
-    }
-
-
-
-
-    //--------------------------------------------------------------------------------------
-    //--------------------------------------------------------------------------------------
-    //--------------------------------------------------------------------------------------
-    //-- START Additional Map Interface Specific Methods
-
-
-    @Override
-    public Object remove(Object key) {
-        JSProperty prop = getProperty(key);
-        if (prop != null)
-            removeProperty(prop);
-        return prop != null ? prop.getValue() : null;
-    }
-
-
-
-    //--------------------------------------------------------------------------------------
-    //--------------------------------------------------------------------------------------
-    //--------------------------------------------------------------------------------------
-    //-- END Additional Map Interface Methods
-
 
 
     //--------------------------------------------------------------------------------------
@@ -105,29 +119,27 @@ public class JSMap extends JSNode implements Map {
     /**
      * Changes the property name iteration order from insertion order to alphabetic order.
      */
-    public void sort() {
-        List<String> keys = new ArrayList(keySet());
-        Collections.sort(keys);
-        LinkedHashMap<String, JSProperty> newProps = new LinkedHashMap();
-        for (String key : keys) {
-            newProps.put(key, getProperty(key));
-        }
+    public JSMap sort() {
+        LinkedHashMap<String, Object> copy = new LinkedHashMap(this);
+
+        List<String> sortedKeys = new ArrayList(keySet());
+        Collections.sort(sortedKeys);
         clear();
-        newProps.values().forEach(p -> put(p.getKey(), p.getValue()));
+        sortedKeys.forEach(k -> put(k, copy.get(k)));
+        return this;
     }
 
     public Object putFirst(String key, Object value){
-        JSProperty oldProp = getProperty(key);
+        Object oldValue = get(key);
         remove(key);
 
-        LinkedHashMap<String, JSProperty> oldMap = properties;
-        properties = new LinkedHashMap<>();
-
+        LinkedHashMap<String, Object> copy = new LinkedHashMap<>(this);
+        clear();
         put(key, value);
-        for(JSProperty prop : oldMap.values()){
-            putProperty(prop);
-        }
-        return oldProp != null ? oldProp.getValue() : null;
+        putAll(copy);
+
+        return oldValue;
     }
+
 
 }

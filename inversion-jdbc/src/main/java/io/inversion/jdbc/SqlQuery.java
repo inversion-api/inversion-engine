@@ -559,7 +559,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         int foundRows;
         if (db.isType("mysql")) {
             sql = "SELECT FOUND_ROWS()";
-            foundRows = JdbcUtils.selectInt(conn, sql);
+            foundRows = (int)JdbcUtils.selectLong(conn, sql);
         } else {
             if (sql.indexOf("LIMIT ") > 0)
                 sql = sql.substring(0, sql.lastIndexOf("LIMIT "));
@@ -572,7 +572,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
             sql = "SELECT count(1) FROM ( " + sql + " ) as q";
 
-            foundRows = JdbcUtils.selectInt(conn, sql, values);
+            foundRows = (int)JdbcUtils.selectLong(conn, sql, values);
         }
         return foundRows;
     }

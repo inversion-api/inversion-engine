@@ -18,7 +18,10 @@ package io.inversion.action.security;
 
 import io.inversion.*;
 import io.inversion.action.security.schemes.ApiKeyScheme;
+import io.inversion.action.security.schemes.BasicScheme;
 import io.inversion.action.security.schemes.BearerScheme;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Task;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -26,6 +29,7 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -45,19 +49,36 @@ public class AuthFilter extends Filter<AuthFilter> {
     public void run(Request req, Response resp) throws ApiException {
         User user = Chain.getUser();
 
-        if (user != null)
-            return;
-
-        for (AuthScheme scheme : schemes) {
-            user = scheme.getUser(req, resp);
-            if (user != null)
-                break;
+        if (user == null) {
+            for (AuthScheme scheme : schemes) {
+                user = scheme.getUser(req, resp);
+                if (user != null)
+                    break;
+            }
         }
 
         if (user == null)
             throw ApiException.new401Unauthroized();
 
         Chain.peek().withUser(user);
+
+        Collection coll = req.getCollection();
+        if(coll != null){
+            for(Property prop : coll.getProperties()){
+                String key = prop.getJsonName();
+                Object claimed = user.getClaim(key);
+                if(claimed != null){
+                    req.getUrl().withParam(key, claimed.toString());
+                    if(req.getData() != null) {
+                        for (Object node : req.getData()) {
+                            if (node instanceof JSMap) {
+                                ((JSMap) node).put(key, claimed);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
     }
 
@@ -97,10 +118,11 @@ public class AuthFilter extends Filter<AuthFilter> {
 
         Components                  components      = openApi.getComponents();
         Map<String, SecurityScheme> securitySchemes = new LinkedHashMap();
-
-        List<SecurityRequirement> securityRequirements = new ArrayList<>();
-
         List<AuthScheme> schemes = getAuthSchemes();
+
+        //List<SecurityRequirement> securityRequirements = new ArrayList<>();
+        ArrayListValuedHashMap<String, String> securityRequirementsNames = new ArrayListValuedHashMap<>();
+
         for (int i = 0; i < schemes.size(); i++) {
             AuthScheme scheme = schemes.get(i);
 
@@ -109,27 +131,43 @@ public class AuthFilter extends Filter<AuthFilter> {
                 name = scheme.getClass().getSimpleName() + (i + 1);
             String description = scheme.getDescription();
 
-            SecurityRequirement secReq = new SecurityRequirement();
-            secReq.addList(name);
-            securityRequirements.add(secReq);
-
-            SecurityScheme oasSS = new SecurityScheme();
-            securitySchemes.put(name, oasSS);
-            oasSS.setName(name);
-
-            if (description != null)
+            if(scheme instanceof BasicScheme){
+                SecurityScheme oasSS = new SecurityScheme();
+                securitySchemes.put(name, oasSS);
+                oasSS.setName(name);
                 oasSS.setDescription(description);
+                oasSS.setType(SecurityScheme.Type.HTTP);
+                oasSS.setScheme("basic");
 
-            if (scheme instanceof BearerScheme) {
+                securityRequirementsNames.put(name, name);
+            }
+            else if (scheme instanceof BearerScheme) {
+
+                SecurityScheme oasSS = new SecurityScheme();
+                securitySchemes.put(name, oasSS);
+                oasSS.setName(name);
+                oasSS.setDescription(description);
                 oasSS.setType(SecurityScheme.Type.HTTP);
                 oasSS.setScheme("bearer");
                 oasSS.setBearerFormat(((BearerScheme) scheme).getBarerFormat());
-                securitySchemes.put(name, oasSS);
+                securityRequirementsNames.put(name, name);
+
+
             } else if (scheme instanceof ApiKeyScheme) {
-                oasSS.setType(SecurityScheme.Type.APIKEY);
+
                 for (Param param : scheme.getParams()) {
+
+                    String apiKeyName = name + "_" + param.getKey() + "_" + param.getIn();
+
+                    SecurityScheme oasSS = new SecurityScheme();
+                    securitySchemes.put(apiKeyName, oasSS);
+                    oasSS.setDescription(description);
+                    oasSS.setType(SecurityScheme.Type.APIKEY);
                     oasSS.setName(param.getKey());
-                    switch (((ApiKeyScheme) scheme).getIn()) {
+
+                    securityRequirementsNames.put(name, apiKeyName);
+
+                    switch (param.getIn()) {
                         case HEADER:
                             oasSS.setIn(SecurityScheme.In.HEADER);
                             break;
@@ -142,8 +180,20 @@ public class AuthFilter extends Filter<AuthFilter> {
                     }
                 }
             }
+
         }
+
         components.setSecuritySchemes(securitySchemes);
+
+        List<SecurityRequirement> securityRequirements = new ArrayList<>();
+        for(String name : securityRequirementsNames.keySet()){
+            SecurityRequirement req = new SecurityRequirement();
+            req.put(name, securityRequirementsNames.get(name));
+            securityRequirements.add(req);
+        }
+
         openApi.setSecurity(securityRequirements);
+
+
     }
 }

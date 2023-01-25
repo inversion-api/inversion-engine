@@ -201,7 +201,7 @@ public class EngineServlet extends HttpServlet {
             String contentType = res.getContentType();
             http.setContentType(contentType);
 
-            StreamBuffer buffer = res.getOutput();
+            StreamBuffer buffer = res.getBody();
             if (buffer != null) {
                 http.setContentLength(buffer.getLength());
                 Utils.pipe(buffer.getInputStream(), out, true, false);

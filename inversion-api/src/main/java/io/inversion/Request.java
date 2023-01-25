@@ -16,20 +16,14 @@
  */
 package io.inversion;
 
-import io.inversion.json.JSFind;
-import io.inversion.json.JSList;
-import io.inversion.json.JSNode;
-import io.inversion.json.JSParser;
+import io.inversion.json.*;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class Request implements JSFind {
+public class Request implements Headers, JSFind {
 
     public static final String COLLECTION_KEY   = "_collection";
     public static final String RESOURCE_KEY     = "_resource";
@@ -38,31 +32,31 @@ public class Request implements JSFind {
     long startAt = System.currentTimeMillis();
     long endAt   = -1;
 
-    String                                 referrer   = null;
-    String                                 remoteAddr = null;
-    ArrayListValuedHashMap<String, String> headers    = new ArrayListValuedHashMap<>();
+    String referrer   = null;
+    String remoteAddr = null;
+    JSMap  headers    = new JSMap();
 
     boolean explain  = false;
     boolean internal = false;
 
-    Engine     engine     = null;
-    Chain      chain      = null;
-    String     method     = null;
-    Url        url        = null;
-    Server     server     = null;
-    Api        api        = null;
-    Op         op         = null;
-    Endpoint   endpoint   = null;
-    Collection collection = null;
-    Db         db         = null;
-
-    Path serverPath     = null;
-    Path serverPathMatch = null;
-    Path operationPath  = null;
-    Path endpointPath   = null;
-    Path dbPath         = null;
-    Path collectionPath = null;
-    Path actionPath     = null;
+    Engine             engine          = null;
+    Chain              chain           = null;
+    String             method          = null;
+    Url                url             = null;
+    Server             server          = null;
+    Api                api             = null;
+    Op                 op              = null;
+    Endpoint           endpoint        = null;
+    Collection         collection      = null;
+    Db                   db          = null;
+    Server.ServerMatcher serverMatch     = null;
+    Path                 serverPath      = null;
+    Path                 serverPathMatch = null;
+    Path               operationPath   = null;
+    Path               endpointPath    = null;
+    Path               dbPath          = null;
+    Path               collectionPath  = null;
+    Path               actionPath      = null;
 
     List<Chain.ActionMatch> actionMatches = new ArrayList();
     Map<String, String>     pathParams    = new HashMap<>();
@@ -108,20 +102,45 @@ public class Request implements JSFind {
             this.url.withParams(params);
         }
 
-        if (headers != null && headers.size() > 0)
-            this.headers = new ArrayListValuedHashMap<>(headers);
+        if (headers != null && headers.size() > 0) {
+            for (String key : headers.keySet()) {
+                List<String> values = headers.get(key);
+                for (String value : values) {
+                    addHeader(key, value);
+                }
+            }
+        }
+
+        System.out.println(this.headers);
     }
 
-    public String findParam(String name, Param.In... wheres) {
+    public String findParam(String name, Param.In... where) {
+
+        if (where == null || where.length == 0)
+            where = new Param.In[]{Param.In.QUERY, Param.In.URL, Param.In.PATH, Param.In.HEADER, Param.In.SERVER_PATH, Param.In.HOST};
+
+        Set<Param.In> wheres = new LinkedHashSet<>();
+        for (Param.In w : where) {
+            switch (w) {
+                case URL:
+                    Utils.add(wheres, Param.In.HOST, Param.In.SERVER_PATH, Param.In.PATH, Param.In.QUERY);
+                    break;
+                default:
+                    wheres.add(w);
+            }
+        }
+
 
         String value = null;
-        for (Param.In where : wheres) {
-            //HOST, SERVER_PATH, PATH, QUERY, BODY, COOKIE, HEADER, USER, CHAIN, CONTEXT, ENVIRONMENT, URL, REQUEST, ANY
-            switch (where) {
-                case URL:
+        for (Param.In w : wheres) {
+            //HOST, SERVER_PATH, PATH, QUERY, BODY, COOKIE, HEADER, USER, CHAIN, CONTEXT, ENVIRONMENT, URL, REQUEST
+            switch (w) {
+
                 case PATH:
-                    value = getUrl().getParam(name);
-                    //return op.getPathParamValue(name); TODO: fixme
+                    Param param = op.getParam(Param.In.PATH, name);
+                    if(param != null){
+                        value = getPath().get(param.index);
+                    }
                     break;
                 case HEADER:
                     value = getHeader(name);
@@ -129,19 +148,29 @@ public class Request implements JSFind {
                 case QUERY:
                     value = getUrl().getParam(name);
                     break;
-
                 case SERVER_PATH:
                     Path path = getServerPathMatch();
-                    for(int i=0; i<path.size(); i++){
-                        if(path.isVar(i) && path.getVarName(i).equalsIgnoreCase(name)){
+                    for (int i = 0; path != null && i < path.size(); i++) {
+                        if (path.isVar(i) && path.getVarName(i).equalsIgnoreCase(name)) {
                             value = getServerPath().get(i);
                             break;
                         }
                     }
                     break;
 
+                case HOST:
+                    Path hostPath = getServerMatch().getHost();
+                    for (int i = 0; hostPath != null && i < hostPath.size(); i++) {
+                        if (hostPath.isVar(i) && hostPath.getVarName(i).equalsIgnoreCase(name)) {
+                            value = getUrl().getHostAsPath().get(i);
+                            break;
+                        }
+                    }
+                    break;
+
                 default:
-                    throw new UnsupportedOperationException();
+                    System.err.println("IMPLEMENT SUPPORT FOR Request.findParam(var, " + w + ")");
+                    //throw new UnsupportedOperationException();
             }
             if (value != null)
                 break;
@@ -199,13 +228,17 @@ public class Request implements JSFind {
     }
 
     public Request withHeaders(String key, String value) {
-        this.headers.put(key, value);
+        addHeader(key, value);
         return this;
     }
 
-    public Request withHeaders(Map<String, String> headers) {
+    public Request withHeaders(JSMap headers) {
         this.headers.putAll(headers);
         return this;
+    }
+
+    public JSMap getHeaders() {
+        return (JSMap) headers;
     }
 
     public Server getServer() {
@@ -278,6 +311,15 @@ public class Request implements JSFind {
 
     public Request withEndpoint(Endpoint endpoint) {
         this.endpoint = endpoint;
+        return this;
+    }
+
+    public Server.ServerMatcher getServerMatch() {
+        return serverMatch;
+    }
+
+    public Request withServerMatch(Server.ServerMatcher serverMatch) {
+        this.serverMatch = serverMatch;
         return this;
     }
 
@@ -363,12 +405,21 @@ public class Request implements JSFind {
     }
 
     public boolean isDebug() {
-        String host = getUrl().getHost().toLowerCase();
-        if ("127.0.0.1".equals(host))
+
+        Api api = getApi();
+        if(api != null || api.isDebug())
             return true;
 
-        if (getApi() != null)
-            return getApi().isDebug();
+        Url url = getUrl();
+        if(Chain.peek() != null)
+            url = Chain.first().getRequest().getUrl();
+
+        if(url.getHost() == null)
+            return true;
+
+        String host = url.getHost().toLowerCase();
+        if ("127.0.0.1".equals(host))
+            return true;
 
         return false;
     }
@@ -482,35 +533,14 @@ public class Request implements JSFind {
         return "delete".equalsIgnoreCase(method);
     }
 
+    public boolean isOptions() {
+        return "options".equalsIgnoreCase(method);
+    }
+
     public String getReferrer() {
         return getHeader("referrer");
     }
 
-    public String getHeader(String key) {
-        key = key.toLowerCase();
-        List<String> vals = headers.get(key);
-        if (vals != null && vals.size() > 0)
-            return vals.get(0);
-        return null;
-    }
-
-    public void removeHeader(String key) {
-        key = key.toLowerCase();
-        headers.remove(key);
-    }
-
-    /**
-     * @return the headers
-     */
-    public ArrayListValuedHashMap<String, String> getHeaders() {
-        return headers;
-    }
-
-    public void withHeader(String key, String value) {
-        key = key.toLowerCase();
-        if (!headers.containsMapping(key, value))
-            headers.put(key, value);
-    }
 
     public Chain getChain() {
         return chain;
@@ -621,5 +651,11 @@ public class Request implements JSFind {
     public Validation validate(String propOrJsonPath, String customErrorMessage) {
         return new Validation(this, propOrJsonPath, customErrorMessage);
     }
+
+    public void check(boolean value, String message, Object... args) {
+        if (!value)
+            throw ApiException.new400BadRequest(message, args);
+    }
+
 
 }

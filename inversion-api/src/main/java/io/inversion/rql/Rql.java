@@ -129,13 +129,13 @@ public class Rql {
      * "Equals" RQL function.
      * Examples:
      * eq(property, value)
-     * <br />eq(property, value with spaces)
-     * <br />eq(property, 'single, t"ick\'s')
-     * <br />eq(property, "dou,bl'e qu\"otes")
-     * <br />eq(property, v*lue)
-     * <br />eq(property, \*alue)
-     * <br />eq(property, valu\*)
-     * <br />eq(property, "va, '\"l\*e"
+     * <br>eq(property, value with spaces)
+     * <br>eq(property, 'single, t"ick\'s')
+     * <br>eq(property, "dou,bl'e qu\"otes")
+     * <br>eq(property, v*lue)
+     * <br>eq(property, \*alue)
+     * <br>eq(property, valu\*)
+     * <br>eq(property, "va, '\"l\*e"
      */
     public static Term eq(Object term1, Object term2) {
         return func("eq", term1, term2);
@@ -151,7 +151,7 @@ public class Rql {
     /**
      * "Greater Than" RQL function.
      * Examples:
-     * <li>gt(price, 200)
+     * <br> - gt(price, 200)
      */
     public static Term gt(Object term1, Object term2) {
         return func("gt", term1, term2);
@@ -168,7 +168,7 @@ public class Rql {
     /**
      * "Less Than" RQL function.
      * Examples:
-     * <li>lt(price, 2.99)
+     * <br>-lt(price, 2.99)
      */
     public static Term lt(Object term1, Object term2) {
         return func("lt", term1, term2);

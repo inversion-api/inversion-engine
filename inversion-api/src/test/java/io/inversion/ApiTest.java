@@ -2,13 +2,7 @@ package io.inversion;
 
 import io.inversion.action.db.DbAction;
 import io.inversion.action.misc.MockAction;
-import io.inversion.utils.Path;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.Test;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -99,7 +93,7 @@ public class ApiTest {
 
     @Test
     public void test_generatePaths_no_concrete_path() {
-        Api api = new Api("test").withServer(new Server().withIncludeOn("test/*"))
+        Api api = new Api("test").withServer(new Server("test/*"))
                 .withAction(new MockAction("mock1"))//
                 .withEndpoint(new Endpoint("[{collection:collectionA}]/*").withName("epA"))
                 .withEndpoint(new Endpoint("[{collection:collection1}]/*").withName("ep1"))

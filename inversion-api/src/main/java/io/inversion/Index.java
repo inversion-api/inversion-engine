@@ -39,6 +39,7 @@ public class Index implements Serializable {
     protected       String         name       = null;
     protected       String         type       = null;           // primary, partition, sort, localsecondary, etc
     protected       boolean        unique     = true;
+    protected       Projection     projection = null;
 
     public Index() {
         super();
@@ -167,5 +168,14 @@ public class Index implements Serializable {
 
     public List<String> getJsonNames() {
         return properties.stream().map(Property::getJsonName).collect(Collectors.toList());
+    }
+
+    public Projection getProjection() {
+        return projection;
+    }
+
+    public Index withProjection(Projection projection) {
+        this.projection = projection;
+        return this;
     }
 }

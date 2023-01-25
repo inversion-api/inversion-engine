@@ -24,7 +24,7 @@ import io.inversion.utils.Utils;
 
 import java.util.*;
 
-class DbDeleteAction<A extends DbDeleteAction> extends Action<A> {
+public class DbDeleteAction<A extends DbDeleteAction> extends Action<A> {
 
     @Override
     protected List<RuleMatcher> getDefaultIncludeMatchers(){

@@ -21,9 +21,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class Relationship implements Serializable {
+
+    public static final String REL_ONE_TO_ONE_PARENT = "ONE_TO_ONE_PARENT";
+    public static final String REL_ONE_TO_ONE_CHILD = "ONE_TO_ONE_CHILD";
+
     public static final String REL_MANY_TO_ONE  = "MANY_TO_ONE";
     public static final String REL_ONE_TO_MANY  = "ONE_TO_MANY";
     public static final String REL_MANY_TO_MANY = "MANY_TO_MANY";
+
 
     protected String name     = null;
     protected String type     = null;
@@ -104,6 +109,12 @@ public final class Relationship implements Serializable {
                 if (isManyToMany() && !other.isManyToOne())
                     continue;
 
+                if (isOneToOneParent() && !other.isOneToOneChild())
+                    continue;
+
+                if (isOneToOneChild() && !other.isOneToOneParent())
+                    continue;
+
                 if (getFkIndex1().equals(other.getFkIndex1()) //
                         && getPrimaryKeyTable1().getResourceIndex().equals(other.getPrimaryKeyTable1().getResourceIndex())) {
                     return other;
@@ -133,6 +144,14 @@ public final class Relationship implements Serializable {
 
     public boolean isManyToOne() {
         return REL_MANY_TO_ONE.equalsIgnoreCase(type);
+    }
+
+    public boolean isOneToOneParent() {
+        return REL_ONE_TO_ONE_PARENT.equalsIgnoreCase(type);
+    }
+
+    public boolean isOneToOneChild() {
+        return REL_ONE_TO_ONE_CHILD.equalsIgnoreCase(type);
     }
 
     /**

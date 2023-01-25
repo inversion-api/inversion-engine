@@ -23,8 +23,10 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 import io.inversion.*;
 import io.inversion.rql.Term;
+import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,26 +42,56 @@ public class S3Db extends Db<S3Db> {
     protected String awsSecretKey = null;
     protected String awsRegion    = null;
 
-    protected String bucket       = null;
-    protected String basePath     = null;
-    protected String includePaths = null;
+    /**
+     * bucketName,bucketName,bucketName|alias,bucketName,bucketName|alias|prefix
+     */
+    protected         String              buckets        = null;
+    private transient AmazonS3            client         = null;
+    protected         Map<String, String> bucketPrefixes = new HashMap<>();
 
-    private AmazonS3 client = null;
+
+    public S3Db() {
+
+    }
+
+    public S3Db(String name, String... includeOn) {
+        withName(name);
+        for (int i = 0; includeOn != null && i < includeOn.length; i++)
+            withIncludeOn(includeOn[i]);
+    }
 
     @Override
     protected void doStartup(Api api) {
         AmazonS3 client = getS3Client();
 
-        // get all of the buckets this account has access to.  
-        List<Bucket> bucketList = client.listBuckets();
+        if (this.buckets != null) {
+            String[] buckets = this.buckets.split(",");
+            for (String bucket : buckets) {
 
-        for (Bucket bucket : bucketList) {
-            Collection coll = new Collection(bucket.getName());
-            // Hardcoding 'key' as the only column as there is no useful way to use the other metadata
-            // for querying 
-            // Other core metadata includes: eTag, size, lastModified, storageClass
-            coll.withProperty("key", String.class.getName(), false);
-            withCollection(coll);
+                String[] parts  = bucket.split("\\|");
+                String   name   = parts.length > 1 ? parts[1] : bucket;
+                String   prefix = parts.length > 2 ? parts[2] : null;
+                bucket = parts[0];
+
+                if (prefix != null)
+                    bucketPrefixes.put(name, prefix);
+
+                Collection coll = new Collection(name).withTableName(bucket);
+                coll.withProperty("key", String.class.getName(), false);
+                coll.withProperty("href", String.class.getName(), false);
+                coll.withIndex(coll.getName() + "Pk", Index.TYPE_RESOURCE_KEY, true, "key");
+                withCollection(coll);
+            }
+        } else {
+            // get all of the buckets this account has access to.
+            List<Bucket> bucketList = client.listBuckets();
+            for (Bucket bucket : bucketList) {
+                Collection coll = new Collection(bucket.getName());
+                coll.withProperty("key", String.class.getName(), false);
+                coll.withProperty("href", String.class.getName(), false);
+                coll.withIndex(coll.getName() + "Pk", Index.TYPE_RESOURCE_KEY, true, "key");
+                withCollection(coll);
+            }
         }
     }
 
@@ -85,8 +117,35 @@ public class S3Db extends Db<S3Db> {
 //   }
 
     @Override
-    public Results doSelect(Collection table, List<Term> columnMappedTerms) throws ApiException {
-        S3DbQuery query = new S3DbQuery(this, table, columnMappedTerms);
+    public Results doSelect(Collection collection, List<Term> columnMappedTerms) throws ApiException {
+
+        String str    = bucketPrefixes.get(collection.getName());
+        Path   prefix = null;
+
+        if (str != null) {
+            prefix = new Path(str);
+            for (int i = 0; i < prefix.size(); i++) {
+                if (prefix.isVar(i)) {
+                    String var   = prefix.getVarName(i);
+                    String value = null;
+                    User   user  = Chain.getUser();
+                    if (user != null) {
+                        value = (String) user.getClaim(var);
+                    }
+                    if (value == null) {
+                        value = Chain.top().getRequest().findParam(var, Param.In.HOST, Param.In.SERVER_PATH, Param.In.PATH);
+                    }
+                    if (value != null) {
+                        prefix.set(i, value);
+                    } else {
+                        throw ApiException.new400BadRequest("Unable to determine value for '{}'", var);
+                    }
+                }
+            }
+        }
+
+
+        S3DbQuery query = new S3DbQuery(this, collection, prefix, columnMappedTerms);
         return query.doSelect();
     }
 
@@ -197,9 +256,5 @@ public class S3Db extends Db<S3Db> {
         return this;
     }
 
-    public S3Db withBucket(String bucket) {
-        this.bucket = bucket;
-        return this;
-    }
 
 }

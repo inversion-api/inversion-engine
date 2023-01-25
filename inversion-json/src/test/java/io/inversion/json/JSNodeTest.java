@@ -21,8 +21,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedInputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -38,6 +37,29 @@ public class JSNodeTest {
 //        assertEquals(str1, str2);
 //    }
 //
+
+//    @Test
+//    public void test_concurrent_modification_exception(){
+//        Map<String, String> map = new HashMap();
+//        Utils.addToMap(map, "a", "1", "b", "2", "c", "3");
+//
+//        boolean thrown = false;
+//        try {
+//            Set<String> keys = map.keySet();
+//            for (String key : keys) {
+//                System.out.println(key);
+//                map.put("x", "x");
+//            }
+//        }
+//        catch(ConcurrentModificationException cme){
+//            //cme.printStackTrace();
+//            thrown = true;
+//        }
+//        if(!thrown)
+//            fail();
+//    }
+
+
 
 
     public static void main(String[] ars)throws Exception{
@@ -80,6 +102,34 @@ public class JSNodeTest {
 
         assertTrue(str.indexOf("$ref")< 0);
     }
+
+
+    @Test
+    public void test_ref_pointer_nested_arrays(){
+        JSNode doc = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPointer1.json")));
+        System.out.println(doc);
+
+
+//        JSList arr1 = new JSList("a0", "a1", "a2");
+//        JSList arr1 = new JSList("b0", "b1", "b2");
+//        JSNode root = new JSMap("arr1", arr1, "arr2", arr2);
+//
+//        JSNode abc1 = new JSMap("abc", "123");
+//        JSNode abc2 = new JSMap("abc", "123");
+//
+//        JSNode parent = new JSMap("1", abc1, "2", abc1);
+//        String str = parent.toString();
+//        System.out.println(str);
+//
+//        assertTrue(str.indexOf("$ref")> 0);
+//
+//        parent = new JSMap("1", abc1, "2", abc2);
+//        str = parent.toString();
+//        System.out.println(str);
+//
+//        assertTrue(str.indexOf("$ref")< 0);
+    }
+
 
 
     @Test
@@ -156,32 +206,32 @@ public class JSNodeTest {
         System.out.println(found1);
         assertEquals(5, found1.size());
 
-        found1 = doc.findAll("$..[?(@.price != 100)]", 1);
+        found1 = doc.findAll(1, "$..[?(@.price != 100)]");
         System.out.println(found1);
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.price != 100)]", 3);
+        found1 = doc.findAll(3, "$..[?(@.price != 100)]");
         System.out.println(found1);
         assertEquals(3, found1.size());
 
-        found1 = doc.findAll("$..[?(@.price!=100)]", 3);
+        found1 = doc.findAll(3, "$..[?(@.price!=100)]");
         System.out.println(found1);
         assertEquals(3, found1.size());
 
-        found1 = doc.findAll("$..book[?(@.isbn)]", 2);
+        found1 = doc.findAll(2, "$..book[?(@.isbn)]");
         System.out.println(found1);
         assertEquals(2, found1.size());
 
-        found1 = doc.findAll("$..[?(@.*.*.isbn)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.*.*.isbn)]");
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.price<10)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.price<10)]");
         assertEquals(2, found1.size());
 
-        found1 = doc.findAll("$..[?(@.*.price<30)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.*.price<30)]");
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.bicycle.price)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.bicycle.price)]");
         assertEquals(1, found1.size());
 
         assertEquals("19.95", doc.findString("store.bicycle.price"));
@@ -192,20 +242,20 @@ public class JSNodeTest {
         assertEquals("red", doc.findString("**.color"));
         assertNull(doc.findString("*.*.*.color"));
 
-        found1 = doc.findAll("$..[?(@.store.bicycle.price)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.store.bicycle.price)]");
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.*.*.color)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.*.*.color)]");
         assertEquals(1, found1.size());
         assertNotNull(found1.getMap(0).get("store"));
 
-        found1 = doc.findAll("$..[?(@.*.bicycle.price)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.*.bicycle.price)]");
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.bicycle.price>10)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.bicycle.price>10)]");
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.store.bicycle.price>10)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.store.bicycle.price>10)]");
         assertEquals(1, found1.size());
 
         found1 = doc.findAll("$.store.book[(@.length-1)]");
@@ -466,23 +516,70 @@ public class JSNodeTest {
         JSList found = test.findAll("**.*");
     }
 
-//    @Test
-//    public void testVisit(){
-//        JSNode parent = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testVisit.json")));
-//        parent.visit(new JSNode.JSNodeVisitor() {
-//            public boolean visit(JSNode node, String key, Object value, Stack<Triple<JSNode, String, Object>> path) {
-//                if(key.equals("$ref") && value instanceof String){
-//                    if(((String)value).startsWith("#")){
-//                        Object found = parent.find((String)value);
-//                        if(found != null){
-//                            System.out.println("Sasdfasd");
-//                        }
-//                    }
-//                }
-//                return true;
-//            }
-//        });
-//    }
+    @Test
+    public void testVisit(){
+        String expected = "[, /store, /store/book, /store/book/0, /store/book/1, /store/book/2, /store/book/3, /store/bicycle]";
+        List found = new ArrayList();
+        JSNode parent = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+        parent.visit(new JSVisitor() {
+            public boolean visit(JSPointer path) {
+                found.add(path.toString());
+                return true;
+            }
+        });
+        assertEquals(expected, found.toString());
+    }
+
+    @Test
+    public void testVisitWithCircularReference(){
+        String expected = "[, /store, /store/book, /store/book/0, /store/book/1, /store/book/2, /store/book/3, /store/bicycle, /store/root]";
+        List found = new ArrayList();
+        JSNode parent = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+
+        parent.getNode("store").put("root", parent);
+
+        parent.visit(new JSVisitor() {
+            public boolean visit(JSPointer path) {
+                if(found.size() > 1000)
+                    fail("a circular reference in the document was not resolved");
+                found.add(path.toString());
+                return true;
+            }
+        });
+
+        assertEquals(expected, found.toString());
+    }
+
+    @Test
+    public void testVisitIterator(){
+        String expected = "[, /store, /store/book, /store/book/0, /store/book/1, /store/book/2, /store/book/3, /store/bicycle]";
+        List found = new ArrayList();
+        JSNode parent = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+
+        for(JSPointer pointer : parent.visit())
+            found.add(pointer);
+
+        assertEquals(expected, found.toString());
+    }
+
+    @Test
+    public void testVisitIteratorWithCircularReference(){
+        String expected = "[, /store, /store/book, /store/book/0, /store/book/1, /store/book/2, /store/book/3, /store/bicycle, /store/root]";
+        JSNode parent = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+
+        //--creates a loop
+        parent.getNode("store").put("root", parent);
+
+        List found = new ArrayList();
+        for(JSPointer pointer : parent.visit()){
+            found.add(pointer);
+            if(found.size() > 1000)
+                fail("a circular reference in the document was not resolved");
+        }
+        assertEquals(expected, found.toString());
+    }
+
+
 
     @Test
     public void test_find_withJsonPointerAndNodeBody() {

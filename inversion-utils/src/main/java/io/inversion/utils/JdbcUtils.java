@@ -455,11 +455,11 @@ public class JdbcUtils {
         return null;
     }
 
-    public static int selectInt(Connection conn, String sql, Object... vals) throws SQLException {
+    public static long selectLong(Connection conn, String sql, Object... vals) throws SQLException {
         Object val = selectValue(conn, sql, vals);
         if (val == null)
             return -1;
-        return Integer.parseInt(val + "");
+        return Long.parseLong(val + "");
     }
 
     public static Object selectValue(Connection conn, String sql, Object... vals) throws SQLException {

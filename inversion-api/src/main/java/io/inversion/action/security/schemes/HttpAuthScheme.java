@@ -23,7 +23,7 @@ public abstract class HttpAuthScheme extends AuthScheme {
 
     public enum HttpScheme {basic, bearer}
 
-    protected HttpScheme scheme = null;
+    protected HttpScheme scheme = HttpScheme.basic;
 
     protected HttpAuthScheme(){
         withType(AuthSchemeType.http);

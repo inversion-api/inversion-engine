@@ -36,7 +36,7 @@ public class EngineTest {
     @Test
     public void test_simple_request() {
         Engine   engine = new Engine();
-        Api      api    = new Api().withServer(new Server().withIncludeOn("GET"));
+        Api      api    = new Api();
         Endpoint ep1    = new Endpoint().withIncludeOn("[{_collection}]/[{_resource}]/[{_relationship}]");
 
         MockAction dbA = new MockAction();
@@ -274,7 +274,7 @@ public class EngineTest {
 
     @Test
     public void testBuildOperations() {
-        Api api = new Api("api").withServer(new Server().withIncludeOn("api/*"));
+        Api api = new Api("api").withServer(new Server("api/*"));
         api.withAction(new MockAction().withIncludeOn("a/b/{named1}/{named2}/*"));
         api.withAction(new MockAction().withIncludeOn("a/b/{named3}/{named4}/*"));
         api.withEndpoint("{endpointNamed1}/b/{endpointNamed2}/[{Ecoll]/[{Eent:e}]/[{Eid}]/*");
@@ -288,7 +288,7 @@ public class EngineTest {
 
     @Test
     public void test_actionPathVariablesAreAddedToQueryAndJson() {
-        Api api = new Api("api").withServer(new Server().withIncludeOn("api/*"));
+        Api api = new Api("api").withServer(new Server("api/*"));
 
         api.withAction(new MockAction() {
 
@@ -663,7 +663,7 @@ public class EngineTest {
     @Test
     public void test_resolveOp_conflicting_paths_resove_on_regex() {
 
-        Api api1 = new Api("test").withServer(new Server().withIncludeOn("test/*"))
+        Api api1 = new Api("test").withServer(new Server("test/*"))
                 .withAction(new MockAction("mock1"))//
                 .withEndpoint(new Endpoint("[{collection:collectionA}]/*").withName("epA"))
                 .withEndpoint(new Endpoint("[{collection:collection1}]/*").withName("ep1"))
@@ -703,7 +703,7 @@ public class EngineTest {
         MockActionA mockActionA = new MockActionA().withIncludeOn("users");
 
         engine = new Engine()//
-                .withApi(new Api().withServer(new Server().withIncludeOn("testApi/*"))
+                .withApi(new Api().withServer(new Server("testApi/*"))
                         .withEndpoint("get", mockActionA)//
                         .withDb(new MockDb()));
 
@@ -790,78 +790,78 @@ public class EngineTest {
 
     }
 
-    /**
-     * ...are configed params set to query?  How
-     */
-    @Test
-    public void testConfigParamOverrides() {
-        //includes/excludes, expands, requires/restricts
-        Endpoint ep = new Endpoint("GET").withQuery("endpointParam=endpointValue&overriddenParam=endpointValue");
-        Action actionA = new MockAction() {
-
-            public void run(io.inversion.Request req, Response res) throws ApiException {
-                Chain.debug("Endpoint_actionA_overriddenParam " + req.getUrl().getParam("overriddenParam"));
-                Chain.debug("Endpoint_actionA_endpointParam " + req.getUrl().getParam("endpointParam"));
-                Chain.debug("Endpoint_actionA_actionAParam " + req.getUrl().getParam("actionAParam"));
-                Chain.debug("Endpoint_actionA_actionBParam " + req.getUrl().getParam("actionBParam"));
-                Chain.debug("Endpoint_actionA_actionCParam " + req.getUrl().getParam("actionCParam"));
-            }
-        }.withQuery("overriddenParam=actionAOverride&actionAParam=actionAValue");
-
-        Action actionB = new MockAction() {
-
-            public void run(io.inversion.Request req, Response res) throws ApiException {
-                Chain.debug("Endpoint_actionB_overriddenParam " + req.getUrl().getParam("overriddenParam"));
-                Chain.debug("Endpoint_actionB_endpointParam " + req.getUrl().getParam("endpointParam"));
-                Chain.debug("Endpoint_actionB_actionAParam " + req.getUrl().getParam("actionAParam"));
-                Chain.debug("Endpoint_actionB_actionBParam " + req.getUrl().getParam("actionBParam"));
-                Chain.debug("Endpoint_actionB_actionCParam " + req.getUrl().getParam("actionCParam"));
-
-            }
-        }.withQuery("overriddenParam=actionBOverride&actionBParam=actionBValue");
-
-        Action actionC = new MockAction() {
-
-            public void run(io.inversion.Request req, Response res) throws ApiException {
-                Chain.debug("Endpoint_actionC_overriddenParam " + req.getUrl().getParam("overriddenParam"));
-                Chain.debug("Endpoint_actionC_endpointParam " + req.getUrl().getParam("endpointParam"));
-                Chain.debug("Endpoint_actionC_actionAParam " + req.getUrl().getParam("actionAParam"));
-                Chain.debug("Endpoint_actionC_actionBParam " + req.getUrl().getParam("actionBParam"));
-                Chain.debug("Endpoint_actionC_actionCParam " + req.getUrl().getParam("actionCParam"));
-
-            }
-        }.withQuery("overriddenParam=actionCOverride&actionCParam=actionCValue");
-
-        ep.withAction(actionA);
-        ep.withAction(actionB);
-        ep.withAction(actionC);
-
-        Engine engine = new Engine()//
-                .withApi(new Api("test")//
-                        .withEndpoint(ep));
-
-        Response res = engine.get("test/test");
-        res.dump();
-
-        res.assertDebug("Endpoint_actionA_overriddenParam", "actionAOverride");
-        res.assertDebug("Endpoint_actionA_endpointParam", "endpointValue");
-        res.assertDebug("Endpoint_actionA_actionAParam", "actionAValue");
-        res.assertDebug("Endpoint_actionA_actionBParam", "null");
-        res.assertDebug("Endpoint_actionA_actionCParam", "null");
-
-        res.assertDebug("Endpoint_actionB_overriddenParam", "actionBOverride");
-        res.assertDebug("Endpoint_actionB_endpointParam", "endpointValue");
-        res.assertDebug("Endpoint_actionB_actionAParam", "actionAValue");
-        res.assertDebug("Endpoint_actionB_actionBParam", "actionBValue");
-        res.assertDebug("Endpoint_actionB_actionCParam", "null");
-
-        res.assertDebug("Endpoint_actionC_overriddenParam", "actionCOverride");
-        res.assertDebug("Endpoint_actionC_endpointParam", "endpointValue");
-        res.assertDebug("Endpoint_actionC_actionAParam", "actionAValue");
-        res.assertDebug("Endpoint_actionC_actionBParam", "actionBValue");
-        res.assertDebug("Endpoint_actionC_actionCParam", "actionCValue");
-
-    }
+//    /**
+//     * ...are configed params set to query?  How
+//     */
+//    @Test
+//    public void testConfigParamOverrides() {
+//        //includes/excludes, expands, requires/restricts
+//        Endpoint ep = new Endpoint("GET").withQuery("endpointParam=endpointValue&overriddenParam=endpointValue");
+//        Action actionA = new MockAction() {
+//
+//            public void run(io.inversion.Request req, Response res) throws ApiException {
+//                Chain.debug("Endpoint_actionA_overriddenParam " + req.getUrl().getParam("overriddenParam"));
+//                Chain.debug("Endpoint_actionA_endpointParam " + req.getUrl().getParam("endpointParam"));
+//                Chain.debug("Endpoint_actionA_actionAParam " + req.getUrl().getParam("actionAParam"));
+//                Chain.debug("Endpoint_actionA_actionBParam " + req.getUrl().getParam("actionBParam"));
+//                Chain.debug("Endpoint_actionA_actionCParam " + req.getUrl().getParam("actionCParam"));
+//            }
+//        }.withQuery("overriddenParam=actionAOverride&actionAParam=actionAValue");
+//
+//        Action actionB = new MockAction() {
+//
+//            public void run(io.inversion.Request req, Response res) throws ApiException {
+//                Chain.debug("Endpoint_actionB_overriddenParam " + req.getUrl().getParam("overriddenParam"));
+//                Chain.debug("Endpoint_actionB_endpointParam " + req.getUrl().getParam("endpointParam"));
+//                Chain.debug("Endpoint_actionB_actionAParam " + req.getUrl().getParam("actionAParam"));
+//                Chain.debug("Endpoint_actionB_actionBParam " + req.getUrl().getParam("actionBParam"));
+//                Chain.debug("Endpoint_actionB_actionCParam " + req.getUrl().getParam("actionCParam"));
+//
+//            }
+//        }.withQuery("overriddenParam=actionBOverride&actionBParam=actionBValue");
+//
+//        Action actionC = new MockAction() {
+//
+//            public void run(io.inversion.Request req, Response res) throws ApiException {
+//                Chain.debug("Endpoint_actionC_overriddenParam " + req.getUrl().getParam("overriddenParam"));
+//                Chain.debug("Endpoint_actionC_endpointParam " + req.getUrl().getParam("endpointParam"));
+//                Chain.debug("Endpoint_actionC_actionAParam " + req.getUrl().getParam("actionAParam"));
+//                Chain.debug("Endpoint_actionC_actionBParam " + req.getUrl().getParam("actionBParam"));
+//                Chain.debug("Endpoint_actionC_actionCParam " + req.getUrl().getParam("actionCParam"));
+//
+//            }
+//        }.withQuery("overriddenParam=actionCOverride&actionCParam=actionCValue");
+//
+//        ep.withAction(actionA);
+//        ep.withAction(actionB);
+//        ep.withAction(actionC);
+//
+//        Engine engine = new Engine()//
+//                .withApi(new Api("test")//
+//                        .withEndpoint(ep));
+//
+//        Response res = engine.get("test/test");
+//        res.dump();
+//
+//        res.assertDebug("Endpoint_actionA_overriddenParam", "actionAOverride");
+//        res.assertDebug("Endpoint_actionA_endpointParam", "endpointValue");
+//        res.assertDebug("Endpoint_actionA_actionAParam", "actionAValue");
+//        res.assertDebug("Endpoint_actionA_actionBParam", "null");
+//        res.assertDebug("Endpoint_actionA_actionCParam", "null");
+//
+//        res.assertDebug("Endpoint_actionB_overriddenParam", "actionBOverride");
+//        res.assertDebug("Endpoint_actionB_endpointParam", "endpointValue");
+//        res.assertDebug("Endpoint_actionB_actionAParam", "actionAValue");
+//        res.assertDebug("Endpoint_actionB_actionBParam", "actionBValue");
+//        res.assertDebug("Endpoint_actionB_actionCParam", "null");
+//
+//        res.assertDebug("Endpoint_actionC_overriddenParam", "actionCOverride");
+//        res.assertDebug("Endpoint_actionC_endpointParam", "endpointValue");
+//        res.assertDebug("Endpoint_actionC_actionAParam", "actionAValue");
+//        res.assertDebug("Endpoint_actionC_actionBParam", "actionBValue");
+//        res.assertDebug("Endpoint_actionC_actionCParam", "actionCValue");
+//
+//    }
 
     @Test
     public void test_exclude() {

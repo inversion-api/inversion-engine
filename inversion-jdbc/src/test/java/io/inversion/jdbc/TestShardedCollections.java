@@ -2,7 +2,7 @@ package io.inversion.jdbc;
 
 import io.inversion.*;
 import io.inversion.action.db.DbAction;
-import io.inversion.action.hateoas.HALAction;
+import io.inversion.action.hateoas.HALFilter;
 import io.inversion.spring.main.InversionMain;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,7 +38,7 @@ public class TestShardedCollections {
         Api api = new Api()//
                 .withName("pricebook")//
                 .withDb(db)//
-                .withAction(new HALAction().withOrder(50))
+                .withAction(new HALFilter().withOrder(50))
                 //.withEndpoint("{storeId:[0-9]*}/[{_collection:items}]/[{productId}]/*", dbAction)
                 .withEndpoint("{storeId:[0-9]*}/[items]/*", dbAction)
                 .withEndpoint("[{_collection:products|stores|channels}]/*", dbAction)

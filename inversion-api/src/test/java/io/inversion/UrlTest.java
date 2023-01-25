@@ -19,28 +19,34 @@ package io.inversion;
 import io.inversion.utils.Utils;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  *
  */
 public class UrlTest {
 
+
+    @Test
+    public void test_relative_protocol(){
+        Url u = new Url("//somehost.com/path");
+        assertEquals("//", u.getProtocol());
+        assertTrue(u.getPort() <= 0);
+        assertEquals("somehost.com", u.getHost());
+        assertEquals("//somehost.com/path", u.toString());
+    }
+
     @Test
     public void test_pass_parsing(){
         passUrl("https://some.my.host/path/v1/{var1}/{var2}", "https://some.my.host/path/v1/{var1}/{var2}/", "remove trailing slash");
         passUrl("http://127.0.0.1:8080", "/", "default host with no trailing slash");
-        passUrl("http://127.0.0.1:8080", "////");
+
         passUrl("http://127.0.0.1:8080/path", "path/");
         passUrl("http://127.0.0.1:8080/path", "/path");
         passUrl("http://127.0.0.1:8080/path", "/path/");
 
         passUrl("http://127.0.0.1:8080/path", "path///");
-        passUrl("http://127.0.0.1:8080/path", "///path");
-        passUrl("http://127.0.0.1:8080/path", "///path///");
 
-        passUrl("http://127.0.0.1:8080/a/b", "////a///b///");
         passUrl("http://127.0.0.1:8080/a/b", "http://127.0.0.1:8080////a///b///");
         passUrl("https://127.0.0.1:8080/a/b", "https://127.0.0.1:8080////a///b///");
         passUrl("http://127.0.0.1/a/b", "http://127.0.0.1////a///b///");
@@ -65,6 +71,13 @@ public class UrlTest {
 
     @Test
     public void test_should_fail_parsing(){
+
+        failUrl("////");
+        failUrl( "///path");
+        failUrl("///path///");
+
+        failUrl( "////a///b///");
+
         failUrl(".");
         failUrl("..");
         failUrl("./");
@@ -107,7 +120,9 @@ public class UrlTest {
     }
 
     void passUrl(String expected, String url, String comment){
-        assertEquals(expected, new Url(url).toString(), comment);
+        Url u = new Url(url);
+        String str = u.toString();
+        assertEquals(expected, str, comment);
     }
 
     @Test

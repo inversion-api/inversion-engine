@@ -16,10 +16,9 @@
  */
 package io.inversion;
 
-import io.inversion.config.Context;
+import io.inversion.context.Context;
 import io.inversion.json.JSMap;
 import io.inversion.utils.Path;
-import io.inversion.utils.Task;
 import io.inversion.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +61,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
      * An optional querystring that will be applied to every request processed.
      * This is useful to force specific params on different endpoints/actions etc.
      */
-    protected String query = null;
+    //protected String query = null;
 
     protected String includeOn = null;
 
@@ -318,14 +317,14 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return (R) this;
     }
 
-    public R withQuery(String query) {
-        this.query = query;
-        return (R) this;
-    }
-
-    public String getQuery() {
-        return query;
-    }
+//    public R withQuery(String query) {
+//        this.query = query;
+//        return (R) this;
+//    }
+//
+//    public String getQuery() {
+//        return query;
+//    }
 
     @Override
     public int compareTo(Rule a) {
@@ -400,7 +399,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
 
     public static class RuleMatcher {
 
-        protected final SortedSet<String>   methods = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        protected final TreeSet<String>   methods = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
         protected final LinkedHashSet<Path> paths   = new LinkedHashSet<>();
 
         public RuleMatcher() {
@@ -409,6 +408,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         public RuleMatcher(String spec) {
             parse(this, spec);
         }
+
 
         public static void parse(RuleMatcher matcher, String spec) {
             if (spec == null)
@@ -425,7 +425,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         }
 
         public String toString() {
-            return "[" + Utils.implode(",", methods, paths) + "]";
+            return Utils.implode(",", methods, paths);
         }
 
         public int hashCode() {

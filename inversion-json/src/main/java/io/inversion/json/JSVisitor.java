@@ -2,5 +2,5 @@ package io.inversion.json;
 
 
 public interface JSVisitor {
-    boolean visit(JSPath path);
+    boolean visit(JSPointer path);
 }

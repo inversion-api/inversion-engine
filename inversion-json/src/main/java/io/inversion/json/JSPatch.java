@@ -33,7 +33,10 @@ public interface JSPatch {
             JsonNode target  = JsonPatch.apply(mapper.readValue(patches.toString(), JsonNode.class), mapper.readValue(getJson().toString(), JsonNode.class));
             JSNode   patched = JSParser.asJSNode(target.toString());
             getJson().clear();
-            patched.getProperties().forEach(p -> getJson().put(p.getKey(), p.getValue()));
+
+            for(String key : patched.keySet()){
+                getJson().put(key, patched.get(key));
+            }
 
             if (getJson().isList()) {
                 JSList arr = (JSList)getJson();

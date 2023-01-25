@@ -25,21 +25,19 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.inversion.*;
 import io.inversion.action.security.AuthScheme;
-import io.inversion.config.Config;
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
 import io.inversion.json.JSParser;
-import io.inversion.utils.Utils;
 import org.apache.commons.collections.map.LRUMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class BearerScheme extends HttpAuthScheme {
 
@@ -51,14 +49,14 @@ public class BearerScheme extends HttpAuthScheme {
 
     public enum In {header}
 
-    protected Param.In     in                  = Param.In.HEADER;
-    protected String       requestHeaderKey    = "Authorization";
-    protected String       barerFormat         = "JWT";
-    protected String       requiredTokenPrefix = "bearer ";
-    protected List<String> contextKeys         = new ArrayList();
-    protected String       secretKeyPrefix     = "jwt";
-    protected String       secretKeyPostfix    = "secret";
-    protected int          secretCacheSize     = 100;
+    protected Param.In in                  = Param.In.HEADER;
+    protected String   requestHeaderKey    = "Authorization";
+    protected String   barerFormat         = "JWT";
+    protected String   requiredTokenPrefix = "Bearer ";
+
+    protected int ttl = 1000 * 60 * 15;
+
+    protected SecretDao secretDao = null;
 
 
     public BearerScheme() {
@@ -82,13 +80,13 @@ public class BearerScheme extends HttpAuthScheme {
 
         token = token.trim();
 
-        if (!token.toLowerCase().startsWith(requiredTokenPrefix))
+        if (!token.toLowerCase().startsWith(requiredTokenPrefix.toLowerCase()))
             return null;
 
         token = token.substring(requiredTokenPrefix.length()).trim();
 
         DecodedJWT jwt = null;
-        for (String secret : findSecrets(secretKeyPrefix, secretKeyPostfix, getContextValues(req))) {
+        for (String secret : secretDao.getSecrets(req)) {
             jwt = decodeJWT(token, secret);
             if (jwt != null)
                 break;
@@ -102,22 +100,6 @@ public class BearerScheme extends HttpAuthScheme {
     }
 
 
-    public List<String> getContextValues(Request req) {
-        List<String> values = new ArrayList<>();
-        for (String contextKey : contextKeys)
-            values.add(getContextValue(req, contextKey));
-        return values;
-    }
-
-    public String getContextValue(Request req, String key) {
-        if (CONTEXT_KEY_API_NAME.equalsIgnoreCase(key))
-            return req.getApi().getName();
-
-        String value = req.getUrl().getParam(key);
-        return value;
-    }
-
-
     public User buildUser(DecodedJWT jwt) {
         User   user    = new User();
         String payload = jwt.getPayload();
@@ -125,72 +107,15 @@ public class BearerScheme extends HttpAuthScheme {
         JSNode node = JSParser.asJSNode(payload);
         for (String key : node.keySet()) {
             Object value = node.get(key);
-            user.withProperty(key, value);
+            user.withClaim(key, value);
         }
 
         return user;
     }
 
 
-    /**
-     * A list of scoping strings from most specific to the request to least specific to the request.
-     * <p>
-     * For example: ["{apiName}, "{tenant}"]
-     * <p>
-     * [{keyPrefix}.]apiName.tenant[.10-1][.{keyPostfix}]
-     * {keyPrefix}.apiName[.10-1].{keyPostfix}
-     *
-     * @param contextValues
-     * @return
-     */
-    List<String> findSecrets(String secretKeyPrefix, String secretKeyPostfix, List<String> contextValues) {
-
-        if (secretCache == null) {
-            synchronized (this) {
-                if (secretCache == null) {
-                    secretCache = new LRUMap(secretCacheSize);
-                }
-            }
-        }
-
-        String       cacheKey = secretKeyPrefix + secretKeyPostfix + contextValues.toString();
-        List<String> secrets  = (List<String>) secretCache.get(cacheKey);
-
-        if (secrets != null)
-            return secrets;
-
-        secrets = new ArrayList<>();
-        for (int i = contextValues.size() - 1; i >= 0; i--) {
-            for (int j = 10; j >= -1; j--) {
-                List parts = new ArrayList();
-                parts.add(secretKeyPrefix);
-                for (int k = 0; k <= i; k++)
-                    parts.add(contextValues.get(k));
-                if (j > -1)
-                    parts.add(j);
-                parts.add(secretKeyPostfix);
-
-                String key    = Utils.implode(".", parts);
-                String secret = getSecret(key);
-
-                if (!Utils.empty(secret))
-                    secrets.add(secret);
-            }
-        }
-
-        if (secrets.size() > 0)
-            secretCache.put(cacheKey, secrets);
-
-        return secrets;
-    }
-
-    protected String getSecret(String key) {
-        return Config.getString(key);
-    }
-
-
     public String buildToken(Request req, User user) {
-        List<String> secrets = findSecrets(secretKeyPrefix, secretKeyPostfix, getContextValues(req));
+        List<String> secrets = secretDao.getSecrets(req);//findSecrets(req, secretKeyPrefix, secretKeyPostfix, getContextValues(req));
         if (secrets.size() > 0)
             return buildToken(user, secrets.get(0));
         return null;
@@ -201,9 +126,9 @@ public class BearerScheme extends HttpAuthScheme {
             JWTCreator.Builder builder = JWT.create();
             String             jwt     = null;
 
-            long expires = System.currentTimeMillis() + 1000 * 60 * 15;
+            long expires = System.currentTimeMillis() + ttl;
             builder.withExpiresAt(new Date(expires));
-            builder.withSubject(user.getUsername());
+            builder.withSubject(user.getSubject());
 
             ObjectMapper mapper = new ObjectMapper();
             String       json   = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(user);
@@ -245,15 +170,101 @@ public class BearerScheme extends HttpAuthScheme {
         return null;
     }
 
-    public String getRequestHeaderKey() {
-        return requestHeaderKey;
+    public SecretDao getSecretDao() {
+        return secretDao;
     }
 
-    public BearerScheme withRequestHeaderKey(String requestHeaderKey) {
-        this.requestHeaderKey = requestHeaderKey;
+    public BearerScheme withSecretDao(SecretDao secretDao) {
+        this.secretDao = secretDao;
         return this;
     }
 
+    public interface SecretDao {
+        List<String> getSecrets(Request request);
+    }
+
+
+    //    public List<String> getContextValues(Request req) {
+//        List<String> values = new ArrayList<>();
+//        for (String contextKey : contextKeys)
+//            values.add(getContextValue(req, contextKey));
+//        return values;
+//    }
+//
+//    public String getContextValue(Request req, String key) {
+//        if (CONTEXT_KEY_API_NAME.equalsIgnoreCase(key))
+//            return req.getApi().getName();
+//
+//        String value = req.getUrl().getParam(key);
+//        return value;
+//    }
+
+//    /**
+//     * A list of scoping strings from most specific to the request to least specific to the request.
+//     * <p>
+//     * For example: ["{apiName}, "{tenant}"]
+//     * <p>
+//     * [{keyPrefix}.]apiName.tenant[.10-1][.{keyPostfix}]
+//     * {keyPrefix}.apiName[.10-1].{keyPostfix}
+//     *
+//     * @param contextValues
+//     * @return
+//     */
+//    List<String> findSecrets(Request req, String secretKeyPrefix, String secretKeyPostfix, List<String> contextValues) {
+//
+//        if (secretCache == null) {
+//            synchronized (this) {
+//                if (secretCache == null) {
+//                    secretCache = new LRUMap(secretCacheSize);
+//                }
+//            }
+//        }
+//
+//        String       cacheKey = secretKeyPrefix + secretKeyPostfix + contextValues.toString();
+//        List<String> secrets  = (List<String>) secretCache.get(cacheKey);
+//
+//        if (secrets != null)
+//            return secrets;
+//
+//        secrets = new ArrayList<>();
+//        for (int i = contextValues.size() - 1; i >= 0; i--) {
+//            for (int j = 10; j >= -1; j--) {
+//                List parts = new ArrayList();
+//                parts.add(secretKeyPrefix);
+//                for (int k = 0; k <= i; k++)
+//                    parts.add(contextValues.get(k));
+//                if (j > -1)
+//                    parts.add(j);
+//                parts.add(secretKeyPostfix);
+//
+//                String key    = Utils.implode(".", parts);
+//                String secret = getSecret(req, key);
+//
+//                if (!Utils.empty(secret))
+//                    secrets.add(secret);
+//            }
+//        }
+//
+//        if (secrets.size() > 0)
+//            secretCache.put(cacheKey, secrets);
+//
+//        return secrets;
+//    }
+//
+//    protected String getSecret(Request req, String key) {
+//        return req.getEngine().getConfig().getString(key);
+//    }
+
+
+//    public String getRequestHeaderKey() {
+//        return requestHeaderKey;
+//    }
+//
+//    public BearerScheme withRequestHeaderKey(String requestHeaderKey) {
+//        this.requestHeaderKey = requestHeaderKey;
+//        return this;
+//    }
+//
     public String getRequiredTokenPrefix() {
         return requiredTokenPrefix;
     }
@@ -262,39 +273,39 @@ public class BearerScheme extends HttpAuthScheme {
         this.requiredTokenPrefix = requiredTokenPrefix;
         return this;
     }
-
-    public List<String> getContextKeys() {
-        return contextKeys;
-    }
-
-    public BearerScheme withContextKeys(String... contextKeys) {
-        for (String contextKey : contextKeys) {
-            this.contextKeys.add(contextKey);
-        }
-        return this;
-    }
-
-    public BearerScheme withContextKeys(List<String> contextKeys) {
-        this.contextKeys = contextKeys;
-        return this;
-    }
-
-    public String getSecretKeyPrefix() {
-        return secretKeyPrefix;
-    }
-
-    public BearerScheme withSecretKeyPrefix(String secretKeyPrefix) {
-        this.secretKeyPrefix = secretKeyPrefix;
-        return this;
-    }
-
-    public String getSecretKeyPostfix() {
-        return secretKeyPostfix;
-    }
-
-    public BearerScheme withSecretKeyPostfix(String secretKeyPostfix) {
-        this.secretKeyPostfix = secretKeyPostfix;
-        return this;
-    }
+//
+//    public List<String> getContextKeys() {
+//        return contextKeys;
+//    }
+//
+//    public BearerScheme withContextKeys(String... contextKeys) {
+//        for (String contextKey : contextKeys) {
+//            this.contextKeys.add(contextKey);
+//        }
+//        return this;
+//    }
+//
+//    public BearerScheme withContextKeys(List<String> contextKeys) {
+//        this.contextKeys = contextKeys;
+//        return this;
+//    }
+//
+//    public String getSecretKeyPrefix() {
+//        return secretKeyPrefix;
+//    }
+//
+//    public BearerScheme withSecretKeyPrefix(String secretKeyPrefix) {
+//        this.secretKeyPrefix = secretKeyPrefix;
+//        return this;
+//    }
+//
+//    public String getSecretKeyPostfix() {
+//        return secretKeyPostfix;
+//    }
+//
+//    public BearerScheme withSecretKeyPostfix(String secretKeyPostfix) {
+//        this.secretKeyPostfix = secretKeyPostfix;
+//        return this;
+//    }
 
 }

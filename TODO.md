@@ -10,7 +10,7 @@ Restore
   - swapRefsWithActualReferences
   - swapLogicalDuplicateReferences
   - collapse
-- Update json path to correct for querying arrays with text keys, algo working but not optimized for map vs list
+- Update json codecPath to correct for querying arrays with text keys, algo working but not optimized for map vs list
 
 
 
@@ -45,11 +45,11 @@ Restore
   * Get rid of Rows, it is inefficient since everything is transformed to json
 
 * Url
-  * Reject special characters in path
+  * Reject special characters in codecPath
 
 * Linker
   * Make linker support op param regexes
-  * If op path at an param index is not a variable, confirm its value matches before using...if no match value supplied, can use the linker but is not preferred to other matches
+  * If op codecPath at an param index is not a variable, confirm its value matches before using...if no match value supplied, can use the linker but is not preferred to other matches
   * Make test cases with crazy 
   * Need to cache results for speed    
 
@@ -73,7 +73,7 @@ Wirer
     * DONE Filter out config properties that don't have a "." in them      
   * DONE Refactor into "config" package and split out Encoder/Decoder/Namer
   * DONE Get rid of extra "Decoder.propKeys" map, try to use a single SortedTreeMap  
-  * DONE Change Wirer to use "_" instead of "." when not intending to have implicit path props set...or maybe use a prefix like '$' to indicate this was already hand wired not from config...or really just only do it for configged settings
+  * DONE Change Wirer to use "_" instead of "." when not intending to have implicit codecPath props set...or maybe use a prefix like '$' to indicate this was already hand wired not from config...or really just only do it for configged settings
   * DONE Error on conflicting name
   * DONE Make masked fields regexes like Db.illegals for sql injection
 

@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  *  <li>then translate the results back from the Db columnName based data into the approperiate jsonName version for external consumption.
  * </ol>
  */
-public abstract class Db<T extends Db> extends Rule<T> {
+public class Db<T extends Db> extends Rule<T> {
 
     /**
      * These params are specifically NOT passed to the Query for parsing.  These are either dirty worlds like sql injection tokens or the are used by actions themselves
@@ -62,7 +62,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
     /**
      * A tableName to collectionName map that can be used by whitelist backend tables that should be included in reflective Collection creation.
      */
-    protected final        Map<String, String>   includeTables  = new HashMap<>();
+    protected final        HashMap<String, String>   includeTables  = new HashMap<>();
     /**
      * OPTIONAL column names that should be included in RQL queries, upserts and patches.
      *
@@ -108,7 +108,7 @@ public abstract class Db<T extends Db> extends Rule<T> {
         this.name = name;
     }
 
-    protected boolean excludeTable(String tableName){
+    protected boolean excludeTable(String tableName) {
         if (includeTables.size() > 0 && !(includeTables.containsKey(tableName) || includeTables.containsKey(tableName.toLowerCase())))
             return true;
         return false;
@@ -428,7 +428,9 @@ public abstract class Db<T extends Db> extends Rule<T> {
                     //------------------------------------------------
                     // next, if the db returned extra columns that
                     // are not mapped to attributes, just straight copy them
-                    for (String key : row.keySet()) {
+                    List<String> sorted = new ArrayList(row.keySet());
+                    Collections.sort(sorted);
+                    for (String key : sorted) {
                         if (!key.equalsIgnoreCase("href") && !node.containsKey(key)) {
                             Object value = row.get(key);
                             node.put(key, value);
@@ -470,7 +472,12 @@ public abstract class Db<T extends Db> extends Rule<T> {
      * @param queryTerms RQL terms that have been translated to use Property columnNames not jsonNames
      * @return A list of maps with keys as Property columnNames not jsonNames
      */
-    public abstract Results doSelect(Collection collection, List<Term> queryTerms) throws ApiException;
+    public Results doSelect(Collection collection, List<Term> queryTerms) throws ApiException{
+        return new Results(null);
+    }
+
+
+
 
     public final List<String> upsert(Collection collection, List<Map<String, Object>> records) throws ApiException {
         return doUpsert(collection, mapToColumnNames(collection, records));
@@ -499,7 +506,9 @@ public abstract class Db<T extends Db> extends Rule<T> {
      * @param records    the records being modified
      * @return the encoded resource key for every supplied row
      */
-    public abstract List<String> doUpsert(Collection collection, List<Map<String, Object>> records) throws ApiException;
+    public List<String> doUpsert(Collection collection, List<Map<String, Object>> records) throws ApiException{
+        return Collections.EMPTY_LIST;
+    }
 
     /**
      * Should be called by Actions instead of upsert() only when all records are strictly known to exist.
@@ -535,7 +544,9 @@ public abstract class Db<T extends Db> extends Rule<T> {
         doDelete(collection, mapToColumnNames(collection, indexValues));
     }
 
-    public abstract void doDelete(Collection collection, List<Map<String, Object>> indexValues) throws ApiException;
+    public void doDelete(Collection collection, List<Map<String, Object>> indexValues) throws ApiException{
+
+    }
 
 
     /**
@@ -654,8 +665,8 @@ public abstract class Db<T extends Db> extends Rule<T> {
         for (Collection coll : getCollections()) {
             if (coll.getName().equals(coll.getTableName())) {
                 //-- collection has not already been specifically customized
-                String prettyName = beautifyCollectionName(coll.getTableName());
-                String pluralName =  Utils.toPluralForm(prettyName);
+                String prettyName   = beautifyCollectionName(coll.getTableName());
+                String pluralName   = Utils.toPluralForm(prettyName);
                 String singularName = prettyName;
                 coll.withName(pluralName);
                 coll.withSingularDispalyName(Utils.capitalize(singularName));
@@ -684,7 +695,6 @@ public abstract class Db<T extends Db> extends Rule<T> {
             }
         }
     }
-
 
 
     /**
@@ -736,27 +746,81 @@ public abstract class Db<T extends Db> extends Rule<T> {
                         Collection pkResource = fkIdx.getProperty(0).getPk().getCollection();
                         Collection fkResource = fkIdx.getProperty(0).getCollection();
 
-                        //ONE_TO_MANY
-                        {
-                            Relationship r = new Relationship();
-                            //TODO:this name may not be specific enough or certain types
-                            //of relationships. For example where an resource is related
-                            //to another resource twice
-                            r.withType(Relationship.REL_ONE_TO_MANY);
-                            r.withFkIndex1(fkIdx);
-                            r.withRelated(fkResource);
-                            r.withName(makeRelationshipName(pkResource, r));
-                            r.withCollection(pkResource);
+                        boolean oneToOne = false;
+                        Index   fkPk     = fkResource.getResourceIndex();
+                        Index   pkPk     = pkResource.getResourceIndex();
+                        if (pkResource != fkResource
+                                && pkPk.isUnique()
+                                && fkPk.isUnique()
+                                && fkIdx.size() == fkPk.size()) {
+
+                            //-- check to see if the foreign key uses the same columns as the primary key in its own table
+                            List pkCols = fkPk.getColumnNames();
+                            List fkCols = fkIdx.getColumnNames();
+                            Collections.sort(pkCols);
+                            Collections.sort(fkCols);
+                            if(pkCols.toString().equalsIgnoreCase(fkCols.toString())) {
+
+                                //-- now check to see if the fk references the pk of the related table
+                                List<String> fkPkCols = new ArrayList();
+                                for (Property prop : fkIdx.getProperties())
+                                    fkPkCols.add(prop.getPk().getColumnName());
+
+                                List<String> pkPkCols = pkPk.getColumnNames();
+
+                                Collections.sort(fkPkCols);
+                                Collections.sort(pkPkCols);
+
+                                if (fkPkCols.toString().equalsIgnoreCase(pkPkCols.toString()))
+                                    oneToOne = true;
+                            }
                         }
 
-                        //MANY_TO_ONE
-                        {
-                            Relationship r = new Relationship();
-                            r.withType(Relationship.REL_MANY_TO_ONE);
-                            r.withFkIndex1(fkIdx);
-                            r.withRelated(pkResource);
-                            r.withName(makeRelationshipName(fkResource, r));
-                            r.withCollection(fkResource);
+                        if(oneToOne){
+                            {
+                                Relationship r = new Relationship();
+                                //TODO:this name may not be specific enough or certain types
+                                //of relationships. For example where an resource is related
+                                //to another resource twice
+                                r.withType(Relationship.REL_ONE_TO_ONE_PARENT);
+                                r.withFkIndex1(fkIdx);
+                                r.withRelated(fkResource);
+                                r.withName(makeRelationshipName(pkResource, r));
+                                r.withCollection(pkResource);
+                            }
+
+                            {
+                                Relationship r = new Relationship();
+                                r.withType(Relationship.REL_ONE_TO_ONE_CHILD);
+                                r.withFkIndex1(fkIdx);
+                                r.withRelated(pkResource);
+                                r.withName(makeRelationshipName(fkResource, r));
+                                r.withCollection(fkResource);
+                            }
+                        }
+                        else {
+                            //ONE_TO_MANY
+                            {
+                                Relationship r = new Relationship();
+                                //TODO:this name may not be specific enough or certain types
+                                //of relationships. For example where an resource is related
+                                //to another resource twice
+                                r.withType(Relationship.REL_ONE_TO_MANY);
+                                r.withFkIndex1(fkIdx);
+                                r.withRelated(fkResource);
+                                r.withName(makeRelationshipName(pkResource, r));
+                                r.withCollection(pkResource);
+                            }
+
+                            //MANY_TO_ONE
+                            {
+                                Relationship r = new Relationship();
+                                r.withType(Relationship.REL_MANY_TO_ONE);
+                                r.withFkIndex1(fkIdx);
+                                r.withRelated(pkResource);
+                                r.withName(makeRelationshipName(fkResource, r));
+                                r.withCollection(fkResource);
+                            }
                         }
                     } catch (Exception ex) {
                         throw ApiException.new500InternalServerError(ex, "Error creating relationship for index: {}", fkIdx);
@@ -870,6 +934,12 @@ public abstract class Db<T extends Db> extends Rule<T> {
                 name = relationship.getFk2Col1().getPk().getCollection().getName();
                 name = Utils.toPluralForm(name);
                 break;
+
+            case Relationship.REL_ONE_TO_ONE_PARENT:
+            case Relationship.REL_ONE_TO_ONE_CHILD:
+                name = relationship.getRelated().getSingularDisplayName();
+                name = Character.toLowerCase(name.charAt(0)) + name.substring(1);
+                break;
         }
 
         return name;
@@ -896,8 +966,8 @@ public abstract class Db<T extends Db> extends Rule<T> {
             return JSParser.parseJson(json);
         }
 
-        if(value instanceof byte[])// && ((byte[])value).length == 16)
-            value = Utils.bytesToHex((byte[])value);
+        if (value instanceof byte[])// && ((byte[])value).length == 16)
+            value = Utils.bytesToHex((byte[]) value);
 
         else if (Utils.in(type, "char", "nchar", "clob"))
             value = value.toString().trim();
@@ -1109,6 +1179,9 @@ public abstract class Db<T extends Db> extends Rule<T> {
      * @return this
      */
     public T withIncludeTable(String tableName, String collectionName) {
+        String existing = this.includeTables.get(tableName);
+        if(existing != null)
+            collectionName = existing + "," + collectionName;
         this.includeTables.put(tableName, collectionName);
         return (T) this;
     }
@@ -1177,20 +1250,20 @@ public abstract class Db<T extends Db> extends Rule<T> {
         return (T) this;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * The name of the Db is used primarily for autowiring "name.property" bean props from
-     *
-     * @param name the name to set
-     * @return this
-     */
-    public T withName(String name) {
-        this.name = name;
-        return (T) this;
-    }
+//    public String getName() {
+//        return name;
+//    }
+//
+//    /**
+//     * The name of the Db is used primarily for autowiring "name.property" bean props from
+//     *
+//     * @param name the name to set
+//     * @return this
+//     */
+//    public T withName(String name) {
+//        this.name = name;
+//        return (T) this;
+//    }
 
     public boolean isType(String... types) {
         String type = getType();
@@ -1239,7 +1312,6 @@ public abstract class Db<T extends Db> extends Rule<T> {
         this.dryRun = dryRun;
         return (T) this;
     }
-
 
 
 }

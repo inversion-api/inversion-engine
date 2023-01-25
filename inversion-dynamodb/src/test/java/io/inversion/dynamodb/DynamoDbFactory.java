@@ -49,8 +49,12 @@ public class DynamoDbFactory {
 
     protected static void rebuildNorthwind() {
         try {
-            DynamoDB dynamoDB = new DynamoDB(DynamoDb.buildDynamoClient("dynamo"));
-            Table    table    = dynamoDB.getTable("northwind");
+            DynamoDB dynamoDB = new DynamoDB(DynamoDb.buildDynamoClient(
+                    Utils.getSysEnvProp("dynamo.awsRegion"), //
+                    Utils.getSysEnvProp("dynamo.awsAccessKey"), //
+                    Utils.getSysEnvProp("dynamo.awsSecretKey"), //
+                    Utils.getSysEnvProp("dynamo.awsEndpoint")));
+            Table table = dynamoDB.getTable("northwind");
             if (table != null) {
                 table.delete();
                 table.waitForDelete();
@@ -109,7 +113,12 @@ public class DynamoDbFactory {
                         .withWriteCapacityUnits(50L));
             }
 
-            AmazonDynamoDB client   = DynamoDb.buildDynamoClient("dynamo");
+            AmazonDynamoDB client   =DynamoDb.buildDynamoClient(
+                    Utils.getSysEnvProp("dynamo.awsRegion"), //
+                    Utils.getSysEnvProp("dynamo.awsAccessKey"), //
+                    Utils.getSysEnvProp("dynamo.awsSecretKey"), //
+                    Utils.getSysEnvProp("dynamo.awsEndpoint"));
+
             DynamoDB       dynamoDB = new DynamoDB(client);
 
             CreateTableRequest request = new CreateTableRequest()//

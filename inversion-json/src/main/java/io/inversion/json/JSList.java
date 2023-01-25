@@ -4,11 +4,10 @@ package io.inversion.json;
 import io.inversion.utils.Utils;
 
 import java.util.*;
-import java.util.stream.Stream;
 
-public class JSList<T extends Object> extends JSNode implements List<T> {
+public class JSList extends ArrayList implements JSNode {
 
-    ArrayList<Object> elements = new ArrayList<>();
+    JSListKeys keySet = null;
 
     public JSList(Object... objects) {
         if (objects != null && objects.length == 1 && objects[0].getClass().isArray()) {
@@ -21,174 +20,93 @@ public class JSList<T extends Object> extends JSNode implements List<T> {
             add(objects[i]);
     }
 
+
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
-    //-- JSBase Implementations
+    //-- JSNode Implementation
+
 
     @Override
-    protected JSProperty getProperty(Object key) {
+    public Object get(Object key) {
         int idx = Utils.atoi(key);
-        if (idx < 0)
-            return null;
-        return new JSProperty(idx, get(idx));
-    }
-
-
-    @Override
-    protected List<JSProperty> getProperties() {
-        List<JSProperty> properties = new ArrayList<>();
-        for (int i = 0; i < elements.size(); i++) {
-            properties.add(new JSProperty(i, elements.get(i)));
-        }
-        return properties;
+        if (idx > -1 && idx < size())
+            return get(idx);
+        return null;
     }
 
     @Override
-    protected JSProperty putProperty(JSProperty property) {
-        int idx = Utils.atoi(property.getKey());
-        if (idx < 0)
-            throw Utils.ex("JSList can not be indexed with key '{}'", idx);
-        Object old = get(idx);
-        set(idx, property.getValue());
-        return old != null ? new JSProperty(idx, old) : null;
+    public Object put(Object key, Object value) {
+        int idx = Utils.atoi(key);
+        return set(idx, value);
     }
 
     @Override
-    protected boolean removeProperty(JSProperty property) {
-        int idx = Utils.atoi(property.getValue());
-        if (idx < 0)
-            return false;
-        if (idx < size()) {
+    public Object removeProp(Object key) {
+        int idx = Utils.atoi(key);
+        if (idx > -1 && idx < size()) {
+            Object oldVal = get(idx);
             remove(idx);
-            return true;
+            return oldVal;
         }
-        return false;
+        return null;
     }
 
+
+    /**
+     * Returns this JSList
+     */
     @Override
-    public void clear() {
-        elements.clear();
+    public List<Object> values() {
+        return this;
+    }
+
+    /**
+     * @return a Set backed by the index numbers of this list
+     */
+    @Override
+    public Set<String> keySet() {
+        if(keySet == null)
+            keySet = new JSListKeys();
+        return keySet;
     }
 
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
-    //-- List Implementations
+    //-- Additional Overrides required for compatibility
 
+    /**
+     * @return json string, pretty printed with properties written out in their original case.
+     */
     @Override
-    public boolean contains(Object o) {
-        return elements.contains(o);
+    public String toString() {
+        return JSWriter.toJson(this, true, false);
     }
 
     @Override
-    public Iterator iterator() {
-        return elements.iterator();
+    public int hashCode(){
+        return System.identityHashCode(this);
     }
 
+    /**
+     * Overridden to automatically expand the size of the list to accept idx
+     * @param idx
+     * @param value
+     * @return
+     */
     @Override
-    public Object[] toArray() {
-        return elements.toArray();
+    public Object set(int idx, Object value){
+        if (idx >= 0) {
+            while (size() <= idx)
+                add(null);
+
+            Object oldVal = get(idx);
+            super.set(idx, value);
+            return oldVal;
+        }
+        return null;
     }
-
-    @Override
-    public Object[] toArray(Object[] a) {
-        return elements.toArray(a);
-    }
-
-    @Override
-    public boolean add(Object o) {
-        return elements.add(o);
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        return elements.remove(o);
-    }
-
-    @Override
-    public boolean containsAll(Collection c) {
-        return elements.containsAll(c);
-    }
-
-    @Override
-    public boolean addAll(Collection c) {
-        return elements.addAll(c);
-    }
-
-    @Override
-    public boolean addAll(int index, Collection c) {
-        return elements.addAll(index, c);
-    }
-
-    @Override
-    public boolean removeAll(Collection c) {
-        return elements.removeAll(c);
-    }
-
-    @Override
-    public boolean retainAll(Collection c) {
-        return elements.retainAll(c);
-    }
-
-    @Override
-    public T get(int index) {
-        if (index < 0 || index >= elements.size())
-            return null;
-        return (T) elements.get(index);
-    }
-
-    @Override
-    public Object set(int index, Object element) {
-        while (elements.size() < index + 1)
-            elements.add(null);
-
-        return elements.set(index, element);
-    }
-
-    @Override
-    public void add(int index, Object element) {
-        while (elements.size() < index)
-            elements.add(null);
-
-        elements.add(index, element);
-    }
-
-    @Override
-    public T remove(int index) {
-        return (T) elements.remove(index);
-    }
-
-    @Override
-    public int indexOf(Object o) {
-        return elements.indexOf(o);
-    }
-
-    @Override
-    public int lastIndexOf(Object o) {
-        return elements.lastIndexOf(o);
-    }
-
-    @Override
-    public ListIterator listIterator() {
-        return elements.listIterator();
-    }
-
-    @Override
-    public ListIterator listIterator(int index) {
-        return elements.listIterator(index);
-    }
-
-    @Override
-    public List subList(int fromIndex, int toIndex) {
-        return elements.subList(fromIndex, toIndex);
-    }
-
-    @Override
-    public Stream stream() {
-        return elements.stream();
-    }
-
 
     //--------------------------------------------------------------------------------------
     //--------------------------------------------------------------------------------------
@@ -201,11 +119,11 @@ public class JSList<T extends Object> extends JSNode implements List<T> {
         return null;
     }
 
-    public JSMap lastMap() {
-        if (size() > 0)
-            return (JSMap) get(size() - 1);
-        return null;
-    }
+//    public JSMap lastMap() {
+//        if (size() > 0)
+//            return (JSMap) get(size() - 1);
+//        return null;
+//    }
 
 //    public T lastAs(Class<T> type) {
 //        if (size() > 0) {
@@ -227,4 +145,44 @@ public class JSList<T extends Object> extends JSNode implements List<T> {
 //        return null;
 //
 //    }
+
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------------------
+    //-- Helper Classes
+
+    class JSListKeys extends AbstractSet{
+
+        @Override
+        public Iterator iterator() {
+            return new JSListKeyIterator();
+        }
+
+        @Override
+        public int size() {
+            return JSList.this.size();
+        }
+    }
+
+    class JSListKeyIterator implements Iterator<String>{
+
+        int expectedSize = JSList.this.size();
+        int next = 0;
+
+        @Override
+        public boolean hasNext() {
+            int size = JSList.this.size();
+            if(expectedSize != size)
+                throw new ConcurrentModificationException();
+            return next < size;
+        }
+
+        @Override
+        public String next() {
+            String nextStr = ((Integer)next).toString();
+            next += 1;
+            return nextStr;
+        }
+    }
 }
+

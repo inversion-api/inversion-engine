@@ -17,11 +17,8 @@
 
 package io.inversion;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.inversion.config.Config;
-import io.inversion.config.Context;
+import io.inversion.context.Context;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSWriter;
 import io.inversion.utils.Path;
 import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
@@ -38,14 +35,13 @@ import org.apache.http.client.methods.*;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -113,7 +109,7 @@ import java.util.zip.GZIPOutputStream;
  */
 public class ApiClient {
 
-    static final    Log                                    log                   = LogFactory.getLog(ApiClient.class);
+    static final Log log = LogFactory.getLog(ApiClient.class);
 
     /**
      * Headers that are always sent regardless of <code>forwardHeaders</code>, <code>includeForwardHeaders</code> and <code>excludeForwardHeaders</code> state.
@@ -122,9 +118,9 @@ public class ApiClient {
      * <p>
      * This list is initially empty.
      */
-    protected final ArrayListValuedHashMap<String, String> forcedHeaders         = new ArrayListValuedHashMap();
+    protected final ArrayListValuedHashMap<String, String> forcedHeaders = new ArrayListValuedHashMap();
 
-    protected final List<RequestListener>    requestListeners  = new ArrayList<>();
+    protected final List<RequestListener> requestListeners = new ArrayList<>();
 
     protected final List<Consumer<Response>> responseListeners = new ArrayList<>();
 
@@ -133,13 +129,13 @@ public class ApiClient {
      *
      * @see Context
      */
-    protected       String                   name              = null;
+    protected String name = null;
 
     /**
      * Optional base url that will be prepended to the url arg of any calls assuming that the url arg supplied is a relative path and not an absolute url.
      * Any {paramName} variables will be replaced with with values from the current Request Url.
      */
-    protected String     url                = null;
+    protected String url = null;
 
 
     /**
@@ -147,7 +143,7 @@ public class ApiClient {
      * <p>
      * Default value is true.
      */
-    protected boolean    forwardHeaders     = true;
+    protected boolean forwardHeaders = true;
 
     /**
      * Forward these headers when forwardHeaders is true.
@@ -159,7 +155,7 @@ public class ApiClient {
      * @see <a href="https://docs.microsoft.com/en-us/azure/azure-monitor/app/correlation">Azure Request Correlation</a>
      * @see <a href="https://github.com/dotnet/runtime/blob/master/src/libraries/System.Diagnostics.DiagnosticSource/src/HttpCorrelationProtocol.md">MS Http Corolation Protocol - Deprecated</a>
      */
-    protected final Set                                    includeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)//
+    protected final Set includeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER)//
             , "authorization", "cookie" //-- can't login to downstream services if you don't forward the authorization
             , "x-forwarded-for", "x-forwarded-host", " x-forwarded-proto" //-- these are generic for servers hosted behind a reverse proxy/load balancer etc.
             , "x-request-id", "x-correlation-id" //-- common but not standard
@@ -173,7 +169,7 @@ public class ApiClient {
      *
      * @see #shouldForwardHeader(String)
      */
-    protected final Set                                    excludeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER) //
+    protected final Set excludeForwardHeaders = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER) //
             , "content-length", "content-type", "content-encoding", "content-language", "content-location", "content-md5", "host");
 
     /**
@@ -181,35 +177,35 @@ public class ApiClient {
      * <p>
      * Default value is false.
      */
-    protected boolean    forwardParams      = false;
+    protected boolean forwardParams = false;
 
     /**
      * Forward these params when forwardParams is true.
      *
      * @see #shouldForwardParam(String)
      */
-    protected final Set<String>                            includeParams         = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+    protected final Set<String> includeParams = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 
     /**
      * Never forward these params.  Contains ["explain"] by default.
      *
      * @see #shouldForwardParam(String)
      */
-    protected final Set<String>              excludeParams     = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER), "explain");
+    protected final Set<String> excludeParams = Utils.add(new TreeSet<String>(String.CASE_INSENSITIVE_ORDER), "explain");
 
     /**
      * Indicates that a request body should be gzipped and the content-encoding header should be sent with value "gzip".
      * <p>
      * Default value is true.
      */
-    protected boolean    useCompression     = true;
+    protected boolean useCompression = true;
 
     /**
      * If <code>useCompression</code> is true, anything over this size in bytes will be compressed.
      * <p>
      * Default value is 1024.
      */
-    protected int        compressionMinSize = 1024;
+    protected int compressionMinSize = 1024;
 
     /**
      * Responses over this size will be written to a temp file that will be deleted
@@ -222,7 +218,7 @@ public class ApiClient {
      * The thread pool executor used to make asynchronous requests.  The Executor will expand to
      * <code>threadsMax</code> worker threads.
      */
-    protected Executor   executor           = null;
+    protected Executor executor = null;
 
     /**
      * The number of background executor threads.
@@ -297,9 +293,10 @@ public class ApiClient {
 
     protected HttpClientBuilder httpClientBuilder = null;
 
-    protected HttpClient httpClient         = null;
+    protected HttpClient httpClient = null;
 
-    public ApiClient() {}
+    public ApiClient() {
+    }
 
     /**
      * @param name the prefix used to look up property values from the environment if they have not already been wired
@@ -423,7 +420,7 @@ public class ApiClient {
      */
     public FutureResponse call(Request request) {
         FutureResponse future = buildFuture(request);
-        if(threadsMax < 1)
+        if (threadsMax < 1)
             future.run();
         else
             submit(future);
@@ -457,10 +454,10 @@ public class ApiClient {
         }
 
         String bodyStr = null;
-        if(body != null){
-            if(body instanceof String)
-                bodyStr = (String)body;
-            if(body instanceof JSNode)
+        if (body != null) {
+            if (body instanceof String)
+                bodyStr = (String) body;
+            if (body instanceof JSNode)
                 bodyStr = ((JSNode) body).toString();
             else
                 //TODO: put back maybe?
@@ -473,15 +470,12 @@ public class ApiClient {
         if (forwardHeaders) {
             Chain chain = Chain.first();//gets the root chain
             if (chain != null) {
-                Request                                originalInboundRequest = chain.getRequest();
-                ArrayListValuedHashMap<String, String> inboundHeaders         = originalInboundRequest.getHeaders();
-                if (inboundHeaders != null) {
-                    for (String key : inboundHeaders.keySet()) {
-                        if (shouldForwardHeader(key)) {
-                            if (request.getHeader(key) == null)
-                                for (String header : inboundHeaders.get(key))
-                                    request.withHeader(key, header);
-                        }
+                Request originalInboundRequest = chain.getRequest();
+                for (String key : originalInboundRequest.getHeaders().keySet()) {
+                    if (shouldForwardHeader(key)) {
+                        if (request.getHeader(key) == null)
+                            for (String value : originalInboundRequest.getAllHeaders(key))
+                                request.addHeader(key, value);
                     }
                 }
             }
@@ -491,7 +485,7 @@ public class ApiClient {
             for (String key : forcedHeaders.keySet()) {
                 request.removeHeader(key);
                 for (String value : forcedHeaders.get(key))
-                    request.withHeader(key, value);
+                    request.addHeader(key, value);
             }
         }
 
@@ -574,12 +568,12 @@ public class ApiClient {
 
     Response doRequest0(Request request) {
 
-        String          m        = request.getMethod();
-        HttpRequestBase req      = null;
+        String          m   = request.getMethod();
+        HttpRequestBase req = null;
 
         String   url      = request.getUrl().toString();
         Response response = new Response(url);
-        response.withJson((JSNode)null);
+        response.withJson((JSNode) null);
         response.withRequest(request);
 
         for (RequestListener l : requestListeners) {
@@ -621,7 +615,7 @@ public class ApiClient {
             }
 
             for (String key : request.getHeaders().keySet()) {
-                List<String> values = request.getHeaders().get(key);
+                List<String> values = request.getAllHeaders(key);
                 for (String value : values) {
                     req.setHeader(key, value);
                     response.debug(key, value);
@@ -640,6 +634,8 @@ public class ApiClient {
                     gzip.flush();
                     gzip.close();
                     bytes = obj.toByteArray();
+                    //TODO: replace this with a transparent stream
+                    //https://stackoverflow.com/questions/11036280/compress-an-inputstream-with-gzip
                 }
 
                 ((HttpEntityEnclosingRequestBase) req).setEntity(new ByteArrayEntity(bytes));
@@ -663,14 +659,24 @@ public class ApiClient {
 
             HttpEntity e = hr.getEntity();
             if (e != null) {
-                InputStream  is         = e.getContent();
+                InputStream is = e.getContent();
+
+//                String text = Utils.read(is);
+//                System.out.println(">>>--------------------------------");
+//                System.out.println(hr.getStatusLine().getStatusCode() + " " + m + " " + url);
+//                System.out.println("\r\n");
+//                System.out.println(text);
+//                System.out.println("<<<--------------------------------");
+//                System.out.println("<<<--------------------------------");
+//                response.withText(text);
+
                 StreamBuffer tempBuffer = new StreamBuffer();
                 tempBuffer.withBufferSize(getMaxMemoryBuffer());
                 Utils.pipe(is, tempBuffer);
-                response.withStream(tempBuffer);
+                response.withBody(tempBuffer);
 
                 long expectedLength = e.getContentLength();
-                if(expectedLength > 0 && tempBuffer.getLength() != expectedLength){
+                if (expectedLength > 0 && tempBuffer.getLength() != expectedLength) {
                     throw new ApiException("Content-Length header does not match received payload size.");
                 }
             }
@@ -688,6 +694,8 @@ public class ApiClient {
             }
         }
 
+        response.dump();
+
         return response;
     }
 
@@ -696,6 +704,7 @@ public class ApiClient {
      * will continue.  If they return a Response, no additional RequestListeners will be notified
      * and the supplied Response will be used instead of actually making the remote response.  In this
      * case all response listeners on this class or the FutureResponse will still be notified.
+     *
      * @param requestListener
      * @return
      */
@@ -712,8 +721,6 @@ public class ApiClient {
     synchronized void submit(FutureResponse future) {
         getExecutor().submit(future);
     }
-
-
 
 
     /**
@@ -744,10 +751,10 @@ public class ApiClient {
         } else {
             url = url != null ? url : "";
 
-            //-- generally "Config.getString(getName() + ".url")" should be redundant because the prop should
+            //-- generally this should be redundant because the prop should
             //-- have been set during wiring by the Wirer. This is here so ApiClient can be used outside
             //-- of a running Engine...like in test and such...or just generally as a utility.
-            String prefix = this.url != null ? this.url : Config.getString(getName() + ".url");
+            String prefix = this.url != null ? this.url : Utils.getSysEnvProp(getName() + ".url");
             if (!Utils.empty(prefix)) {
                 if (url.length() > 0 && !url.startsWith("/") && !prefix.endsWith("/"))
                     url = prefix + "/" + url;
@@ -759,15 +766,15 @@ public class ApiClient {
         if (url == null)
             throw ApiException.new500InternalServerError("Unable to determine url for ApiClient.buildUrl().  Either pass the desired url in on your call or set configuration property {}.url=${url}.", getName());
 
-        if(!(url.startsWith("http://") || url.startsWith("https://")))
+        if (!(url.startsWith("http://") || url.startsWith("https://")))
             throw ApiException.new500InternalServerError("The destination URL must start with 'http://' or 'https://', received '{}'", url);
 
         Request parentRequest = null;
-        Chain chain = Chain.peek();
-        if(chain != null)
+        Chain   chain         = Chain.peek();
+        if (chain != null)
             parentRequest = chain.getRequest();
 
-        if(parentRequest != null){
+        if (parentRequest != null) {
             url = replaceVars(parentRequest, url);
         }
 
@@ -785,40 +792,36 @@ public class ApiClient {
         String protocol = url.substring(0, url.indexOf(":") + 3);
         url = url.substring(url.indexOf(":") + 3);
 
-        String query = null;
-        int queryIdx = url.indexOf("?");
-        if(queryIdx > -1){
+        String query    = null;
+        int    queryIdx = url.indexOf("?");
+        if (queryIdx > -1) {
             query = url.substring(url.indexOf("?") + 1);
             url = url.substring(0, url.indexOf("?"));
         }
 
-        String host = null;
-        int slashIdx = url.indexOf("/");
-        int colonIdx = url.indexOf(":");
-        if(slashIdx < 0 && colonIdx < 0){
+        String host     = null;
+        int    slashIdx = url.indexOf("/");
+        int    colonIdx = url.indexOf(":");
+        if (slashIdx < 0 && colonIdx < 0) {
             //-- localhost
             host = url;
             url = "";
-        }
-        else if(slashIdx > 0 && colonIdx < 0){
+        } else if (slashIdx > 0 && colonIdx < 0) {
             //--- localhost/*
             host = url.substring(0, slashIdx);
             url = url.substring(slashIdx + 1);
-        }
-        else if(colonIdx > 0 && slashIdx < 0){
+        } else if (colonIdx > 0 && slashIdx < 0) {
             //--- localhost:8080
             host = url;
             url = "";
-        }
-        else if(colonIdx > 0 && slashIdx > 0 && colonIdx < slashIdx){
+        } else if (colonIdx > 0 && slashIdx > 0 && colonIdx < slashIdx) {
             //--- localhost:8080/*
             host = url.substring(0, slashIdx);
             url = url.substring(slashIdx);
-        }
-        else if(colonIdx > 0 && slashIdx > 0 && slashIdx < colonIdx){
+        } else if (colonIdx > 0 && slashIdx > 0 && slashIdx < colonIdx) {
             //--- localhost/{var:regex}
-            host = url.substring(0, slashIdx+1);
-            url = url.substring(slashIdx+1);
+            host = url.substring(0, slashIdx + 1);
+            url = url.substring(slashIdx + 1);
         }
 
         String path = url;
@@ -834,23 +837,21 @@ public class ApiClient {
         return url;
     }
 
-    Path replaceVars(Request request, Path path, boolean allowOptionals){
+    Path replaceVars(Request request, Path path, boolean allowOptionals) {
         path = path.copy();
         boolean isOptional = false;
-        for(int i=0; i<path.size(); i++){
-            isOptional  = isOptional || path.isOptional(i);
-            if(path.isVar(i)){
+        for (int i = 0; i < path.size(); i++) {
+            isOptional = isOptional || path.isOptional(i);
+            if (path.isVar(i)) {
                 String value = request.getUrl().getParam(path.getVarName(i));
-                if(value != null){
+                if (value != null) {
                     path.set(i, value);
-                }
-                else if(isOptional){
-                    if(!allowOptionals)
+                } else if (isOptional) {
+                    if (!allowOptionals)
                         throw ApiException.new500InternalServerError("Optionals are not allowed in this variable substitution.");
                     path = path.subpath(0, i);
                     break;
-                }
-                else{
+                } else {
                     throw ApiException.new500InternalServerError("You have a non optional unbound variable in your ApiClient configuration.");
                 }
             }
@@ -1013,7 +1014,7 @@ public class ApiClient {
         if (httpClientBuilder == null) {
             synchronized (this) {
                 if (httpClientBuilder == null) {
-                        httpClientBuilder = buildDefaultHttpClientBuilder();
+                    httpClientBuilder = buildDefaultHttpClientBuilder();
                 }
             }
         }
@@ -1021,16 +1022,16 @@ public class ApiClient {
     }
 
 
-    public synchronized HttpClientBuilder buildDefaultHttpClientBuilder(){
+    public synchronized HttpClientBuilder buildDefaultHttpClientBuilder() {
 
         HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
 
         httpClientBuilder.setMaxConnTotal(maxConTotal);
         httpClientBuilder.setMaxConnPerRoute(maxConPerRoute);
-        if(evictExpiredConnections)
+        if (evictExpiredConnections)
             httpClientBuilder.evictExpiredConnections();
 
-        if(evictIdleConnectionsAfterTimeMillis > 0)
+        if (evictIdleConnectionsAfterTimeMillis > 0)
             httpClientBuilder.evictIdleConnections(evictIdleConnectionsAfterTimeMillis, TimeUnit.MILLISECONDS);
 
         RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(socketTimeout).setConnectTimeout(connectTimeout).setConnectionRequestTimeout(connectionRequestTimeout).build();
@@ -1038,7 +1039,6 @@ public class ApiClient {
 
         return httpClientBuilder;
     }
-
 
 
     public ApiClient withExecutor(Executor executor) {

@@ -2,6 +2,7 @@ package io.inversion.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import io.inversion.utils.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
@@ -25,6 +26,19 @@ public class JSWriter {
 //            throw new RuntimeException("Error writing json: " + ex.getMessage(), ex);
 //        }
 //    }
+
+
+    public static String toJson(Object object, boolean pretty){
+        try {
+            if (pretty)
+                return JSParser.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+            return JSParser.objectMapper.writeValueAsString(object);
+        }
+        catch(Exception ex){
+            Utils.rethrow(ex);
+            return null;
+        }
+    }
 
     static String toJson(JSNode node){
         return toJson(node, true, false);
@@ -65,11 +79,9 @@ public class JSWriter {
 
         json.writeStartObject();
 
-        //json.writeStringField("$id", path);
-
-        for (JSProperty p : object.getProperties()) {
-            String name  = lowercaseNames ? p.getKey().toString().toLowerCase() : p.getKey().toString();
-            Object value = p.getValue();
+        for (String key : object.keySet()) {
+            Object value = object.get(key);
+            String name  = lowercaseNames ? key.toLowerCase() : key;
 
             if (value == null) {
                 json.writeNullField(name);
@@ -120,7 +132,7 @@ public class JSWriter {
             if (value == null) {
                 json.writeNull();
             } else if (value instanceof JSNode) {
-                private_writeObject((JSNode) value, json, visited, lowercaseNames, path + "[" + i + "]");
+                private_writeObject((JSNode) value, json, visited, lowercaseNames, path + "/" + i );
             } else {
                 if (value instanceof String) {
                     if (value.equals("null"))

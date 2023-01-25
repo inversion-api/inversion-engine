@@ -81,6 +81,9 @@ public class CsvAction extends Action<CsvAction> {
             }
             printer.println();
 
+            System.out.println(arr);
+            System.out.println("asdf");
+
             for (int i = 0; i < arr.size(); i++) {
                 for (String key : keysList) {
                     Object val = ((JSNode) arr.get(i)).get(key);

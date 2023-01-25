@@ -396,8 +396,11 @@ public final class Api {
             if (parentCollection == null || childCollection == null)
                 throw ApiException.new500InternalServerError("You have specified a relationship between collections that don't exist in the Api after startup during delayed config: '{}' and, '{}'", parentCollectionName, childCollectionName);
 
-            parentCollection.withOneToManyRelationship(parentPropertyName, childCollection, childFkProps);
-            childCollection.withManyToOneRelationship(childPropertyName, parentCollection, childFkProps);
+            if(parentPropertyName != null)
+                parentCollection.withOneToManyRelationship(parentPropertyName, childCollection, childFkProps);
+
+            if(childPropertyName != null)
+                childCollection.withManyToOneRelationship(childPropertyName, parentCollection, childFkProps);
         });
 
         return this;
@@ -460,6 +463,11 @@ public final class Api {
 
     public boolean isDebug() {
         return debug;
+    }
+
+    public Api withDebug(boolean debug){
+        this.debug = debug;
+        return this;
     }
 
     public void setDebug(boolean debug) {
@@ -551,21 +559,12 @@ public final class Api {
     }
 
     void configureServers() {
-        ArrayListValuedHashMap<Server, Path> servers = new ArrayListValuedHashMap();
-        for (Server server : getServers()) {
-            servers.putAll(server, server.getAllIncludePaths());
-        }
-        System.out.println("SERVERS: ");
-        for (Server server : servers.keySet()) {
-            List<Path> serverPaths = new ArrayList(new LinkedHashSet(servers.get(server)));
-            for (Path serverPath : serverPaths) {
-                List<String> serverUrls = server.getUrls();
-                if (serverUrls.size() == 0)
-                    serverUrls.add("127.0.0.1");
 
-                for (String host : serverUrls) {
-                    System.out.println(" - " + host + "/" + serverPath);
-                }
+        System.out.println("\r\n--------------------------------------------");
+        System.out.println("SERVERS: ");
+        for (Server server : servers) {
+            for(Server.ServerMatcher sm : server.getServerMatches()){
+                System.out.println("  - " + sm);
             }
         }
     }
@@ -685,9 +684,7 @@ public final class Api {
                     if (!epMatcher.hasMethod(method))
                         continue;
                     for (Path epPath : epMatcher.getPaths()) {
-
                         Db db = matchDb(method, epPath);
-
                         List<Action> epActions  = ep.getActions();
                         List<Action> allActions = new ArrayList(ep.getActions());
                         for (Action action : getActions()) {
@@ -697,24 +694,22 @@ public final class Api {
                         Collections.sort(allActions);
 
                         List<Path> allPathsForSingleEpMatcherPath = new ArrayList<>();
-                        //allPathsForSingleEpMatcherPath.add(epPath.copy());
-
                         for (Action action : allActions) {
+                            if(action.isDecoration())
+                                continue;
                             for(Path fullActionPath : (List<Path>)action.getFullIncludePaths(this, db, method, epPath, epActions.contains(action))){
                                 allPathsForSingleEpMatcherPath.add(fullActionPath);
                             }
                         }
                         allPathsForSingleEpMatcherPath = Path.filterDuplicates(allPathsForSingleEpMatcherPath);
-                        for(Path p : allPathsForSingleEpMatcherPath){
-                            if(p.endsWithWildcard())
-                                p.removeTrailingWildcard();
-                        }
                         allPathsForSingleEpMatcherPath.removeIf(p -> p.size() == 0);
                         endpointPaths.addAll(allPathsForSingleEpMatcherPath);
                     }
                 }
 
                 endpointPaths = Path.filterDuplicates(endpointPaths);
+                endpointPaths = removeObscuredWildcards(endpointPaths);
+
                 if(endpointPaths.size() > 0){
                     List<List<Path>> groupedPaths = groupPaths(endpointPaths);
                     Map<Endpoint, List<List<Path>>> epMap = paths.get(method);
@@ -726,30 +721,46 @@ public final class Api {
                 }
             }
         }
-
-//TODO: this still needs to be here but the algorithm has changed
-//        //-- endpoints could have produced identical paths. Filter out duplicates
-//        ArrayListValuedHashMap<String, Path> merged = new ArrayListValuedHashMap<>();
-//        for (String method : paths.keySet()) {
-//            List<Path> before = paths.get(method);
-//            List<Path> after  = Path.filterDuplicates(before);
-//            merged.putAll(method, after);
-//        }
-//        paths = merged;
-
-
 //        System.out.println("\r\nPATHS ------------------------");
-//        List<String> methodsList = new ArrayList(paths.keySet());
-//        Collections.sort(methodsList);
-//        for (String method : methodsList) {
-//            List<Path> pathList = new ArrayList(paths.get(method));
-//            for (Path path : pathList) {
-//                System.out.println(method + " " + path);
+//        for(String method : paths.keySet()){
+//            Map<Endpoint, List<List<Path>>> pathSet = paths.get(method);
+//            for(Endpoint ep : pathSet.keySet()){
+//                System.out.println(method + " - " + ep.getAllIncludePaths());
+//                for(Object o : pathSet.get(ep)){
+//                    System.out.println("  - " + o);
+//                }
 //            }
 //        }
 //        System.out.println("END PATHS --------------------\r\n");
 
         return paths;
+    }
+
+    List<Path> removeObscuredWildcards(List<Path> paths){
+        ArrayListValuedHashMap<String, Path> templates = new ArrayListValuedHashMap();
+        for(Path path : paths){
+            String template = path.getTemplate();
+            templates.put(template, path);
+        }
+        List<String> sorted = new ArrayList(templates.keySet());
+        Collections.sort(sorted);
+
+        for(int i=1; i<sorted.size()-1; i++){
+            String previous = sorted.get(i-1);
+            String current = sorted.get(i);
+            if(previous.endsWith("/*") && current.startsWith(previous.substring(0, previous.length()-1))){
+                System.out.println("REMOVING: " + previous);
+                templates.remove(previous);
+            }
+        }
+
+        List<Path> newPaths = new ArrayList();
+        for(String key : templates.keySet()){
+            List<Path> ps = templates.get(key);
+            newPaths.addAll(ps);
+        }
+        Collections.sort(newPaths);
+        return newPaths;
     }
 
     /**

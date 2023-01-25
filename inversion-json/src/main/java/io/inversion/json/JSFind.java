@@ -83,17 +83,25 @@ public interface JSFind {
      * JsonPath bracket-notation such as  "$['store']['book'][0]['title']"
      * is currently not supported.
      *
-     * @param pathExpression defines the properties to find
      * @param qty            the maximum number of results
+     * @param pathExpressions defines the properties to find
      * @return an array of found values
      * @see <a href="https://tools.ietf.org/html/rfc6901">JSON Pointer</a>
      * @see <a href="https://goessner.net/articles/JsonPath/">JSON Path</a>
      * @see <a href="https://github.com/json-path/JsonPath">JSON Path</a>
      */
-    default public JSList findAll(String pathExpression, int qty) {
-        pathExpression = fromJsonPointer(pathExpression);
-        pathExpression = fromJsonPath(pathExpression);
-        return new JSList(findAll0(pathExpression, qty, new ArrayList(), new HashMap()));
+    default JSList findAll(int qty, String... pathExpressions) {
+
+        JSList found = new JSList();
+        for(int i =0; pathExpressions != null && i<pathExpressions.length; i++){
+            String pathExpression = pathExpressions[i];
+            if(!Utils.empty(pathExpression)){
+                pathExpression = fromJsonPointer(pathExpression);
+                pathExpression = fromJsonPath(pathExpression);
+                found.addAll(findAll0(pathExpression, qty, new ArrayList(), new HashMap()));
+            }
+        }
+        return found;
     }
 
     default List findAll0(String pathExpression, int qty, List collected, HashMap<String, Set<JSNode>> visited) {
@@ -329,14 +337,14 @@ public interface JSFind {
 
 
     /**
-     * Convenience overloading of {@link #findAll(String, int)} that returns the first item found
+     * Convenience overloading of {@link #findAll(int, String...)} that returns the first item found
      *
      * @param pathExpression specifies the properties to find
      * @return the first item found at <code>pathExpression</code>
-     * @see #findAll(String, int)
+     * @see #findAll(int, String...)
      */
     default Object find(String pathExpression) {
-        JSList found = findAll(pathExpression, 1);
+        JSList found = findAll(1, pathExpression);
         if (found.size() > 0)
             return found.get(0);
 
@@ -456,26 +464,31 @@ public interface JSFind {
     }
 
     /**
-     * Convenience overloading of {@link #findAll(String, int)}
+     * Convenience overloading of {@link #findAll(int, String...)}
      *
-     * @param pathExpression specifies the properties to find
+     * @param pathExpressions specifies the properties to find
      * @return all items found for <code>pathExpression</code>
-     * @see #findAll(String, int)
+     * @see #findAll(int, String...)
      */
-    default JSList findAll(String pathExpression) {
-        return findAll(pathExpression, -1);
+    default JSList findAll(String... pathExpressions) {
+        return findAll(-1, pathExpressions);
     }
 
     /**
-     * Convenience overloading of {@link #findAll(String, int)}
+     * Convenience overloading of {@link #findAll(int, String...)}
      *
-     * @param pathExpression specifies the properties to find
+     * @param pathExpressions specifies the properties to find
      * @return all items found for <code>pathExpression</code> cast as a List
-     * @see #findAll(String, int)
+     * @see #findAll(int, String...)
      */
-    default List<JSNode> findAllNodes(String pathExpression) {
-        return (List<JSNode>)findAll(pathExpression);
+    default List<JSMap> findMaps(String... pathExpressions) {
+        return (List<JSMap>)findAll(pathExpressions);
     }
+
+    default List<JSList> findLists(String... pathExpressions) {
+        return (List<JSList>)findAll(pathExpressions);
+    }
+
 
     default Stream streamAll() {
         List all = findAll("**.*").asList();

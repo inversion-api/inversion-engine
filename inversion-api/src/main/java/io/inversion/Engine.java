@@ -19,24 +19,25 @@ package io.inversion;
 import ch.qos.logback.classic.Level;
 import io.inversion.Api.ApiListener;
 import io.inversion.Chain.ActionMatch;
-import io.inversion.action.db.*;
-import io.inversion.config.Codec;
+import io.inversion.action.db.DbAction;
 import io.inversion.config.Config;
-import io.inversion.config.Context;
-import io.inversion.config.InversionNamer;
+import io.inversion.context.Context;
+import io.inversion.context.Includer;
+import io.inversion.context.InversionNamer;
+import io.inversion.context.codec.ToStringCodec;
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
 import io.inversion.json.JSParser;
 import io.inversion.rql.Rql;
 import io.inversion.rql.Term;
-import io.inversion.utils.*;
+import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -57,18 +58,16 @@ public class Engine {
 
     /**
      * Optional override for the configPath sys/env prop used by Config to locate configuration property files
-     *
-     * @see Config#loadConfiguration(Object, String, String)
      */
-    transient protected          String  configPath       = null;
+    transient protected String configPath    = null;
     /**
      * Optional override for the sys/env prop used by Config to determine which profile specific configuration property files to load
-     *
-     * @see Config#loadConfiguration(Object, String, String)
      */
-    transient protected          String  configProfile    = null;
+    transient protected String configProfile = null;
 
     transient protected Context context = null;
+
+    transient protected Config config = null;
 
 
     /**
@@ -94,13 +93,18 @@ public class Engine {
      * <p>
      * Unless you are really doing something specific with browser security you probably won't need to customize this list.
      */
-    protected          String  corsAllowHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,content-type,host,user-agent,x-auth-token";
+    protected String corsAllowHeaders = "accept,accept-encoding,accept-language,access-control-request-headers,access-control-request-method,authorization,connection,content-type,host,user-agent,x-auth-token";
 
-    transient volatile boolean started          = false;
-    transient volatile boolean starting         = false;
+    transient volatile boolean started  = false;
+    transient volatile boolean starting = false;
 
     public Engine() {
         //System.out.println("Engine<>");
+    }
+
+    public Engine(String configPath, String configProfile) {
+        this.configPath = configPath;
+        this.configProfile = configProfile;
     }
 
     public Engine(Api... apis) {
@@ -137,43 +141,23 @@ public class Engine {
         try {
             startup0();
 
-            if (!Config.hasConfiguration())
-                Config.loadConfiguration(this, getConfigPath(), getConfigProfile());
+            Config  config  = getConfig();
+            Context context = getContext();
 
-            if(context == null){
-                context = new Context();
-                context.withNamer(new InversionNamer());
+            Map<String, String> properties = config.getProperties();
+            //Map<String, String> firstPassApplied = context.wire(properties, this);
 
-                context.withCodec(new Codec(Path.class){
-                    @Override
-                    public Object fromString(Class clazz, String encoded) {
-                        return new Path(encoded);
-                    }
-                });
-                context.withCodec(new Codec(JSNode.class){
-                    @Override
-                    public String toString(Object JSNode){
-                        return ((JSNode)JSNode).toString(false);
-                    }
-                    @Override
-                    public Object fromString(Class clazz, String encoded) {
-                        return JSParser.parseJson(encoded);
-                    }
-                });
-                context.withCodec(new Codec(Rule.RuleMatcher.class){
-                    @Override
-                    public Object fromString(Class clazz, String encoded) { return new Rule.RuleMatcher(encoded); }
-                });
+            Map<String, String> firstPassEncoded = context.encode(this);
+            Map<String, String> firstPassApplied = context.decode(properties);
 
-                Map<String, String> properties = Config.getProperties();
-                Map<String, String> firstPassApplied = context.wire(properties, this);
+            autowire(context);
+            //-- remove props that were previously applied so configed classes don't get re-instantiated etc.
+            //properties.entrySet().removeIf(entry -> firstPassApplied.containsKey(entry.getKey()));
+            properties.entrySet().removeIf(entry -> entry.getKey().toLowerCase().endsWith(".class") || entry.getKey().toLowerCase().endsWith(".classname"));
+            //Map<String, String> secondPassApplied = context.wire(properties, this);
 
-                autowire(context);
-                //-- remove props that were previously applied so configed classes don't get re-instantiated etc.
-                //properties.entrySet().removeIf(entry -> firstPassApplied.containsKey(entry.getKey()));
-                properties.entrySet().removeIf(entry -> entry.getKey().toLowerCase().endsWith(".class") || entry.getKey().toLowerCase().endsWith(".classname"));
-                Map<String, String> secondPassApplied = context.wire(properties, this);
-            }
+            Map<String, String> secondPassEncoded = context.encode(this);
+            Map<String, String> secondPassApplied = context.decode(properties);
 
             started = true;
 
@@ -189,48 +173,12 @@ public class Engine {
             if (!hasApi)
                 throw ApiException.new500InternalServerError("CONFIGURATION ERROR: You don't have any Apis configured.");
 
-//            //-- debug output
-//            for (Api api : apis) {
-//                System.out.println("\r\n--------------------------------------------");
-//                System.out.println("API             " + api);
-//
-//                List<Operation> operations = api.getOperations();
-//                Collections.sort(operations);
-//                for (Operation op : operations) {
-//
-//                    String method = op.method;
-//                    while (method.length() < 6)
-//                        method += " ";
-//
-//                    System.out.println(method + " : " + op.name + " - " + op.displayPath + " - " + op.params);
-//                }
-//
-////                for (Endpoint e : api.getEndpoints()) {
-////                    System.out.println("  - ENDPOINT:   " + e);
-////                }
-////
-////                List<String> collectionDebugs = new ArrayList<>();
-////                for (Collection c : api.getCollections()) {
-////                    if (c.getDb() != null && c.getDb().getEndpointPath() != null)
-////                        collectionDebugs.add(c.getDb().getEndpointPath() + c.getName());
-////                    else
-////                        collectionDebugs.add(c.getName());
-////                }
-////                Collections.sort(collectionDebugs);
-////                for (String coll : collectionDebugs) {
-////                    System.out.println("  - COLLECTION: " + coll);
-////                }
-//            }
-//            //-- end debug output
-
 
             System.out.println("...ENGINE STARTED IN: " + (System.currentTimeMillis() - start) + "ms");
             return this;
         } finally {
             starting = false;
         }
-
-
     }
 
     /**
@@ -509,15 +457,16 @@ public class Engine {
                 h = h.trim();
                 allowedHeaders = allowedHeaders.concat(h).concat(",");
             }
-            res.withHeader("Access-Control-Allow-Origin", "*");
-            res.withHeader("Access-Control-Allow-Credentials", "true");
-            res.withHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-            res.withHeader("Access-Control-Allow-Headers", allowedHeaders);
-
-            //--
-            //-- End CORS Header Setup
-
-
+            if (req.isOptions()) {
+                res.withHeader("Access-Control-Allow-Origin", "*");
+                res.withHeader("Access-Control-Allow-Credentials", "true");
+                res.withHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+                res.withHeader("Access-Control-Allow-Headers", allowedHeaders);
+                //--
+                //-- End CORS Header Setup
+            } else {
+                res.withHeader("Cache-Control", "no-store");
+            }
 
 
             Path urlPath = url.getPath();
@@ -526,11 +475,12 @@ public class Engine {
                     throw ApiException.new400BadRequest("URL {} is malformed.", url);
             }
 
+
             if (url.toString().contains("/favicon.ico")) {
                 //-- browsers being a pain in the rear
                 //throw ApiException.new404NotFound("The requested resource 'favicon.ico' could not be found.", req.getUrl().getOriginal());
                 res.withStatus(Status.SC_404_NOT_FOUND);
-                res.withJson((JSNode)null);
+                res.withJson((JSNode) null);
                 return chain;
             }
 
@@ -559,7 +509,7 @@ public class Engine {
             }
 
             for (Action filter : filters) {
-                Path path = req.getUrl().getPath().copy();
+                Path path  = req.getUrl().getPath().copy();
                 Path match = filter.match(req.getMethod(), path);
                 if (match != null) {
                     chain.withAction(new ActionMatch(match, path, filter));
@@ -590,7 +540,11 @@ public class Engine {
 
         } catch (Throwable ex) {
 
-            if (req.isDebug())
+            boolean outError = req.isDebug();
+            if(!outError)
+                outError = !(ex instanceof ApiException) || ((ApiException)ex).getStatusCode() >= 500;
+
+            if (outError)
                 ex.printStackTrace();
 
             Chain.debug("Uncaught Exception: " + Utils.getShortCause(ex));
@@ -649,9 +603,8 @@ public class Engine {
             String opString = req.getOp().toString();//.replace("\r", " ").replace("\n", " ").replace("  ", " ");
             res.debug("OPERATION: " + opString);
 
-            ArrayListValuedHashMap<String, String> headers = req.getHeaders();
-            for (String key : headers.keys()) {
-                res.debug(key + " " + Utils.implode(",", headers.get(key)));
+            for (String key : req.getHeaders().keySet()) {
+                res.debug(key + " " + Utils.implode(",", req.getAllHeaders(key)));
             }
             res.debug("");
 
@@ -678,8 +631,6 @@ public class Engine {
             }
 
             String orig = url.getOriginal();
-            System.out.println(orig);
-
             throw ApiException.new404NotFound("No Endpoint found matching '{}:{}' Valid endpoints are: {}", req.getMethod(), url.getOriginal(), buff.toString());
         }
 
@@ -705,58 +656,60 @@ public class Engine {
     }
 
 
-    public boolean matchApi(Request req){
+    public boolean matchApi(Request req) {
 
-        if(req.getApi() != null)
+        if (req.getApi() != null)
             return true;
 
-        Path reqPath = req.getUrl().getPath();
-        Path                remainder       = reqPath.copy();
+        Path                reqPath         = req.getUrl().getPath();
+        Path                remainder       = reqPath == null ? new Path() : reqPath.copy();
         Path                serverPathMatch = null;
         Path                serverPath      = null;
-        Server              server          = null;
-        Api                 api             = null;
-        Map<String, String> pathParams = new HashMap();
+        Server               server      = null;
+        Server.ServerMatcher serverMatch = null;
+        Api                  api         = null;
+        Map<String, String> pathParams      = new HashMap();
 
         for (Api a : getApis()) {
             for (Server serv : a.getServers()) {
-                serverPathMatch = serv.match(req.getMethod(), req.getUrl());
-                if (serverPathMatch == null)
+                serverMatch = serv.match(req.getUrl());
+                if (serverMatch == null)
                     continue;
+
                 server = serv;
                 api = a;
-                serverPath = serverPathMatch.extract(pathParams, remainder);
+                serverPath = serverMatch.getPath().extract(pathParams, remainder);
                 break;
             }
             if (api != null) {
                 break;
             }
         }
-        if(api != null && server != null){
+        if (api != null && server != null) {
             req.withApi(api);
             req.withServer(server);
+            req.withServerMatch(serverMatch);
             req.withServerPath(serverPath);
             req.withServerPathMatch(serverPathMatch);
             req.withPathParams(pathParams);
             req.withOperationPath(remainder);
             return true;
-        }
-        else{
+        } else {
             return false;
         }
     }
 
     boolean matchRequest(Request req) {
 
-        if(!matchApi(req))
+        if (!matchApi(req))
             return false;
 
         Api api = req.getApi();
-        if(api == null)
+        if (api == null)
             return false;
 
         Map<String, String> pathParams = new HashMap<>();
-        Path remainder = req.getOperationPath().copy();
+        Path                remainder  = req.getOperationPath().copy();
 
         if (api != null) {
             for (Op op : api.getOps()) {
@@ -824,29 +777,23 @@ public class Engine {
     }
 
 
-
-
     public static JSNode buildErrorJson(Throwable ex) {
-        String status  = "500";
-        String message = "Internal Server Error";
-        String error   = null;
+        String status  = "500 Internal Server Error";
+        String message = ex.getMessage();
+        String error   = Utils.getShortCause(ex);
+
         if (ex instanceof ApiException) {
             ApiException apiEx = ((ApiException) ex);
             status = apiEx.getStatus();
-            message = status.substring(4, status.length());
-            status = status.substring(0, 3);
+            message = apiEx.getMessage();
 
-            if ("500".equals(status)) {
-                error = ex.getMessage() + "\r\n" + Utils.getShortCause(ex);
-            } else {
-                error = apiEx.getMessage();
-                if (error != null && error.indexOf(" - ") < 20)
-                    error = error.substring(error.indexOf(" - ") + 3);
+            if(message.indexOf("-") < 25){
+                //error messages have the status in them...cut this out to get to the user message
+                message = message.substring(message.indexOf("-") + 1).trim();
             }
-        }
 
-        if (error == null && "500".equalsIgnoreCase(status)) {
-            error = Utils.getShortCause(ex);
+            if (apiEx.getStatusCode() < 500)
+                error = null;
         }
 
         JSNode json = new JSMap("status", status, "message", message);
@@ -1021,9 +968,49 @@ public class Engine {
         return this;
     }
 
+    public Config getConfig() {
+        if (config == null) {
+            synchronized (this) {
+                if (config == null) {
+                    config = Config.getConfig("inversion", getConfigPath(), getConfigProfile(), this);
+                }
+            }
+        }
+
+        return config;
+    }
+
+    public Engine withConfig(Config config) {
+        this.config = config;
+        return this;
+    }
+
     public Context getContext() {
+        if (context == null) {
+            context = new Context();
+            Includer includer = context.getEncoder().getIncluder();
+
+
+            context.withNamer(new InversionNamer());
+            context.withCodec(new ToStringCodec(Path.class));
+            context.withCodec(new ToStringCodec(Rule.RuleMatcher.class));
+            context.withCodec(new ToStringCodec(JSNode.class) {
+
+                @Override
+                public String toString(Object bean) {
+                    return ((JSNode) bean).toString(false);
+                }
+
+                @Override
+                public Object fromString(Type type, String encoded) {
+                    return JSParser.parseJson(encoded);
+                }
+            });
+        }
+
         return context;
     }
+
 
     public Engine withContext(Context context) {
         this.context = context;
@@ -1059,7 +1046,7 @@ public class Engine {
 
     public Engine withFilters(Action... filters) {
         for (Action filter : filters) {
-            if(filters != null) {
+            if (filters != null) {
                 if (!this.filters.contains(filter)) {
                     this.filters.add(filter);
                 }
@@ -1069,7 +1056,7 @@ public class Engine {
         return this;
     }
 
-    public List<Action> getFilters(){
+    public List<Action> getFilters() {
         return Collections.unmodifiableList(filters);
     }
 
@@ -1089,7 +1076,7 @@ public class Engine {
     }
 
     protected static void exclude(JSMap node, Set<String> includes, Set<String> excludes, String path) {
-        for (String key : node.keySet()) {
+        for (String key : new LinkedHashSet<>(node.keySet())) {
             String attrPath = (path != null ? (path + "." + key) : key).toLowerCase();
 
             Object value = node.get(key);

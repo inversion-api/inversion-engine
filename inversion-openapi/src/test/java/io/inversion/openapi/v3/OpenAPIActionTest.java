@@ -19,8 +19,7 @@ package io.inversion.openapi.v3;
 import io.inversion.Api;
 import io.inversion.Endpoint;
 import io.inversion.action.db.DbAction;
-import io.inversion.action.hateoas.HALAction;
-import io.inversion.action.hateoas.LinksAction;
+import io.inversion.action.hateoas.LinksFilter;
 import io.inversion.action.misc.FileAction;
 import io.inversion.action.openapi.OpenAPIAction;
 import io.inversion.jdbc.JdbcDb;
@@ -54,7 +53,7 @@ public class OpenAPIActionTest {
 
                 .withEndpoint(new Endpoint("*"
                         //, new HALAction() //
-                        ,new LinksAction() //
+                        ,new LinksFilter() //
                         //,new AuthAction().withAuthScheme(new BearerScheme().withDescription("this is a JWT."))
                         //                .withAuthScheme(new ApiKeyScheme().withParameter(new Parameter("username", "username", "query", false))
                         //                        .withParameter(new Parameter("password", "password", "query", false)))//

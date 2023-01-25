@@ -3,11 +3,7 @@ package io.inversion;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcConnectionLocal;
 import io.inversion.jdbc.JdbcDbFactory;
-import io.inversion.utils.Path;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 
 public class OpPathTest {

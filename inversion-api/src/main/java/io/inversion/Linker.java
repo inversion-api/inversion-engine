@@ -29,6 +29,10 @@ public class Linker {
     public Linker() {
     }
 
+    public String buildLink(Request req, String collectionName, String resourceKey, String relationshipKey) {
+        return buildLink(req, req.getApi().getCollection(collectionName), resourceKey, relationshipKey);
+    }
+
     public String buildLink(Request req, Collection collection, String resourceKey, String relationshipKey) {
 
         List<Op> found = new ArrayList();
@@ -58,6 +62,11 @@ public class Linker {
                         opPath.set(p.getIndex(), resourceKey);
                     } else if (p.getKey().equalsIgnoreCase("_relationship")) {
                         opPath.set(p.getIndex(), relationshipKey);
+                    }
+                    else{
+                        String matchingParam = req.findParam(p.getKey(), Param.In.PATH);
+                        if(matchingParam != null)
+                            opPath.set(p.getIndex(), matchingParam);
                     }
                 }
             }

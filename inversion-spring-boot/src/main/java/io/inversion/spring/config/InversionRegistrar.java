@@ -46,26 +46,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
-/**
- * Sets an Engine bean in the spring registry and puts spring application properties into
- * the Inversion Config so you can put Inversion DI props into your spring application.properties
- * as a convenience instead of inversion.*properties.  Properties found in inversion*.properties
- * will still be used by Inversion before any spring properties with the same keys.
- *
- * @see Config
- */
 public class InversionRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware, BeanFactoryAware {
 
     static final Logger log = LoggerFactory.getLogger(InversionRegistrar.class);
-
-    Environment environment = null;
-    BeanFactory beanFactory = null;
+    static Environment environment = null;
+    static BeanFactory beanFactory = null;
     public static Api[] apis = null;
 
     @Override
     public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
-
         if (apis != null && apis.length > 0) {
             ConfigurableBeanFactory config = (ConfigurableBeanFactory) beanFactory;
             for (Api api : apis) {
@@ -76,7 +66,6 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
                 config.registerSingleton(name, api);
             }
         }
-        ;
     }
 
     @Override
@@ -89,81 +78,14 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
         registry.registerBeanDefinition("engine", bean);
     }
 
-    /**
-     * Copies the Spring properties configuration into the Inversion configuration
-     * so you can put your Inversion config properties into your spring application.properties files.
-     * <p>
-     * Any properties found in inversion*.properties files will still override any properties set in
-     * spring files.
-     *
-     * @param environment the Spring injected environment
-     */
     @Override
     public void setEnvironment(Environment environment) {
-
         this.environment = environment;
         setEnvironmentDefaults(environment);
-
-        //-- the Inversion Config.configPath and Config.configProfile could
-        //-- have been set in spring specific config.  This allows Inversion
-        //-- to use those values when loading the default config instead of
-        //-- just searching for the values via getEnvSysProp
-        String configPath = null;
-        String configProfile = null;
-        for(String key : Config.CONFIG_PATH_KEYS){
-            configPath = environment.getProperty(key);
-            if(configPath != null)
-                break;
-        }
-        for(String key : Config.CONFIG_PROFILE_KEYS){
-            configProfile = environment.getProperty(key);
-            if(configProfile != null)
-                break;
-        }
-
-
-        PropertiesConfiguration springConfig = new PropertiesConfiguration();
-
-        final MutablePropertySources sources = ((AbstractEnvironment) environment).getPropertySources();
-        StreamSupport.stream(sources.spliterator(), false)
-                .filter(ps -> ps instanceof EnumerablePropertySource)
-                .map(ps -> ((EnumerablePropertySource) ps).getPropertyNames())
-                .flatMap(Arrays::stream)
-                .distinct()
-                .filter(prop -> !(prop.contains("credentials") || prop.contains("password")))
-                .forEach(prop -> springConfig.setProperty(prop, environment.getProperty(prop)));
-
-
-        CompositeConfiguration inversionConfig = Config.loadConfiguration(this, configPath, configProfile);
-
-        List<Configuration> toAddBack = new ArrayList<>();
-        for (int i = 0; i < inversionConfig.getNumberOfConfigurations(); i++) {
-            Configuration subConfig = inversionConfig.getConfiguration(i);
-            String        source    = subConfig.getProperty(Config.CONFIG_SOURCE_PROP) + "";
-            if (!source.equals("null")) {
-                source = Utils.substringAfter(source, "/");
-                String prefix = Config.CONFIG_FILE_NAME.substring(0, Config.CONFIG_FILE_NAME.indexOf("."));
-                String postfix = Config.CONFIG_FILE_NAME.substring(Config.CONFIG_FILE_NAME.indexOf("."));
-
-                if (source.startsWith(prefix) && source.endsWith(postfix)) {
-                    i--;
-                    inversionConfig.removeConfiguration(subConfig);
-                    toAddBack.add(subConfig);
-                }
-            }
-        }
-
-        inversionConfig.addConfigurationFirst(springConfig);
-        for (int i = toAddBack.size() - 1; i >= 0; i--) {
-            Configuration subConfig = toAddBack.get(i);
-            inversionConfig.addConfigurationFirst(subConfig);
-        }
     }
 
     protected void setEnvironmentDefaults(Environment env) {
-
         log.info("Setting SpringBoot Defaults:");
-
         setEnvironmentDefault(env, "server.compression.enabled", "true");
         setEnvironmentDefault(env, "server.compression.mime-types", "text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json");
         setEnvironmentDefault(env, "server.compression.min-response-size", "2048");
@@ -174,7 +96,6 @@ public class InversionRegistrar implements ImportBeanDefinitionRegistrar, Enviro
     }
 
     protected void setEnvironmentDefault(Environment env, String prop, String value) {
-
         String found = env.getProperty(prop);
         if (found == null) {
             System.setProperty(prop, value);

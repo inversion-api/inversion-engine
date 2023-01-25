@@ -57,12 +57,12 @@ task allJavadocs {
 }
 
 tasks.withType(Javadoc) {
-	failOnError false
+	failOnError = false
 	title = "Inversion Cloud API Engine - " + project.version
 }
 
 //regenerate javadocs after a build
-build.finalizedBy(allJavadocs)
+//build.finalizedBy(allJavadocs)
 
 allprojects {
 

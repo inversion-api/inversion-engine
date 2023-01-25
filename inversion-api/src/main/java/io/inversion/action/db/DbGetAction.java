@@ -33,7 +33,7 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.util.*;
 
-class DbGetAction<A extends DbGetAction> extends Action<A>  {
+public class DbGetAction<A extends DbGetAction> extends Action<A>  {
 
     protected int maxRows = 100;
 
@@ -213,7 +213,11 @@ class DbGetAction<A extends DbGetAction> extends Action<A>  {
                 } else {
                     return;
                 }
-            } else {
+            }
+//            else if(rel.isOneToOneParent() || rel.isOneToOneChild()){
+//                //-- TODO: need to optimize for one to one relatinships, there is no need to requery the DB here.
+//            }
+            else {
                 //-- The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
                 //-- By default, the system would have written out : http://localhost/northwind/source/orders/YYYYY
                 //-- We are going to have to re-query to get the FK value from the resource of the passed in link
@@ -472,7 +476,27 @@ class DbGetAction<A extends DbGetAction> extends Action<A>  {
                 } else if (rel.isManyToMany()) {
                     idxToMatch = rel.getFkIndex1();
                     idxToRetrieve = rel.getFkIndex2();
+                } else if(rel.isOneToOneParent()){
+                    relatedEks = new ArrayList<>();
+                    for (JSMap parentObj : parentObjs) {
+                        String parentEk = getResourceKey(collection, parentObj);
+                        String childEk  = parentEk; //TODO: this will not work if the columns are not in the same order
+                        if (childEk != null) {
+                            relatedEks.add(new DefaultKeyValue(parentEk, childEk));
+                        }
+                    }
                 }
+                else if(rel.isOneToOneChild()){
+                    relatedEks = new ArrayList<>();
+                    for (JSMap parentObj : parentObjs) {
+                        String parentEk = getResourceKey(collection, parentObj);
+                        String childEk  = parentEk; //TODO: this will not work if the columns are not in the same order
+                        if (childEk != null) {
+                            relatedEks.add(new DefaultKeyValue(parentEk, childEk));
+                        }
+                    }
+                }
+
 
                 if (relatedEks == null) {
                     List toMatchEks = new ArrayList<>();
@@ -521,7 +545,7 @@ class DbGetAction<A extends DbGetAction> extends Action<A>  {
                     JSNode parentObj = (JSNode) pkCache.get(collection, parentEk);
                     JSNode childObj  = (JSNode) pkCache.get(relatedCollection, relatedEk);
 
-                    if (rel.isManyToOne()) {
+                    if (rel.isManyToOne() || rel.isOneToOneParent() || rel.isOneToOneChild()) {
                         parentObj.put(rel.getName(), childObj);
                     } else {
                         if (childObj != null) {

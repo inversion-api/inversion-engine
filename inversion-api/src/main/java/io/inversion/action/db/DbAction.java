@@ -29,7 +29,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
-public class DbAction<A extends DbAction> extends Action<A> implements OpenAPIWriter<A> {
+public class DbAction extends Action<DbAction> implements OpenAPIWriter<DbAction> {
 
     private DbGetAction    getAction    = new DbGetAction();
     private DbPostAction   postAction   = new DbPostAction();
@@ -63,7 +63,7 @@ public class DbAction<A extends DbAction> extends Action<A> implements OpenAPIWr
     @Override
     protected LinkedHashSet<Path> getIncludePaths(Api api, Db db, String method) {
         LinkedHashSet<Path> includePaths = new LinkedHashSet<>();
-        for (Path actionPath : super.getIncludePaths(api, db, method)){
+        for (Path actionPath : super.getIncludePaths(api, db, method)) {
             int collectionIdx   = actionPath.getVarIndex("_collection");
             int resourceIdx     = actionPath.getVarIndex("_resource");
             int relationshipIdx = actionPath.getVarIndex("_relationship");
@@ -94,8 +94,6 @@ public class DbAction<A extends DbAction> extends Action<A> implements OpenAPIWr
         }
         return includePaths;
     }
-
-
 
 
     @Override
@@ -173,7 +171,7 @@ public class DbAction<A extends DbAction> extends Action<A> implements OpenAPIWr
     protected String getResourceKeyParamName(Collection c) {
         String name = null;
         Index  idx  = c.getResourceIndex();
-        if (idx != null) {
+        if (idx != null && idx.size() == 1) {
             name = idx.getJsonNames().get(0);
         } else {
             name = c.getSingularDisplayName() + "Id";
@@ -196,5 +194,48 @@ public class DbAction<A extends DbAction> extends Action<A> implements OpenAPIWr
         return name;
     }
 
+    public DbGetAction getGetAction() {
+        return getAction;
+    }
 
+    public DbAction withGetAction(DbGetAction getAction) {
+        this.getAction = getAction;
+        return this;
+    }
+
+    public DbPostAction getPostAction() {
+        return postAction;
+    }
+
+    public DbAction withPostAction(DbPostAction postAction) {
+        this.postAction = postAction;
+        return this;
+    }
+
+    public DbPutAction getPutAction() {
+        return putAction;
+    }
+
+    public DbAction withPutAction(DbPutAction putAction) {
+        this.putAction = putAction;
+        return this;
+    }
+
+    public DbPatchAction getPatchAction() {
+        return patchAction;
+    }
+
+    public DbAction withPatchAction(DbPatchAction patchAction) {
+        this.patchAction = patchAction;
+        return this;
+    }
+
+    public DbDeleteAction getDeleteAction() {
+        return deleteAction;
+    }
+
+    public DbAction withDeleteAction(DbDeleteAction deleteAction) {
+        this.deleteAction = deleteAction;
+        return this;
+    }
 }

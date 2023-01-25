@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-context</artifactId>
-  <version>0.10.0</version>
+  <version>0.10.1</version>
   <name>inversion-context</name>
   <description>Inversion Cloud API Engine</description>
   <url>https://inversion.io</url>
@@ -36,13 +36,7 @@
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-utils</artifactId>
-      <version>0.10.0</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.inversion</groupId>
-      <artifactId>inversion-json</artifactId>
-      <version>0.10.0</version>
+      <version>0.10.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -53,8 +47,8 @@
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
-      <artifactId>commons-configuration2</artifactId>
-      <version>2.7</version>
+      <artifactId>commons-text</artifactId>
+      <version>1.9</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
