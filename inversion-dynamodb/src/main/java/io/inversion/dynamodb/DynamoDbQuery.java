@@ -16,22 +16,24 @@
  */
 package io.inversion.dynamodb;
 
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
-import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.api.QueryApi;
+import com.amazonaws.services.dynamodbv2.document.api.ScanApi;
+import com.amazonaws.services.dynamodbv2.document.spec.BatchGetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes;
+import io.inversion.Collection;
+import io.inversion.Index;
 import io.inversion.*;
+import io.inversion.rql.Page;
 import io.inversion.rql.*;
 import io.inversion.utils.Utils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * IMPLEMENTATION NOTE: Helpful DynamoDb Links
@@ -194,6 +196,92 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
     }
 
     protected Results doSelect0() throws Exception {
+
+        Results results = doSelect1();
+
+        if (results.size() > 0) {
+            if (this.index != null) {
+                String type = this.index.getType();
+                if (!type.equalsIgnoreCase(DynamoDb.PRIMARY_INDEX_TYPE)) {
+                    Projection proj = this.index.getProjection();
+
+                    if (proj != null) {
+
+                        HashSet<String> includeColumns = new HashSet(getSelect().getIncludeColumns());
+                        if (includeColumns.size() == 0) {
+                            for (Property p : collection.getProperties()) {
+                                includeColumns.add(p.getColumnName());
+                            }
+                        }
+
+                        HashSet<String> projectionColumns = new HashSet();
+                        for (Property p : proj.getProperties()) {
+                            projectionColumns.add(p.getColumnName());
+                        }
+
+                        boolean columnsCovered = true;
+                        for (String includeCol : includeColumns) {
+                            if (!projectionColumns.contains(includeCol)) {
+                                columnsCovered = false;
+                                break;
+                            }
+                        }
+                        if (!columnsCovered) {
+                            results.withRows(batchGet(results.getRows()));
+                        }
+                    }
+                }
+            }
+        }
+        return results;
+    }
+
+    List<Map<String, Object>> batchGet(List<Map<String, Object>> rows){
+
+        LinkedHashMap<String, Map<String, Object>> found = new LinkedHashMap<>();
+
+        AmazonDynamoDB         dynamoClient = db.getDynamoClient();
+        DynamoDB               dynamoDb     = new DynamoDB(dynamoClient);
+        Index                  primaryIdx   = collection.getResourceIndex();
+        BatchGetItemSpec       spec         = new BatchGetItemSpec();
+        TableKeysAndAttributes tk           = new TableKeysAndAttributes(collection.getTableName());
+        for (Map<String, Object> row : rows) {
+            PrimaryKey pk = new PrimaryKey();
+            for (Property prop : primaryIdx.getProperties()) {
+                pk.addComponent(prop.getColumnName(), row.get(prop.getColumnName()));
+            }
+            tk.addPrimaryKey(pk);
+            spec.withTableKeyAndAttributes(tk);
+        }
+        BatchGetItemOutcome out        = dynamoDb.batchGetItem(tk);
+        List<Item>          items      = out.getTableItems().get(collection.getTableName());
+
+        for (Item item : items) {
+            Map map = item.asMap();
+            String key = collection.encodeKeyFromColumnNames(map);
+            found.put(key, map);
+        }
+
+        KeysAndAttributes unprocessed = out.getUnprocessedKeys().get(collection.getTableName());
+        if(unprocessed != null){
+            throw ApiException.new500InternalServerError("Unable to retrieve all items");
+        }
+
+        List<Map<String, Object>> results = new ArrayList<>();
+        for(Map<String, Object> row : rows){
+            String key = collection.encodeKeyFromColumnNames(row);
+            results.add(found.get(key));
+        }
+
+        return results;
+    }
+
+
+
+
+
+
+    protected Results doSelect1() throws Exception {
         com.amazonaws.services.dynamodbv2.document.Index dynamoIndex = null;
         Results                                          result      = new Results(this);
 
@@ -254,7 +342,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             Chain.debug(debug.toString());
 
             if (!isDryRun()) {
-                ItemCollection<QueryOutcome> queryResult = dynamoIndex != null ? dynamoIndex.query(qs) : dynamoTable.query(qs);
+                QueryApi                     queryApi    = dynamoIndex != null ? dynamoIndex : dynamoTable;
+                ItemCollection<QueryOutcome> queryResult = queryApi.query(qs);
                 for (Item item : queryResult) {
                     result.withRow(item.asMap());
                 }
@@ -288,7 +377,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
             Chain.debug(debug.toString());
 
             if (!isDryRun()) {
-                ItemCollection<ScanOutcome> scanResult = dynamoIndex != null ? dynamoIndex.scan(ss) : dynamoTable.scan(ss);
+                ScanApi                     scanApi    = dynamoIndex != null ? dynamoIndex : dynamoTable;
+                ItemCollection<ScanOutcome> scanResult = scanApi.scan(ss);
                 for (Item item : scanResult) {
                     result.withRow(item.asMap());
                 }
@@ -372,7 +462,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                     if (afterSortKeyCol != null) {
                         sortKey = findTerm(afterSortKeyCol, "eq");
                         if (sortKey == null) {
-                            //--  WB 20200805 - there are a limited number of operators supported for sort keys in KeyCondition Expressions. 
+                            //--  WB 20200805 - there are a limited number of operators supported for sort keys in KeyCondition Expressions.
                             //--  @see https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#DDB-Query-request-KeyConditionExpression
                             sortKey = findTerm(afterSortKeyCol, "gt", "ne", "gt", "ge", "lt", "le", "sw", "ew", "in", "out", "n", "nn");
                             if (sortKey != null && Utils.in(sortKey.getToken(), "in", "out")) {
@@ -415,7 +505,7 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                 Term sortKey = findTerm(sortCol, "eq");
 
                 if (sortKey == null) {
-                    //--  WB 20200805 - there are a limited number of operators supported for sort keys in KeyCondition Expressions. 
+                    //--  WB 20200805 - there are a limited number of operators supported for sort keys in KeyCondition Expressions.
                     //--  @see https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#DDB-Query-request-KeyConditionExpression
                     sortKey = findTerm(sortCol, "gt", "ne", "gt", "ge", "lt", "le", "sw", "ew", "in", "out", "n", "nn");
                     if (sortKey != null && Utils.in(sortKey.getToken(), "in", "out")) {

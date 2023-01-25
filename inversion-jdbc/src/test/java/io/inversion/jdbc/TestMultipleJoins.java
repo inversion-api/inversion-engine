@@ -43,7 +43,7 @@ public class TestMultipleJoins {
         api = new Api()//
                 .withName("crm")//
                 .withDb(db)//
-                .withEndpoint("GET,PUT,POST,:/*", new DbAction());
+                .withEndpoint("GET,PUT,POST,*", new DbAction());
 
         engine = new Engine(api);
         engine.startup();

@@ -28,8 +28,9 @@ import java.util.List;
  */
 public class Query<T extends Query, D extends Db, S extends Select, F extends From, W extends Where, R extends Group, O extends Order, G extends Page> extends Builder<T, T> {
     //hold ordered list of columnName=literalValue pairs
-    protected final List<KeyValue> values = new ArrayList<>();
-    protected D          db         = null;
+    protected final List<KeyValue> castValues     = new ArrayList<>();
+    protected final List<KeyValue> originalValues = new ArrayList<>();
+    protected D                    db             = null;
     protected Collection collection = null;
     protected S select = null;
     protected F from   = null;
@@ -183,15 +184,19 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
     }
 
     public int getNumValues() {
-        return values.size();
+        return castValues.size();
     }
 
     protected T clearValues() {
-        values.clear();
+        castValues.clear();
+        originalValues.clear();
         return r();
     }
 
     protected T withColValue(String columnName, Object value) {
+
+        originalValues.add(new DefaultKeyValue(columnName, value));
+
         Collection coll = this.collection;
         if (columnName != null) {
             if (columnName.contains(".")) {
@@ -220,30 +225,38 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
             }
         }
 
-        values.add(new DefaultKeyValue(columnName, value));
+        castValues.add(new DefaultKeyValue(columnName, value));
         return r();
     }
 
     public List<String> getColValueKeys() {
         List keys = new ArrayList<>();
-        for (KeyValue kv : values)
+        for (KeyValue kv : castValues)
             keys.add(kv.getKey());
         return keys;
     }
 
     public List<Object> getColValues() {
         List keys = new ArrayList<>();
-        for (KeyValue kv : values)
+        for (KeyValue kv : castValues)
             keys.add(kv.getValue());
         return keys;
     }
 
+    public List<Object> getOriginalValues() {
+        List keys = new ArrayList<>();
+        for (KeyValue kv : originalValues)
+            keys.add(kv.getValue());
+        return keys;
+    }
+
+
     public KeyValue<String, String> getColValue(int index) {
-        return values.get(index);
+        return castValues.get(index);
     }
 
     public List<KeyValue> getValues() {
-        return values;
+        return castValues;
     }
 
     /**

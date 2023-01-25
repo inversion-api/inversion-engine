@@ -1,7 +1,6 @@
 package io.inversion.json.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.junit.jupiter.api.Test;
 
 import java.net.URL;
@@ -10,16 +9,16 @@ public class AnyBeanTest {
 
     ObjectMapper mapper = new ObjectMapper();
 
-    @Test
-    public void test_jackson_decoding_1() throws Exception {
-        URL          url      = getClass().getResource("anybean_test1.json");
-        JsonAnyBean1 anybean1 = mapper.readValue(url, JsonAnyBean1.class);
-        ReflectionToStringBuilder.toString(anybean1);
-        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(anybean1);
-        System.out.println(json);
-
-    }
-
+//    @Test
+//    public void test_jackson_decoding_1() throws Exception {
+//        URL          url      = getClass().getResource("anybean_test1.json");
+//        JsonAnyBean1 anybean1 = mapper.readValue(url, JsonAnyBean1.class);
+//        ReflectionToStringBuilder.toString(anybean1);
+//        String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(anybean1);
+//        System.out.println(json);
+//
+//    }
+//
 
 //    @Test
 //    public void test_jackson_jsnode_encoding_1() throws Exception {

@@ -1,17 +1,30 @@
-* DONE why is Op getting duplicate variables set?
+
+# IMPORTANT
+Restore 
+- Order.getSorts()
+- SqlQuery.getDefaultSorts()
+- SqlQuery.printInitialSelect()
+- SqlQuery.printTermsSelect()
+- SqlQuery.printTableAlias()
+- DbPostAction
+  - swapRefsWithActualReferences
+  - swapLogicalDuplicateReferences
+  - collapse
+- Update json codecPath to correct for querying arrays with text keys, algo working but not optimized for map vs list
+
+
+
 * Set server variables on chain like endpoint and action
-* DONE Make operationPath String on Op that starts with a "/" and remove use of getPath().toString() in OpenApiWriter  
 * Add support for Server (including adding all servers to a single api) in Wirer
 * Add param support to Server & check on request matching
 * Add server params to openapi
 * Check that all servers have the same variables
 * Add global route connection restriction and retry/backoff to RestClient
-* Rename RestClient API Client...should it be its own project?  
 * Add default 404 handling to springboot
 * Add url scrubbing to Engine
 
 
-*  Get all H2 tests passing
+
 
 * Engine 
   * Operation Construction
@@ -30,14 +43,13 @@
 
 * Rows / JSNode
   * Get rid of Rows, it is inefficient since everything is transformed to json
-  * Get rid of extra map in JSNode and just use case-insensitive string comparison when key not found
 
 * Url
-  * Reject special characters in path
+  * Reject special characters in codecPath
 
 * Linker
   * Make linker support op param regexes
-  * If op path at an param index is not a variable, confirm its value matches before using...if no match value supplied, can use the linker but is not preferred to other matches
+  * If op codecPath at an param index is not a variable, confirm its value matches before using...if no match value supplied, can use the linker but is not preferred to other matches
   * Make test cases with crazy 
   * Need to cache results for speed    
 
@@ -47,8 +59,8 @@
 * Make all objects reject a "name" field with special characters in it (ones that would be Collection.encodedStr)
 
 
-* Parameter
-  * Change "in" to an enum
+* Path
+ * Add constructor to take in and join multiple paths not just strings  
     
 
 Wirer
@@ -61,7 +73,7 @@ Wirer
     * DONE Filter out config properties that don't have a "." in them      
   * DONE Refactor into "config" package and split out Encoder/Decoder/Namer
   * DONE Get rid of extra "Decoder.propKeys" map, try to use a single SortedTreeMap  
-  * DONE Change Wirer to use "_" instead of "." when not intending to have implicit path props set...or maybe use a prefix like '$' to indicate this was already hand wired not from config...or really just only do it for configged settings
+  * DONE Change Wirer to use "_" instead of "." when not intending to have implicit codecPath props set...or maybe use a prefix like '$' to indicate this was already hand wired not from config...or really just only do it for configged settings
   * DONE Error on conflicting name
   * DONE Make masked fields regexes like Db.illegals for sql injection
 

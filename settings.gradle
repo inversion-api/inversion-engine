@@ -2,6 +2,7 @@ rootProject.name = 'inversion'
 
 include 'inversion-api'
 include 'inversion-azure-functions'
+include 'inversion-config'
 include 'inversion-context'
 include 'inversion-cosmosdb'
 include 'inversion-demos'
@@ -17,6 +18,5 @@ include 'inversion-s3'
 include 'inversion-script'
 include 'inversion-spring-boot'
 include 'inversion-utils'
-
 
 

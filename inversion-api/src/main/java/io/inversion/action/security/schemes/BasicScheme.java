@@ -1,23 +1,25 @@
+/*
+ * Copyright (c) 2015-2021 Rocket Partners, LLC
+ * https://github.com/inversion-api
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.inversion.action.security.schemes;
 
-import io.inversion.ApiException;
-import io.inversion.Request;
-import io.inversion.Response;
-import io.inversion.User;
-import io.inversion.action.security.AuthScheme;
-
-public class BasicScheme  extends AuthScheme {
-
-    BearerScheme.RevokedTokenCache revokedTokenCache = null;
+public abstract class BasicScheme  extends HttpAuthScheme {
 
     public BasicScheme() {
-        withName("basicAuth");
-        withType("http");
-        withScheme("basic");
+        withHttpScheme(HttpScheme.basic);
     }
 
-    @Override
-    public User getUser(Request req, Response res) throws ApiException {
-        return null;
-    }
 }

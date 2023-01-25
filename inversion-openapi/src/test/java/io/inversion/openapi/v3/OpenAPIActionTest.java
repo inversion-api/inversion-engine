@@ -19,7 +19,7 @@ package io.inversion.openapi.v3;
 import io.inversion.Api;
 import io.inversion.Endpoint;
 import io.inversion.action.db.DbAction;
-import io.inversion.action.hateoas.HALAction;
+import io.inversion.action.hateoas.LinksFilter;
 import io.inversion.action.misc.FileAction;
 import io.inversion.action.openapi.OpenAPIAction;
 import io.inversion.jdbc.JdbcDb;
@@ -41,19 +41,19 @@ public class OpenAPIActionTest {
                         "sa", //
                         "", //
                         JdbcDb.class.getResource("northwind-h2.ddl").toString()))
-                .withEndpoint(new Endpoint("asasd.text", new OpenAPIAction()).withName("ep1"))
+                //.withEndpoint(new Endpoint("asasd.text", new OpenAPIAction()).withName("ep1"))
                 //.withEndpoint(new Endpoint("GET", "aaaa.text", new OpenAPIAction()))
                 //.withEndpoint(new Endpoint("GET", "bbbb.text", new OpenAPIAction()))
-                //.withEndpoint(new Endpoint("GET", "openapi.json,openapi.yaml", new OpenAPIAction()))
-                //.withEndpoint(new Endpoint("GET", "rapidoc.html", new FileAction()))
+                .withEndpoint(new Endpoint("GET,openapi.json,openapi.yaml", new OpenAPIAction()))
+                .withEndpoint(new Endpoint("GET,rapidoc.html", new FileAction()))
 
 //                .withEndpoint(new Endpoint("*", "auth.json", new FileAction()))
 //                .withEndpoint(new Endpoint("*", "test/*", new HALAction(), new MockAction()))
 //                .withCollection(new Collection().withName("auths").withSchemaRef("http://localhost:8080/northwind/v1/us/auth.json").withProperty("id", "number").withIndex("pk", "primary", true, "id"));
 
-                .withEndpoint(new Endpoint("GET"
-                        , new HALAction() //
-                        //,new LinksAction() //
+                .withEndpoint(new Endpoint("*"
+                        //, new HALAction() //
+                        ,new LinksFilter() //
                         //,new AuthAction().withAuthScheme(new BearerScheme().withDescription("this is a JWT."))
                         //                .withAuthScheme(new ApiKeyScheme().withParameter(new Parameter("username", "username", "query", false))
                         //                        .withParameter(new Parameter("password", "password", "query", false)))//

@@ -16,8 +16,8 @@
  */
 package io.inversion.action.openapi;
 
-import io.inversion.*;
 import io.inversion.Collection;
+import io.inversion.*;
 import io.inversion.action.security.AuthScheme;
 import io.inversion.utils.Path;
 import io.inversion.utils.Task;
@@ -31,6 +31,7 @@ import io.swagger.v3.oas.models.servers.ServerVariable;
 import io.swagger.v3.oas.models.servers.ServerVariables;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
+import java.io.InputStream;
 import java.util.*;
 
 public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
@@ -39,28 +40,16 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 
 
     protected String getDescription() {
-        return Utils.read(Utils.findInputStream(this, "description.md"));
+        InputStream is = Utils.findInputStream(this, "description.md");
+        if (is != null)
+            return Utils.read(is);
+        return "";
     }
 
 
     public OpenAPI writeOpenAPI(Request req, OpenAPI openApi) throws ApiException {
 
         List<Op> opsToDoc = new ArrayList(req.getApi().getOps());
-
-//        //-- important, this sorts so that GET is processed first so a
-//        //-- FIND can reference this schema created by the GET
-//        Collections.sort(opsToDoc, new Comparator<Op>() {
-//            @Override
-//            public int compare(Op o1, Op o2) {
-//
-//                int val1 = Op.functionAsInt(o1.getFunction());
-//                int val2 = Op.functionAsInt(o2.getFunction());
-//                if(val1 != val2){
-//                    return val1 > val2 ? 1 : -1;
-//                }
-//                return o1.getOperationPath().compareTo(o2.getOperationPath());
-//            }
-//        });
 
         //-- remove any endpoints that end with the ignoredSuffixes
         opsToDoc.removeIf(o -> ignoredSuffixes.parallelStream().anyMatch(suffix -> o.getPath().toString().endsWith(suffix)));
@@ -81,23 +70,23 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
     //TODO: change this so internal ops are not documented in the first place...
     //...requires related functions to internal endpoints be able to lazy create
     //their ops...need to think about this more
-    protected void removeInternalOps(OpenAPI openApi, List<Op> ops){
-        for(Op op : ops){
-            if(op.isInternal()){
-                switch(op.getMethod().toUpperCase()){
-                    case "GET" :
+    protected void removeInternalOps(OpenAPI openApi, List<Op> ops) {
+        for (Op op : ops) {
+            if (op.isInternal()) {
+                switch (op.getMethod().toUpperCase()) {
+                    case "GET":
                         openApi.getPaths().get(op.getOperationPath()).setGet(null);
                         break;
-                    case "POST" :
+                    case "POST":
                         openApi.getPaths().get(op.getOperationPath()).setPost(null);
                         break;
-                    case "PUT" :
+                    case "PUT":
                         openApi.getPaths().get(op.getOperationPath()).setPut(null);
                         break;
-                    case "PATCH" :
+                    case "PATCH":
                         openApi.getPaths().get(op.getOperationPath()).setPatch(null);
                         break;
-                    case "DELETE" :
+                    case "DELETE":
                         openApi.getPaths().get(op.getOperationPath()).setDelete(null);
                         break;
                 }
@@ -128,69 +117,99 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 
     protected void documentServers(OpenAPI openApi, List<Op> ops, Request req) {
         if (openApi.getServers() == null) {
-//            Server server = new Server();
-//            String url    = req.getServerPath().toString();
-//            server.setUrl("/" + url);
-//            openApi.setServers(Utils.add(new ArrayList(), server));
-
             List<Server> apiServers = new ArrayList();
 
             ArrayListValuedHashMap<io.inversion.Server, Path> serversMap = new ArrayListValuedHashMap<>();
-            Api api = ops.get(0).getApi();
-            for(io.inversion.Server server : api.getServers()){
-                serversMap.putAll(server, server.getAllIncludePaths());
-            }
+            Api                                               api        = ops.get(0).getApi();
+            for (io.inversion.Server serv : api.getServers()) {
+                if(!serv.isDocumented())
+                    continue;
+                //serversMap.putAll(server, server.getAllIncludePaths());
+                for (Url url : serv.getUrls()) {
+                    Server server = new Server();
+                    apiServers.add(server);
 
-            for (io.inversion.Server server : serversMap.keySet()) {
-                List<String> urls = server.getUrls();
-                if (urls.size() == 0) {
-                    String host = req.getUrl().toString();
-                    host = host.substring(0, host.indexOf("/", 8));
-                    urls.add(host);
-                }
-                for (String host : urls) {
-                    List<Path> serverPaths = new ArrayList<>(new LinkedHashSet(serversMap.get(server)));
-                    //Collections.sort(serverPaths);
-                    for (Path path : serverPaths) {
-                        Server apiServer = new Server();
-                        apiServers.add(apiServer);
+                    String urlStr = url.toString();
+                    if(urlStr.startsWith("http://127.0.0.1:8080")) {
+                        urlStr = urlStr.substring("http://localhost:8080".length());
+                    }
 
-                        if(server.getDescription() != null){
-                            apiServer.setDescription(server.getDescription());
-                        }
 
-                        path = path.copy();
-                        path.removeTrailingWildcard();
-                        apiServer.setUrl(host + "/" + path);
 
-                        if(server.getParams().size() > 0){
-                            ServerVariables variables = apiServer.getVariables();
-                            if(variables == null) {
-                                variables = new ServerVariables();
-                                apiServer.setVariables(variables);
-                            }
-                            for(Param param : server.getParams()){
-                                String key = param.getKey();
-                                String desc = param.getDescription();
-                                desc = desc != null ? desc : key;
+                    server.setUrl(urlStr);
+
+                    Path host = url.getHostAsPath();
+                    if (host != null) {
+                        for (int i = 0; i < host.size(); i++) {
+                            if (host.isVar(i)) {
+                                ServerVariables variables = server.getVariables();
+                                if (variables == null) {
+                                    variables = new ServerVariables();
+                                    server.setVariables(variables);
+                                }
                                 ServerVariable var = new ServerVariable();
-                                var.setDefault("asdf");
-                                var.setDescription(desc);
-                                variables.put(key, var);
+                                variables.put(host.getVarName(i), var);
                             }
                         }
                     }
                 }
-
-
             }
+
+//            for (io.inversion.Server server : serversMap.keySet()) {
+//                List<String> urls = server.getUrls();
+//                if (urls.size() == 0) {
+//                    String host = req.getUrl().toString();
+//                    host = host.substring(0, host.indexOf("/", 8));
+//                    urls.add(host);
+//                }
+//                for (String host : urls) {
+//                    List<Path> serverPaths = new ArrayList<>(new LinkedHashSet(serversMap.get(server)));
+//                    //Collections.sort(serverPaths);
+//                    for (Path path : serverPaths) {
+//                        Server apiServer = new Server();
+//                        apiServers.add(apiServer);
+//
+//                        if (server.getDescription() != null) {
+//                            apiServer.setDescription(server.getDescription());
+//                        }
+//
+//                        path = path.copy();
+//                        path.removeTrailingWildcard();
+//                        apiServer.setUrl(host + "/" + path);
+//
+//                        if (server.getParams().size() > 0) {
+//                            ServerVariables variables = apiServer.getVariables();
+//                            if (variables == null) {
+//                                variables = new ServerVariables();
+//                                apiServer.setVariables(variables);
+//                            }
+//                            for (Param param : server.getParams()) {
+//                                String key  = param.getKey();
+//                                String desc = param.getDescription();
+//
+//                                ServerVariable var = new ServerVariable();
+//
+//                                String defaultValue = req.findParam(key, Param.In.SERVER_PATH);
+//                                if (!Utils.empty(defaultValue))
+//                                    var.setDefault(defaultValue);
+//
+//                                if(!Utils.empty(desc))
+//                                    var.setDescription(desc);
+//
+//                                variables.put(key, var);
+//                            }
+//                        }
+//                    }
+//                }
+//
+//
+//            }
 
             openApi.setServers(apiServers);
         }
     }
 
     protected void documentSchemas(OpenAPI openApi, Request req) {
-
         Components comps = openApi.getComponents();
         if (comps == null) {
             comps = new Components();
@@ -204,22 +223,9 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
         }
 
         documentErrorSchema(openApi);
-
-//        //TODO: change this to HAL Links
-//        //TODO: inspect op to make sure we are using HAL
-//        documentCollectionLinksSchema(openApi);
-//
-//        for (Collection coll : req.getApi().getCollections()) {
-//            if(ignoreCollection(coll))
-//                continue;
-//
-//            //TODO: only document collections with an op
-//            documentResourceSchemas(openApi, coll);
-//            documentCollectionSchemas(openApi, coll);
-//        }
     }
 
-    protected void documentSecurity(OpenAPI openApi, List<Operation> opsToDoc) {
+//    protected void documentSecurity(OpenAPI openApi, List<Op> opsToDoc) {
 //        Components                  components      = openApi.getComponents();
 //        Map<String, SecurityScheme> securitySchemes = new HashMap();
 //
@@ -319,7 +325,7 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
 //                    op.operation.setSecurity(op.securityRequirements);
 //            }
 //        }
-    }
+//    }
 
     protected String getDescription(AuthScheme scheme, Param param) {
         String schemeDesc = scheme.getDescription();
@@ -342,9 +348,9 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
         Schema schema = new Schema();
         openApi.getComponents().addSchemas("error", schema);
 
-        schema.addProperties("status", newTypeSchema("string"));
-        schema.addProperties("message", newTypeSchema("string"));
-        schema.addProperties("error", newTypeSchema("string"));
+        schema.addProperties("status", newTypeSchema("string", null));
+        schema.addProperties("message", newTypeSchema("string", null));
+        schema.addProperties("error", newTypeSchema("string", null));
     }
 //
 //    protected void documentCollectionLinksSchema(OpenAPI openApi) {
@@ -537,14 +543,14 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
                     if (prop != null) {
                         String type = prop.getJsonType();
                         if (type.equalsIgnoreCase("number"))
-                            schema = newTypeSchema("number");
+                            schema = newTypeSchema("number", null);
                         if (type.equalsIgnoreCase("boolean"))
-                            schema = newTypeSchema("boolean");
+                            schema = newTypeSchema("boolean", null);
                     }
                 }
 
                 if (schema == null) {
-                    schema = newTypeSchema("string");
+                    schema = newTypeSchema("string", null);
                     String regex = pathMatch.getRegex(i);
                     if (regex != null)
                         schema.setPattern(regex);
@@ -586,8 +592,8 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
         }
     }
 
-    public void hook_documentOp(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
-        OpenAPIWriter.super.hook_documentOp(docChain, openApi, ops, op, schemas);
+    public Operation hook_documentOp(Task docChain, OpenAPI openApi, List<Op> ops, Op op, Map<Object, Schema> schemas) {
+        return OpenAPIWriter.super.hook_documentOp(docChain, openApi, ops, op, schemas);
 //        PathItem pathItem = openApi.getPaths().get(op.getPath());
 //        if (pathItem != null) {
 //            Operation op = pathItem.getGet();

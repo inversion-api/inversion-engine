@@ -16,7 +16,7 @@
  */
 package io.inversion;
 
-public class Change {
+public final class Change {
     protected String method;
     protected String collectionKey;
     protected Object resourceKey;

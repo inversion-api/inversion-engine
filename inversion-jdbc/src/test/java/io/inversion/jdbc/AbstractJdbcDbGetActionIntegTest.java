@@ -21,7 +21,7 @@ import io.inversion.Collection;
 import io.inversion.Engine;
 import io.inversion.Response;
 import io.inversion.action.db.AbstractDbGetActionIntegTest;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.jupiter.api.Test;
 
@@ -281,7 +281,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
         String collectionPath = collectionPath();
 
-        String toMatch = JSReader.parseJson("[{\"employee\":{\"reportsto\":{\"territories\":\"http://127.0.0.1/COLLECTION_PATHemployees/2/territories\"}}}]").toString();
+        String toMatch = JSParser.parseJson("[{\"employee\":{\"reportsto\":{\"territories\":\"http://127.0.0.1/COLLECTION_PATHemployees/2/territories\"}}}]").toString();
         toMatch = toMatch.replace("COLLECTION_PATH", collectionPath);
 
         assertEquals(toMatch.toLowerCase(), res.data().toString().toLowerCase());
@@ -350,7 +350,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
         Response res;
         res = engine.get(url("indexlogs?w(error,ERROR_MSG)")).assertOk();
         res.dump();
-        assertEquals((int) (Integer) res.getJson().getNode("meta").getValue("foundRows"), 1);
+        assertEquals((int) (Integer) res.getJson().getNode("meta").get("foundRows"), 1);
 
         String debug = res.getDebug().toLowerCase();
         if (debug.contains("[1]: sql ->"))//this is checking sql statements
@@ -360,7 +360,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
         res = engine.get(url("indexlogs?w(error,ERROR MSG)")).assertOk();
 
-        assertEquals((int) (Integer) res.getJson().getNode("meta").getValue("foundRows"), 1);
+        assertEquals((int) (Integer) res.getJson().getNode("meta").get("foundRows"), 1);
 
         debug = res.getDebug().toLowerCase();
         if (debug.contains("[1]: sql ->"))//this is checking sql statements
@@ -370,7 +370,7 @@ public abstract class AbstractJdbcDbGetActionIntegTest extends AbstractDbGetActi
 
         res = engine.get(url("indexlogs?eq(error,ERROR_MSG foo)")).assertOk();
 
-        assertEquals((int) (Integer) res.getJson().getNode("meta").getValue("foundRows"), 1);
+        assertEquals((int) (Integer) res.getJson().getNode("meta").get("foundRows"), 1);
 
         debug = res.getDebug().toLowerCase();
         if (debug.contains("[1]: sql ->"))//this is checking sql statements

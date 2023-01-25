@@ -51,7 +51,7 @@ public class FileAction <A extends FileAction> extends Action<A> {
         if(filePath != null) {
             InputStream is = findStream(filePath);
             if (is != null) {
-                res.withStream(new StreamBuffer(is));
+                res.withBody(new StreamBuffer(is));
                 if (filterMode)
                     req.getChain().cancel();
 

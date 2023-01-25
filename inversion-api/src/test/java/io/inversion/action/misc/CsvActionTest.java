@@ -21,8 +21,8 @@ public class CsvActionTest {
     public void run_shouldReturnCsv_when_singleObject_in_response() throws Exception {
         Response res          = new Response();
         JSNode   singleObject = new JSMap();
-        singleObject.putValue("key1", "value1");
-        singleObject.putValue("key2", "value2");
+        singleObject.put("key1", "value1");
+        singleObject.put("key2", "value2");
         res.withJson(singleObject);
         action.run(buildSuccessfulRequest(), res);
         assertNull(res.getJson());
@@ -33,11 +33,11 @@ public class CsvActionTest {
     public void run_shouldReturnCsv_when_ArrayObject_in_response() throws Exception {
         Response res          = new Response();
         JSNode   singleObject = new JSMap();
-        singleObject.putValue("key1", "value1");
-        singleObject.putValue("key2", "value2");
+        singleObject.put("key1", "value1");
+        singleObject.put("key2", "value2");
         JSList array = new JSList();
-        array.putValue(0, singleObject);
-        array.putValue(1, singleObject.copy());
+        array.put(0, singleObject);
+        array.put(1, singleObject.copy());
         res.withJson(array);
         action.run(buildSuccessfulRequest(), res);
         System.out.println(res.getJson());
@@ -49,11 +49,11 @@ public class CsvActionTest {
     public void run_shouldReturnCsv_when_InversionWrapper_in_response() throws Exception {
         Response res          = new Response();
         JSNode   singleObject = new JSMap();
-        singleObject.putValue("key1", "value1");
-        singleObject.putValue("key2", "value2");
+        singleObject.put("key1", "value1");
+        singleObject.put("key2", "value2");
         JSList array = new JSList();
-        array.putValue(0, singleObject);
-        array.putValue(1, singleObject.copy());
+        array.put(0, singleObject);
+        array.put(1, singleObject.copy());
         res.withRecords(array.asList());
         res.withMeta("blah", "blahvalue");
         action.run(buildSuccessfulRequest(), res);
@@ -67,8 +67,8 @@ public class CsvActionTest {
     public void run_should_doNothing_when_notGetRequest() throws Exception {
         Response res          = new Response();
         JSNode   singleObject = new JSMap();
-        singleObject.putValue("key1", "value1");
-        singleObject.putValue("key2", "value2");
+        singleObject.put("key1", "value1");
+        singleObject.put("key2", "value2");
         res.withJson(singleObject);
         Map<String, String> params = new HashMap<>();
         params.put("format", "csv");

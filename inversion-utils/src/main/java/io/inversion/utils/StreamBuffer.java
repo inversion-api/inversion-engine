@@ -1,7 +1,6 @@
 package io.inversion.utils;
 
 
-
 import java.io.*;
 
 /**
@@ -12,52 +11,43 @@ import java.io.*;
  */
 public class StreamBuffer extends OutputStream {
 
-    protected long bufferSize = 100 * 1024;
-    protected String tempDir = null;
+    String                contentType = null;
+    long                  bufferSize  = 256 * 1024;
+    ByteArrayOutputStream memOut      = new ByteArrayOutputStream();
+    BufferedOutputStream  fileOut     = null;
+    int                   length      = 0;
+    File                  tempFile    = null;
+    boolean               closed      = false;
+    byte[]                bytes       = null;
 
-    ByteArrayOutputStream memOut = new ByteArrayOutputStream();
-    BufferedOutputStream fileOut = null;
-    int length = 0;
-    File tempFile = null;
-    boolean closed = false;
-    byte[] bytes = null;
-    int openFileStreams = 0;
-
-    public StreamBuffer(){
+    public StreamBuffer() {
 
     }
 
-    public StreamBuffer(InputStream in){
-        try{
+    public StreamBuffer(InputStream in) {
+        try {
             Utils.pipe(new BufferedInputStream(in), this);
-        }
-        catch(Exception ex){
+        } catch (Exception ex) {
             throw Utils.ex("Error buffering stream");
         }
     }
 
-    OutputStream getOut(int toWrite) throws IOException{
+    OutputStream getOut(int toWrite) throws IOException {
 
-        if(closed)
+        if (closed)
             throw new IOException("Stream is closed");
 
         length += toWrite;
 
-        if(fileOut != null)
+        if (fileOut != null)
             return fileOut;
 
-        if(length >= bufferSize){
-            if(tempDir != null){
-                File tempDirDir = new File(tempDir);
-                tempDirDir.mkdirs();
-                tempFile = File.createTempFile(getClass().getSimpleName() + "-" + System.currentTimeMillis() + "", ".tmp", tempDirDir);
-            }else{
-                tempFile = File.createTempFile(getClass().getSimpleName() + "-" + System.currentTimeMillis() + "", ".tmp");
-            }
+        if (length >= bufferSize) {
+            tempFile = File.createTempFile(getClass().getSimpleName() + "-" + System.currentTimeMillis() + "", ".tmp");
             tempFile.deleteOnExit();
 
             fileOut = new BufferedOutputStream(new FileOutputStream(tempFile));
-            if(memOut != null){
+            if (memOut != null) {
                 memOut.flush();
                 memOut.close();
                 byte[] bytes = memOut.toByteArray();
@@ -93,7 +83,9 @@ public class StreamBuffer extends OutputStream {
 
     @Override
     public void close() throws IOException {
-        getOut(0).close();
+        OutputStream out = getOut(0);
+        out.flush();
+        out.close();
         closed = true;
     }
 
@@ -104,15 +96,14 @@ public class StreamBuffer extends OutputStream {
      * @return a stream containing the data written to this stream
      * @throws IOException
      */
-    public InputStream getInputStream() throws IOException{
+    public InputStream getInputStream() throws IOException {
         closed = true;
 
-        if(memOut !=null){
-            try{
+        if (memOut != null) {
+            try {
                 memOut.flush();
                 memOut.close();
-            }
-            catch(Exception ex){
+            } catch (Exception ex) {
                 //ignore
             }
 
@@ -120,31 +111,27 @@ public class StreamBuffer extends OutputStream {
             memOut = null;
         }
 
-        if(bytes != null)
+        if (bytes != null)
             return new ByteArrayInputStream(bytes);
 
-        if(fileOut != null){
-            try{
+        if (fileOut != null) {
+            try {
                 fileOut.flush();
                 fileOut.close();
-            }
-            catch(Exception ex){
+            } catch (Exception ex) {
                 //ignore
             }
             fileOut = null;
         }
 
-        if(tempFile != null) {
-
+        if (tempFile != null) {
             FileInputStream in = new FileInputStream(tempFile) {
                 //-- NOTE this reference should prevent the garbage collector from
                 //-- finalizing the StreamBuffer until all streams have been finalized
                 //-- and we know we can delete the underlying file
                 StreamBuffer referenceHolder = StreamBuffer.this;
             };
-
             return in;
-
         }
 
         throw new IOException("InputStream has already been retrieved");
@@ -162,6 +149,15 @@ public class StreamBuffer extends OutputStream {
         super.finalize();
     }
 
+    public String getContentType() {
+        return contentType;
+    }
+
+    public StreamBuffer withContentType(String contentType) {
+        this.contentType = contentType;
+        return this;
+    }
+
     public int getLength() {
         return length;
     }
@@ -175,20 +171,11 @@ public class StreamBuffer extends OutputStream {
         return this;
     }
 
-    public String getTempDir() {
-        return tempDir;
-    }
-
-    public StreamBuffer withTempDir(String tempDir) {
-        this.tempDir = tempDir;
-        return this;
-    }
-
     public File getTempFile() {
         return tempFile;
     }
 
-    public String toString(){
+    public String toString() {
         return "StreamBuffer[" + length + "]";
     }
 

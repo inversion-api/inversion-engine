@@ -21,15 +21,17 @@ import io.inversion.Rule;
 import io.inversion.utils.Utils;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class AclRule extends Rule<AclRule> {
-    protected final List<String> permissions = new ArrayList<>();
-    protected final List<String> roles       = new ArrayList<>();
-    protected boolean allow = true;
-    protected boolean info  = false;
-    protected boolean allRolesMustMatch       = false;
-    protected boolean allPermissionsMustMatch = false;
+    protected final ArrayList<String> permissions             = new ArrayList<>();
+    protected final ArrayList<String> roles                   = new ArrayList<>();
+    protected final ArrayList<String> scopes                  = new ArrayList<>();
+    protected       boolean           allow                   = true;
+    protected       boolean           info                    = false;
+    protected       boolean           allRolesMustMatch       = false;
+    protected       boolean           allPermissionsMustMatch = false;
+    protected       boolean           allScopesMustMatch = false;
+
 
     public AclRule() {
         super();
@@ -76,6 +78,22 @@ public class AclRule extends Rule<AclRule> {
         rule.withAllRolesMustMatch(false);
         rule.withRoles(role1);
         rule.withRoles(rolesN);
+        return rule;
+    }
+
+    public static AclRule requireAllScopes(String ruleMatcherSpec, String scope1, String... scopesN) {
+        AclRule rule = new AclRule(null, ruleMatcherSpec, null);
+        rule.withAllRolesMustMatch(true);
+        rule.withScopes(scope1);
+        rule.withScopes(scopesN);
+        return rule;
+    }
+
+    public static AclRule requireOneScopes(String ruleMatcherSpec, String scope1, String... scopesN) {
+        AclRule rule = new AclRule(null, ruleMatcherSpec, null);
+        rule.withAllRolesMustMatch(false);
+        rule.withScopes(scope1);
+        rule.withScopes(scopesN);
         return rule;
     }
 
@@ -158,6 +176,22 @@ public class AclRule extends Rule<AclRule> {
         }
         return this;
     }
+
+    public ArrayList<String> getScopes() {
+        return new ArrayList(scopes);
+    }
+
+    public AclRule withScopes(String... scopes) {
+        if (scopes != null) {
+            for (String scope : Utils.explode(",", scopes)) {
+                if (!this.scopes.contains(scope))
+                    this.scopes.add(scope);
+            }
+        }
+        return this;
+    }
+
+
 
     public boolean isAllow() {
         return allow;

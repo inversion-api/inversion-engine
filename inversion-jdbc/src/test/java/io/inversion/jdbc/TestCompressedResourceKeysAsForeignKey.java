@@ -2,7 +2,7 @@ package io.inversion.jdbc;
 
 import io.inversion.*;
 import io.inversion.action.db.DbAction;
-import io.inversion.action.hateoas.LinksAction;
+import io.inversion.action.hateoas.LinksFilter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ public class TestCompressedResourceKeysAsForeignKey {
 
         db = JdbcDbFactory.bootstrapH2(getClass().getName() + System.currentTimeMillis(), JdbcDb.class.getResource("person-h2.ddl").toString());
         api = new Api("person") //
-                .withEndpoint(new LinksAction(), new DbAction())//
+                .withEndpoint(new LinksFilter(), new DbAction())//
                 .withDb(db);
 
         engine = new Engine(api);

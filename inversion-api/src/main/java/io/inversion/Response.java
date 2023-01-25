@@ -17,7 +17,8 @@
 package io.inversion;
 
 import io.inversion.json.*;
-import io.inversion.utils.*;
+import io.inversion.utils.MimeTypes;
+import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
@@ -80,6 +81,14 @@ public class Response implements JSFind {
         return this;
     }
 
+    public Response withJson(String json) {
+        if (json == null)
+            withJson((JSNode) null);
+        else
+            withJson((JSNode) JSParser.parseJson(json));
+        return this;
+    }
+
     public Response withText(String text) {
         this.text = text;
         this.json = null;
@@ -87,31 +96,42 @@ public class Response implements JSFind {
         return this;
     }
 
-    public Response withStream(StreamBuffer stream, String fileName) {
-        withStream(stream);
+    public Response withBody(StreamBuffer stream, String fileName) {
+        withBody(stream);
         withFileName(fileName);
         return this;
     }
 
-    public Response withStream(StreamBuffer stream) {
+    public Response withBody(StreamBuffer stream) {
         this.text = null;
         this.json = null;
         this.stream = stream;
+        if (getContentType() == null && stream.getContentType() != null)
+            withContentType(stream.getContentType());
         return this;
     }
 
     public JSNode getJson() {
         if (stream != null) {
-
-            if(!MimeTypes.TYPE_APPLICATION_JSON.equalsIgnoreCase(getContentType()))
+            if (!MimeTypes.TYPE_APPLICATION_JSON.equalsIgnoreCase(getContentType()))
                 return null;
 
             try {
-                json = (JSNode) JSReader.parseJson(stream.getInputStream());
+                json = (JSNode) JSParser.parseJson(stream.getInputStream());
             } catch (Exception e) {
                 throw new ApiException(e);
             } finally {
                 stream = null;
+            }
+        }
+        if (json == null && text != null) {
+            try
+            {
+                json = (JSNode) JSParser.parseJson(text);
+                text = null;
+            }
+            catch(Exception ex){
+                //maybe not json, OK
             }
         }
 
@@ -128,10 +148,14 @@ public class Response implements JSFind {
                 stream = null;
             }
         }
+
+        if (text == null && json != null)
+            return json.toString();
+
         return text;
     }
 
-    public StreamBuffer getOutput() {
+    public StreamBuffer getBody() {
         boolean explain = false;
         Request req     = getRequest();
         if (req == null && Chain.getDepth() > 0)
@@ -140,10 +164,10 @@ public class Response implements JSFind {
         if (req != null)
             explain = req.isDebug() && req.isExplain();
 
-        return getOutput(explain);
+        return getBody(explain);
     }
 
-    public StreamBuffer getOutput(boolean explain) {
+    public StreamBuffer getBody(boolean explain) {
 
         StreamBuffer output = stream;
         try {
@@ -152,9 +176,16 @@ public class Response implements JSFind {
                 if (json != null) {
                     output = new StreamBuffer();
                     output.write(json.toString().getBytes(StandardCharsets.UTF_8));
+                    output.withContentType(MimeTypes.TYPE_APPLICATION_JSON);
                 } else if (text != null) {
                     output = new StreamBuffer();
                     output.write(text.getBytes(StandardCharsets.UTF_8));
+
+                    String contentType = getContentType();
+                    if (contentType == null)
+                        contentType = MimeTypes.TYPE_TEXT_PLAIN;
+
+                    output.withContentType(contentType);
                 }
             }
 
@@ -178,6 +209,7 @@ public class Response implements JSFind {
                     buff.append(text);
                 }
                 output = new StreamBuffer();
+                output.withContentType(MimeTypes.TYPE_TEXT_PLAIN);
                 output.write(buff.toString().getBytes(StandardCharsets.UTF_8));
             }
 
@@ -194,7 +226,7 @@ public class Response implements JSFind {
 
     public String getDebug() {
         try {
-            return Utils.read(getOutput(true).getInputStream());
+            return Utils.read(getBody(true).getInputStream());
         } catch (IOException ex) {
             throw new ApiException(ex);
         }
@@ -306,7 +338,7 @@ public class Response implements JSFind {
         JSNode meta = json.getMap("meta");
         if (meta == null)
             meta = json;
-        meta.putValue(key, value);
+        meta.put(key, value);
         return this;
     }
 
@@ -327,6 +359,16 @@ public class Response implements JSFind {
     public int getFoundRows() {
         return getMeta().findInt("foundRows");
     }
+
+    public Response withLastKey(String lastKey) {
+        withMeta("lastKey", lastKey);
+        return this;
+    }
+
+    public String getLastKey() {
+        return getMeta().findString("lastKey");
+    }
+
 
     public Response withPageSize(int pageSize) {
         withMeta("pageSize", pageSize);
@@ -368,9 +410,9 @@ public class Response implements JSFind {
     public Response withLink(String name, String url) {
         JSNode links = getJson().findMap("_links");
         if (links != null) {
-            links.putValue(name, new JSMap("href", url));
+            links.put(name, new JSMap("href", url));
         } else {
-            getMeta().putValue(name, url);
+            getMeta().put(name, url);
         }
         return this;
     }
@@ -382,7 +424,7 @@ public class Response implements JSFind {
             if (link != null)
                 return link.getString("href");
         } else {
-            Object link = getMeta().getValue(name);
+            Object link = getMeta().get(name);
             if (link instanceof String)
                 return (String) link;
         }
@@ -448,11 +490,14 @@ public class Response implements JSFind {
         if (json instanceof JSList)
             return (JSList) json;
 
-        if (json.getValue("data") instanceof JSList)
+        if (json.get("data") instanceof JSList)
             return json.getList("data");
 
-        if (json.getValue("_embedded") instanceof JSList)
+        if (json.get("_embedded") instanceof JSList)
             return json.getList("_embedded");
+
+        if (json.get("items") instanceof JSList)
+            return json.getList("items");
 
         //-- there is a single object in the payload without a meta or payload section
         //-- this could mess up some callers that try to add to the returned
@@ -460,9 +505,9 @@ public class Response implements JSFind {
         return new JSList(json);
     }
 
-    public JSMap getFirstRecordAsMap(){
+    public JSMap getFirstRecordAsMap() {
         JSList data = data();
-        if(data == null || data.size() == 0)
+        if (data == null || data.size() == 0)
             return null;
         return data.getMap(0);
     }
@@ -471,7 +516,7 @@ public class Response implements JSFind {
         JSList data = data();
         if (data == null) {
             data = new JSList();
-            getJson().putValue("data", data);
+            getJson().put("data", data);
         }
         data.add(record);
         return this;
@@ -573,6 +618,10 @@ public class Response implements JSFind {
             headers.put(key, value);
     }
 
+    public void clearHeaders(){
+        this.headers.clear();
+    }
+
     public String getRedirect() {
         return getHeader("Location");
     }
@@ -597,19 +646,27 @@ public class Response implements JSFind {
 
     public String getContentType() {
         String contentType = getHeader("Content-Type");
-        if (contentType == null) {
 
-            if (json != null)
-                return MimeTypes.TYPE_APPLICATION_JSON;
+        if (contentType != null)
+            return contentType;
 
-            if (fileName != null) {
-                int dot = fileName.lastIndexOf('.');
-                if (dot > 0) {
-                    String ext = fileName.substring(dot + 1);
-                    contentType = MimeTypes.getMimeType(ext);
-                }
+        if (json != null) {
+            return MimeTypes.TYPE_APPLICATION_JSON;
+        }
+
+        if (fileName != null) {
+            int dot = fileName.lastIndexOf('.');
+            if (dot > 0) {
+                String ext = fileName.substring(dot + 1);
+                contentType = MimeTypes.getMimeType(ext);
+                if (contentType != null)
+                    return contentType;
             }
         }
+
+        if (stream != null)
+            return stream.getContentType();
+
         return contentType;
     }
 
@@ -697,7 +754,7 @@ public class Response implements JSFind {
         String message = getText();
         try {
             while (message != null && message.startsWith("{") && message.contains("\\\"message\\\"")) {
-                message = JSReader.asJSNode(message).getString("message");
+                message = JSParser.asJSNode(message).getString("message");
             }
         } catch (Exception ex) {
             //igore

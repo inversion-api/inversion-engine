@@ -18,7 +18,7 @@ package io.inversion.elasticsearch;
 
 import io.inversion.*;
 import io.inversion.json.JSMap;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.rql.Term;
 import io.inversion.json.JSNode;
 import io.inversion.utils.Rows.Row;
@@ -267,7 +267,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
             if (isSuccess(statusCode)) {
                 // we now have the indices, aliases for each index, and mappings (and settings if we need them)
 
-                JSMap jsObj = JSReader.asJSMap(EntityUtils.toString(allResponse.getEntity()));
+                JSMap jsObj = JSParser.asJSMap(EntityUtils.toString(allResponse.getEntity()));
 
                 Map<String, JSNode> jsContentMap = (Map<String, JSNode>) jsObj;
 

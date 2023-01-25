@@ -19,7 +19,7 @@ package io.inversion;
 
 import io.inversion.json.JSList;
 import io.inversion.json.JSNode;
-import io.inversion.json.JSReader;
+import io.inversion.json.JSParser;
 import io.inversion.utils.Utils;
 
 import java.util.regex.Pattern;
@@ -81,7 +81,7 @@ public class Validation {
 
         if (childProps != null && value instanceof JSNode && !((JSNode) value).isList()) {
             for (String childProp : childProps) {
-                if (Utils.empty(((JSNode) value).getValue(childProp))) {
+                if (Utils.empty(((JSNode) value).get(childProp))) {
                     fail("Required field '" + propOrPath + "." + childProp + "' is missing.");
                 }
             }
@@ -267,7 +267,7 @@ public class Validation {
             return null;
 
         if (value instanceof String)
-            value = JSReader.parseJson(value.toString());
+            value = JSParser.parseJson(value.toString());
 
         return ((JSNode) value);
     }
@@ -277,7 +277,7 @@ public class Validation {
             return null;
 
         if (value instanceof String)
-            value = JSReader.asJSList(value.toString());
+            value = JSParser.asJSList(value.toString());
 
         return ((JSList) value);
     }

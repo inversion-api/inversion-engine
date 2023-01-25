@@ -19,13 +19,14 @@ package io.inversion.s3;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import io.inversion.ApiException;
-import io.inversion.Chain;
-import io.inversion.Collection;
-import io.inversion.Results;
+import io.inversion.*;
 import io.inversion.rql.*;
+import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html
@@ -37,8 +38,12 @@ import java.util.List;
  * https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/LegacyConditionalParameters.KeyConditions.html
  */
 public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3DbQuery>, S3DbQuery>, From<From<From, S3DbQuery>, S3DbQuery>, Where<Where<Where, S3DbQuery>, S3DbQuery>, Group<Group<Group, S3DbQuery>, S3DbQuery>, Order<Order<Order, S3DbQuery>, S3DbQuery>, Page<Page<Page, S3DbQuery>, S3DbQuery>> {
-    public S3DbQuery(S3Db db, Collection table, List<Term> terms) {
+
+    Path securePrefix = null;
+
+    public S3DbQuery(S3Db db, Collection table, Path securePrefix, List<Term> terms) {
         super(db, table, terms);
+        this.securePrefix = securePrefix;
         getWhere().clearFunctions();
         getWhere().withFunctions("eq", "sw");
     }
@@ -48,22 +53,35 @@ public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3Db
         // path == /s3/bucketName/inner/folder
         // retrieve as much meta data as possible about the files in the bucket
 
-        ListObjectsRequest req = new ListObjectsRequest();
-        req.setBucketName(getCollection().getTableName());
-        req.setMaxKeys(getPage().getLimit()); // TODO fix pagesize...currently always set to 1000 ... tied to 'size' but not 'pagesize'?
-        req.setDelimiter("/");
+        Path prefix = new Path();
+        if (securePrefix != null) {
+            prefix.add(securePrefix.toString());
+        }
 
-        String prefix = Chain.top().getRequest().getSubpath().toString();
+        //-- add the url path to the prefix, removing collection/bucket identifier
+        Request req        = Chain.peek().getRequest();
+        Path    pathPrefix = req.getPath();
+        Path    epPath     = req.getEndpointPath();
+        pathPrefix = pathPrefix.subpath(epPath.size(), pathPrefix.size());
+        if (pathPrefix.size() >= 1)
+            pathPrefix = pathPrefix.subpath(1, pathPrefix.size());
+        prefix.add(pathPrefix.toString());
+        //-- end url pathing
 
-        while (prefix.startsWith("/"))
-            prefix = prefix.substring(1);
 
-        while (prefix.endsWith("/"))
-            prefix = prefix.substring(0, prefix.length() - 1);
+        ListObjectsRequest s3Req = new ListObjectsRequest();
+        s3Req.setBucketName(getCollection().getTableName());
+        s3Req.setMaxKeys(getPage().getLimit());
+        if (prefix.size() > 0) {
+            s3Req.setPrefix(prefix.toString() + "/");
+        }
+        s3Req.setDelimiter("/");
 
-        req.setPrefix(prefix);
+        System.out.println("prefix    = " + s3Req.getPrefix());
+        System.out.println("delimiter = " + s3Req.getDelimiter());
 
-        ObjectListing listing = getDb().getS3Client().listObjects(req);
+
+        ObjectListing listing = getDb().getS3Client().listObjects(s3Req);
 
         Results results = new Results(this);
 
@@ -74,32 +92,64 @@ public class S3DbQuery extends Query<S3DbQuery, S3Db, Select<Select<Select, S3Db
         List<String>          directoryList = listing.getCommonPrefixes();
         List<S3ObjectSummary> fileList      = listing.getObjectSummaries();
 
+        List found = new ArrayList();
+
         // alphabetize the data returned to the client...
         while (!directoryList.isEmpty()) {
-            String directory = directoryList.get(0);
-            if (!fileList.isEmpty()) {
-                S3ObjectSummary file = fileList.get(0);
-                if (directory.compareToIgnoreCase(file.getKey()) < 0) {
-                    // directory name comes before file name
-                    //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
-                    directoryList.remove(0);
-                } else {
-                    // file name comes before directory
-                    //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + file.getKey(), file.getLastModified(), file.getSize(), true));
-                    fileList.remove(0);
-                }
-            } else {
-                //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
-                directoryList.remove(0);
-            }
+            String directory = directoryList.remove(0);
+            found.add(directory);
+
+//            if (!fileList.isEmpty()) {
+//                S3ObjectSummary file = fileList.get(0);
+//                if (directory.compareToIgnoreCase(file.getKey()) < 0) {
+//                    // directory name comes before file name
+//                    //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
+//                    directoryList.remove(0);
+//                } else {
+//                    // file name comes before directory
+//                    //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + file.getKey(), file.getLastModified(), file.getSize(), true));
+//                    fileList.remove(0);
+//                }
+//            } else {
+//                //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + directory, null, null, false));
+//
+//                String dir = directoryList.remove(0);
+//                Map row = Utils.asMap("key", dir);
+//            }
         }
 
         while (!fileList.isEmpty()) {
             S3ObjectSummary file = fileList.remove(0);
-            //results.withRow(buildListObj(req.getApiUrl() + req.getPath() + file.getKey(), file.getLastModified(), file.getSize(), true));
+            found.add(file);
         }
 
+        String removeSecure = null;
+        if (securePrefix != null)
+            removeSecure = securePrefix.toString() + "/";
+
+
+        for (Object obj : found) {
+
+            String key = obj instanceof String ? (String) obj : ((S3ObjectSummary) obj).getKey();
+
+            if (removeSecure != null)
+                key = key.substring(removeSecure.length());
+
+            Request root = Chain.peek().getRequest();
+            Url     url  = root.getUrl().copy();
+            url.clearParams();
+
+            Path path = new Path(root.getServerPath());
+            path.add(root.getEndpointPath().toString());
+            path.add(root.getActionPath().first());
+            path.add(key);
+            url.withPath(path);
+
+            Map row = Utils.asMap("key", key, "href", url.toString());
+            results.withRow(row);
+        }
         return results;
     }
+
 
 }

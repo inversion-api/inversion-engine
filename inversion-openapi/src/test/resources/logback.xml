@@ -7,5 +7,5 @@
         <appender-ref ref="CONSOLE" />
     </root>
     <logger name="org.springframework.web" level="INFO"/>
-    <!-- <logger name="io.inversion.config.Context" level="ALL"/> -->
+    <!-- <logger name="io.inversion.context.Context" level="ALL"/> -->
 </configuration>

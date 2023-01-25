@@ -16,14 +16,7 @@
  */
 package io.inversion.utils;
 
-//import io.inversion.ApiException;
-//import io.inversion.Chain;
-//import io.inversion.Request;
-//import io.inversion.Response;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -75,6 +68,24 @@ import java.util.regex.Pattern;
 public class Path implements Comparable<Path> {
     List<String> parts = new ArrayList<>();
     List<String> lc    = new ArrayList<>();
+
+    public String getTemplate(){
+        StringBuilder b = new StringBuilder();
+        for(int i=0; i<size(); i++){
+            String part = get(i).toLowerCase();
+            if(isVar(i)){
+                part = "{}";
+                String regex = getRegex(i);
+                if(regex != null)
+                  part = "{" + regex + "}";
+            }
+            if(b.length() > 0)
+                b.append("/");
+
+            b.append(part);
+        }
+        return b.toString();
+    }
 
 
     /**
@@ -202,8 +213,10 @@ public class Path implements Comparable<Path> {
         return fixed;
     }
 
-
     public Path copyFrom(Path path) {
+        if(path == null)
+            return this;
+
         parts.clear();
         lc.clear();
         parts.addAll(path.parts);
@@ -359,6 +372,11 @@ public class Path implements Comparable<Path> {
         return null;
     }
 
+    public Path removeLast(){
+        remove(size()-1);
+        return this;
+    }
+
     /**
      * @return true if this Path ended in a "*" which was removed, false if this Path does not end in a "*"
      */
@@ -419,7 +437,7 @@ public class Path implements Comparable<Path> {
 
     @Override
     public int compareTo(Path o) {
-        if(o == null)
+        if (o == null)
             return 1;
         return toString().toLowerCase().compareTo(o.toString().toLowerCase());
     }
@@ -478,7 +496,7 @@ public class Path implements Comparable<Path> {
         return isWildcard(get(index));
     }
 
-    public static boolean isWildcard(String part){
+    public static boolean isWildcard(String part) {
         return "*".equals(part);
     }
 
@@ -576,7 +594,7 @@ public class Path implements Comparable<Path> {
         return isOptional(part);
     }
 
-    public static boolean isOptional(String part){
+    public static boolean isOptional(String part) {
         if (part != null) {
             return part.startsWith("[") && part.endsWith("]");
         }
@@ -683,7 +701,6 @@ public class Path implements Comparable<Path> {
     }
 
 
-
     /**
      * Convenience overloading of {@link #extract(Map, Path, boolean)} with <code>greedy = true</code>.
      *
@@ -788,6 +805,25 @@ public class Path implements Comparable<Path> {
         return matchedPath;
     }
 
+    public int getVarIndex(String varName) {
+        if (varName == null)
+            return -1;
+
+        for (int i = 0; i < size(); i++) {
+            String temp = getVarName(i);
+            if (varName.equalsIgnoreCase(temp))
+                return i;
+        }
+        return -1;
+    }
+
+    public boolean hasVars() {
+        for (int i = 0; i < size(); i++)
+            if (isVar(i))
+                return true;
+        return false;
+    }
+
     public boolean hasAllVars(String... vars) {
         for (int i = 0; i < vars.length; i++) {
             boolean has = false;
@@ -855,170 +891,6 @@ public class Path implements Comparable<Path> {
         return paths;
     }
 
-
-    public static Path joinPaths(Path inLeftPath, Path inRightPath, boolean relative) {
-
-        Path    leftPath     = new Path(inLeftPath);
-        Path    rightPath    = new Path(inRightPath);
-        String  leftPart     = null;
-        String  rightPart    = null;
-        Path    joined       = new Path();
-        boolean leftOptional = false;
-
-        while (relative && leftPath.size() > 0) {
-            leftPart = leftPath.get(0);
-
-            if (!leftPath.isOptional(0) && !leftPath.isWildcard(0))
-                joined.add(leftPart);
-
-            if (leftPath.isOptional(0) || leftPath.isWildcard(0))
-                leftOptional = true;
-
-            if (!leftOptional)
-                leftPath.remove(0);
-            else
-                break;
-        }
-
-        while (leftPath.size() > 0 && rightPath.size() > 0) {
-            leftPart = leftPath.get(0);
-            rightPart = rightPath.get(0);
-
-            if (leftPath.isWildcard(0))
-                joined.add(rightPart);
-            else if (rightPath.isWildcard())
-                joined.add(leftPart);
-            else if (leftPath.isVar(0)){// && rightPath.isVar(0)) {
-                //joined.add(rightPart);
-                joined.add(leftPart);
-            } else if (!leftPath.isVar(0) && !rightPath.isVar(0)) {
-                String leftVal  = Path.unwrapOptional(leftPath.get(0));
-                String rightVal = Path.unwrapOptional(rightPath.get(0));
-                if (!leftVal.equalsIgnoreCase(rightVal))
-                    return null;
-                joined.add(rightVal);
-//            } else if (!rightPath.isVar(0)) {
-//                joined.add(rightPart);
-            } else {
-                joined.add(leftPart);
-            }
-
-            leftPath.remove(0);
-            rightPath.remove(0);
-        }
-
-        while (leftPath.size() > 0)
-            joined.add(leftPath.remove(0));
-
-        while (rightPath.size() > 0)
-            joined.add(rightPath.remove(0));
-
-        return joined;
-    }
-
-    public static List<Path> mergePaths(List<Path> mPaths, List<Path> aPaths) {
-
-        for (Path aPath : aPaths) {
-
-            boolean exists = false;
-            for (int m = 0; m < mPaths.size(); m++) {
-
-                Path mPath = mPaths.get(m);
-                if (aPath == mPath)
-                    continue;
-
-                if (!compatible(aPath, mPath))
-                    continue;
-
-                for (int i = 0; i < aPath.size(); i++) {
-
-                    if (i >= mPath.size()) {
-                        break;
-                    }
-
-                    //the old rule consumes the new one  a/b consumes a/*
-                    if (aPath.isWildcard(i) && !mPath.isWildcard(i)) {
-                        exists = true;
-                        break;
-                    }
-
-                    //the new rule will consume the old one....a/* consumed by a/b or a/b/c
-                    if (mPath.isWildcard(i)) {
-                        mPaths.remove(m);
-                        m--;
-                        break;
-                    }
-
-                    if (!mPath.isVar(i) && aPath.isVar(i))
-                        aPath.set(i, mPath.get(i));
-
-                    if (mPath.isVar(i) && !aPath.isVar(i)) {
-                        mPath.set(i, aPath.get(i));
-                    }
-
-//                    if (!mPath.isVar(i) && !aPath.isVar(i)) {
-//                        if (!mPath.get(i).equalsIgnoreCase(aPath.get(i)))
-//                            throw ApiException.new500InternalServerError("Endpoint configuration error.  Actions have incompatible paths.");
-//                    }
-
-
-                    if (aPath.size() == mPath.size() && i == mPath.size() - 1)
-                        exists = true;
-                }
-            }
-
-            if (!exists) {
-                mPaths.add(aPath);
-            }
-        }
-
-        //-- removes "a" if "a/*" is in the list.
-        for (int i = 0; i < mPaths.size(); i++) {
-            for (int j = 0; j < mPaths.size(); j++) {
-                if (i == j)
-                    continue;
-
-                Path p1 = mPaths.get(i);
-                Path p2 = mPaths.get(j);
-
-                if (p1.size() == p2.size() + 1 && p1.endsWithWildcard()) {
-                    mPaths.remove(j);
-                    j--;
-                    continue;
-                }
-                if (p2.size() == p1.size() + 1 && p2.endsWithWildcard()) {
-                    mPaths.remove(i);
-                    i--;
-                    break;
-                }
-            }
-        }
-
-        return mPaths;
-    }
-
-
-    public static boolean compatible(Path a, Path b) {
-        for (int i = 0; i < a.size(); i++) {
-            if (a.isWildcard(i))
-                return true;
-            if (i < b.size() && b.isWildcard(i))
-                return true;
-
-            if (i >= b.size())
-                return false;
-
-            if (!a.isVar(i) && !b.isVar(i)) {
-                String sA = a.get(i);
-                String sB = b.get(i);
-                sA = unwrapOptional(sA);
-                sB = unwrapOptional(sB);
-                if (!sA.equalsIgnoreCase(sB))
-                    return false;
-            }
-        }
-        return true;
-    }
 
 
 }

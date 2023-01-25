@@ -18,6 +18,9 @@ package io.inversion.utils;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class UtilsTest {
@@ -104,5 +107,10 @@ public class UtilsTest {
         assertFalse(Utils.endsWith("http://localhost/northwind", "/"));
         assertTrue(Utils.endsWith("http://localhost/northwind/", "/"));
 
+    }
+
+    @Test
+    public void disjunction(){
+        Collection add = Utils.add(new ArrayList(), "a", "b", "c");
     }
 }

@@ -19,13 +19,13 @@ package io.inversion;
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
-import io.inversion.utils.*;
+import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import java.util.*;
 
-public class Chain {
+public final class Chain {
 
     public static final Set<String> APPEND_PARAMS = Collections.unmodifiableSet(Utils.add(new HashSet(), "include", "exclude", "collapse"));
 
@@ -152,7 +152,7 @@ public class Chain {
                 fkval = toHere.getCollection().encodeKeyFromJsonNames(fromHere, toHere.getFkIndex1());
             } else {
                 //this value is already an encoded resourceKey
-                Object obj = fromHere.getValue(toHere.getFk1Col1().getJsonName());
+                Object obj = fromHere.get(toHere.getFk1Col1().getJsonName());
                 if (obj != null)
                     fkval = obj.toString();
             }
@@ -177,120 +177,8 @@ public class Chain {
     }
 
     public static String buildLink(Collection collection, String resourceKey, String relationshipKey) {
-        Request req       = top().getRequest();
-        Request linkedReq = req.getApi().getLinker().buildRequest(req, null, "GET", collection, resourceKey, relationshipKey, null);
-        //if (linkedReq == null)
-        //    throw ApiException.new400BadRequest("Unable to find a valid operation.");
-
-        if (linkedReq == null)
-            return null;
-
-        Url    url = linkedReq.getUrl();
-        String str = url.toString();
-        //System.out.println(str);
-        return str;
-
-//        Request req = top().getRequest();
-//
-//
-//        if(subCollectionKey != null)
-//        Operation op = req.getApi().findOperation(req, null, null, resourceKey, relationship
-//
-//
-//        Request req = top().getRequest();
-//
-//        String collectionKey = collection.getName();
-//
-//        if (req.getCollection() == collection)
-//            collectionKey = req.getCollectionKey();
-//
-//        StringBuilder url = new StringBuilder(Utils.empty(req.getApiUrl()) ? "" : req.getApiUrl());
-//
-//        if (!Utils.endsWith(url, "/"))
-//            url.append("/");
-//
-//        if (req.getCollection() != null && (collection == req.getCollection() || collection.getDb() == req.getCollection().getDb()))//
-//        {
-//            //going after the same collection...so must be going after the same endpoint
-//            //so get the endpoint path from the current request and ame sure it is on the url.
-//
-//            Path epp = req.getEndpointPath();
-//
-//            if (epp != null && epp.size() > 0) {
-//                url.append(epp).append("/");
-//            }
-//        } else if (collection.getDb().getEndpointPath() != null) {
-//            Path epP = collection.getDb().getEndpointPath();
-//
-//            for (int i = 0; i < epP.size(); i++) {
-//                if (epP.isWildcard(i))
-//                    break;
-//
-//                if (epP.isVar(i)) {
-//                    String value;
-//                    String name = epP.getVarName(i);
-//                    switch (name.toLowerCase()) {
-//                        case "_collection":
-//                            value = collection.getName();
-//                            break;
-//                        case "_resource":
-//                            value = resourceKey + "";
-//                            break;
-//                        case "_relationship":
-//                            value = subCollectionKey;
-//                            break;
-//                        default:
-//                            value = req.getUrl().getParam(name);
-//                    }
-//                    if (value == null)
-//                        throw ApiException.new500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
-//
-//                    url.append(epP.get(i)).append("/");
-//                } else {
-//                    url.append(epP.get(i)).append("/");
-//                }
-//            }
-//
-//            url.append(collection.getDb().getEndpointPath()).append("/");
-//        }
-//
-//        if (!Utils.empty(collectionKey)) {
-//            if (!Utils.endsWith(url, "/"))
-//                url.append("/");
-//
-//            url.append(collectionKey);
-//        }
-//
-//        if (!Utils.empty(resourceKey)){
-//            if (!Utils.endsWith(url, "/"))
-//                url.append("/");
-//            url.append(resourceKey.toString());
-//        }
-//
-//
-//        if (!Utils.empty(subCollectionKey)){
-//            if (!Utils.endsWith(url, "/"))
-//                url.append("/");
-//            url.append(subCollectionKey);
-//        }
-//
-//        if (req.getApi().getUrl() != null && !Utils.startsWith(url, req.getApi().getUrl())) {
-//            String newUrl = req.getApi().getUrl();
-//            while (newUrl.endsWith("/"))
-//                newUrl = newUrl.substring(0, newUrl.length() - 1);
-//
-//            url = new StringBuilder(newUrl).append(url.substring(url.indexOf("/", 8)));
-//        }
-//
-//        if (req.getApi() != null) {
-//            if (Utils.empty(req.getApi().getUrl())) {
-//                String proto = req.getHeader("x-forwarded-proto");
-//                if (!Utils.empty(proto)) {
-//                    url = new StringBuilder(proto).append(url.substring(url.indexOf(":")));
-//                }
-//            }
-//        }
-//        return new Url(url.toString()).toString();
+        Request req = top().getRequest();
+        return req.getApi().getLinker().buildLink(req, collection, resourceKey, relationshipKey);
     }
 
     public Chain withUser(User user) {
@@ -348,8 +236,8 @@ public class Chain {
         boolean root = next == 0;
         try {
             //TODO: this is not correct, the Params in the op should have a source and get applied from the op params based on the source not being an action
-            if (root)
-                applyRuleParams(getRequest().getUrl(), getServer(), getEndpoint());
+////////            if (root)
+////////                applyRuleParams(getRequest().getUrl(), getServer(), getEndpoint());
 
 
             while (next()) {
@@ -358,7 +246,14 @@ public class Chain {
 
         } finally {
             if (root) {
-                filterPathParams(response.getJson());
+                JSNode json = null;
+                try{
+                    json = request.getJson();
+                }
+                catch(Exception ex){
+                    //response not json, OK
+                }
+                filterPathParams(json);
             }
         }
     }
@@ -374,7 +269,7 @@ public class Chain {
             json.streamAll()
                     .filter(node -> node instanceof JSNode && !(node instanceof JSList))
                     .forEach(node -> {
-                        pathParamsToRemove.forEach(key -> ((JSNode) node).removeValues(key));
+                        pathParamsToRemove.forEach(key -> ((JSNode) node).remove(key));
                     });
         }
         return this;
@@ -399,9 +294,16 @@ public class Chain {
             Map<String, String> pathParams = new HashMap<>();
             if (actionMatch.path != null) {
                 actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
-                applyPathParams(pathParams, request.getUrl(), request.getJson());
+                JSNode json = null;
+                try {
+                    json = request.getJson();
+                } catch (Exception ex) {
+                    //--body might not be json, OK to be null below
+                    //ex.printStackTrace();
+                }
+                applyPathParams(pathParams, request.getUrl(), json);
             }
-            applyRuleParams(request.getUrl(), actionMatch.action);
+////////            applyRuleParams(request.getUrl(), actionMatch.action);
             actionMatch.action.run(request, response);
             return true;
         }
@@ -418,35 +320,35 @@ public class Chain {
         pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> url.withParam(e.getKey(), e.getValue()));
 
         if (json != null) {
-            json.stream()
+            json.asList().stream()
                     .filter(node -> node instanceof JSMap)
-                    .forEach(node -> pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null && !e.getKey().startsWith("_"))).forEach(e -> ((JSNode) node).putValue(e.getKey(), e.getValue())));
+                    .forEach(node -> pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null && !e.getKey().startsWith("_"))).forEach(e -> ((JSNode) node).put(e.getKey(), e.getValue())));
         }
 
         pathParamsToRemove.addAll(pathParamsToAdd.keySet());
     }
 
 
-    public Chain applyRuleParams(Url url, Rule... rules) {
-        for (Rule rule : rules) {
-            if (rule == null)
-                continue;
-            String query = rule.getQuery();
-            if (query != null) {
-                Url temp = new Url("http://127.0.0.1?" + query);
-                for (String name : temp.getParams().keySet()) {
-                    String value = temp.getParam(name);
-                    if (APPEND_PARAMS.contains(name.toLowerCase())) {
-                        String previous = url.getParam(name);
-                        if (previous != null)
-                            value = value + "," + previous;
-                    }
-                    url.withParam(name, value);
-                }
-            }
-        }
-        return this;
-    }
+//    public Chain applyRuleParams(Url url, Rule... rules) {
+//        for (Rule rule : rules) {
+//            if (rule == null)
+//                continue;
+//            String query = rule.getQuery();
+//            if (query != null) {
+//                Url temp = new Url("http://127.0.0.1?" + query);
+//                for (String name : temp.getParams().keySet()) {
+//                    String value = temp.getParam(name);
+//                    if (APPEND_PARAMS.contains(name.toLowerCase())) {
+//                        String previous = url.getParam(name);
+//                        if (previous != null)
+//                            value = value + "," + previous;
+//                    }
+//                    url.withParam(name, value);
+//                }
+//            }
+//        }
+//        return this;
+//    }
 
     public boolean hasNext() {
         return !isCanceled() && next < actions.size();

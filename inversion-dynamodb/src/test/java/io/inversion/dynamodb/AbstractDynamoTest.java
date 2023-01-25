@@ -32,7 +32,7 @@ public interface AbstractDynamoTest extends AbstractEngineTest {
 
     @Override
     default Db buildDb() {
-        Db db = new DynamoDb().withName("bad_name_missing_env_props_on_purpose");
+        Db db = (DynamoDb)new DynamoDb().withName("bad_name_missing_env_props_on_purpose");
         if (isIntegTest()) {
             db = DynamoDbFactory.buildNorthwindDynamoDb();
         } else {

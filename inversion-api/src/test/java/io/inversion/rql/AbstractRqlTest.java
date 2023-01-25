@@ -191,7 +191,12 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
             if (!verifyTest(testKey, queryString, expected, res)) {
                 System.out.println("FAILED: " + testKey);
                 System.out.println(" - expected: " + expected);
-                System.out.println(" - received: " + (Results.LAST_QUERY != null ? Results.LAST_QUERY : maybeMatch));
+
+                String received = (Results.LAST_QUERY != null ? Results.LAST_QUERY : maybeMatch);
+                if(received != null && received.indexOf(":") > 0)
+                    received = received.substring(received.indexOf(":")+1).trim();
+
+                System.out.println(" - received: " + received);
 
                 res.dump();
                 failures.put(testKey, res.getStatus() + " - " + maybeMatch);

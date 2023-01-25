@@ -42,7 +42,7 @@ public class JdbcNorthwindApiDemoMain {
 
                 //-- DATABASE CONFIGURATION OPTION #1.
                 //-- you can set your database connection information explicitly in the code here...
-                .withDb(new JdbcDb("northwind", //the database name used as the properties key prefix when
+                .withDb(new JdbcDb("northwindDb", //the database name used as the properties key prefix when
                         "org.h2.Driver", //-- jdbc driver
                         "jdbc:h2:mem:northwind;DB_CLOSE_DELAY=-1", //-- jdbc url
                         "sa", //-- jdbc user

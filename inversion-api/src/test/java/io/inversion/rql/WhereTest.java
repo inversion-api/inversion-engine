@@ -26,10 +26,10 @@ public class WhereTest {
     @Test
     public void isInvalidColumn() {
         Where where = new Where(new Query());
-        assertFalse(where.isInvalidColumn(RqlParser.parse("function(column,1,2,3)")));
-        assertFalse(where.isInvalidColumn(RqlParser.parse("function(column_name,1,2,3)")));
-        assertTrue(where.isInvalidColumn(RqlParser.parse("function(_column,1,2,3)")));
-        assertTrue(where.isInvalidColumn(RqlParser.parse("function(col-umn,1,2,3)")));
+        assertFalse(where.isInvalidColumn(Rql.parse("function(column,1,2,3)")));
+        assertFalse(where.isInvalidColumn(Rql.parse("function(column_name,1,2,3)")));
+        assertTrue(where.isInvalidColumn(Rql.parse("function(_column,1,2,3)")));
+        assertTrue(where.isInvalidColumn(Rql.parse("function(col-umn,1,2,3)")));
     }
 
 }

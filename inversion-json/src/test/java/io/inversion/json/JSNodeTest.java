@@ -21,8 +21,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedInputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -39,12 +38,35 @@ public class JSNodeTest {
 //    }
 //
 
+//    @Test
+//    public void test_concurrent_modification_exception(){
+//        Map<String, String> map = new HashMap();
+//        Utils.addToMap(map, "a", "1", "b", "2", "c", "3");
+//
+//        boolean thrown = false;
+//        try {
+//            Set<String> keys = map.keySet();
+//            for (String key : keys) {
+//                System.out.println(key);
+//                map.put("x", "x");
+//            }
+//        }
+//        catch(ConcurrentModificationException cme){
+//            //cme.printStackTrace();
+//            thrown = true;
+//        }
+//        if(!thrown)
+//            fail();
+//    }
+
+
+
 
     public static void main(String[] ars)throws Exception{
         long start1 = Utils.time();
         List parsed = new ArrayList();
         for(int i=0;i<1000; i++){
-            parsed.add(JSReader.parseJson(new BufferedInputStream(JSNodeTest.class.getResourceAsStream("orders.json"))));
+            parsed.add(JSParser.parseJson(new BufferedInputStream(JSNodeTest.class.getResourceAsStream("orders.json"))));
         }
         long end1 = Utils.time();
 //        long start2 = Utils.time();
@@ -83,6 +105,34 @@ public class JSNodeTest {
 
 
     @Test
+    public void test_ref_pointer_nested_arrays(){
+        JSNode doc = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPointer1.json")));
+        System.out.println(doc);
+
+
+//        JSList arr1 = new JSList("a0", "a1", "a2");
+//        JSList arr1 = new JSList("b0", "b1", "b2");
+//        JSNode root = new JSMap("arr1", arr1, "arr2", arr2);
+//
+//        JSNode abc1 = new JSMap("abc", "123");
+//        JSNode abc2 = new JSMap("abc", "123");
+//
+//        JSNode parent = new JSMap("1", abc1, "2", abc1);
+//        String str = parent.toString();
+//        System.out.println(str);
+//
+//        assertTrue(str.indexOf("$ref")> 0);
+//
+//        parent = new JSMap("1", abc1, "2", abc2);
+//        str = parent.toString();
+//        System.out.println(str);
+//
+//        assertTrue(str.indexOf("$ref")< 0);
+    }
+
+
+
+    @Test
     void fromJsonPath() {
         assertEquals("**.book.[(@_length-1)]", JSFind.fromJsonPath("$..book[(@.length-1)]"));
         assertEquals("**.book.[0,1]", JSFind.fromJsonPath("$..book[0,1]"));
@@ -92,7 +142,7 @@ public class JSNodeTest {
 
     @Test
     public void testJsonPath1() {
-        final JSNode doc = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+        final JSNode doc = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
         JSList      found1;
         JSList      found2;
 
@@ -156,32 +206,32 @@ public class JSNodeTest {
         System.out.println(found1);
         assertEquals(5, found1.size());
 
-        found1 = doc.findAll("$..[?(@.price != 100)]", 1);
+        found1 = doc.findAll(1, "$..[?(@.price != 100)]");
         System.out.println(found1);
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.price != 100)]", 3);
+        found1 = doc.findAll(3, "$..[?(@.price != 100)]");
         System.out.println(found1);
         assertEquals(3, found1.size());
 
-        found1 = doc.findAll("$..[?(@.price!=100)]", 3);
+        found1 = doc.findAll(3, "$..[?(@.price!=100)]");
         System.out.println(found1);
         assertEquals(3, found1.size());
 
-        found1 = doc.findAll("$..book[?(@.isbn)]", 2);
+        found1 = doc.findAll(2, "$..book[?(@.isbn)]");
         System.out.println(found1);
         assertEquals(2, found1.size());
 
-        found1 = doc.findAll("$..[?(@.*.*.isbn)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.*.*.isbn)]");
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.price<10)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.price<10)]");
         assertEquals(2, found1.size());
 
-        found1 = doc.findAll("$..[?(@.*.price<30)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.*.price<30)]");
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.bicycle.price)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.bicycle.price)]");
         assertEquals(1, found1.size());
 
         assertEquals("19.95", doc.findString("store.bicycle.price"));
@@ -192,42 +242,42 @@ public class JSNodeTest {
         assertEquals("red", doc.findString("**.color"));
         assertNull(doc.findString("*.*.*.color"));
 
-        found1 = doc.findAll("$..[?(@.store.bicycle.price)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.store.bicycle.price)]");
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.*.*.color)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.*.*.color)]");
         assertEquals(1, found1.size());
-        assertNotNull(found1.getMap(0).getValue("store"));
+        assertNotNull(found1.getMap(0).get("store"));
 
-        found1 = doc.findAll("$..[?(@.*.bicycle.price)]", -1);
-        assertEquals(1, found1.size());
-
-        found1 = doc.findAll("$..[?(@.bicycle.price>10)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.*.bicycle.price)]");
         assertEquals(1, found1.size());
 
-        found1 = doc.findAll("$..[?(@.store.bicycle.price>10)]", -1);
+        found1 = doc.findAll(-1, "$..[?(@.bicycle.price>10)]");
+        assertEquals(1, found1.size());
+
+        found1 = doc.findAll(-1, "$..[?(@.store.bicycle.price>10)]");
         assertEquals(1, found1.size());
 
         found1 = doc.findAll("$.store.book[(@.length-1)]");
-        assertEquals("J. R. R. Tolkien", found1.getMap(0).getValue("author"));
+        assertEquals("J. R. R. Tolkien", found1.getMap(0).get("author"));
 
         found1 = doc.findAll("$.store.book[-1:]");
-        assertEquals("J. R. R. Tolkien", found1.getMap(0).getValue("author"));
+        assertEquals("J. R. R. Tolkien", found1.getMap(0).get("author"));
 
         found1 = doc.findAll("$.store.book[-2:]");
-        assertEquals("Herman Melville", found1.getMap(0).getValue("author"));
+        assertEquals("Herman Melville", found1.getMap(0).get("author"));
 
         found1 = doc.findAll("$.store.book[(@.length-2)]");
-        assertEquals("Herman Melville", found1.getMap(0).getValue("author"));
+        assertEquals("Herman Melville", found1.getMap(0).get("author"));
 
         found1 = doc.findAll("$.store.book[:3]");
         assertEquals(3, found1.size());
 
         found1 = doc.findAll("$.store.book[1:3]");
         assertEquals(3, found1.size());
-        assertEquals("Evelyn Waugh", found1.getMap(0).getValue("author"));
-        assertEquals("Herman Melville", found1.getMap(1).getValue("author"));
-        assertEquals("J. R. R. Tolkien", found1.getMap(2).getValue("author"));
+        assertEquals("Evelyn Waugh", found1.getMap(0).get("author"));
+        assertEquals("Herman Melville", found1.getMap(1).get("author"));
+        assertEquals("J. R. R. Tolkien", found1.getMap(2).get("author"));
 
 
         //JSList categories = doc.findAll("**.category");
@@ -252,7 +302,7 @@ public class JSNodeTest {
     @Test
     public void find_wildcards() {
         JSList found;
-        JSNode  doc = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testCollectNodes1.json")));
+        JSNode  doc = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testCollectNodes1.json")));
 
 //        found = doc.findAll("data.*.basket.lineItems.code");
 //        assertEquals(0, found.size());
@@ -277,8 +327,8 @@ public class JSNodeTest {
 
     @Test
     public void diff_1() {
-        JSNode  doc1    = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff1.1.json")));
-        JSNode  doc2    = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff1.2.json")));
+        JSNode  doc1    = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff1.1.json")));
+        JSNode  doc2    = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff1.2.json")));
         JSList patches = doc2.diff(doc1);
         doc1.patch(patches);
 
@@ -296,8 +346,8 @@ public class JSNodeTest {
      */
     @Test
     public void diff_3() {
-        JSNode stateDoc = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff3.1.json")));
-        JSNode apiEvent = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff3.2.json")));
+        JSNode stateDoc = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff3.1.json")));
+        JSNode apiEvent = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff3.2.json")));
 
         JSMap meta = stateDoc.getMap("meta");
         meta.put("events", new JSList(apiEvent));
@@ -310,11 +360,11 @@ public class JSNodeTest {
 
         JSList patches = body.diff(stateDoc.getNode("data"));
         if (patches.size() > 0) {
-            apiEvent.putValue("patches", patches);
+            apiEvent.put("patches", patches);
             stateDoc.getNode("data").patch(patches);
         }
 
-        stateDoc = JSReader.asJSNode(stateDoc.toString());
+        stateDoc = JSParser.asJSNode(stateDoc.toString());
 
         assertEquals("028000003647", stateDoc.findString("data.0.basket.lineItems.1.code"));
         assertEquals("028000003647", stateDoc.findString("meta.events.0.body.basket.lineItems.1.code"));
@@ -323,8 +373,8 @@ public class JSNodeTest {
 
     @Test
     public void diff_4() {
-        JSNode array1 = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff4.1.json")));
-        JSNode array2 = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff4.2.json")));
+        JSNode array1 = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff4.1.json")));
+        JSNode array2 = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff4.2.json")));
 
         JSList patches = array1.diff(array2);
 
@@ -338,8 +388,8 @@ public class JSNodeTest {
      */
     @Test
     public void diff_5() {
-        JSNode doc1 = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff5.1.json")));
-        JSNode doc2 = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff5.2.json")));
+        JSNode doc1 = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff5.1.json")));
+        JSNode doc2 = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testDiff5.2.json")));
 
         JSList patches = doc2.diff(doc1);
 
@@ -466,33 +516,80 @@ public class JSNodeTest {
         JSList found = test.findAll("**.*");
     }
 
-//    @Test
-//    public void testVisit(){
-//        JSNode parent = JSNode.parseJsonNode(Utils.read(getClass().getResourceAsStream("testVisit.json")));
-//        parent.visit(new JSNode.JSNodeVisitor() {
-//            public boolean visit(JSNode node, String key, Object value, Stack<Triple<JSNode, String, Object>> path) {
-//                if(key.equals("$ref") && value instanceof String){
-//                    if(((String)value).startsWith("#")){
-//                        Object found = parent.find((String)value);
-//                        if(found != null){
-//                            System.out.println("Sasdfasd");
-//                        }
-//                    }
-//                }
-//                return true;
-//            }
-//        });
-//    }
+    @Test
+    public void testVisit(){
+        String expected = "[, /store, /store/book, /store/book/0, /store/book/1, /store/book/2, /store/book/3, /store/bicycle]";
+        List found = new ArrayList();
+        JSNode parent = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+        parent.visit(new JSVisitor() {
+            public boolean visit(JSPointer path) {
+                found.add(path.toString());
+                return true;
+            }
+        });
+        assertEquals(expected, found.toString());
+    }
+
+    @Test
+    public void testVisitWithCircularReference(){
+        String expected = "[, /store, /store/book, /store/book/0, /store/book/1, /store/book/2, /store/book/3, /store/bicycle, /store/root]";
+        List found = new ArrayList();
+        JSNode parent = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+
+        parent.getNode("store").put("root", parent);
+
+        parent.visit(new JSVisitor() {
+            public boolean visit(JSPointer path) {
+                if(found.size() > 1000)
+                    fail("a circular reference in the document was not resolved");
+                found.add(path.toString());
+                return true;
+            }
+        });
+
+        assertEquals(expected, found.toString());
+    }
+
+    @Test
+    public void testVisitIterator(){
+        String expected = "[, /store, /store/book, /store/book/0, /store/book/1, /store/book/2, /store/book/3, /store/bicycle]";
+        List found = new ArrayList();
+        JSNode parent = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+
+        for(JSPointer pointer : parent.visit())
+            found.add(pointer);
+
+        assertEquals(expected, found.toString());
+    }
+
+    @Test
+    public void testVisitIteratorWithCircularReference(){
+        String expected = "[, /store, /store/book, /store/book/0, /store/book/1, /store/book/2, /store/book/3, /store/bicycle, /store/root]";
+        JSNode parent = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testJsonPath1.json")));
+
+        //--creates a loop
+        parent.getNode("store").put("root", parent);
+
+        List found = new ArrayList();
+        for(JSPointer pointer : parent.visit()){
+            found.add(pointer);
+            if(found.size() > 1000)
+                fail("a circular reference in the document was not resolved");
+        }
+        assertEquals(expected, found.toString());
+    }
+
+
 
     @Test
     public void test_find_withJsonPointerAndNodeBody() {
-        JSNode node = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("testVisit.json")));
+        JSNode node = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("testVisit.json")));
         Object found = node.find("#/data[0]/territories[0]/region");
         assertNotNull(found);
     }
     @Test
     public void test_find_withJsonPointerAndArrayBody() {
-        JSNode node = JSReader.asJSNode(Utils.read(getClass().getResourceAsStream("test_find_withJsonPointerAndArrayBody.json")));
+        JSNode node = JSParser.asJSNode(Utils.read(getClass().getResourceAsStream("test_find_withJsonPointerAndArrayBody.json")));
         Object found = node.find("#/[0]/territories[0]/region");
         assertNotNull(found);
     }

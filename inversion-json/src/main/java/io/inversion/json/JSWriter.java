@@ -7,10 +7,38 @@ import io.inversion.utils.Utils;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.IdentityHashMap;
 
 public class JSWriter {
+
+//    public static String toJson(Object obj){
+//        if(obj instanceof JSNode){
+//            return toJson((JSNode)obj);
+//        }
+//        try{
+//            return JSNode.mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
+//        }
+//        catch(Exception ex){
+//            if(ex instanceof RuntimeException)
+//                throw ((RuntimeException)ex);
+//            throw new RuntimeException("Error writing json: " + ex.getMessage(), ex);
+//        }
+//    }
+
+
+    public static String toJson(Object object, boolean pretty){
+        try {
+            if (pretty)
+                return JSParser.objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+            return JSParser.objectMapper.writeValueAsString(object);
+        }
+        catch(Exception ex){
+            Utils.rethrow(ex);
+            return null;
+        }
+    }
 
     static String toJson(JSNode node){
         return toJson(node, true, false);
@@ -51,11 +79,9 @@ public class JSWriter {
 
         json.writeStartObject();
 
-        //json.writeStringField("$id", path);
-
-        for (JSProperty p : object.getProperties()) {
-            String name  = lowercaseNames ? p.getKey().toString().toLowerCase() : p.getKey().toString();
-            Object value = p.getValue();
+        for (String key : object.keySet()) {
+            Object value = object.get(key);
+            String name  = lowercaseNames ? key.toLowerCase() : key;
 
             if (value == null) {
                 json.writeNullField(name);
@@ -82,7 +108,10 @@ public class JSWriter {
             } else if (value instanceof BigDecimal) {
                 json.writeNumberField(name, (BigDecimal) value);
             } else if (value instanceof Date) {
-                json.writeStringField(name, Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
+                String dateFormat = "yyyy-MM-dd'T'HH:mmZ";
+                SimpleDateFormat f = new SimpleDateFormat(dateFormat);
+                String dateString = f.format((Date) value);
+                json.writeStringField(name, dateString);
             } else {
                 String strVal = value + "";
                 if ("null".equals(strVal)) {
@@ -103,7 +132,7 @@ public class JSWriter {
             if (value == null) {
                 json.writeNull();
             } else if (value instanceof JSNode) {
-                private_writeObject((JSNode) value, json, visited, lowercaseNames, path + "[" + i + "]");
+                private_writeObject((JSNode) value, json, visited, lowercaseNames, path + "/" + i );
             } else {
                 if (value instanceof String) {
                     if (value.equals("null"))
@@ -125,7 +154,10 @@ public class JSWriter {
                 } else if (value instanceof BigDecimal) {
                     json.writeNumber((BigDecimal) value);
                 } else if (value instanceof Date) {
-                    json.writeString(Utils.formatDate((Date) value, "yyyy-MM-dd'T'HH:mmZ"));
+                    String dateFormat = "yyyy-MM-dd'T'HH:mmZ";
+                    SimpleDateFormat f = new SimpleDateFormat(dateFormat);
+                    String dateString = f.format((Date) value);
+                    json.writeString(dateString);
                 } else {
                     json.writeString(encodeStringValue(value.toString()));
                 }

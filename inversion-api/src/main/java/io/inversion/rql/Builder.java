@@ -254,7 +254,7 @@ public class Builder<T, P extends Builder> {
                     if (part == null || part.length() == 0)
                         continue;
 
-                    Term parsed = RqlParser.parse(part);
+                    Term parsed = Rql.parse(part);
                     terms.add(parsed);
                 }
             }

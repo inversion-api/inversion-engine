@@ -61,7 +61,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 if (method != null && method.equals("selectRows")) {
                     log.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
                 } else {
-                    log.warn(ex.getMessage(), ex);
+                    log.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
                 }
             }
 
@@ -474,7 +474,7 @@ public class JdbcDb extends Db<JdbcDb> {
             }
         }
 
-        System.out.println("CREATING CONNECTION POOL: " + getUser() + "@" + getUrl());
+        //System.out.println("CREATING CONNECTION POOL: " + getUser() + "@" + getUrl());
 
         HikariConfig config = new HikariConfig();
         String       driver = getDriver();
@@ -577,11 +577,11 @@ public class JdbcDb extends Db<JdbcDb> {
                             continue;
                     }
 
-                    if (includeTables.size() > 0 && !includeTables.containsKey(tableName))
+                    if(excludeTable(tableName))
                         continue;
 
-                    Collection table = new Collection(tableName);
-                    withCollection(table);
+                    Collection collection = new Collection(tableName);
+                    withCollection(collection);
 
                     ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
 
@@ -593,12 +593,14 @@ public class JdbcDb extends Db<JdbcDb> {
                         boolean nullable      = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
                         boolean autoincrement = Utils.in((colsRs.getObject("IS_AUTOINCREMENT") + "").toLowerCase(), "yes", "true", "1");
 
+                        
+
                         Property column = new Property(colName, colType, nullable);
 
                         if (autoincrement)
                             column.withReadOnly(true);
 
-                        table.withProperties(column);
+                        collection.withProperties(column);
                     }
                     colsRs.close();
 
@@ -637,7 +639,7 @@ public class JdbcDb extends Db<JdbcDb> {
                         //this looks like it only supports single column indexes but if
                         //an index with this name already exists, that means this is another
                         //column in that index.
-                        table.withIndex(idxName, idxType, unique, colName);
+                        collection.withIndex(idxName, idxType, unique, colName);
 
                     }
                     indexMd.close();
@@ -647,11 +649,11 @@ public class JdbcDb extends Db<JdbcDb> {
                         String   idxName = pkMd.getString("PK_NAME");
                         String   idxType = Index.TYPE_PRIMARY_KEY;
                         String   colName = pkMd.getString("COLUMN_NAME");
-                        Property column  = table.getProperty(colName);
+                        Property column  = collection.getProperty(colName);
 
                         int   keySeq = pkMd.getInt("KEY_SEQ");
 
-                        table.withIndex(idxName, idxType, true, colName);
+                        collection.withIndex(idxName, idxType, true, colName);
                         //System.out.println("Primary key: " + colName);
                     }
                     pkMd.close();
@@ -677,6 +679,9 @@ public class JdbcDb extends Db<JdbcDb> {
                 do {
                     String tableName = rs.getString("TABLE_NAME");
 
+                    if(excludeTable(tableName))
+                        continue;
+
                     //            System.out.println(tableName);
                     //
                     //            ResultSetMetaData rsmd = rs.getMetaData();
@@ -691,19 +696,19 @@ public class JdbcDb extends Db<JdbcDb> {
                     while (keyMd.next()) {
                         //String pkName = keyMd.getString("PK_NAME");
                         String fkName = keyMd.getString("FK_NAME");
-
                         String fkTableName  = keyMd.getString("FKTABLE_NAME");
-                        String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
-                        String pkTableName  = keyMd.getString("PKTABLE_NAME");
-                        String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
-
-                        Property fk = getProperty(fkTableName, fkColumnName);
-                        Property pk = getProperty(pkTableName, pkColumnName);
-                        fk.withPk(pk);
 
                         Collection coll = getCollectionByTableName(fkTableName);
                         if (coll != null) {
-                            //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
+
+                            String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
+                            String pkTableName  = keyMd.getString("PKTABLE_NAME");
+                            String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
+
+                            Property fk = getProperty(fkTableName, fkColumnName);
+                            Property pk = getProperty(pkTableName, pkColumnName);
+                            fk.withPk(pk);
+
                             coll.withIndex(fkName, Index.TYPE_FOREIGN_KEY, false, fk.getColumnName());
                         }
 

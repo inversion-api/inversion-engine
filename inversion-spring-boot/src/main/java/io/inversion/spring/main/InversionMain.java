@@ -37,12 +37,19 @@ import org.springframework.context.ApplicationContext;
 @EnableInversion
 public class InversionMain {
 
-    protected static ApplicationContext context = null;
-    protected static Engine             engine  = null;
+    protected static Class              primarySource = InversionMain.class;
+    protected static ApplicationContext context            = null;
+    protected static Engine             engine             = null;
 
     public static void main(String[] args) {
         run(args, null);
     }
+
+    public static void run(Class<?> primarySource, String... args){
+        InversionMain.primarySource = primarySource;
+        run(args, null);
+    }
+
 
     /**
      * Convenience method for launching a Engine with a single API.
@@ -61,7 +68,7 @@ public class InversionMain {
                 exit();
 
             InversionRegistrar.apis = apis;
-            context = SpringApplication.run(InversionMain.class, args);
+            context = SpringApplication.run(primarySource, args);
 
             engine = (Engine) context.getBean("engine");
         } catch (Throwable e) {

@@ -99,7 +99,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         List    values  = getColValues();
 
         //-- for test cases and query explain
-        String debug = getClass().getSimpleName() + " " + getType() + ": " + sql + " args=" + values;
+        String debug = getClass().getSimpleName() + " " + getType() + ": " + sql + " args=" + getOriginalValues();
         //String debug = sql + " args=" + values;
         debug = debug.replaceAll("\r", "");
         debug = debug.replaceAll("\n", " ");
@@ -239,7 +239,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
                 String table = getFrom().getTable();
                 if (Utils.empty(table))
-                    throw ApiException.new400BadRequest("Your requested url '{}' could not be mapped to a table to query.", Chain.peek().getRequest().getUrl());
+                    throw ApiException.new400BadRequest("Your requested url '{}' could not be mapped to a table to query for operation {}", Chain.peek().getRequest().getUrl(), Chain.peek().getRequest().getOp().getName());
 
                 subquery = quoteCol(getFrom().getTable());
                 initialSelect = " SELECT " + (distinct ? "DISTINCT " : "") + alias + ".* FROM " + subquery;
@@ -257,9 +257,14 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
     protected String printTermsSelect(Parts parts, boolean preparedStmt) {
         StringBuilder cols = new StringBuilder();
         LinkedCaseInsensitiveMap<Term> projection = getSelect().getProjection();
+        int i=0;
         for (String column : projection.keySet()){
+            i+=1;
 
-            Term term = projection.get();
+            if("*".equals(column))
+                continue;
+
+            Term term = projection.get(column);
             if (term.hasToken("as")) {
                 Term function = term.getTerm(0);
                 cols.append(" ").append(printTerm(function, null, preparedStmt));
@@ -276,7 +281,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
                 cols.append(" ").append(printCol(term.getToken()));
             }
 
-            if (i < terms.size() - 1)
+            if (i != terms.size())
                 cols.append(", ");
         }
 
@@ -314,6 +319,12 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
             int idx = parts.select.toLowerCase().indexOf("select") + 6;
             parts.select = parts.select.substring(0, idx) + " SQL_CALC_FOUND_ROWS " + parts.select.substring(idx);
         }
+
+        if(parts.select.trim().endsWith(",")){
+            parts.select = parts.select.trim();
+            parts.select = parts.select.substring(0, parts.select.length()-1) + " ";
+        }
+
 
         return parts.select;
     }
@@ -464,8 +475,9 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         List<Sort> sorts = new ArrayList<>();
 
         boolean    wildcard = false;
-        List<Term> columns  = getSelect().getProjection();
-        if (columns.size() == 0) //this is a "select *"
+        LinkedCaseInsensitiveMap<Term> columns  = getSelect().getProjection();
+
+        if (columns.size() == 1 && columns.containsKey("*")) //this is a "select *"
             wildcard = true;
 
         boolean aggregate = getSelect().findAggregateTerms().size() > 0;
@@ -547,7 +559,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         int foundRows;
         if (db.isType("mysql")) {
             sql = "SELECT FOUND_ROWS()";
-            foundRows = JdbcUtils.selectInt(conn, sql);
+            foundRows = (int)JdbcUtils.selectLong(conn, sql);
         } else {
             if (sql.indexOf("LIMIT ") > 0)
                 sql = sql.substring(0, sql.lastIndexOf("LIMIT "));
@@ -560,7 +572,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
             sql = "SELECT count(1) FROM ( " + sql + " ) as q";
 
-            foundRows = JdbcUtils.selectInt(conn, sql, values);
+            foundRows = (int)JdbcUtils.selectLong(conn, sql, values);
         }
         return foundRows;
     }
@@ -854,7 +866,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         }
 
         withColValue(col, val);
-        return asVariableName(values.size() - 1);
+        return asVariableName(castValues.size() - 1);
     }
 
     protected String concatAll(String connector, String function, List strings) {
@@ -921,12 +933,11 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
     public String printTableAlias() {
         String tableName = getFrom().getAlias();
-
         if (tableName != null) {
             return quoteCol(tableName);
         }
 
-        return "";
+        throw new ApiException("Unable to determine table name or alias.");
     }
 
     public String printCol(String columnName) {

@@ -32,6 +32,10 @@ public class Term implements Comparable<Term> {
 
     }
 
+    protected Term(String token) {
+        withToken(token);
+    }
+
     protected Term(Term parent, String token) {
         withParent(parent);
         withToken(token);

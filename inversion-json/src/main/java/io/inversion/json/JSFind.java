@@ -83,17 +83,25 @@ public interface JSFind {
      * JsonPath bracket-notation such as  "$['store']['book'][0]['title']"
      * is currently not supported.
      *
-     * @param pathExpression defines the properties to find
      * @param qty            the maximum number of results
+     * @param pathExpressions defines the properties to find
      * @return an array of found values
      * @see <a href="https://tools.ietf.org/html/rfc6901">JSON Pointer</a>
      * @see <a href="https://goessner.net/articles/JsonPath/">JSON Path</a>
      * @see <a href="https://github.com/json-path/JsonPath">JSON Path</a>
      */
-    default public JSList findAll(String pathExpression, int qty) {
-        pathExpression = fromJsonPointer(pathExpression);
-        pathExpression = fromJsonPath(pathExpression);
-        return new JSList(findAll0(pathExpression, qty, new ArrayList(), new HashMap()));
+    default JSList findAll(int qty, String... pathExpressions) {
+
+        JSList found = new JSList();
+        for(int i =0; pathExpressions != null && i<pathExpressions.length; i++){
+            String pathExpression = pathExpressions[i];
+            if(!Utils.empty(pathExpression)){
+                pathExpression = fromJsonPointer(pathExpression);
+                pathExpression = fromJsonPath(pathExpression);
+                found.addAll(findAll0(pathExpression, qty, new ArrayList(), new HashMap()));
+            }
+        }
+        return found;
     }
 
     default List findAll0(String pathExpression, int qty, List collected, HashMap<String, Set<JSNode>> visited) {
@@ -138,7 +146,7 @@ public interface JSFind {
 
         if ("*".equals(nextSegment)) {
             if (path.size() == 1) {
-                Collection values = json.getValues();
+                Collection values = json.values();
 
                 for (Object value : values) {
                     if (!collected.contains(value) && (qty < 1 || collected.size() < qty))
@@ -146,7 +154,7 @@ public interface JSFind {
                 }
             } else {
                 List<String> nextPath = path.subList(1, path.size());
-                for (Object value : json.getValues()) {
+                for (Object value : json.values()) {
                     if (value instanceof JSNode) {
                         ((JSNode) value).findAll0(nextPath, qty, collected, visited);
                     }
@@ -156,7 +164,7 @@ public interface JSFind {
             if (path.size() != 1) {
                 List<String> nextPath = path.subList(1, path.size());
                 this.findAll0(nextPath, qty, collected, visited);
-                for (Object value : json.getValues()) {
+                for (Object value : json.values()) {
                     if (value instanceof JSNode) {
                         ((JSNode) value).findAll0(path, qty, collected, visited);
                     }
@@ -211,7 +219,7 @@ public interface JSFind {
                         value = token;
 
                         if (json.isList()) {
-                            for (Object child : json.getValues()) {
+                            for (Object child : json.values()) {
                                 if (child instanceof JSNode) {
                                     List found = ((JSNode) child).findAll0(subpath, -1, new ArrayList(), visited);
                                     for (Object val : found) {
@@ -247,7 +255,7 @@ public interface JSFind {
                     }
 
                     if (json.isList()) {
-                        for (Object child : json.getValues()) {
+                        for (Object child : json.values()) {
                             if (child instanceof JSNode) {
                                 List found = ((JSNode) child).findAll0(subpath, -1, new ArrayList(), visited);
                                 for (Object val : found) {
@@ -277,24 +285,24 @@ public interface JSFind {
                     if (expr.startsWith("(@_length-")) {
                         int index = Integer.parseInt(expr.substring(expr.indexOf("-") + 1, expr.length() - 1).trim());
                         if (length - index > 0) {
-                            found.add(json.getValue(length - index));
+                            found.add(json.get(length - index));
                         }
                     } else if (expr.startsWith(":")) {
                         int count = Integer.parseInt(expr.substring(1).trim());
                         for (int i = 0; i < length && i < count; i++) {
-                            found.add(json.getValue(count));
+                            found.add(json.get(count));
                         }
                     } else if (expr.endsWith(":")) {
                         int idx = Integer.parseInt(expr.substring(0, expr.length() - 1).trim()) * -1;
                         if (idx <= length)
-                            found.add(json.getValue(length - idx));
+                            found.add(json.get(length - idx));
                     } else {
                         try {
 
                             int start = Integer.parseInt(expr.substring(0, expr.indexOf(":")).trim());
                             int end   = Integer.parseInt(expr.substring(expr.indexOf(":") + 1).trim());
                             for (int i = start; i <= end && i < length; i++) {
-                                found.add(json.getValue(i));
+                                found.add(json.get(i));
                             }
                         } catch (Exception ex) {
                             System.out.println(expr);
@@ -303,6 +311,7 @@ public interface JSFind {
                     }
                     if (found.size() > 0) {
                         if (path.size() > 1) {
+                            //TODO: this is a dead assignment...need a test case here
                             List<String> nextPath = path.subList(1, path.size());
                         } else {
                             collected.addAll(found);
@@ -312,14 +321,7 @@ public interface JSFind {
             }
 
         } else {
-            Object found = null;
-            try {
-                if(json instanceof JSList && Utils.atoi(nextSegment) < 0)
-                    System.out.println("asdf");
-                found = json.getValue(nextSegment);
-            } catch (NumberFormatException ex) {
-                //trying to access an array with a prop name...ignore
-            }
+            Object found = json.get(nextSegment);
             if (found != null) {
                 if (path.size() == 1) {
                     if (!collected.contains(found) && (qty < 1 || collected.size() < qty))
@@ -335,14 +337,14 @@ public interface JSFind {
 
 
     /**
-     * Convenience overloading of {@link #findAll(String, int)} that returns the first item found
+     * Convenience overloading of {@link #findAll(int, String...)} that returns the first item found
      *
      * @param pathExpression specifies the properties to find
      * @return the first item found at <code>pathExpression</code>
-     * @see #findAll(String, int)
+     * @see #findAll(int, String...)
      */
     default Object find(String pathExpression) {
-        JSList found = findAll(pathExpression, 1);
+        JSList found = findAll(1, pathExpression);
         if (found.size() > 0)
             return found.get(0);
 
@@ -462,26 +464,31 @@ public interface JSFind {
     }
 
     /**
-     * Convenience overloading of {@link #findAll(String, int)}
+     * Convenience overloading of {@link #findAll(int, String...)}
      *
-     * @param pathExpression specifies the properties to find
+     * @param pathExpressions specifies the properties to find
      * @return all items found for <code>pathExpression</code>
-     * @see #findAll(String, int)
+     * @see #findAll(int, String...)
      */
-    default JSList findAll(String pathExpression) {
-        return findAll(pathExpression, -1);
+    default JSList findAll(String... pathExpressions) {
+        return findAll(-1, pathExpressions);
     }
 
     /**
-     * Convenience overloading of {@link #findAll(String, int)}
+     * Convenience overloading of {@link #findAll(int, String...)}
      *
-     * @param pathExpression specifies the properties to find
+     * @param pathExpressions specifies the properties to find
      * @return all items found for <code>pathExpression</code> cast as a List
-     * @see #findAll(String, int)
+     * @see #findAll(int, String...)
      */
-    default List<JSNode> findAllNodes(String pathExpression) {
-        return (List<JSNode>)findAll(pathExpression);
+    default List<JSMap> findMaps(String... pathExpressions) {
+        return (List<JSMap>)findAll(pathExpressions);
     }
+
+    default List<JSList> findLists(String... pathExpressions) {
+        return (List<JSList>)findAll(pathExpressions);
+    }
+
 
     default Stream streamAll() {
         List all = findAll("**.*").asList();

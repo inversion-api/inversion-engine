@@ -27,17 +27,23 @@ package io.inversion;
 public interface Status {
     String SC_200_OK         = "200 OK";
     String SC_201_CREATED    = "201 Created";
+    String SC_202_ACCEPTED   = "202 Accepted";
     String SC_204_NO_CONTENT = "204 No Content";
 
     //@see https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
     // String         SC_302_FOUND                 = "302 Found";
+
+    String SC_307_TEMPORARY_REDIRECT = "307 Temporary Redirect";
     String SC_308_PERMANENT_REDIRECT = "308 Permanent Redirect";
 
-    String SC_400_BAD_REQUEST           = "400 Bad Request";
-    String SC_401_UNAUTHORIZED          = "401 Unauthorized";
-    String SC_403_FORBIDDEN             = "403 Forbidden";
-    String SC_404_NOT_FOUND             = "404 Not Found";
-    String SC_429_TOO_MANY_REQUESTS     = "429 Too Many Requests";
-    String SC_500_INTERNAL_SERVER_ERROR = "500 Internal Server Error";
-    String SC_501_NOT_IMPLEMENTED       = "501 Not Implemented";
+    String SC_400_BAD_REQUEST                   = "400 Bad Request";
+    String SC_401_UNAUTHORIZED                  = "401 Unauthorized";
+    String SC_403_FORBIDDEN                     = "403 Forbidden";
+    String SC_404_NOT_FOUND                     = "404 Not Found";
+    String SC_409_CONFLICT                      = "409 Conflict";
+    String SC_429_TOO_MANY_REQUESTS             = "429 Too Many Requests";
+    String SC_500_INTERNAL_SERVER_ERROR         = "500 Internal Server Error";
+    String SC_507_INSUFFICIENT_STORAGE          = "507 Conflict";
+    String SC_501_NOT_IMPLEMENTED               = "501 Not Implemented";
+    String SC_599_NETWORK_CONNECT_TIMEPUT_ERROR = "599 Network Connect Timeout Error";
 }

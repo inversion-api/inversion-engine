@@ -1,6 +1,11 @@
 dependencies {
 
+
+    api project(':inversion-config')
     api project(':inversion-context')
+    api project(':inversion-json')
+
+    api group: "org.springframework", name: "spring-core", version: "${springCoreVersion}"
 
     api group: "javax.servlet", name: "javax.servlet-api", version: "${servletApiVersion}"
     api group: "javax.xml.bind", name: "jaxb-api", version: "${javaxJaxbVersion}"
@@ -11,7 +16,6 @@ dependencies {
 
 
     api group: "org.apache.commons", name: "commons-csv", version: "${commonsCsvVersion}"
-    api group: "org.apache.commons", name: "commons-text", version: "${commonsTextVersion}"
 
     api group: "org.apache.httpcomponents", name: "httpclient", version: "${httpclientVersion}"
     api group: "org.apache.httpcomponents", name: "httpmime", version: "${httpmimeVersion}"
@@ -26,7 +30,7 @@ dependencies {
     api group: "io.swagger.core.v3", name: "swagger-core", version: "${swaggerCoreVersion}"
     api group: "io.swagger.parser.v3", name: "swagger-parser", version: "${swaggerParserVersion}"
 
-
+    testImplementation project(':inversion-context').sourceSets.test.output
 
 
 

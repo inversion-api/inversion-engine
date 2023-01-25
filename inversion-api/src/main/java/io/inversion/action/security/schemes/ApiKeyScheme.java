@@ -16,21 +16,51 @@
  */
 package io.inversion.action.security.schemes;
 
-import io.inversion.ApiException;
-import io.inversion.Request;
-import io.inversion.Response;
-import io.inversion.User;
+import io.inversion.*;
 import io.inversion.action.security.AuthScheme;
+import io.inversion.utils.Utils;
+
+import java.util.List;
 
 public class ApiKeyScheme extends AuthScheme {
 
-    public ApiKeyScheme(){
-        withName("keyAuth");
+    public ApiKeyScheme() {
+        withType(AuthSchemeType.apiKey);
     }
 
+    protected UserDao userDao = null;
 
     @Override
     public User getUser(Request req, Response res) throws ApiException {
+
+        List<Param> params = getParams();
+        if (params.size() == 1) {
+            Param  apiKeyParam = params.get(0);
+            String apiKey      = req.findParam(apiKeyParam.getKey(), apiKeyParam.getIn());
+            if (apiKey != null) {
+                return userDao.getUserByApiKey(req, apiKey);
+            }
+        } else {
+            Param usernameParam = params.get(0).getKey().toLowerCase().indexOf("pass") < 0 ? params.get(0) : params.get(1);
+            Param passwordParam = params.get(0).getKey().toLowerCase().indexOf("pass") >= 0 ? params.get(0) : params.get(1);
+
+            String username = req.findParam(usernameParam.getKey(), usernameParam.getIn());
+            String password = req.findParam(passwordParam.getKey(), passwordParam.getIn());
+
+            if (username != null && password != null) {
+                return userDao.getUserByUsernameAndPassword(req, username, password);
+            }
+        }
         return null;
     }
+
+    public UserDao getUserDao() {
+        return userDao;
+    }
+
+    public ApiKeyScheme withUserDao(UserDao userDao) {
+        this.userDao = userDao;
+        return this;
+    }
+
 }

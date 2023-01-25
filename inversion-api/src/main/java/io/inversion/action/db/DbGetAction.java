@@ -18,7 +18,6 @@ package io.inversion.action.db;
 
 import io.inversion.Collection;
 import io.inversion.*;
-import io.inversion.action.openapi.OpenAPIWriter;
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
@@ -34,31 +33,38 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.util.*;
 
-public class DbGetAction<A extends DbGetAction> extends Action<A> implements OpenAPIWriter<A> {
+public class DbGetAction<A extends DbGetAction> extends Action<A>  {
 
     protected int maxRows = 100;
 
     public DbGetAction() {
-        Param expand = new Param();
-        expand.withDescription("An optional comma separated lists of relationship names that should be expanded in the response. You can reference any number of nesting using 'dot' path notation.");
-        expand.withIn(Param.In.QUERY);
-        expand.withKey("expand");
-        withParam(expand);
+//        Param expand = new Param();
+//        expand.withDescription("An optional comma separated lists of relationship names that should be expanded in the response. You can reference any number of nesting using 'dot' path notation.");
+//        expand.withIn(Param.In.QUERY);
+//        expand.withKey("expand");
+//        withParam(expand);
 
         Param page = new Param();
-        page.withDescription("The optional value used to compute the 'offset' of the first resource returned as 'offset'='page'*'limit'.  If an 'offset' parameter is also supplied it will be used instead of the 'page' parameter.");
-        page.withKey("page");
+        page.withDescription("An optional value used to compute the 'offset' of the first item returned as 'offset'='pageNumber'*'pageSize'.  If an 'offset' parameter is also supplied it will be used instead of the 'pageNumber' parameter.");
+        page.withKey("pageNumber");
         page.withIn(Param.In.QUERY);
         withParam(page);
 
         Param size = new Param();
-        size.withDescription("The optional number of resources to return.  Unless overridden by other configuration the default value is '100'");
-        size.withKey("size");
+        size.withDescription("An optional number of items to return.  Unless overridden by other configuration the default value is '100'");
+        size.withKey("pageSize");
         size.withIn(Param.In.QUERY);
         withParam(size);
 
+        Param offset = new Param();
+        offset.withDescription("An optional value used to compute the offset.  This value overrides the 'pageNumber' parameters.");
+        offset.withKey("offset");
+        offset.withIn(Param.In.QUERY);
+        withParam(offset);
+
+
         Param sort = new Param();
-        sort.withDescription("An optional comma separated list of json property names use to order the results.  Each property may optionally be prefixed with '-' to specify descending order.");
+        sort.withDescription("An optional comma separated list of json property names used to order the results.  Each property may optionally be prefixed with '-' to specify descending order.");
         sort.withKey("sort");
         sort.withIn(Param.In.QUERY);
         withParam(sort);
@@ -73,15 +79,15 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
         withParam(q);
     }
 
-    @Override
-    public void hook_configureOpParam(Task task, Op op, Param param){
-        switch (op.getFunction()){
-            case FIND:
-            case RELATED:
-                if(Utils.in(param.getKey().toLowerCase(), "page", "size", "sort", "q"))
-                    op.withParam(param);
-                break;
-        }
+    /**
+     * This task has been selected to run as part of the supplied operation, this
+     * callback allows actions to perform any custom configuration on the op.
+     * @param task
+     * @param op
+     */
+    public void configureOp(Task task, Op op) {
+        if(Op.OpFunction.FIND == op.getFunction())
+            getParams().forEach(p -> op.withParam(p));
     }
 
     @Override
@@ -92,7 +98,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
 
     protected static String getForeignKey(Relationship rel, JSMap node) {
         Index idx = rel.getFkIndex1();
-        if (idx.size() == 1 && node.getValue(idx.getJsonName(0)) != null)
+        if (idx.size() == 1 && node.get(idx.getJsonName(0)) != null)
             return node.getString(idx.getJsonName(0));
 
         String key = rel.getCollection().encodeKeyFromJsonNames(node, rel.getFkIndex1());
@@ -140,7 +146,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
     }
 
 
-    @Override
+
     public void run(Request req, Response res) throws ApiException {
         if (req.getRelationshipKey() != null) {
             //-- all URLs with a subcollection key will be rewritten and
@@ -207,7 +213,11 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
                 } else {
                     return;
                 }
-            } else {
+            }
+//            else if(rel.isOneToOneParent() || rel.isOneToOneChild()){
+//                //-- TODO: need to optimize for one to one relatinships, there is no need to requery the DB here.
+//            }
+            else {
                 //-- The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
                 //-- By default, the system would have written out : http://localhost/northwind/source/orders/YYYYY
                 //-- We are going to have to re-query to get the FK value from the resource of the passed in link
@@ -266,11 +276,27 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
         Results results = select(req, req.getCollection(), req.getApi());
 
         if (results.size() == 0 && req.getResourceKey() != null && req.getCollectionKey() != null) {
-            res.withJson(null);
+            res.withJson((JSNode)null);
             res.withStatus(Status.SC_404_NOT_FOUND);
         } else {
             //-- copy data into the response
             res.withRecords(results.getRows());
+
+            if(res.data().size() > 0) {
+                Collection coll = null;
+                if (req.getOp().getFunction() == Op.OpFunction.RELATED) {
+                    if (req.getRelationship() != null)
+                        coll = req.getRelationship().getCollection();
+                } else if (req.getOp().getFunction() == Op.OpFunction.FIND) {
+                    if (req.getCollection() != null)
+                        coll = req.getCollection();
+                }
+                if(coll != null){
+                    String lastKey = coll.encodeKeyFromJsonNames((JSMap)res.data().last());
+                    if(lastKey != null)
+                        res.withLastKey(lastKey);
+                }
+            }
 
             //------------------------------------------------
             //-- setup all of the meta section
@@ -311,14 +337,14 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
                         res.withNext(next);
                     } else if (results.size() == limit && (foundRows < 0 || (offest + limit) < foundRows)) {
                         String next = req.getUrl().getOriginal();
-                        next = stripTerms(next, "offset", "page", "pageNum");
+                        next = stripTerms(next, "offset", "page", "pageNum", "pageNumber", "after");
 
                         if (!next.contains("?"))
                             next += "?";
                         if (!next.endsWith("?"))
                             next += "&";
 
-                        next += "pageNum=" + (page.getPageNum() + 1);
+                        next += "pageNumber=" + (page.getPageNum() + 1);
 
                         res.withNext(next);
                     }
@@ -450,14 +476,34 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
                 } else if (rel.isManyToMany()) {
                     idxToMatch = rel.getFkIndex1();
                     idxToRetrieve = rel.getFkIndex2();
+                } else if(rel.isOneToOneParent()){
+                    relatedEks = new ArrayList<>();
+                    for (JSMap parentObj : parentObjs) {
+                        String parentEk = getResourceKey(collection, parentObj);
+                        String childEk  = parentEk; //TODO: this will not work if the columns are not in the same order
+                        if (childEk != null) {
+                            relatedEks.add(new DefaultKeyValue(parentEk, childEk));
+                        }
+                    }
                 }
+                else if(rel.isOneToOneChild()){
+                    relatedEks = new ArrayList<>();
+                    for (JSMap parentObj : parentObjs) {
+                        String parentEk = getResourceKey(collection, parentObj);
+                        String childEk  = parentEk; //TODO: this will not work if the columns are not in the same order
+                        if (childEk != null) {
+                            relatedEks.add(new DefaultKeyValue(parentEk, childEk));
+                        }
+                    }
+                }
+
 
                 if (relatedEks == null) {
                     List toMatchEks = new ArrayList<>();
                     for (JSMap parentObj : parentObjs) {
                         String parentEk = getResourceKey(collection, parentObj);
                         if (!toMatchEks.contains(parentEk)) {
-                            if (parentObj.getValue(rel.getName()) instanceof JSList)
+                            if (parentObj.get(rel.getName()) instanceof JSList)
                                 throw ApiException.new500InternalServerError("This relationship seems to have already been expanded.");//-- this is an implementation logic error. If it ever happens...FIX IT.
 
                             toMatchEks.add(parentEk);
@@ -465,7 +511,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
                             if (rel.isManyToOne()) {
                                 parentObj.remove(rel.getName());
                             } else {
-                                parentObj.putValue(rel.getName(), new JSList());
+                                parentObj.put(rel.getName(), new JSList());
                             }
                         }
                     }
@@ -499,8 +545,8 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
                     JSNode parentObj = (JSNode) pkCache.get(collection, parentEk);
                     JSNode childObj  = (JSNode) pkCache.get(relatedCollection, relatedEk);
 
-                    if (rel.isManyToOne()) {
-                        parentObj.putValue(rel.getName(), childObj);
+                    if (rel.isManyToOne() || rel.isOneToOneParent() || rel.isOneToOneChild()) {
+                        parentObj.put(rel.getName(), childObj);
                     } else {
                         if (childObj != null) {
                             parentObj.getList(rel.getName()).add(childObj);
@@ -537,7 +583,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
             List idxToMatchVals = new ArrayList<>();
 
             for (String property : idxToMatch.getJsonNames()) {
-                Object propVal = node.getValue(property);
+                Object propVal = node.get(property);
 
                 if (propVal instanceof String) {
                     propVal = Utils.substringAfter(propVal.toString(), "/");
@@ -552,7 +598,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A> implements Ope
 
             List idxToRetrieveVals = new ArrayList<>();
             for (String property : idxToRetrieve.getJsonNames()) {
-                Object propVal = node.getValue(property);
+                Object propVal = node.get(property);
 
                 propVal = Utils.substringAfter(propVal.toString(), "/");
                 if (((String) propVal).contains("~")) {
