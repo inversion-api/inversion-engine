@@ -150,6 +150,10 @@ public final class Url {
                         withPort(Integer.parseInt(url.substring(1, slash)));
                         url = url.substring(slash);
                     }
+                    else{
+                        withPort(Integer.parseInt(url.substring(1)));
+                        url = "";
+                    }
                 }
             }
 
