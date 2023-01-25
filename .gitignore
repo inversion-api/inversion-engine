@@ -44,3 +44,6 @@ northwind.mv.db
 northwind.trace.db
 
 docs/javadoc
+
+cd/gradle.properties
+cd/codesigning.asc
