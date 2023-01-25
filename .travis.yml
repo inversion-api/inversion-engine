@@ -30,7 +30,8 @@ before_install:
 - openssl aes-256-cbc -K $encrypted_81c98acad902_key -iv $encrypted_81c98acad902_iv
   -in cd/codesigning.asc.enc -out cd/codesigning.asc -d
 - gpg --fast-import cd/codesigning.asc
-- cat gradle.properties
+- my_var=$(cat gradle.properties)
+- echo $my_var
 env:
   global:
   - secure: kGnWnnGuq55khmsjqyHmeHr11soSRyaK8gGDN6tmDxVaO1OSQ/x8kOU7tk7iS458wOJPI1vPs/5S9H5OlWjRZ9QuCADTvFTpXBmBMPKHpPcVa8a9femWFlL0/v9c/2urc2F/CutewV41JXgfRoq1avIlC8xL5SeGA9MWsi5hYbVLUqBb6BDsg5hcc52zJ6rp57jfNlwUa/0EEcth/8eqPn7d/omdaBbnXdAmEoe53wnVXmOvRLsRClwBWvHvS5H3lMl8nLAf3prwK2QNv8iw8AN+FBbGFiIgVYxjQSt2kNnQNXPaxdIzA/Y+oei2Aa1pKIXjWcng8iCHAQJLU0J5Lt16uLR/Fmhs2ORi74cDd2wSxYiHuZHwfAUdWGc2dx/RROEFk04QXXI/60C6U+eUmeWv4Av+knZYasRytG7tFBKGRTaNjHYRP5T4d0wb7jwVFVLW9ZsJ9IKyQwgaPmpggGqxBYZLEcQ5ACQH0NMYA1uSKZTuA+9f2wPueTcwQZZYK/+bS9j4xRgDBtxOIXOiaNn60zLZ2+R+XDL5/LqKdNSumMEvcgXoBkM7cS/8bF9AVlP7HpFAsyb7C+nKNAtgyaPl7y3ymWYG+kDJ/aqAlx1xMJh0nFx/MdQira8jv+buJH39Mjd4hJeau2DGQB7NHtjHs7HZkOSIxKcqDOIwE4s=
