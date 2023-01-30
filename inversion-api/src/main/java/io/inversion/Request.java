@@ -407,7 +407,7 @@ public class Request implements Headers, JSFind {
     public boolean isDebug() {
 
         Api api = getApi();
-        if(api != null || api.isDebug())
+        if(api != null && api.isDebug())
             return true;
 
         Url url = getUrl();
