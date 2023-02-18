@@ -1,0 +1,177 @@
+{
+  "href" : "http://localhost/northwind/h2/employees/5",
+  "orderDetails" : "http://localhost/northwind/h2/employees/5/orderDetails",
+  "reportsTo" : "http://localhost/northwind/h2/employees/2",
+  "orders" : "http://localhost/northwind/h2/employees/5/orders",
+  "employeeId" : 5,
+  "lastName" : "Buchanan",
+  "firstName" : "Steven",
+  "title" : "Sales Manager",
+  "titleOfCourtesy" : "Mr.",
+  "birthDate" : "1955-03-04T05:00:00Z",
+  "hireDate" : "1993-10-17T04:00:00Z",
+  "address" : "14 Garrett Hill",
+  "city" : "London",
+  "region" : null,
+  "postalCode" : "SW1 8JR",
+  "country" : "UK",
+  "homePhone" : "(71) 555-4848",
+  "extension" : "3453",
+  "notes" : "Steven Buchanan graduated from St. Andrews University, Scotland, with a BSC degree in 1976.  Upon joining the company as a sales representative in 1992, he spent 6 months in an orientation program at the Seattle office and then returned to his permanent post in London.  He was promoted to sales manager in March 1993.  Mr. Buchanan has completed the courses \"Successful Telemarketing\" and \"International Sales Management.\"  He is fluent in French.",
+  "photoPath" : "/images/northwind-icons/employee_man_2.png",
+  "salary" : 1744.21,
+  "territories" : [ {
+    "href" : "http://localhost/northwind/h2/territories/02903",
+    "employees" : "http://localhost/northwind/h2/territories/02903/employees",
+    "territoryId" : "02903",
+    "territoryDescription" : "Providence",
+    "regionId" : 1,
+    "region" : {
+      "territories" : "http://localhost/northwind/h2/regions/1/territories",
+      "href" : "http://localhost/northwind/h2/regions/1",
+      "regionId" : 1,
+      "regionDescription" : "Eastern"
+    }
+  }, {
+    "href" : "http://localhost/northwind/h2/territories/07960",
+    "employees" : "http://localhost/northwind/h2/territories/07960/employees",
+    "territoryId" : "07960",
+    "territoryDescription" : "Morristown",
+    "regionId" : 1,
+    "region" : {
+      "regionId" : 1
+    }
+  }, {
+    "href" : "http://localhost/northwind/h2/territories/08837",
+    "employees" : "http://localhost/northwind/h2/territories/08837/employees",
+    "territoryId" : "08837",
+    "territoryDescription" : "Edison",
+    "regionId" : 1,
+    "region" : {
+      "$ref" : "#/territories[0]/region"
+    }
+  }, {
+    "href" : "http://localhost/northwind/h2/territories/10019",
+    "employees" : "http://localhost/northwind/h2/territories/10019/employees",
+    "territoryId" : "10019",
+    "territoryDescription" : "New York",
+    "regionId" : 1,
+    "region" : {
+      "$ref" : "#/territories[0]/region"
+    }
+  }, {
+    "href" : "http://localhost/northwind/h2/territories/10038",
+    "employees" : "http://localhost/northwind/h2/territories/10038/employees",
+    "territoryId" : "10038",
+    "territoryDescription" : "New York",
+    "regionId" : 1,
+    "region" : {
+      "$ref" : "#/territories[0]/region"
+    }
+  }, {
+    "href" : "http://localhost/northwind/h2/territories/11747",
+    "employees" : "http://localhost/northwind/h2/territories/11747/employees",
+    "territoryId" : "11747",
+    "territoryDescription" : "Mellvile",
+    "regionId" : 1,
+    "region" : {
+      "$ref" : "#/territories[0]/region"
+    }
+  }, {
+    "href" : "http://localhost/northwind/h2/territories/14450",
+    "employees" : "http://localhost/northwind/h2/territories/14450/employees",
+    "territoryId" : "14450",
+    "territoryDescription" : "Fairport",
+    "regionId" : 1,
+    "region" : {
+      "$ref" : "#/territories[0]/region"
+    }
+  }, {
+    "$ref" : "#/territories[6]"
+  }, {
+    "href" : "http://localhost/northwind/h2/territories/14450",
+    "employees" : "http://localhost/northwind/h2/territories/14450/employees",
+    "territoryId" : "14450",
+    "territoryDescription" : "Fairport",
+    "regionId" : 1,
+    "region" : {
+      "territories" : "http://localhost/northwind/h2/regions/1/territories",
+      "href" : "http://localhost/northwind/h2/regions/1",
+      "regionId" : 1,
+      "regionDescription" : "Eastern"
+    }
+  } ],
+  "employees" : [ {
+    "href" : "http://localhost/northwind/h2/employees/6",
+    "orderDetails" : "http://localhost/northwind/h2/employees/6/orderDetails",
+    "territories" : "http://localhost/northwind/h2/employees/6/territories",
+    "employees" : "http://localhost/northwind/h2/employees/6/employees",
+    "reportsTo" : "http://localhost/northwind/h2/employees/5",
+    "orders" : "http://localhost/northwind/h2/employees/6/orders",
+    "employeeId" : 6,
+    "lastName" : "Suyama",
+    "firstName" : "Michael",
+    "title" : "Sales Representative",
+    "titleOfCourtesy" : "Mr.",
+    "birthDate" : "1963-07-02T04:00:00Z",
+    "hireDate" : "1993-10-17T04:00:00Z",
+    "address" : "Coventry House Miner Rd.",
+    "city" : "London",
+    "region" : null,
+    "postalCode" : "EC2 7JR",
+    "country" : "UK",
+    "homePhone" : "(71) 555-7773",
+    "extension" : "428",
+    "notes" : "Michael is a graduate of Sussex University (MA, economics, 1983) and the University of California at Los Angeles (MBA, marketing, 1986).  He has also taken the courses \"Multi-Cultural Selling\" and \"Time Management for the Sales Professional.\"  He is fluent in Japanese and can read and write French, Portuguese, and Spanish.",
+    "photoPath" : "/images/northwind-icons/employee_man_3.png",
+    "salary" : 2004.07
+  }, {
+    "href" : "http://localhost/northwind/h2/employees/7",
+    "orderDetails" : "http://localhost/northwind/h2/employees/7/orderDetails",
+    "territories" : "http://localhost/northwind/h2/employees/7/territories",
+    "employees" : "http://localhost/northwind/h2/employees/7/employees",
+    "reportsTo" : "http://localhost/northwind/h2/employees/5",
+    "orders" : "http://localhost/northwind/h2/employees/7/orders",
+    "employeeId" : 7,
+    "lastName" : "King",
+    "firstName" : "Robert",
+    "title" : "Sales Representative",
+    "titleOfCourtesy" : "Mr.",
+    "birthDate" : "1960-05-29T04:00:00Z",
+    "hireDate" : "1994-01-02T05:00:00Z",
+    "address" : "Edgeham Hollow Winchester Way",
+    "city" : "London",
+    "region" : null,
+    "postalCode" : "RG1 9SP",
+    "country" : "UK",
+    "homePhone" : "(71) 555-5598",
+    "extension" : "465",
+    "notes" : "Robert King served in the Peace Corps and traveled extensively before completing his degree in English at the University of Michigan in 1992, the year he joined the company.  After completing a course entitled \"Selling in Europe,\" he was transferred to the London office in March 1993.",
+    "photoPath" : "/images/northwind-icons/employee_man_4.png",
+    "salary" : 1991.55
+  }, {
+    "href" : "http://localhost/northwind/h2/employees/9",
+    "orderDetails" : "http://localhost/northwind/h2/employees/9/orderDetails",
+    "territories" : "http://localhost/northwind/h2/employees/9/territories",
+    "employees" : "http://localhost/northwind/h2/employees/9/employees",
+    "reportsTo" : "http://localhost/northwind/h2/employees/5",
+    "orders" : "http://localhost/northwind/h2/employees/9/orders",
+    "employeeId" : 9,
+    "lastName" : "Dodsworth",
+    "firstName" : "Anne",
+    "title" : "Sales Representative",
+    "titleOfCourtesy" : "Ms.",
+    "birthDate" : "1966-01-27T05:00:00Z",
+    "hireDate" : "1994-11-15T05:00:00Z",
+    "address" : "7 Houndstooth Rd.",
+    "city" : "London",
+    "region" : null,
+    "postalCode" : "WG2 7LT",
+    "country" : "UK",
+    "homePhone" : "(71) 555-4444",
+    "extension" : "452",
+    "notes" : "Anne has a BA degree in English from St. Lawrence College.  She is fluent in French and German.",
+    "photoPath" : "/images/northwind-icons/employee_woman_5.png",
+    "salary" : 2333.33
+  } ]
+}

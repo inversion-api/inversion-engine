@@ -1,0 +1,18 @@
+dependencies {
+    api project(':inversion-utils')
+
+    //api group: "org.apache.commons", name: "commons-lang3", version: "${commonsLang3Version}"
+
+    api group: "org.springframework", name: "spring-core", version: "${springCoreVersion}"
+
+
+    //JSON parsing
+    api group: "com.fasterxml.jackson.core", name: "jackson-core", version: "${jacksonCoreVersion}"
+    api group: "com.fasterxml.jackson.core", name: "jackson-databind", version: "${jacksonDatabindVersion}"
+    api group: "javax.xml.bind", name: "jaxb-api", version: "${javaxJaxbVersion}"
+
+    //JSON Patch
+    api group: "com.flipkart.zjsonpatch",    name: "zjsonpatch", version: "${zjsonpatchVersion}"
+
+
+}

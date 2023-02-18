@@ -1,0 +1,227 @@
+{
+  "openapi" : "3.0.1",
+  "info" : {
+    "title" : "northwind",
+    "version" : "1"
+  },
+  "servers" : [ {
+    "url" : "/northwind/v1/us"
+  } ],
+  "security" : [ ],
+  "paths" : {
+    "/test/auths" : {
+      "get" : {
+        "tags" : [ "auths" ],
+        "description" : "A pageable list of all auths resources the user has access to and also match any query parameters.  The list may be empty.",
+        "operationId" : "GET--test-auths",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "description" : "The optional value used to compute the 'offset' of the first resource returned as 'offset'='page'*'limit'.  If an 'offset' parameter is also supplied it will be used instead of the 'page' parameter.",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "description" : "The optional number of resources to return.  Unless overridden by other configuration the default value is '100'",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "sort",
+          "in" : "query",
+          "description" : "An optional comma separated list of json property names use to order the results.  Each property may optionally be prefixed with '-' to specify descending order.",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "q",
+          "in" : "query",
+          "description" : "An RQL formatted filter statement that allows you to retrieve only the specific resources you require.  See 'Overview->Querying' for more documentation on available functions and syntax.",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "include",
+          "in" : "query",
+          "description" : "An optional comma separated list of json properties to include in the response.  If this field is not supplied, then any field not listed in the 'excludes' parameter are returned.  When using the 'expands' parameter, you can use 'dot' path notation to reference inclusion of nested properties.",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "exclude",
+          "in" : "query",
+          "description" : "An optional comma separated list of json properties you specifically do not want to be included in the response. When using the 'expands' parameter, you can use 'dot' path notation to reference exclusion of nested properties.",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "expand",
+          "in" : "query",
+          "description" : "An optional comma separated lists of relationship names that should be expanded in the response. You can reference any number of nesting using 'dot' path notation.",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GetAuthsResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/auths/{id}" : {
+      "get" : {
+        "tags" : [ "auths" ],
+        "description" : "A specific auths object",
+        "operationId" : "GET--test-auths-id",
+        "parameters" : [ {
+          "name" : "include",
+          "in" : "query",
+          "description" : "An optional comma separated list of json properties to include in the response.  If this field is not supplied, then any field not listed in the 'excludes' parameter are returned.  When using the 'expands' parameter, you can use 'dot' path notation to reference inclusion of nested properties.",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "exclude",
+          "in" : "query",
+          "description" : "An optional comma separated list of json properties you specifically do not want to be included in the response. When using the 'expands' parameter, you can use 'dot' path notation to reference exclusion of nested properties.",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "expand",
+          "in" : "query",
+          "description" : "An optional comma separated lists of relationship names that should be expanded in the response. You can reference any number of nesting using 'dot' path notation.",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "http://localhost:8080/northwind/v1/us/auth.json"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Not Found",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters" : [ {
+        "name" : "id",
+        "in" : "path",
+        "required" : true,
+        "schema" : {
+          "type" : "number"
+        }
+      } ]
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "GetAuthsResult" : {
+        "properties" : {
+          "_links" : {
+            "$ref" : "#/components/schemas/_links"
+          },
+          "page" : {
+            "type" : "number"
+          },
+          "size" : {
+            "type" : "number"
+          },
+          "total" : {
+            "type" : "number"
+          },
+          "_embedded" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "http://localhost:8080/northwind/v1/us/auth.json"
+            }
+          }
+        }
+      },
+      "_links" : {
+        "properties" : {
+          "self" : {
+            "properties" : {
+              "href" : {
+                "type" : "string"
+              }
+            }
+          },
+          "first" : {
+            "properties" : {
+              "href" : {
+                "type" : "string"
+              }
+            }
+          },
+          "prev" : {
+            "properties" : {
+              "href" : {
+                "type" : "string"
+              }
+            }
+          },
+          "next" : {
+            "properties" : {
+              "href" : {
+                "type" : "string"
+              }
+            }
+          },
+          "last" : {
+            "properties" : {
+              "href" : {
+                "type" : "string"
+              }
+            }
+          },
+          "after" : {
+            "properties" : {
+              "href" : {
+                "type" : "string"
+              }
+            }
+          }
+        }
+      },
+      "error" : {
+        "properties" : {
+          "status" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "error" : {
+            "type" : "string"
+          }
+        }
+      }
+    },
+    "securitySchemes" : { }
+  }
+}

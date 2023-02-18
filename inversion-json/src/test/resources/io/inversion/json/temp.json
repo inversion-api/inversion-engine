@@ -1,0 +1,18 @@
+{
+  "val1" : null,
+  "val3" : null,
+  "val4" : null,
+  "rel1" : {
+    "val1" : null,
+    "val2" : null,
+    "rel1_1" : {
+      "rel1_1_1" : {
+        "val2" : null,
+        "rel1_1_1_1" : {
+          "val1" : null,
+          "val2" : null
+        }
+      }
+    }
+  }
+}

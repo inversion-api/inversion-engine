@@ -1,0 +1,20 @@
+{
+  "basket": {
+    "lineItems": [
+      {
+        "code": "049000044836",
+        "itemId": 434,
+        "size": "1.5L",
+        "minage": 0,
+        "name": "Coke Black Cherry Vanilla 1.5L",
+        "category": "Packaged Beverages",
+        "subcategory": "Carbonated Soft Drinks",
+        "brandfamily": "Coke",
+        "pack": "each"
+      },
+      {
+        "code": "028000003647"
+      }
+    ]
+  }
+}

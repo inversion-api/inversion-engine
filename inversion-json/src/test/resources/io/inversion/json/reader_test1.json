@@ -1,0 +1,5 @@
+{
+  "string": "value",
+  "array": [ "a", "b", "c" ],
+  "node" : {"hello" : "world"}
+}
