@@ -97,11 +97,11 @@ public class Config {
             configApp = Utils.getSysEnvProp("configApp");
         }
 
-        if (configProfile == null) {
+        if (configProfile == null && configApp != null) {
             configProfile = findConfigProfile(configApp);
         }
 
-        if (configPath == null)
+        if (configPath == null && configApp != null)
             configPath = findConfigPath(configApp);
 
         config.configApp = configApp;

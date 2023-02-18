@@ -134,7 +134,11 @@ public class InversionConfig {
             if (!done)
                 parts.add(part);
         }
-        return (parts.size() > 0 ? ("/" + new Path(parts)) : "") + "/*";
+
+        String path = (parts.size() > 0 ? ("/" + new Path(parts)) : "") + "/*";
+        //System.err.println("SPRING BOOT PATH: " + path);
+
+        return path;
     }
 
 

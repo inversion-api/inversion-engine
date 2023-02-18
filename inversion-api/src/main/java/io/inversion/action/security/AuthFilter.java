@@ -62,24 +62,6 @@ public class AuthFilter extends Filter<AuthFilter> {
 
         Chain.peek().withUser(user);
 
-        Collection coll = req.getCollection();
-        if(coll != null){
-            for(Property prop : coll.getProperties()){
-                String key = prop.getJsonName();
-                Object claimed = user.getClaim(key);
-                if(claimed != null){
-                    req.getUrl().withParam(key, claimed.toString());
-                    if(req.getData() != null) {
-                        for (Object node : req.getData()) {
-                            if (node instanceof JSMap) {
-                                ((JSMap) node).put(key, claimed);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
     }
 
     public List<AuthScheme> getAuthSchemes() {

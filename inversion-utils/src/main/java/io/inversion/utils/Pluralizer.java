@@ -27,11 +27,11 @@ import java.util.regex.Pattern;
  *    English.plural("cat", 1) = "cat";
  *    English.plural("cat", 2) = "cats";
  * </pre>
- * </p>
+ *
  * <p>
  * Based on <a href="http://www.csse.monash.edu.au/~damian/papers/HTML/Plurals.html">
  * An Algorithmic Approach to English Pluralization</a> by Damian Conway.
- * </p>
+ *
  */
 public class Pluralizer {
 
@@ -182,14 +182,14 @@ public class Pluralizer {
 
     /**
      * Returns plural form of the given word.
-     * <p>
+     *
      * For instance:
      * <pre>
      * {@code
      * English.plural("cat") == "cats";
      * }
      * </pre>
-     * </p>
+     *
      *
      * @param word word in singular form
      * @return plural form of given word
@@ -204,7 +204,7 @@ public class Pluralizer {
 
     /**
      * Returns singular or plural form of the word based on count.
-     * <p>
+     *
      * For instance:
      * <pre>
      * {@code
@@ -212,7 +212,7 @@ public class Pluralizer {
      * English.plural("cat", 2) == "cats";
      * }
      * </pre>
-     * </p>
+     *
      *
      * @param word  word in singular form
      * @param count word count

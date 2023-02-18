@@ -24,7 +24,7 @@ dependencies {
     api group: "com.auth0", name: "java-jwt", version: "${auth0JwtVersion}"
 
     //Generate strings matching a regex
-    api group: "com.github.curious-odd-man", name: "rgxgen", version: "1.3"
+    //api group: "com.github.curious-odd-man", name: "rgxgen", version: "1.3"
 
     api group: "io.swagger.core.v3", name: "swagger-models", version: "${swaggerModelsVersion}"
     api group: "io.swagger.core.v3", name: "swagger-core", version: "${swaggerCoreVersion}"

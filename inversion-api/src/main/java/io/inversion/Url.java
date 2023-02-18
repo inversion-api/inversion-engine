@@ -156,6 +156,9 @@ public final class Url {
                     }
                 }
             }
+            else{
+                protocol = "//";
+            }
 
             while(url.startsWith("/"))
                 url = url.substring(1);

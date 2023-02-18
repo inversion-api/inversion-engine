@@ -76,11 +76,11 @@ public class HATEOASFilter<T extends HATEOASFilter>  extends Filter<T> implement
     }
 
     public void addLink(JSMap entityNode, String name, String link){
-        System.out.println("-----------------");
-        System.out.println(entityNode);
+//        System.out.println("-----------------");
+//        System.out.println(entityNode);
         entityNode.putFirst(name, link);
-        System.out.println(name);
-        System.out.println(entityNode);
-        System.out.println("<<<-----------------");
+//        System.out.println(name);
+//        System.out.println(entityNode);
+//        System.out.println("<<<-----------------");
     }
 }
