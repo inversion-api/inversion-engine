@@ -47,3 +47,4 @@ docs/javadoc
 
 cd/gradle.properties
 cd/codesigning.asc
+cd/gradle.properties.secret

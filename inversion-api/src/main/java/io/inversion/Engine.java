@@ -16,7 +16,7 @@
  */
 package io.inversion;
 
-import ch.qos.logback.classic.Level;
+//import ch.qos.logback.classic.Level;
 import io.inversion.Api.ApiListener;
 import io.inversion.Chain.ActionMatch;
 import io.inversion.action.db.DbAction;
@@ -48,8 +48,8 @@ import java.util.stream.Collectors;
 public class Engine {
 
     static {
-        ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
-        logger.setLevel(Level.WARN);
+        //ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger("ROOT");
+        //logger.setLevel(Level.WARN);
     }
 
     protected final transient Logger log = LoggerFactory.getLogger(getClass().getName());
@@ -671,8 +671,10 @@ public class Engine {
         Map<String, String> pathParams      = new HashMap();
 
         for (Api a : getApis()) {
+
             for (Server serv : a.getServers()) {
                 serverMatch = serv.match(req.getUrl());
+
                 if (serverMatch == null)
                     continue;
 
@@ -685,6 +687,7 @@ public class Engine {
                 break;
             }
         }
+
         if (api != null && server != null) {
             req.withApi(api);
             req.withServer(server);
@@ -713,7 +716,10 @@ public class Engine {
 
         if (api != null) {
             for (Op op : api.getOps()) {
-                if (op.matches(req, remainder)) {
+
+                boolean matched = op.matches(req, remainder);
+
+                if (matched) {
                     //TODO: need to revalidate for exclude rules...or remove the concept
                     req.withOp(op);
                     req.withEndpoint(op.getEndpoint());
@@ -767,7 +773,7 @@ public class Engine {
                     Collections.sort(actions);
                     req.withActionMatches(actions);
 
-                    System.out.println("SELECTING OPERATION: " + op.getMethod() + " " + op.getPath());
+                    //System.out.println("SELECTING OPERATION: " + op.getMethod() + " " + op.getPath());
 
                     return true;
                 }

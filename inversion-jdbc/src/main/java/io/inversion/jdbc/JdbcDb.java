@@ -28,6 +28,8 @@ import io.inversion.rql.Term;
 import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
 import org.apache.commons.configuration2.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
@@ -54,7 +56,7 @@ public class JdbcDb extends Db<JdbcDb> {
     static {
         JdbcUtils.addSqlListener(new SqlListener() {
 
-            final ch.qos.logback.classic.Logger log = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(JdbcDb.class);
+            Logger log = LoggerFactory.getLogger(JdbcDb.class.getName());
 
             @Override
             public void onError(String method, String sql, Object args, Exception ex) {

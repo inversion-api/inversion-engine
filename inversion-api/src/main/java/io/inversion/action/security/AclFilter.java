@@ -33,33 +33,33 @@ import java.util.List;
 public class AclFilter extends Filter<AclFilter> {
     protected final List<AclRule> aclRules = new ArrayList<>();
 
-    public AclFilter orRequireAllPerms(String ruleMatcherSpec, String permission1, String... permissionsN) {
-        withAclRules(AclRule.requireAllPerms(ruleMatcherSpec, permission1, permissionsN));
+    public AclFilter orRequireAllPerms(String permissions, String... includedOn) {
+        withAclRules(AclRule.requireAllPerms(permissions, includedOn));
         return this;
     }
 
-    public AclFilter orRequireOnePerm(String ruleMatcherSpec, String permission1, String... permissionsN) {
-        withAclRules(AclRule.requireOnePerm(ruleMatcherSpec, permission1, permissionsN));
+    public AclFilter orRequireOnePerm(String permissions, String... includedOn) {
+        withAclRules(AclRule.requireOnePerm(permissions, includedOn));
         return this;
     }
 
-    public AclFilter orRequireAllRoles(String ruleMatcherSpec, String role1, String... rolesN) {
-        withAclRules(AclRule.requireAllRoles(ruleMatcherSpec, role1, rolesN));
+    public AclFilter orRequireAllRoles(String roles, String... includedOn) {
+        withAclRules(AclRule.requireAllRoles(roles, includedOn));
         return this;
     }
 
-    public AclFilter orRequireOneRole(String ruleMatcherSpec, String role1, String... rolesN) {
-        withAclRules(AclRule.requireOneRole(ruleMatcherSpec, role1, rolesN));
+    public AclFilter orRequireOneRole(String roles, String... includedOn) {
+        withAclRules(AclRule.requireOneRole(roles, includedOn));
         return this;
     }
 
-    public AclFilter orRequireAllScopes(String ruleMatcherSpec, String scope1, String... scopeN) {
-        withAclRules(AclRule.requireAllRoles(ruleMatcherSpec, scope1, scopeN));
+    public AclFilter orRequireAllScopes(String scopes, String... includedOn) {
+        withAclRules(AclRule.requireAllRoles(scopes, includedOn));
         return this;
     }
 
-    public AclFilter orRequireOneScope(String ruleMatcherSpec, String scope1, String... scopeN) {
-        withAclRules(AclRule.requireOneRole(ruleMatcherSpec, scope1, scopeN));
+    public AclFilter orRequireOneScope(String scopes, String... includedOn) {
+        withAclRules(AclRule.requireOneRole(scopes, includedOn));
         return this;
     }
 

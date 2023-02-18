@@ -193,6 +193,10 @@ public final class Api {
         return hash;
     }
 
+    public String toString(){
+        return "Api: " + name;
+    }
+
     public Api withHash(String hash) {
         this.hash = hash;
         return this;

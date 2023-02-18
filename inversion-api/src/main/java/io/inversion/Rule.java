@@ -251,8 +251,9 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
 //        return (R) this;
 //    }
 
-    public R withIncludeOn(String spec) {
-        withIncludeOn(new RuleMatcher(spec));
+    public R withIncludeOn(String... specs) {
+        for(int i=0; specs != null && i < specs.length; i++)
+            withIncludeOn(new RuleMatcher(specs[i]));
         return (R) this;
     }
 
@@ -279,8 +280,9 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return (R) this;
     }
 
-    public R withExcludeOn(String spec) {
-        withExcludeOn(new RuleMatcher(spec));
+    public R withExcludeOn(String... specs) {
+        for(int i=0; specs != null && i < specs.length; i++)
+            withExcludeOn(new RuleMatcher(specs[i]));
         return (R) this;
     }
 
