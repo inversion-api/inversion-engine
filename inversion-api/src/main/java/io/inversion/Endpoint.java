@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * A single Endpoint, bundling one or more Path match relative Actions, is selected to service a Request.
  */
-public class Endpoint extends Rule<Endpoint> {
+public final class Endpoint extends Rule<Endpoint> {
     /**
      * The Actions that are 'local' to this request.
      * <p>
@@ -35,20 +35,45 @@ public class Endpoint extends Rule<Endpoint> {
 
     /**
      * Internal Endpoints can only be called by recursive calls to the engine when Chain.depth() is @gt; 1.
+     * This could have been logically called 'private' but that is a reserved word in Java.
      */
     protected boolean internal = false;
+
+    protected transient Api api = null;
 
     public Endpoint() {
 
     }
 
-    public Endpoint(String methods, String includePaths, Action... actions) {
-        withIncludeOn(methods, includePaths);
+    public Endpoint(Action... actions) {
+        if (actions != null) {
+            for (Action action : actions)
+                withAction(action);
+        }
+    }
+
+    public Endpoint(String ruleMatcherSpec, Action... actions) {
+        withIncludeOn(ruleMatcherSpec);
 
         if (actions != null) {
             for (Action action : actions)
                 withAction(action);
         }
+    }
+
+    @Override
+    public int compareTo(Endpoint o) {
+        return toString().compareTo(o.toString());
+    }
+
+    public Api getApi() {
+        return api;
+    }
+
+    public Endpoint withApi(Api api) {
+        this.api = api;
+        api.withEndpoint(this);
+        return this;
     }
 
     public Endpoint withInternal(boolean internal) {
@@ -60,18 +85,30 @@ public class Endpoint extends Rule<Endpoint> {
         return internal;
     }
 
+    public Action getAction(String name){
+        for(Action action : actions){
+            if(name.equalsIgnoreCase(action.getName()))
+                return action;
+        }
+        return null;
+    }
+
     public List<Action> getActions() {
         return new ArrayList(actions);
     }
 
     public Endpoint withActions(Action... actions) {
-        for (Action action : actions)
-            withAction(action);
+        for (int i =0; actions != null && i<actions.length; i++)
+            withAction(actions[i]);
 
         return this;
     }
 
     public Endpoint withAction(Action action) {
+
+        if(action == null)
+            return this;
+
         if (actions.contains(action))
             return this;
 

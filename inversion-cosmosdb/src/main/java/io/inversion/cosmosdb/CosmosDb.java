@@ -19,9 +19,8 @@ package io.inversion.cosmosdb;
 import com.microsoft.azure.documentdb.*;
 import io.inversion.Index;
 import io.inversion.*;
+import io.inversion.json.JSMap;
 import io.inversion.rql.Term;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows;
 import io.inversion.utils.Utils;
 
 import java.util.ArrayList;
@@ -39,6 +38,8 @@ public class CosmosDb extends Db<CosmosDb> {
     transient protected DocumentClient documentClient = null;
     boolean allowCrossPartitionQueries = false;
 
+    transient ConnectionPolicy connectionPolicy = null;
+
     public CosmosDb() {
         this.withType("cosmosdb");
     }
@@ -48,7 +49,7 @@ public class CosmosDb extends Db<CosmosDb> {
         withName(name);
     }
 
-    public static DocumentClient buildDocumentClient(String uri, String key) {
+    public static DocumentClient buildDocumentClient(String uri, String key, ConnectionPolicy connectionPolicy) {
         if (Utils.empty(uri) || Utils.empty(key)) {
             String error = "";
             error += "Unable to connect to Cosmos DB because conf values for 'uri' or 'key' can not be found. ";
@@ -60,7 +61,9 @@ public class CosmosDb extends Db<CosmosDb> {
             throw ApiException.new500InternalServerError(error);
         }
 
-        DocumentClient client = new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
+        connectionPolicy = ConnectionPolicy.GetDefault();
+
+        DocumentClient client = new DocumentClient(uri, key, connectionPolicy, ConsistencyLevel.Session);
         return client;
     }
 
@@ -93,7 +96,7 @@ public class CosmosDb extends Db<CosmosDb> {
                 if (term.hasToken("_key")) {
                     String indexName = term.getToken(0);
                     Index idx = collection.getIndex(indexName);
-                    Rows.Row key = collection.decodeResourceKey(idx, term.getToken(1));
+                    Map<String, Object>  key = collection.decodeKeyToColumnNames(idx, term.getToken(1));
 //                    Rows.Row key = collection.decodeResourceKey(term.getToken(0));
                     for (Property prop : partitionIdx.getProperties()) {
                         String colName = prop.getColumnName();
@@ -110,7 +113,7 @@ public class CosmosDb extends Db<CosmosDb> {
                 //-- remove any explicit partitionKey query params supplied by the users
                 columnMappedTerms.removeIf(term -> term.hasToken("eq") && partitionIdx.getName().equals(term.getToken(0)));
 
-                String partitionKey = io.inversion.Collection.encodeResourceKey(values, partitionIdx);
+                String partitionKey = io.inversion.Collection.encodeKey(values, partitionIdx, false);
                 columnMappedTerms.add(Term.term(null, "eq", partitionIdx.getName(), partitionKey));
             }
         }
@@ -133,7 +136,7 @@ public class CosmosDb extends Db<CosmosDb> {
         //-- makes sure the partition key is set correctly on the document if there is one.
         Index partitionIdx = collection.getIndexByType(INDEX_TYPE_PARTITION_KEY);
         if (partitionIdx != null) {
-            String partitionKey = io.inversion.Collection.encodeResourceKey(row, partitionIdx);
+            String partitionKey = io.inversion.Collection.encodeKey(row, partitionIdx, false);
             if (partitionKey == null)
                 throw ApiException.new400BadRequest("Unable to determine the CosmosDb partition key from the supplied fields");
 
@@ -146,17 +149,17 @@ public class CosmosDb extends Db<CosmosDb> {
 
             normalizePartitionKey(collection, row);
 
-            JSNode doc = new JSNode(row);
+            JSMap  doc = new JSMap(row);
             String id  = doc.getString("id");
             if (id == null) {
-                id = collection.encodeResourceKey(row);
+                id = collection.encodeKeyFromColumnNames(row);
                 if (id == null)
                     throw ApiException.new400BadRequest("Your record does not contain the required key fields.");
                 doc.putFirst("id", id);
             }
 
             //-- the only way to achieve a PATCH is to query for the document first.
-            Results existing = doSelect(collection, Utils.asList(Term.term(null, "_key", collection.getPrimaryIndex().getName(), id)));
+            Results existing = doSelect(collection, Utils.asList(Term.term(null, "_key", collection.getResourceIndex().getName(), id)));
             if (existing.size() == 1) {
                 Map<String, Object> existingRow = existing.getRow(0);
                 for (String key : existingRow.keySet()) {
@@ -192,7 +195,7 @@ public class CosmosDb extends Db<CosmosDb> {
     }
 
     @Override
-    public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
+    public void doDelete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
         for (Map<String, Object> row : indexValues) {
             deleteRow(table, row);
         }
@@ -211,7 +214,7 @@ public class CosmosDb extends Db<CosmosDb> {
 
         normalizePartitionKey(collection, indexValues);
 
-        Object id                = collection.encodeResourceKey(indexValues);
+        Object id                = collection.encodeKeyFromColumnNames(indexValues);
         Object partitionKeyValue = indexValues.get(collection.getIndex(CosmosDb.INDEX_TYPE_PARTITION_KEY).getProperty(0).getColumnName());
         String documentUri       = "/dbs/" + db + "/colls/" + collection.getTableName() + "/docs/" + id;
 
@@ -284,11 +287,18 @@ public class CosmosDb extends Db<CosmosDb> {
         return this;
     }
 
-    public DocumentClient getDocumentClient() {
+    public synchronized DocumentClient getDocumentClient() {
         if (this.documentClient == null) {
             synchronized (this) {
                 if (this.documentClient == null) {
-                    this.documentClient = buildDocumentClient(uri, key);
+
+                    if(this.connectionPolicy == null){
+                        connectionPolicy = new ConnectionPolicy();
+                        connectionPolicy.setConnectionMode(ConnectionMode.DirectHttps);
+                        connectionPolicy.setMaxPoolSize(10);
+                    }
+
+                    this.documentClient = buildDocumentClient(uri, key, connectionPolicy);
                 }
             }
         }

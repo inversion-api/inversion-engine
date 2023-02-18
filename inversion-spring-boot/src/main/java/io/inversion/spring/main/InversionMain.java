@@ -17,6 +17,7 @@
 package io.inversion.spring.main;
 
 import io.inversion.Api;
+import io.inversion.Engine;
 import io.inversion.spring.config.EnableInversion;
 import io.inversion.spring.config.InversionRegistrar;
 import io.inversion.utils.Utils;
@@ -36,11 +37,19 @@ import org.springframework.context.ApplicationContext;
 @EnableInversion
 public class InversionMain {
 
-    protected static ApplicationContext context = null;
+    protected static Class              primarySource = InversionMain.class;
+    protected static ApplicationContext context            = null;
+    protected static Engine             engine             = null;
 
     public static void main(String[] args) {
         run(args, null);
     }
+
+    public static void run(Class<?> primarySource, String... args){
+        InversionMain.primarySource = primarySource;
+        run(args, null);
+    }
+
 
     /**
      * Convenience method for launching a Engine with a single API.
@@ -59,7 +68,9 @@ public class InversionMain {
                 exit();
 
             InversionRegistrar.apis = apis;
-            context = SpringApplication.run(InversionMain.class, args);
+            context = SpringApplication.run(primarySource, args);
+
+            engine = (Engine) context.getBean("engine");
         } catch (Throwable e) {
             e = Utils.getCause(e);
             if (Utils.getStackTraceString(e).contains("A child container failed during start")) {
@@ -101,4 +112,13 @@ public class InversionMain {
         return context;
     }
 
+    /**
+     * The Engine will not be populated until after the Spring Boot app starts
+     * and publishes the ApplicationContext
+     *
+     * @return
+     */
+    public static Engine getEngine() {
+        return engine;
+    }
 }

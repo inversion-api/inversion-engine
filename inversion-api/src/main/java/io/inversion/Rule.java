@@ -16,7 +16,8 @@
  */
 package io.inversion;
 
-import io.inversion.utils.JSNode;
+import io.inversion.context.Context;
+import io.inversion.json.JSMap;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
 import org.slf4j.Logger;
@@ -32,32 +33,43 @@ import java.util.*;
  */
 public abstract class Rule<R extends Rule> implements Comparable<R> {
 
-    protected final transient Logger log = LoggerFactory.getLogger(getClass().getName());
+    public static final SortedSet<String> ALL_METHODS = Collections.unmodifiableSortedSet(new TreeSet<String>(Utils.asSet("GET", "POST", "PUT", "PATCH", "DELETE")));
+
+    protected final transient Logger            log             = LoggerFactory.getLogger(getClass().getName());
     /**
      * Method/path combinations that would cause this Rule to be included in the relevant processing.
      */
-    protected final List<RuleMatcher> includeMatchers = new ArrayList<>();
+    protected final           List<RuleMatcher> includeMatchers = new ArrayList<>();
     /**
      * Method/path combinations that would cause this Rule to be excluded from the relevant processing.
      */
-    protected final List<RuleMatcher> excludeMatchers = new ArrayList<>();
+    protected final           List<RuleMatcher> excludeMatchers = new ArrayList<>();
     /**
      * {@code JSNode} is used because it implements a case insensitive map without modifying the keys
      */
-    protected final transient JSNode configMap = new JSNode();
+    protected final transient JSMap             configMap       = new JSMap();
     /**
      * The name used for configuration and debug purposes.
      */
-    protected String name = null;
+    protected                 String            name            = null;
     /**
      * Rules are always processed in sequence sorted by ascending order.
      */
-    protected int order = 1000;
-    protected                 String configStr = null;
+    protected                 int               order           = 1000;
 
-    protected String includeOn      = null;
+    /**
+     * An optional querystring that will be applied to every request processed.
+     * This is useful to force specific params on different endpoints/actions etc.
+     */
+    //protected String query = null;
 
-    protected String excludeOn      = null;
+    protected String includeOn = null;
+
+    protected String excludeOn = null;
+
+    protected String description = null;
+
+    protected List<Param> params = new ArrayList();
 
     transient boolean lazyConfiged = false;
 
@@ -66,6 +78,8 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         for (String path : Utils.explode(",", paths)) {
             pathsList.add(new Path(path));
         }
+        if (pathsList.size() == 0)
+            pathsList.add(new Path("*"));
         return pathsList;
     }
 
@@ -75,7 +89,11 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
 
     }
 
-    public void checkLazyConfig() {
+    public void afterWiringComplete(Context context) {
+        checkLazyConfig();
+    }
+
+    protected void checkLazyConfig() {
         //-- reluctant lazy config defaultIncludes if no other
         //-- includes/excludes have been configured by the user.
 
@@ -90,15 +108,17 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     protected void doLazyConfig() {
-
-        if(includeOn != null)
+        if (includeOn != null)
             withIncludeOn(includeOn);
 
-        if(excludeOn != null)
+        if (excludeOn != null)
             withExcludeOn(excludeOn);
 
-        if (getAllIncludePaths().size() == 0 && getAllExcludePaths().size() == 0) {
-            withIncludeOn(getDefaultIncludeMatch());
+        if (includeMatchers.size() == 0 && excludeMatchers.size() == 0) {
+
+            List<RuleMatcher> matchers = getDefaultIncludeMatchers();
+            for (RuleMatcher m : matchers)
+                withIncludeOn(m);
         }
     }
 
@@ -108,8 +128,8 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
      *
      * @return the default include match "*","*"
      */
-    protected RuleMatcher getDefaultIncludeMatch() {
-        return new RuleMatcher(null, "*");
+    protected List<RuleMatcher> getDefaultIncludeMatchers() {
+        return Utils.asList(new RuleMatcher(null, "*"));
     }
 
     /**
@@ -141,7 +161,10 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
      * @param path   the concrete path to match
      * @return the first includeMatchers path to match when method also matches, null if no matches or excluded
      */
-    protected Path match(String method, Path path) {
+    public Path match(String method, Path path) {
+        return match(method, path, false);
+    }
+    public Path match(String method, Path path, boolean bidirectional) {
         checkLazyConfig();
 
         for (RuleMatcher excluder : excludeMatchers) {
@@ -149,7 +172,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
                 continue;
 
             for (Path excludePath : excluder.paths) {
-                if (excludePath.matches(path)) {
+                if (excludePath.matches(path, bidirectional)) {
                     return null;
                 }
             }
@@ -164,7 +187,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
                 continue;
 
             for (Path includePath : includer.paths) {
-                if (includePath.matches(path)) {
+                if (includePath.matches(path, bidirectional)) {
                     return includePath;
                 }
             }
@@ -179,7 +202,17 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return null;
     }
 
+    public List<String> getAllIncludeMethods() {
+        checkLazyConfig();
+        Set methods = new LinkedHashSet();
+        for (RuleMatcher includer : includeMatchers) {
+            methods.addAll(includer.methods);
+        }
+        return new ArrayList(methods);
+    }
+
     public List<Path> getAllIncludePaths() {
+        checkLazyConfig();
         Set paths = new LinkedHashSet();
         for (RuleMatcher includer : includeMatchers) {
             paths.addAll(includer.paths);
@@ -188,6 +221,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     public List<Path> getAllExcludePaths() {
+        checkLazyConfig();
         Set paths = new LinkedHashSet();
         for (RuleMatcher excluder : excludeMatchers) {
             paths.addAll(excluder.paths);
@@ -196,6 +230,7 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
     public List<RuleMatcher> getIncludeMatchers() {
+        checkLazyConfig();
         return new ArrayList(includeMatchers);
     }
 
@@ -204,34 +239,35 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return (R) this;
     }
 
-    /**
-     * Select this Rule when any method and path match.
-     *
-     * @param methods or more comma separated http method names, can be null to match on any
-     * @param paths   each path can be one or more comma separated variableized Paths
-     * @return this
-     */
-    public R withIncludeOn(String methods, String paths) {
-        withIncludeOn(new RuleMatcher(methods, paths));
+//    /**
+//     * Select this Rule when any method and path match.
+//     *
+//     * @param methods or more comma separated http method names, can be null to match on any
+//     * @param paths   each path can be one or more comma separated variableized Paths
+//     * @return this
+//     */
+//    public R withIncludeOn(String methods, String paths) {
+//        withIncludeOn(new RuleMatcher(methods, paths));
+//        return (R) this;
+//    }
+
+    public R withIncludeOn(String... specs) {
+        for(int i=0; specs != null && i < specs.length; i++)
+            withIncludeOn(new RuleMatcher(specs[i]));
         return (R) this;
     }
 
-    public R withIncludeOn(String methodsAndOrPaths) {
-        parseRuleMatcher(methodsAndOrPaths).forEach(matcher -> withIncludeOn(matcher));
-        return (R)this;
-    }
-
-    /**
-     * Don't select this Rule when any method and path match.
-     *
-     * @param methods or more comma separated http method names, can be null to match on any
-     * @param paths   each path can be one or more comma separated variableized Paths
-     * @return this
-     */
-    public R withExcludeOn(String methods, String paths) {
-        withExcludeOn(new RuleMatcher(methods, paths));
-        return (R) this;
-    }
+//    /**
+//     * Don't select this Rule when any method and path match.
+//     *
+//     * @param methods or more comma separated http method names, can be null to match on any
+//     * @param paths   each path can be one or more comma separated variableized Paths
+//     * @return this
+//     */
+//    public R withExcludeOn(String methods, String paths) {
+//        withExcludeOn(new RuleMatcher(methods, paths));
+//        return (R) this;
+//    }
 
     /**
      * Don't select this Rule when RuleMatcher matches
@@ -244,12 +280,14 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return (R) this;
     }
 
-    public R withExcludeOn(String methodsAndOrPaths) {
-        parseRuleMatcher(methodsAndOrPaths).forEach(matcher -> withExcludeOn(matcher));
-        return (R)this;
+    public R withExcludeOn(String... specs) {
+        for(int i=0; specs != null && i < specs.length; i++)
+            withExcludeOn(new RuleMatcher(specs[i]));
+        return (R) this;
     }
 
     public List<RuleMatcher> getExcludeMatchers() {
+        checkLazyConfig();
         return new ArrayList(excludeMatchers);
     }
 
@@ -262,6 +300,16 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return (R) this;
     }
 
+    public Rule withDescription(String description) {
+        this.description = description;
+        return this;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+
     public int getOrder() {
         return order;
     }
@@ -271,35 +319,14 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return (R) this;
     }
 
-    public Set<String> getConfigKeys() {
-        return new HashSet(configMap.keySet());
-    }
-
-    public String getConfig(String key) {
-        return (String) configMap.get(key);
-    }
-
-    public String getConfig(String key, String defaultValue) {
-        String value = configMap.getString(key);
-        if (Utils.empty(value))
-            value = defaultValue;
-
-        return value;
-    }
-
-    public R withConfig(String queryString) {
-        try {
-            if (queryString != null) {
-                configStr = configStr == null ? queryString : configStr + "&" + queryString;
-
-                Map<String, String> parsed = Utils.parseQueryString(queryString);
-                configMap.putAll(parsed);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return (R) this;
-    }
+//    public R withQuery(String query) {
+//        this.query = query;
+//        return (R) this;
+//    }
+//
+//    public String getQuery() {
+//        return query;
+//    }
 
     @Override
     public int compareTo(Rule a) {
@@ -307,15 +334,22 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
         return compare;
     }
 
-    R clearIncludeRuleMatchers() {
-        includeMatchers.clear();
+    public List<Param> getParams() {
+        return params;
+    }
+
+    public R withParams(List<Param> params) {
+        params.forEach(p -> withParam(p));
         return (R) this;
     }
 
-    R clearExcludeRuleMatchers() {
-        excludeMatchers.clear();
+    public R withParam(Param param) {
+        if (!params.contains(param)) {
+            params.add(param);
+        }
         return (R) this;
     }
+
 
     public String toString() {
         StringBuilder buff = new StringBuilder(getClass().getSimpleName());
@@ -336,44 +370,75 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
     }
 
 
-    static List<RuleMatcher> parseRuleMatcher(String methodsAndOrPaths)
-    {
-        List<RuleMatcher> matchers = new ArrayList<>();
-        String[] parts = methodsAndOrPaths.split("\\|");
-        for(int i=0; i<parts.length; i++)
-        {
-            if(parts.length - i == 1)
-            {
-                //there is not another matched pair so parse both methods and paths from this single string
-
-                List<String> methodsList = new ArrayList();
-                List<String> pathsList   = new ArrayList();
-
-                for (String part : parts[i].split(",")) {
-                    part = part.trim();
-                    if (Utils.in(part.toLowerCase(), "get", "post", "put", "patch", "delete"))
-                        methodsList.add(part);
-                    else
-                        pathsList.add(part);
-                }
-
-                String methods = methodsList.size() == 0 ? "*" : Utils.implode(",", methodsList);
-                String paths = pathsList.size() == 0 ? "*" : Utils.implode(",", pathsList);
-                matchers.add(new RuleMatcher(methods, paths));
-            }
-            else
-            {
-                matchers.add(new RuleMatcher(parts[i], parts[i+1]));
-                i++;
-            }
-        }
-        return matchers;
-    }
+//    static List<RuleMatcher> parseRuleMatcher(String methodsAndOrPaths) {
+//        List<RuleMatcher> matchers = new ArrayList<>();
+//        String[]          parts    = methodsAndOrPaths.split("\\|");
+//        for (int i = 0; i < parts.length; i++) {
+//            if (parts.length - i == 1) {
+//                //there is not another matched pair so parse both methods and paths from this single string
+//
+//                List<String> methodsList = new ArrayList();
+//                List<String> pathsList   = new ArrayList();
+//
+//                for (String part : parts[i].split(",")) {
+//                    part = part.trim();
+//                    if (Utils.in(part.toLowerCase(), "get", "post", "put", "patch", "delete"))
+//                        methodsList.add(part);
+//                    else
+//                        pathsList.add(part);
+//                }
+//
+//                String methods = methodsList.size() == 0 ? "*" : Utils.implode(",", methodsList);
+//                String paths   = pathsList.size() == 0 ? "*" : Utils.implode(",", pathsList);
+//                matchers.add(new RuleMatcher(methods, paths));
+//            } else {
+//                matchers.add(new RuleMatcher(parts[i], parts[i + 1]));
+//                i++;
+//            }
+//        }
+//        return matchers;
+//    }
 
     public static class RuleMatcher {
 
-        protected final Set<String> methods = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-        protected final List<Path>  paths   = new ArrayList<>();
+        protected final TreeSet<String>   methods = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        protected final LinkedHashSet<Path> paths   = new LinkedHashSet<>();
+
+        public RuleMatcher() {
+        }
+
+        public RuleMatcher(String spec) {
+            parse(this, spec);
+        }
+
+
+        public static void parse(RuleMatcher matcher, String spec) {
+            if (spec == null)
+                return;
+
+            spec = spec.trim();
+            List<String> parts = Utils.explode(",", spec);
+            for (String part : parts) {
+                if (ALL_METHODS.contains(part.toUpperCase()))
+                    matcher.withMethods(part);
+                else
+                    matcher.withPaths(new Path(part));
+            }
+        }
+
+        public String toString() {
+            return Utils.implode(",", methods, paths);
+        }
+
+        public int hashCode() {
+            return toString().toLowerCase().hashCode();
+        }
+
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof RuleMatcher && Utils.equal(this.toString(), o.toString());
+        }
 
         public RuleMatcher(String methods, String... paths) {
             this(methods, asPathsList(paths));
@@ -389,56 +454,57 @@ public abstract class Rule<R extends Rule> implements Comparable<R> {
             withPaths(paths);
         }
 
+        public RuleMatcher clearPaths() {
+            paths.clear();
+            return this;
+        }
+
+        public RuleMatcher clearMethods() {
+            methods.clear();
+            return this;
+        }
+
+        public boolean hasMethod(String method) {
+            return methods.size() == 0 || methods.contains(method);
+        }
+
+
         public void withMethods(String... methods) {
             for (String method : Utils.explode(",", methods)) {
-                if ("*".equals(method)) {
-                    this.methods.add("GET");
-                    this.methods.add("POST");
-                    this.methods.add("PUT");
-                    this.methods.add("PATCH");
-                    this.methods.add("DELETE");
+                if (method.equals("*"))
                     continue;
+                method = method.toUpperCase();
+                if (ALL_METHODS.contains(method)) {
+                    this.methods.add(method);
                 }
-
-                if ("read".equalsIgnoreCase(method)) {
-                    this.methods.add("GET");
-                    continue;
-                }
-
-                if ("write".equalsIgnoreCase(method)) {
-                    this.methods.add("POST");
-                    this.methods.add("PUT");
-                    this.methods.add("PATCH");
-                    this.methods.add("DELETE");
-                    continue;
-                }
-
-                this.methods.add(method.toUpperCase());
             }
         }
 
-        public void withPaths(Path... paths) {
-            this.paths.addAll(Arrays.asList(paths));
+        public RuleMatcher withPaths(Path... paths) {
+            for (int i = 0; paths != null && i < paths.length; i++) {
+                if (paths[i] != null)
+                    this.paths.add(paths[i]);
+            }
+            return this;
         }
 
-        public void withPaths(List<Path> paths) {
-            this.paths.addAll(paths);
+        public RuleMatcher withPaths(List<Path> paths) {
+            for (Path p : paths)
+                withPaths(p);
+            return this;
         }
 
-        public String toString() {
-            StringBuilder buff = new StringBuilder();
+        public SortedSet<String> getMethods() {
             if (methods.size() == 0)
-                buff.append("*");
-            else
-                buff.append(methods);
+                return ALL_METHODS;
+            return Collections.unmodifiableSortedSet(methods);
+        }
 
-            buff.append(":");
-            if(paths.size() == 0)
-                buff.append("*");
-            else
-                buff.append(paths);
-
-            return buff.toString();
+        public LinkedHashSet<Path> getPaths() {
+            if (this.paths.size() == 0) {
+                return Utils.add(new LinkedHashSet(), new Path("*"));
+            }
+            return new LinkedHashSet(paths);
         }
     }
 }

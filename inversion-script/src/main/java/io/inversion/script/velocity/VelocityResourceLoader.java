@@ -17,7 +17,7 @@
 package io.inversion.script.velocity;
 
 import io.inversion.script.ScriptAction;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSNode;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;

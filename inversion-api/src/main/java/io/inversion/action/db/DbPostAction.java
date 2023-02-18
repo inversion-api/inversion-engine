@@ -18,17 +18,15 @@ package io.inversion.action.db;
 
 import io.inversion.Collection;
 import io.inversion.*;
+import io.inversion.json.*;
 import io.inversion.rql.Term;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.keyvalue.MultiKey;
 import org.apache.commons.collections4.map.MultiKeyMap;
 
 import java.util.*;
 
-public class DbPostAction extends Action<DbPostAction> {
+class DbPostAction<A extends DbPostAction> extends Action<A>  {
     protected boolean collapseAll = false;
 
     /**
@@ -37,13 +35,16 @@ public class DbPostAction extends Action<DbPostAction> {
     protected boolean strictRest     = false;
     protected boolean getResponse    = true;
 
-
+    @Override
+    protected List<Rule.RuleMatcher> getDefaultIncludeMatchers(){
+        return Utils.asList(new RuleMatcher("POST", "{" + Request.COLLECTION_KEY + "}"));
+    }
 
     public static String nextPath(String path, String next) {
         return Utils.empty(path) ? next : path + "." + next;
     }
 
-    @Override
+
     public void run(Request req, Response res) throws ApiException {
         if (req.isMethod("PUT", "POST")) {
             upsert(req, res);
@@ -71,15 +72,15 @@ public class DbPostAction extends Action<DbPostAction> {
             throw ApiException.new400BadRequest("You must pass a JSON body on a {}", req.getMethod());
 
         //if the caller posted back an Inversion GET style envelope with meta/data sections, unwrap to get to the real body
-        if(body.find("meta") instanceof JSNode && body.find("data") instanceof  JSArray)
-            body = body.findNode("data");
+        if(body.find("meta") instanceof JSNode && body.find("data") instanceof  JSList)
+            body = body.findMap("data");
 
         //if a single cell array was passed in, unwrap to get to the real body
-        if(body instanceof JSArray && ((JSArray)body).length() == 1 && ((JSArray)body).get(0) instanceof JSNode)
-            body = ((JSArray)body).getNode(0);
+        if(body instanceof JSList && ((JSList)body).size() == 1 && ((JSList)body).get(0) instanceof JSNode)
+            body = ((JSList)body).getNode(0);
 
 
-        if (body.isArray()) {
+        if (body.isList()) {
             if (!Utils.empty(req.getResourceKey())) {
                 throw ApiException.new400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
             }
@@ -93,21 +94,21 @@ public class DbPostAction extends Action<DbPostAction> {
             }
         }
 
-        List<String> resourceKeys = req.getCollection().getDb().patch(req.getCollection(), req.getJson().asNodeList());
+        List<String> resourceKeys = req.getCollection().getDb().patch(req.getCollection(), req.getJson().asMapList());
 
-        if (resourceKeys.size() > 0) {
+        if (resourceKeys.size() == req.getJson().asMapList().size()) {
             res.withStatus(Status.SC_201_CREATED);
-            String location = Chain.buildLink(req.getCollection(), Utils.implode(",", resourceKeys), null);
+            String location = Chain.buildLink(req.getCollection(), Utils.implode(",", resourceKeys));
             res.withHeader("Location", location);
 
             if(isGetResponse()){
                 Response getResponse = req.getChain().getEngine().service("GET", location);
-                res.getJson().put("data", getResponse.getData());
+                res.getJson().put("data", getResponse.data());
             }
         }
         else
         {
-            res.withStatus(Status.SC_404_NOT_FOUND);
+            throw ApiException.new404NotFound("One or more of the requested resource could not be found.");
         }
 
         //TODO: add res.withChanges()
@@ -126,35 +127,45 @@ public class DbPostAction extends Action<DbPostAction> {
         List         resourceKeys;
         JSNode       body        = req.getJson();
 
+        swapRefsWithActualReferences(body);
+
+        JSList bodyArr = body.asList();
+        Map visited = new HashMap();
+        for(int i=0; i<bodyArr.size(); i++){
+            swapLogicalDuplicateReferences(collection, (JSNode)bodyArr.get(i), bodyArr, i + "0", visited);
+        }
+
+
         //if the caller posted back an Inversion GET style envelope with meta/data sections, unwrap to get to the real body
-        if(body.find("meta") instanceof JSNode && body.find("data") instanceof  JSArray)
+        if(body.find("meta") instanceof JSNode && body.find("data") instanceof  JSList)
             body = body.findNode("data");
 
         //if a single cell array was passed in, unwrap to get to the real body
-        if(body instanceof JSArray && ((JSArray)body).length() == 1 && ((JSArray)body).get(0) instanceof JSNode)
-            body = ((JSArray)body).getNode(0);
+        if(body instanceof JSList && ((JSList)body).size() == 1 && ((JSList)body).get(0) instanceof JSNode)
+            body = ((JSList)body).getNode(0);
 
 
-        boolean     collapseAll = "true".equalsIgnoreCase(req.getChain().getConfig("collapseAll", this.collapseAll + ""));
-        Set<String> collapses   = req.getChain().mergeEndpointActionParamsConfig("collapses");
+        boolean     collapseAll = "true".equalsIgnoreCase(req.getUrl().getParam("collapseAll"));
+        String collapseStr = req.getUrl().getParam("collapse");
+        Set<String> collapses   = collapseStr == null ? new HashSet<>() : Utils.asSet(Utils.explode(",", collapseStr));
 
         if (collapseAll || collapses.size() > 0) {
-            body = JSNode.parseJsonNode(body.toString());
+            body = JSParser.asJSNode(body.toString());
             collapse(body, collapseAll, collapses, "");
         }
 
-        if (body instanceof JSArray) {
+        if (body instanceof JSList) {
             if (!Utils.empty(req.getResourceKey())) {
                 throw ApiException.new400BadRequest("You can't batch '{}' an array of objects to a specific resource url.  You must '{}' them to a collection.", req.getMethod(), req.getMethod());
             }
-            resourceKeys = upsert(req, collection, (JSArray) body);
+            resourceKeys = upsert(req, collection, (JSList) body);
         } else {
             String href = body.getString("href");
             if (req.isPut() && href != null && req.getResourceKey() != null && !req.getUrl().toString().startsWith(href)) {
                 throw ApiException.new400BadRequest("You are PUT-ing an resource with a different href property than the resource URL you are PUT-ing to.");
             }
 
-            resourceKeys = upsert(req, collection, new JSArray(body));
+            resourceKeys = upsert(req, collection, new JSList(body));
         }
 
         res.withChanges(changes);
@@ -162,27 +173,37 @@ public class DbPostAction extends Action<DbPostAction> {
         //-- take all of the hrefs and combine into a
         //-- single href for the "Location" header
 
-        //JSArray array = new JSArray();
+        //JSList array = new JSList();
         //res.getJson().put("data", array);
 
         StringBuilder buff = new StringBuilder();
         for (Object key : resourceKeys) {
             String resourceKey = key + "";
-            String href        = Chain.buildLink(collection, resourceKey, null);
-            res.data().add(new JSNode("href", href));
-
-            String nextId = href.substring(href.lastIndexOf("/") + 1);
-            buff.append(",").append(nextId);
+            String href        = Chain.buildLink(collection, resourceKey);
+            if(href != null){
+                res.data().add(new JSMap("href", href));
+                String nextId = href.substring(href.lastIndexOf("/") + 1);
+                buff.append(",").append(nextId);
+            }
         }
 
         if (buff.length() > 0) {
             res.withStatus(Status.SC_201_CREATED);
-            String location = Chain.buildLink(collection, buff.substring(1, buff.length()), null);
+            String location = Chain.buildLink(collection, buff.substring(1, buff.length()));
             res.withHeader("Location", location);
 
             if(isGetResponse()){
                 Response getResponse = req.getChain().getEngine().service("GET", location);
-                res.getJson().put("data", getResponse.getData());
+                if(getResponse.isSuccess()){
+                    res.getJson().put("data", getResponse.data());
+                }
+                else{
+                    getResponse.getJson();
+                    res.withBody(getResponse.getBody());
+                    res.withStatus(getResponse.getStatus());
+                    res.withError(getResponse.getError());
+                }
+
             }
         }
         else
@@ -204,7 +225,7 @@ public class DbPostAction extends Action<DbPostAction> {
      * <p>
      * Step 2: For each relationship POST back through the "front door".  This is the primary
      * recursion that enables nested documents to submitted all at once by client.  Putting
-     * this step first ensure that all new objects are POSTed, with their newly created hrefs
+     * this step first ensures that all new objects are POSTed, with their newly created hrefs
      * placed back in the JSON prior to any PUTs that depend on relationship keys to exist.
      * <p>
      * Step 3: PKs generated for child documents which are actually relationship parents, are set
@@ -223,20 +244,29 @@ public class DbPostAction extends Action<DbPostAction> {
      * @param nodes      the records to update
      * @return the entity keys of all upserted records
      */
-    protected List<String> upsert(Request req, Collection collection, JSArray nodes) {
+    protected List<String> upsert(Request req, Collection collection, JSList nodes) {
         //--
         //--
         //-- Step 1. Upsert this generation including many-to-one relationships where the fk is known
         //--
 
         System.out.println("UPSERT: " + collection.getName() + ":\r\n" + nodes);
+        List<String> returnList = collection.getDb().upsert(collection, nodes);
 
-        List<String> returnList = collection.getDb().upsert(collection, nodes.asList());
-        for (int i = 0; i < nodes.length(); i++) {
-            //-- new records need their newly assigned id/href assigned back on them
-            if (nodes.getNode(i).get("href") == null) {
-                String newHref = Chain.buildLink(collection, returnList.get(i) + "", null);
-                nodes.getNode(i).put("href", newHref);
+        for (int i = 0; i < nodes.size(); i++) {
+            //-- new records need their newly assigned autogenerated key fields assigned back on them
+            JSMap node = (JSMap)nodes.get(i);
+            Map<String, Object> row = collection.decodeKeyToJsonNames(returnList.get(i));
+            for(String key : row.keySet()){
+                node.put(key, row.get(key));
+            }
+
+            //-- makes sure any ONE_TO_MANY child nodes that need a key reference back to the parent get it set on them
+            for (Relationship rel : collection.getRelationships()) {
+                if(rel.isOneToMany() && node.get(rel.getName()) instanceof JSList){
+                    Map foreignKey = rel.getInverse().buildForeignKeyFromPrimaryKey(node);
+                    node.getList(rel.getName()).asMapList().forEach(child -> child.putAll(foreignKey));
+                }
             }
         }
 
@@ -249,121 +279,106 @@ public class DbPostAction extends Action<DbPostAction> {
         //-- THE ACTION (MAYBE THIS ONE) THAT HANDLES THE UPSERT FOR THAT CHILD COLLECTION
         //-- AND ITS DESCENDANTS.
         for (Relationship rel : collection.getRelationships()) {
-            Relationship inverse    = rel.getInverse();
-            List         childNodes = new ArrayList<>();
-
-            for (JSNode node : nodes.asNodeList()) {
+            Relationship                  inverse    = rel.getInverse();
+            LinkedHashMap<String, JSMap> childMap = new LinkedHashMap<>();
+            for (JSNode node : nodes.asMapList()) {
                 Object value = node.get(rel.getName());
-                if (value instanceof JSArray) //this is a one-to-many or many-to-many
-                {
-                    JSArray childArr = ((JSArray) value);
-                    for (int i = 0; i < childArr.size(); i++) {
-                        //-- removals will be handled in the next section, not this recursion
-                        Object child = childArr.get(i);
-                        if (child == null)
-                            continue;
 
-                        if (child instanceof String) {
-                            //-- this was passed in as an href reference, not as an object
-                            if (rel.isOneToMany()) {
-                                //-- the child inverse of this is a many-to-one that modifies the child row.
-                                child = new JSArray(child);
-                                childArr.set(i, child);
-                            } else {
-                                //-- don't do anything..the many-to-many section below will update this
-                            }
-                        }
-
-                        if (child instanceof JSNode) {
-                            JSNode childNode = (JSNode) child;
-                            if (rel.isOneToMany()) {
-                                //-- this generations one-to-many, are the next generation's many-to-ones
-                                //-- the child generation receives an implicity relationship via nesting
-                                //-- under the parent, have to set the inverse prop on the child so
-                                //-- its many-to-one FK gets set to this parent.
-
-                                childNode.put(inverse.getName(), node.getString("href"));
-                            }
-                            childNodes.add(childNode);
-
-                        }
+                if (value instanceof JSNode) {
+                    for (JSMap child : ((JSNode) value).asMapList()) {
+                        String resourceKey = rel.getRelated().encodeKeyFromJsonNames(child);
+                        String hashKey     = resourceKey != null ? resourceKey : "_child:" + childMap.size();
+                        if(!childMap.containsKey(hashKey))
+                            childMap.put(hashKey, child);
                     }
-                } else if (value instanceof JSNode) {
-                    //-- this must be a many-to-one...the FK is in this generation, not the child
-                    JSNode childNode = ((JSNode) value);
-                    childNodes.add(childNode);
-                }
-            }
-
-            if (childNodes.size() > 0) {
-                String   path = Chain.buildLink(rel.getRelated(), null, null);
-                Response res  = req.getEngine().post(path, new JSArray(childNodes));
-                if (!res.isSuccess() || res.getData().length() != childNodes.size()) {
-                    res.rethrow();
-                    //throw new ApiException(Status.SC_400_BAD_REQUEST, res.getErrorContent());
                 }
 
-                //-- now get response URLS and set them BACK on the source from this generation
-                JSArray data = res.getData();
-                for (int i = 0; i < data.length(); i++) {
-                    String childHref = ((JSNode) data.get(i)).getString("href");
-                    ((JSNode) childNodes.get(i)).put("href", childHref);
+                if (childMap.size() > 0) {
+                    String   path = Chain.buildLink(rel.getRelated());
+
+                    JSList childArr = new JSList();
+                    for (String key : childMap.keySet()) {
+                        childArr.add(childMap.get(key));
+                    }
+
+                    Response res  = req.getEngine().post(path, childArr);
+                    if (!res.isSuccess())
+                        res.rethrow();
+
+                    if(res.data().size() != childMap.size()){
+                        throw new ApiException("Can not determine if all children submitted were updated.  Request size = {}.  Response size = {}", childMap.size(), res.data().size());
+                    }
+
+                    //-- now get response and set properties BACK on the source from this generation
+                    int                 i            = -1;
+                    Map<String, JSNode> updatedKeys  = new HashMap();
+                    Map<JSNode, String> updatedNodes = new HashMap();
+                    for (String childKey : childMap.keySet()) {
+                        i++;
+                        JSMap newChild = (JSMap) res.data().getMap(i);
+                        String newKey = rel.getRelated().encodeKeyFromJsonNames(newChild);
+                        if(newKey == null)
+                            throw new ApiException("New child key was null {}", newChild);
+
+                        JSMap oldChild = childMap.get(childKey);
+                        oldChild.clear();
+                        oldChild.putAll(newChild);
+
+                        updatedNodes.put(oldChild, newKey);
+                        updatedKeys.put(newKey, oldChild);
+                    }
                 }
             }
         }
 
         //--
         //--
-        //-- Step 3. sets foreign keys on json parent entities..this happens
-        //-- when a JSON parent is actually a ONE_TO_MANY child.
+        //-- Step 3. sets foreign keys on json parent entities..this is important
+        //-- when a JSON parent has a MANY_TO_ONE relationship.  The child object
+        //-- may not have even existed on the initial Step 1 Upsert.
         //--
-        //-- ...important for when
-        //-- new ONE_TO_MANY entities are passed in...they won't have an href
-        //-- on the initial record submit..the recursion has to happen to
-        //-- give them an href
-        //--
-        //-- TODO: can optimize this to not upsert if the key was available
-        //-- in the first pass
+        //-- TODO: you could skip this step if the child pk were known at the start of Step 1.
+        //-- TODO: deduplicate the upsert list
+
         for (Relationship rel : collection.getRelationships()) {
-            List<Map> updatedRows = new ArrayList<>();
+            List<Map> patches = new ArrayList<>();
             if (rel.isManyToOne())//this means we have a FK to the related element's PK
             {
-                for (JSNode node : nodes.asNodeList()) {
-                    Map<String, Object> primaryKey         = collection.getDb().getKey(collection, node);
-                    Map<String, Object> foreignResourceKey = collection.getDb().getKey(rel.getRelated(), node.get(rel.getName()));
+                for (JSNode node : nodes.asMapList()) {
+                    Object childObj = node.get(rel.getName());
+                    if(!(childObj instanceof JSNode))
+                        continue;
 
-                    Index foreignIdx        = rel.getFkIndex1();
-                    Index relatedPrimaryIdx = rel.getRelated().getPrimaryIndex();
+                    Map<String, Object> foreignKey = rel.buildForeignKeyFromPrimaryKey((JSMap)childObj);
+                    if(foreignKey == null)
+                        throw new ApiException("Foreign key should not be null at this point");
 
-                    Object docChild = node.get(rel.getName());
-                    if (docChild instanceof JSNode) {
-                        Map<Object, Object> updatedRow = new HashMap<>();
-                        updatedRows.add(updatedRow);
-                        updatedRow.putAll(primaryKey);
+                    Map<String, Object> primaryKey = new LinkedHashMap();
 
-                        if (foreignIdx.size() != relatedPrimaryIdx.size() && foreignIdx.size() == 1) {
-                            //-- the fk is an resourceKey not a one-to-one column mapping to the primary composite key
-                            updatedRow.put(foreignIdx.getProperty(0).getColumnName(), rel.getRelated().encodeResourceKey(foreignResourceKey));
-                        } else {
-                            Map foreignKey = collection.getDb().mapTo(foreignResourceKey, rel.getRelated().getPrimaryIndex(), rel.getFkIndex1());
-                            updatedRow.putAll(foreignKey);
-                        }
+                    for(String name : collection.getResourceIndex().getJsonNames()){
+                        Object value = node.get(name);
+                        if(value == null)
+                            throw new ApiException("Primary key field should not be null at this point");
+                        primaryKey.put(name, value);
                     }
+
+                    Map<String, Object> patch = new LinkedHashMap<>();
+                    patch.putAll(primaryKey);
+                    patch.putAll(foreignKey);
+                    patches.add(patch);
                 }
 
-                if (updatedRows.size() > 0) {
-                    //-- don't need to "go back through the front door and PATCH to the engine
-                    //-- here because we are updating our own collection.
-                    //-- TODO...make sure of above statement.
-                    collection.getDb().doPatch(collection, updatedRows);
+                if (patches.size() > 0) {
+                    //-- don't need to "go back through the front door and PATCH to the engine because we are updating our own collection.
+                    collection.getDb().patch(collection, patches);
                 }
             }
         }
 
         //--
         //--
-        //-- Step 4: Now find all key values to keep for one-to-many and many-to-many relationships
-        //-- ... this step just collects them...then next steps updates new and removed relationships
+        //-- Step 4: Now find all key values to KEEP for one-to-many and many-to-many relationships
+        //-- ... this step just collects them...later, step 5 removes relationships
         //--
 
         MultiKeyMap<Object, ArrayList> keepRels = new MultiKeyMap<>(); //-- relationship, parentKey, list of childKeys
@@ -372,38 +387,31 @@ public class DbPostAction extends Action<DbPostAction> {
             if (rel.isManyToOne())//these were handled in step 1 and 2
                 continue;
 
-            for (JSNode node : nodes.asNodeList()) {
-                if (!node.hasProperty(rel.getName()) || node.get(rel.getName()) instanceof String)
-                    continue;//-- this property was not passed back in...if it is string it is the link to expand the relationship
+            for (JSNode node : nodes.asMapList()) {
+                if (!(node.get(rel.getName()) instanceof JSList))
+                    continue;//-- this property was not passed back in or was not an array of related nodes
 
-                String href = node.getString("href");
+                LinkedHashMap<String, Object> foreignKey = buildKey(node, collection.getResourceIndex(), rel.getFkIndex1());
 
-                if (href == null)
-                    throw ApiException.new500InternalServerError("The child href should not be null at this point, this looks like an algorithm error.");
+                //LinkedHashMap foreignKey = extractKey(node, rel.getFkIndex1())
 
-                Row                 parentPk  = collection.decodeResourceKey(href);
-                Map<String, Object> parentKey = collection.getDb().mapTo(parentPk, collection.getPrimaryIndex(), rel.getFkIndex1());
+                keepRels.put(rel, foreignKey, new ArrayList());//there may not be any child nodes...this has to be added here so it now orphaned children will be found in step 5
 
-                keepRels.put(rel, parentKey, new ArrayList());//there may not be any child nodes...this has to be added here so it will be in the loop later
 
-                JSArray childNodes = node.getArray(rel.getName());
-
-                for (int i = 0; childNodes != null && i < childNodes.length(); i++) {
-                    Object childHref = childNodes.get(i);
-                    childHref = childHref instanceof JSNode ? ((JSNode) childHref).get("href") : childHref;
-
-                    if (!Utils.empty(childHref)) {
-                        String childEk = (String) Utils.last(Utils.explode("/", childHref.toString()));
-                        Row    childPk = rel.getRelated().decodeResourceKey(childEk);
-
-                        if (rel.isOneToMany()) {
-                            keepRels.get(rel, parentKey).add(childPk);
-                        } else if (rel.isManyToMany()) {
-                            Map childFk = collection.getDb().mapTo(childPk, rel.getRelated().getPrimaryIndex(), rel.getFkIndex2());
-                            keepRels.get(rel, parentKey).add(childFk);
-                        }
+                JSList childNodes = node.getList(rel.getName());
+                for (int i = 0; childNodes != null && i < childNodes.size(); i++) {
+                    JSNode child = (JSNode) childNodes.get(i);
+                    if (rel.isOneToMany()) {
+                        LinkedHashMap<String, Object> childKey = buildKey(child, rel.getRelated().getResourceIndex());
+                        keepRels.get(rel, foreignKey).add(childKey);
+                    } else if (rel.isManyToMany()) {
+                        LinkedHashMap<String, Object> nodeFk = buildKey(node, collection.getResourceIndex(), rel.getFkIndex1());
+                        LinkedHashMap<String, Object> childFk = buildKey(child, rel.getRelated().getResourceIndex(), rel.getFkIndex2());
+                        LinkedHashMap<String, Object> linkKey = new LinkedHashMap<>();
+                        linkKey.putAll(nodeFk);
+                        linkKey.putAll(childFk);
+                        keepRels.get(rel, foreignKey).add(linkKey);
                     }
-
                 }
             }
         }
@@ -433,36 +441,31 @@ public class DbPostAction extends Action<DbPostAction> {
             Map          parentKey = (Map) entry.getKey().getKey(1);
             List<Map>    childKeys = (List) keepRels.get(rel, parentKey);
 
-            List upserts = new ArrayList<>();
+            System.out.println("rel: " + rel.getName());
+            System.out.println("parentKey: " + parentKey);
+            System.out.println("child keys: " + childKeys);
 
             //-- this set will contain the columns we need to update/delete outdated relationships
             Set includesKeys = new HashSet();
             includesKeys.addAll(parentKey.keySet());
-            includesKeys.addAll(rel.getRelated().getPrimaryIndex().getColumnNames());
+            includesKeys.addAll(rel.getRelated().getResourceIndex().getJsonNames());
 
             Term childNot = Term.term(null, "not");
             Term childOr  = Term.term(childNot, "or");
 
+            List<Map> upserts = new ArrayList();
             for (Map childKey : childKeys) {
-                Map upsert = new HashMap<>();
-                upsert.putAll(parentKey);
-                upsert.putAll(childKey);
-                upserts.add(upsert);
-
                 includesKeys.addAll(childKey.keySet());
                 childOr.withTerm(asTerm(childKey));
+                upserts.add(childKey);
             }
 
-            //-- TODO: I don't think you need to do this...the recursive generation already did it...
             Collection coll = rel.isOneToMany() ? rel.getRelated() : rel.getFk1Col1().getCollection();
-            if (rel.isOneToMany()) {
+
+            if (rel.isManyToMany()) {
                 //TODO: go through front door?
-                log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
-                coll.getDb().doPatch(coll, upserts);
-            } else if (rel.isManyToMany()) {
-                //TODO: go through front door?
-                log.debug("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
-                coll.getDb().doUpsert(coll, upserts);
+                System.out.println("updating relationship: " + rel + " -> " + coll + " -> " + upserts);
+                coll.getDb().upsert(coll, upserts);
             }
 
             //-- now find all relationships that are NOT in the group that we just upserted
@@ -470,7 +473,7 @@ public class DbPostAction extends Action<DbPostAction> {
 
             Map<String, String> queryTerms = new HashMap<>();
             queryTerms.put("limit", "100");
-            queryTerms.put("includes", Utils.implode(",", includesKeys));
+            queryTerms.put("include", Utils.implode(",", includesKeys));
 
             for (Object parentKeyProp : parentKey.keySet()) {
                 queryTerms.put(parentKeyProp.toString(), parentKey.get(parentKeyProp).toString());
@@ -482,27 +485,33 @@ public class DbPostAction extends Action<DbPostAction> {
 
             String next = Chain.buildLink(coll);
             while (true) {
-                log.debug("...looking for one-to-many and many-to-many foreign keys: " + rel + " -> " + queryTerms);
+                log.warn("...looking for one-to-many and many-to-many foreign keys: " + rel + " -> " + queryTerms);
 
                 Response toUnlink = req.getEngine().get(next, queryTerms).assertOk();
 
-                if (toUnlink.data().length() == 0)
+                if (toUnlink.data().size() == 0)
                     break;
 
+                toUnlink.dump();
+
                 if (rel.isOneToMany()) {
-                    for (JSNode node : toUnlink.data().asNodeList()) {
+                    for (JSNode node : toUnlink.data().asMapList()) {
                         for (String prop : rel.getFkIndex1().getJsonNames()) {
                             node.put(prop, null);
                         }
                     }
-                    req.getEngine().patch(Chain.buildLink(coll), toUnlink.data());
+                    req.getEngine().patch(Chain.buildLink(coll), toUnlink.data()).assertOk();
 
                 }
                 //TODO: put back in support for many to many rels recursing through engine
                 else if (rel.isManyToMany()) {
                     List resourceKeys = new ArrayList<>();
-                    for (JSNode node : toUnlink.data().asNodeList()) {
-                        resourceKeys.add(Utils.substringAfter(node.getString("href"), "/"));
+                    for (JSMap node : toUnlink.data().asMapList()) {
+                        String key = coll.encodeKeyFromJsonNames(node);
+                        if(key == null)
+                            throw new ApiException("Unable to determine the key for a MANY_TO_MANY relationship deletion.");
+
+                        resourceKeys.add(key);
                     }
 
                     String url = Chain.buildLink(coll) + "/" + Utils.implode(",", resourceKeys);
@@ -515,6 +524,99 @@ public class DbPostAction extends Action<DbPostAction> {
         }
 
         return returnList;
+    }
+
+    LinkedHashMap<String,Object> buildKey(JSNode node, Index index){
+        //TODO add support for keys of different lengths
+        LinkedHashMap<String, Object> key = new LinkedHashMap<>();
+        for(int i=0; i<index.size(); i++){
+            Object value = node.get(index.getJsonName(i));
+            if(value == null)
+                throw new ApiException("Foreign key component can not be null.");
+            key.put(index.getJsonName(i), value);
+        }
+        return key;
+    }
+
+    LinkedHashMap<String,Object> buildKey(JSNode node, Index fromIndex, Index toIndex){
+        //TODO add support for keys of different lengths
+        //TODO what about foreign keys that are out of order
+
+        if(fromIndex == null || toIndex == null)
+            throw new ApiException("You can't map an index when one of them is null.");
+
+        LinkedHashMap<String, Object> foreignKey = new LinkedHashMap<>();
+        for(int i=0; i<fromIndex.size(); i++){
+            Object value = node.get(fromIndex.getJsonName(i));
+            if(value == null)
+                throw new ApiException("Foreign key component can not be null.");
+            foreignKey.put(toIndex.getJsonName(i), value);
+        }
+        return foreignKey;
+    }
+
+
+    /**
+     * Copies a JSNode reference (not a duplicate the actual same JSNode) from its source to where
+     * it is referenced as a $ref property.
+     *
+     * @param root
+     */
+    protected void swapRefsWithActualReferences(JSNode root){
+        root.visit(path -> {
+            JSNode node = path.getNode();
+            Object refObj = node.get("$ref");
+            if(refObj instanceof String){
+                String ref = (String)refObj;
+                if(ref.startsWith("#")){
+                    Object found = root.find(ref);
+                    if(found == null)
+                        throw ApiException.new400BadRequest("Unable to find $ref ''", ref);
+                    path.getParent().getNode().put(path.getProperty(), found);
+                }
+            }
+            return true;
+        });
+    }
+
+    /**
+     * Copies a JSNode body (not a duplicate the actual same JSNode) to a property reference to that body
+     * if it exists elsewhere in the document.  For example "author" = "http://host/authors/1234 would be swapped
+     * with the body of author 1234 if it existed in the doc.
+     */
+    protected void swapLogicalDuplicateReferences(Collection childColl, JSNode child, JSNode parent, String parentProp, Map<Collection, Map<String, JSNode>> visited){
+        if(child == null)
+            return;
+
+        String resourceKey = childColl.encodeKeyFromColumnNames((JSMap)child);
+        if(resourceKey != null){
+            Map<String, JSNode> keys = visited.get(childColl);
+            if(keys == null){
+                keys = new HashMap<>();
+                visited.put(childColl, keys);
+            }
+
+            JSNode existing = keys.get(resourceKey);
+            if(existing != null){
+                parent.put(parentProp, existing);
+                return;
+            }else{
+                keys.put(resourceKey, child);
+            }
+        }
+
+        for(Relationship rel : childColl.getRelationships()){
+            Object grandchild = child.get(rel.getName());
+            if(grandchild instanceof JSList){
+                JSList arr = (JSList)grandchild;
+                for(int i=0; i<arr.size(); i++){
+                    swapLogicalDuplicateReferences(rel.getRelated(), arr.getMap(i), arr, i + "", visited);
+                }
+            }
+            else if(grandchild instanceof JSMap){
+                swapLogicalDuplicateReferences(rel.getRelated(), (JSMap)grandchild, child, rel.getName(), visited);
+            }
+        }
     }
 
 
@@ -563,6 +665,7 @@ public class DbPostAction extends Action<DbPostAction> {
         return this;
     }
 
+
     /*
      * Collapses nested objects so that relationships can be preserved but the fields
      * of the nested child objects are not saved (except for FKs back to the parent
@@ -573,67 +676,67 @@ public class DbPostAction extends Action<DbPostAction> {
      * the parent document back to the parent collection.
      */
     public static void collapse(JSNode parent, boolean collapseAll, Set collapses, String path) {
-        for (String key : parent.keySet()) {
-            Object value = parent.get(key);
-
-            if (collapseAll || collapses.contains(nextPath(path, key))) {
-                if (value instanceof JSArray) {
-                    JSArray children = (JSArray) value;
-                    if (children.length() == 0)
-                        parent.remove(key);
-
-                    for (int i = 0; i < children.length(); i++) {
-                        if (children.get(i) == null) {
-                            children.remove(i);
-                            i--;
-                            continue;
-                        }
-
-                        if (children.get(i) instanceof JSArray || !(children.get(i) instanceof JSNode)) {
-                            children.remove(i);
-                            i--;
-                            continue;
-                        }
-
-                        JSNode child = children.getNode(i);
-                        for (String key2 : child.keySet()) {
-                            if (!key2.equalsIgnoreCase("href")) {
-                                child.remove(key2);
-                            }
-                        }
-
-                        if (child.keySet().size() == 0) {
-
-                            children.remove(i);
-                            i--;
-                            continue;
-                        }
-                    }
-                    if (children.length() == 0)
-                        parent.remove(key);
-
-                } else if (value instanceof JSNode) {
-                    JSNode child = (JSNode) value;
-                    for (String key2 : child.keySet()) {
-                        if (!key2.equalsIgnoreCase("href")) {
-                            child.remove(key2);
-                        }
-                    }
-                    if (child.keySet().size() == 0)
-                        parent.remove(key);
-                }
-            } else if (value instanceof JSArray) {
-                JSArray children = (JSArray) value;
-                for (int i = 0; i < children.length(); i++) {
-                    if (children.get(i) instanceof JSNode && !(children.get(i) instanceof JSArray)) {
-                        collapse(children.getNode(i), collapseAll, collapses, nextPath(path, key));
-                    }
-                }
-            } else if (value instanceof JSNode) {
-                collapse((JSNode) value, collapseAll, collapses, nextPath(path, key));
-            }
-
-        }
+//        for (String key : parent.keySet()) {
+//            Object value = parent.getValue(key);
+//
+//            if (collapseAll || collapses.contains(nextPath(path, key))) {
+//                if (value instanceof JSList) {
+//                    JSList children = (JSList) value;
+//                    if (children.size() == 0)
+//                        parent.removeValue(key);
+//
+//                    for (int i = 0; i < children.size(); i++) {
+//                        if (children.get(i) == null) {
+//                            children.remove(i);
+//                            i--;
+//                            continue;
+//                        }
+//
+//                        if (children.get(i) instanceof JSList || !(children.get(i) instanceof JSNode)) {
+//                            children.remove(i);
+//                            i--;
+//                            continue;
+//                        }
+//
+//                        JSNode child = children.getNode(i);
+//                        for (String key2 : child.keySet()) {
+//                            if (!key2.equalsIgnoreCase("href")) {
+//                                child.removeValue(key2);
+//                            }
+//                        }
+//
+//                        if (child.keySet().size() == 0) {
+//
+//                            children.remove(i);
+//                            i--;
+//                            continue;
+//                        }
+//                    }
+//                    if (children.size() == 0)
+//                        parent.removeValue(key);
+//
+//                } else if (value instanceof JSNode) {
+//                    JSNode child = (JSNode) value;
+//                    for (String key2 : child.keySet()) {
+//                        if (!key2.equalsIgnoreCase("href")) {
+//                            child.removeValue(key2);
+//                        }
+//                    }
+//                    if (child.keySet().size() == 0)
+//                        parent.removeValue(key);
+//                }
+//            } else if (value instanceof JSList) {
+//                JSList children = (JSList) value;
+//                for (int i = 0; i < children.size(); i++) {
+//                    if (children.get(i) instanceof JSNode && !(children.get(i) instanceof JSList)) {
+//                        collapse(children.getNode(i), collapseAll, collapses, nextPath(path, key));
+//                    }
+//                }
+//            } else if (value instanceof JSNode) {
+//                collapse((JSNode) value, collapseAll, collapses, nextPath(path, key));
+//            }
+//
+//        }
     }
 
 }

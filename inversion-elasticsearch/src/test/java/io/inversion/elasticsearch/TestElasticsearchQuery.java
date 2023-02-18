@@ -47,16 +47,16 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("gt(testRange, 25)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("range"));
 //
@@ -99,16 +99,16 @@ public class TestElasticsearchQuery {
 //    //      ElasticsearchQuery query = new ElasticsearchQuery();
 //    //      query.getWhere().gt("testRange", 25);
 //    //
-//    //      JSNode jsNode = query.toJson();
+//    //      JSNode JSNode = query.toJson();
 //    //
-//    //      assertNotNull(jsNode, "json should not be empty.");
+//    //      assertNotNull(JSNode, "json should not be empty.");
 //    //
-//    //      assertEquals(2, jsNode.size());
+//    //      assertEquals(2, JSNode.size());
 //    //
-//    //      assertNotNull(jsNode.get("sort"));
+//    //      assertNotNull(JSNode.get("sort"));
 //    //
-//    //      assertNotNull(jsNode.get("query"));
-//    //      JSNode queryNode = jsNode.getNode("query");
+//    //      assertNotNull(JSNode.get("query"));
+//    //      JSNode queryNode = JSNode.getNode("query");
 //    //
 //    //      assertNotNull(queryNode.get("range"));
 //    //
@@ -150,16 +150,16 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("lt(testRange, 25)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("range"));
 //
@@ -198,13 +198,13 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("sw(city,Chand,Atl)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("sort"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("wildcard"));
 //
@@ -240,15 +240,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("w(city,andl)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("wildcard"));
 //
@@ -297,15 +297,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("w(name,'nestl','f\\'')");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -315,7 +315,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //        assertNotNull(boolNode.get("should"));
 //
-//        JSArray shouldArr = boolNode.getArray("should");
+//        JSList shouldArr = boolNode.getList("should");
 //        assertEquals(2, shouldArr.length());
 //
 //        boolean nestlFound = false;
@@ -370,15 +370,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("wo(city,h)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -388,7 +388,7 @@ public class TestElasticsearchQuery {
 //        assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
 //        assertNotNull(boolNode.get("must_not"));
 //
-//        JSArray mustNotArr = boolNode.getArray("must_not");
+//        JSList mustNotArr = boolNode.getList("must_not");
 //        assertEquals(1, mustNotArr.length());
 //        JSNode wildcardNode = mustNotArr.getNode(0).getNode("wildcard");
 //        assertEquals(1, wildcardNode.size());
@@ -421,15 +421,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("ew(city,andler)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("wildcard"));
 //
@@ -465,15 +465,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("w(city,andl)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("wildcard"));
 //
@@ -526,14 +526,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("emp(state)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -543,7 +543,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("should"));
-//        JSArray shouldArr = boolNode.getArray("should");
+//        JSList shouldArr = boolNode.getList("should");
 //
 //        assertEquals(2, shouldArr.length());
 //        JSNode termNode      = null;
@@ -566,7 +566,7 @@ public class TestElasticsearchQuery {
 //        assertTrue((Boolean) innerBoolNode.get("adjust_pure_negative"));
 //        assertEquals(new Double(1.0), (Double) innerBoolNode.get("boost"));
 //
-//        JSArray mustNotArr = innerBoolNode.getArray("must_not");
+//        JSList mustNotArr = innerBoolNode.getList("must_not");
 //        assertEquals(1, mustNotArr.length());
 //        JSNode existsNode = mustNotArr.getNode(0).getNode("exists");
 //        assertEquals(2, existsNode.size());
@@ -600,13 +600,13 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("search(keywords,Tim)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        JSNode fuzzyNode = queryNode.getNode("fuzzy");
 //        assertEquals(1, fuzzyNode.size());
@@ -667,14 +667,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("nemp(state)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -684,11 +684,11 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("must"));
-//        JSArray mustArr = boolNode.getArray("must");
+//        JSList mustArr = boolNode.getList("must");
 //
 //        assertEquals(2, mustArr.length());
-//        JSArray mustNotArr   = null;
-//        JSArray innerMustArr = null;
+//        JSList mustNotArr   = null;
+//        JSList innerMustArr = null;
 //
 //        for (JSNode node : mustArr.asNodeList()) {
 //            JSNode bool = node.getNode("bool");
@@ -697,9 +697,9 @@ public class TestElasticsearchQuery {
 //            assertEquals(new Double(1.0), (Double) bool.get("boost"));
 //
 //            if (bool.hasProperty("must_not"))
-//                mustNotArr = bool.getArray("must_not");
+//                mustNotArr = bool.getList("must_not");
 //            else if (bool.hasProperty("must"))
-//                innerMustArr = bool.getArray("must");
+//                innerMustArr = bool.getList("must");
 //        }
 //
 //        assertEquals(1, mustNotArr.length());
@@ -737,14 +737,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("nn(state)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        JSNode existsNode = queryNode.getNode("exists");
 //        assertEquals(2, existsNode.size());
@@ -778,14 +778,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("n(state)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -795,7 +795,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("must_not"));
-//        JSArray mustNotArr = boolNode.getArray("must_not");
+//        JSList mustNotArr = boolNode.getList("must_not");
 //
 //        assertEquals(1, mustNotArr.length());
 //        JSNode existsNode = mustNotArr.getNode(0).getNode("exists");
@@ -819,14 +819,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("pageSize=1000");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertEquals(1000, jsNode.getInt("size"));
+//        assertEquals(1000, JSNode.getInt("size"));
 //
 //    }
 //
@@ -856,17 +856,17 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("gt(testRange, 25)&page=2");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(4, jsNode.size());
-//        assertEquals(100, jsNode.getInt("size"));
-//        assertEquals(2, jsNode.getInt("from"));
+//        assertEquals(4, JSNode.size());
+//        assertEquals(100, JSNode.getInt("size"));
+//        assertEquals(2, JSNode.getInt("from"));
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("range"));
 //
@@ -891,13 +891,13 @@ public class TestElasticsearchQuery {
 ////      ElasticsearchQuery query = new ElasticsearchQuery();
 ////      query.withTerm("gt(testRange, 25)&pagesize=100&start=2000");
 ////
-////      JSNode jsNode = query.toJson();
-////      assertNotNull(jsNode, "json should not be empty.");
+////      JSNode JSNode = query.toJson();
+////      assertNotNull(JSNode, "json should not be empty.");
 ////
-//    //      assertNotNull(jsNode.get("sort"));
+//    //      assertNotNull(JSNode.get("sort"));
 ////
-//    //      assertNotNull(jsNode.get("query"));
-////      JSNode queryNode = jsNode.getNode("query");
+//    //      assertNotNull(JSNode.get("query"));
+////      JSNode queryNode = JSNode.getNode("query");
 ////
 ////      fail("doom doom doooooom.");
 ////
@@ -920,13 +920,13 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("order=test");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(1, jsNode.size());
-//        assertNotNull(jsNode.get("sort"));
+//        assertEquals(1, JSNode.size());
+//        assertNotNull(JSNode.get("sort"));
 //
-//        JSArray sortArr = jsNode.getArray("sort");
+//        JSList sortArr = JSNode.getList("sort");
 //        assertEquals(2, sortArr.size());
 //
 //        boolean sort1Found = false;
@@ -964,13 +964,13 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("order=+test");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(1, jsNode.size());
-//        assertNotNull(jsNode.get("sort"));
+//        assertEquals(1, JSNode.size());
+//        assertNotNull(JSNode.get("sort"));
 //
-//        JSArray sortArr = jsNode.getArray("sort");
+//        JSList sortArr = JSNode.getList("sort");
 //        assertEquals(2, sortArr.size());
 //
 //        boolean sort1Found = false;
@@ -1008,13 +1008,13 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("order=-test");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(1, jsNode.size());
-//        assertNotNull(jsNode.get("sort"));
+//        assertEquals(1, JSNode.size());
+//        assertNotNull(JSNode.get("sort"));
 //
-//        JSArray sortArr = jsNode.getArray("sort");
+//        JSList sortArr = JSNode.getList("sort");
 //        assertEquals(2, sortArr.size());
 //
 //        boolean sort1Found = false;
@@ -1045,13 +1045,13 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("sort=test,-test2,+test3");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(1, jsNode.size());
-//        assertNotNull(jsNode.get("sort"));
+//        assertEquals(1, JSNode.size());
+//        assertNotNull(JSNode.get("sort"));
 //
-//        JSArray sortArr = jsNode.getArray("sort");
+//        JSList sortArr = JSNode.getList("sort");
 //        assertEquals(4, sortArr.size());
 //
 //        boolean testFound  = false;
@@ -1107,14 +1107,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("order=test&pageSize=1000");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
-//        assertEquals(1000, jsNode.getInt("size"));
-//        assertNotNull(jsNode.get("sort"));
+//        assertEquals(2, JSNode.size());
+//        assertEquals(1000, JSNode.getInt("size"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        JSArray sortArr = jsNode.getArray("sort");
+//        JSList sortArr = JSNode.getList("sort");
 //        assertEquals(2, sortArr.size());
 //
 //        boolean sort1Found = false;
@@ -1167,15 +1167,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("gt(priority,25)&source=priority");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(3, jsNode.size());
+//        assertEquals(3, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //        assertEquals(1, queryNode.size());
 //        JSNode rangeNode = queryNode.getNode("range");
 //        assertEquals(1, rangeNode.size());
@@ -1187,14 +1187,14 @@ public class TestElasticsearchQuery {
 //        assertTrue((Boolean) priorityNode.get("include_upper"));
 //        assertEquals(new Double(1.0), (Double) priorityNode.get("boost"));
 //
-//        assertNotNull(jsNode.get("_source"));
-//        JSNode sourceNode = jsNode.getNode("_source");
+//        assertNotNull(JSNode.get("_source"));
+//        JSNode sourceNode = JSNode.getNode("_source");
 //        assertEquals(2, sourceNode.size());
-//        JSArray includes = sourceNode.getArray("includes");
+//        JSList includes = sourceNode.getList("includes");
 //        assertEquals(1, includes.size());
 //        assertEquals("priority", includes.getString(0));
 //
-//        JSArray excludes = sourceNode.getArray("excludes");
+//        JSList excludes = sourceNode.getList("excludes");
 //        assertEquals(0, excludes.size());
 //
 //    }
@@ -1227,15 +1227,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("gt(priority,25)&includes=priority,test2,banana");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(3, jsNode.size());
+//        assertEquals(3, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //        assertEquals(1, queryNode.size());
 //        JSNode rangeNode = queryNode.getNode("range");
 //        assertEquals(1, rangeNode.size());
@@ -1247,16 +1247,16 @@ public class TestElasticsearchQuery {
 //        assertTrue((Boolean) priorityNode.get("include_upper"));
 //        assertEquals(new Double(1.0), (Double) priorityNode.get("boost"));
 //
-//        assertNotNull(jsNode.get("_source"));
-//        JSNode sourceNode = jsNode.getNode("_source");
+//        assertNotNull(JSNode.get("_source"));
+//        JSNode sourceNode = JSNode.getNode("_source");
 //        assertEquals(2, sourceNode.size());
-//        JSArray includes = sourceNode.getArray("includes");
+//        JSList includes = sourceNode.getList("includes");
 //        assertEquals(3, includes.size());
 //        assertTrue(includes.contains("priority"));
 //        assertTrue(includes.contains("test2"));
 //        assertTrue(includes.contains("banana"));
 //
-//        JSArray excludes = sourceNode.getArray("excludes");
+//        JSList excludes = sourceNode.getList("excludes");
 //        assertEquals(0, excludes.size());
 //
 //    }
@@ -1289,15 +1289,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("gt(priority,25)&excludes=priority");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(3, jsNode.size());
+//        assertEquals(3, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //        assertEquals(1, queryNode.size());
 //        JSNode rangeNode = queryNode.getNode("range");
 //        assertEquals(1, rangeNode.size());
@@ -1309,14 +1309,14 @@ public class TestElasticsearchQuery {
 //        assertTrue((Boolean) priorityNode.get("include_upper"));
 //        assertEquals(new Double(1.0), (Double) priorityNode.get("boost"));
 //
-//        assertNotNull(jsNode.get("_source"));
-//        JSNode sourceNode = jsNode.getNode("_source");
+//        assertNotNull(JSNode.get("_source"));
+//        JSNode sourceNode = JSNode.getNode("_source");
 //        assertEquals(2, sourceNode.size());
-//        JSArray excludes = sourceNode.getArray("excludes");
+//        JSList excludes = sourceNode.getList("excludes");
 //        assertEquals(1, excludes.size());
 //        assertEquals("priority", excludes.getString(0));
 //
-//        JSArray includes = sourceNode.getArray("includes");
+//        JSList includes = sourceNode.getList("includes");
 //        assertEquals(0, includes.size());
 //
 //    }
@@ -1345,16 +1345,16 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("gt(hispanicRank,25)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("range"));
 //
@@ -1396,12 +1396,12 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("ge(hispanicRank,25)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertNotNull(jsNode.get("sort"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("sort"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertEquals(1, queryNode.size());
 //        assertNotNull(queryNode.get("range"));
@@ -1452,15 +1452,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("lt(players.registerNum,3)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //        assertNotNull(queryNode.get("nested"));
 //
 //        JSNode nestedNode = queryNode.getNode("nested");
@@ -1516,14 +1516,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("eq(city,CHANDLER)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("sort"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        JSNode termNode = queryNode.getNode("term");
 //        assertEquals(1, termNode.size());
@@ -1555,12 +1555,12 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("eq(uninstalled,true)");
 //
-//        JSNode jsNode = query.getJson();
+//        JSNode JSNode = query.getJson();
 //
-//        assertNotNull(jsNode, "json should not be empty.");
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertNotNull(jsNode.get("sort"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("sort"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        JSNode termNode = queryNode.getNode("term");
 //        assertEquals(1, termNode.size());
@@ -1598,14 +1598,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("ne(hispanicRank,25)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -1615,7 +1615,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("must_not"));
-//        JSArray mustNotArr = boolNode.getArray("must_not");
+//        JSList mustNotArr = boolNode.getList("must_not");
 //
 //        assertEquals(1, mustNotArr.length());
 //        JSNode termNode = mustNotArr.getNode(0).getNode("term");
@@ -1669,15 +1669,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(ne(hispanicRank,95),gt(hispanicRank,93))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -1687,7 +1687,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) bool1Node.get("boost"));
 //
 //        assertNotNull(bool1Node.get("filter"));
-//        JSArray filterArr = bool1Node.getArray("filter");
+//        JSList filterArr = bool1Node.getList("filter");
 //
 //        assertEquals(2, filterArr.length());
 //
@@ -1713,7 +1713,7 @@ public class TestElasticsearchQuery {
 //                assertTrue((Boolean) bool2Node.get("adjust_pure_negative"));
 //                assertEquals(new Double(1.0), (Double) bool2Node.get("boost"));
 //
-//                JSArray mustNotArr = bool2Node.getArray("must_not");
+//                JSList mustNotArr = bool2Node.getList("must_not");
 //
 //                assertEquals(1, mustNotArr.length());
 //                JSNode termNode = mustNotArr.getNode(0).getNode("term");
@@ -1774,14 +1774,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("ne(hispanicRank,95)&gt(hispanicRank,93)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        JSNode queryNode = jsNode.getNode("query");
+//        JSNode queryNode = JSNode.getNode("query");
 //        assertEquals(1, queryNode.size());
 //
 //        assertNotNull(queryNode.get("bool"));
@@ -1792,7 +1792,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) bool1Node.get("boost"));
 //
 //        assertNotNull(bool1Node.get("filter"));
-//        JSArray filterArr = bool1Node.getArray("filter");
+//        JSList filterArr = bool1Node.getList("filter");
 //
 //        assertEquals(2, filterArr.length());
 //
@@ -1818,7 +1818,7 @@ public class TestElasticsearchQuery {
 //                assertTrue((Boolean) bool2Node.get("adjust_pure_negative"));
 //                assertEquals(new Double(1.0), (Double) bool2Node.get("boost"));
 //
-//                JSArray mustNotArr = bool2Node.getArray("must_not");
+//                JSList mustNotArr = bool2Node.getList("must_not");
 //
 //                assertEquals(1, mustNotArr.length());
 //                JSNode termNode = mustNotArr.getNode(0).getNode("term");
@@ -1870,13 +1870,13 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("or(eq(name,fwqa),eq(name,cheetos))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        JSNode boolNode = queryNode.getNode("bool");
 //        assertEquals(3, boolNode.size());
@@ -1884,7 +1884,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //        assertNotNull(boolNode.get("should"));
 //
-//        JSArray shouldArr = boolNode.getArray("should");
+//        JSList shouldArr = boolNode.getList("should");
 //        assertEquals(2, shouldArr.length());
 //
 //        boolean fwqaFound    = false;
@@ -1931,19 +1931,19 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("in(city,Chicago,Tempe,Chandler)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        JSNode termsNode = queryNode.getNode("terms");
 //        assertEquals(2, termsNode.size());
 //        assertEquals(new Double(1.0), (Double) termsNode.get("boost"));
 //
-//        JSArray cityArr = termsNode.getArray("city");
+//        JSList cityArr = termsNode.getList("city");
 //        assertEquals(3, cityArr.length());
 //
 //        boolean chicagoFound  = false;
@@ -1990,15 +1990,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("out(city,Chicago,Tempe,Chandler)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -2008,13 +2008,13 @@ public class TestElasticsearchQuery {
 //        assertTrue((Boolean) boolNode.get("adjust_pure_negative"));
 //        assertNotNull(boolNode.get("must_not"));
 //
-//        JSArray mustNotArr = boolNode.getArray("must_not");
+//        JSList mustNotArr = boolNode.getList("must_not");
 //        assertEquals(1, mustNotArr.length());
 //        JSNode termsNode = mustNotArr.getNode(0).getNode("terms");
 //        assertEquals(2, termsNode.size());
 //        assertEquals(new Double(1.0), (Double) termsNode.get("boost"));
 //
-//        JSArray cityArr = termsNode.getArray("city");
+//        JSList cityArr = termsNode.getList("city");
 //        assertEquals(3, cityArr.length());
 //
 //        boolean chicagoFound  = false;
@@ -2077,15 +2077,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("eq(locationCode,270*)&eq(city,Chandler)&eq(address1,*McQueen*)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -2095,7 +2095,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("filter"));
-//        JSArray filterArr = boolNode.getArray("filter");
+//        JSList filterArr = boolNode.getList("filter");
 //
 //        assertEquals(3, filterArr.length());
 //
@@ -2184,15 +2184,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(search(keywords,test),search(keywords,matt))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -2202,7 +2202,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("filter"));
-//        JSArray filterArr = boolNode.getArray("filter");
+//        JSList filterArr = boolNode.getList("filter");
 //
 //        assertEquals(2, filterArr.length());
 //
@@ -2279,15 +2279,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("search(keywords,test)&search(keywords,matt)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -2297,7 +2297,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("filter"));
-//        JSArray filterArr = boolNode.getArray("filter");
+//        JSList filterArr = boolNode.getList("filter");
 //
 //        assertEquals(2, filterArr.length());
 //
@@ -2366,13 +2366,13 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("or(eq(id,3),eq(name,*POST*))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("sort"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -2382,7 +2382,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //        assertNotNull(boolNode.get("should"));
 //
-//        JSArray shouldArr = boolNode.getArray("should");
+//        JSList shouldArr = boolNode.getList("should");
 //        assertEquals(2, shouldArr.length());
 //
 //        boolean termNodeFound     = false;
@@ -2437,14 +2437,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("eq(address1,*GILBERT*)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
-//        assertEquals(2, jsNode.size());
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("wildcard"));
 //
@@ -2493,15 +2493,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(eq(locationCode,9187),eq(city,CHANDLER))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -2511,7 +2511,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("filter"));
-//        JSArray filterArr = boolNode.getArray("filter");
+//        JSList filterArr = boolNode.getList("filter");
 //
 //        assertEquals(2, filterArr.length());
 //
@@ -2578,15 +2578,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(eq(address1,*GILBERT*),eq(city,CHANDLER))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -2596,7 +2596,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("filter"));
-//        JSArray filterArr = boolNode.getArray("filter");
+//        JSList filterArr = boolNode.getList("filter");
 //
 //        assertEquals(2, filterArr.length());
 //
@@ -2674,14 +2674,14 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(gt(hispanicRank,25),le(hispanicRank,40))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        JSNode queryNode = jsNode.getNode("query");
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -2691,7 +2691,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("filter"));
-//        JSArray filterArr = boolNode.getArray("filter");
+//        JSList filterArr = boolNode.getList("filter");
 //
 //        assertEquals(2, filterArr.length());
 //
@@ -2777,15 +2777,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(and(eq(locationCode,270*),eq(city,Chandler)),and(eq(address1,*McQueen*)))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -2795,7 +2795,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("filter"));
-//        JSArray filterArr = boolNode.getArray("filter");
+//        JSList filterArr = boolNode.getList("filter");
 //
 //        assertEquals(2, filterArr.length());
 //
@@ -2819,7 +2819,7 @@ public class TestElasticsearchQuery {
 //                assertEquals(new Double(1.0), (Double) innerBoolNode.get("boost"));
 //
 //                assertNotNull(innerBoolNode.get("filter"));
-//                JSArray innerFilterArr = innerBoolNode.getArray("filter");
+//                JSList innerFilterArr = innerBoolNode.getList("filter");
 //
 //                assertEquals(2, innerFilterArr.length());
 //
@@ -2884,15 +2884,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("gt(players.registerNum,5)");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("nested"));
 //
@@ -2961,15 +2961,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(eq(keywords.name,color),eq(keywords.value,33))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("nested"));
 //
@@ -2995,7 +2995,7 @@ public class TestElasticsearchQuery {
 //            assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //            assertNotNull(boolNode.get("filter"));
-//            JSArray filterArr = boolNode.getArray("filter");
+//            JSList filterArr = boolNode.getList("filter");
 //
 //            assertEquals(2, filterArr.length());
 //
@@ -3071,15 +3071,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(eq(keywords.name,age),gt(keywords.value,30))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("nested"));
 //
@@ -3105,7 +3105,7 @@ public class TestElasticsearchQuery {
 //            assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //            assertNotNull(boolNode.get("filter"));
-//            JSArray filterArr = boolNode.getArray("filter");
+//            JSList filterArr = boolNode.getList("filter");
 //
 //            assertEquals(2, filterArr.length());
 //
@@ -3181,15 +3181,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(eq(keywords.name,items.name),w(keywords.value,Powerade))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("nested"));
 //
@@ -3215,7 +3215,7 @@ public class TestElasticsearchQuery {
 //            assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //            assertNotNull(boolNode.get("filter"));
-//            JSArray filterArr = boolNode.getArray("filter");
+//            JSList filterArr = boolNode.getList("filter");
 //
 //            assertEquals(2, filterArr.length());
 //
@@ -3286,15 +3286,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(w(keywords.value,Powerade),eq(keywords.name,items.name))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("nested"));
 //
@@ -3320,7 +3320,7 @@ public class TestElasticsearchQuery {
 //            assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //            assertNotNull(boolNode.get("filter"));
-//            JSArray filterArr = boolNode.getArray("filter");
+//            JSList filterArr = boolNode.getList("filter");
 //
 //            assertEquals(2, filterArr.length());
 //
@@ -3394,15 +3394,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(gt(players.registerNum,5),eq(city,Chandler))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -3412,7 +3412,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("filter"));
-//        JSArray filterArr = boolNode.getArray("filter");
+//        JSList filterArr = boolNode.getList("filter");
 //
 //        assertEquals(2, filterArr.length());
 //
@@ -3514,15 +3514,15 @@ public class TestElasticsearchQuery {
 //        ElasticsearchQuery query = new ElasticsearchQuery();
 //        query.withTerm("and(and(eq(players.deleted,true),eq(city,PHOENIX)),and(eq(address1,*VALLEY*)))");
 //
-//        JSNode jsNode = query.getJson();
-//        assertNotNull(jsNode, "json should not be empty.");
+//        JSNode JSNode = query.getJson();
+//        assertNotNull(JSNode, "json should not be empty.");
 //
-//        assertEquals(2, jsNode.size());
+//        assertEquals(2, JSNode.size());
 //
-//        assertNotNull(jsNode.get("sort"));
+//        assertNotNull(JSNode.get("sort"));
 //
-//        assertNotNull(jsNode.get("query"));
-//        JSNode queryNode = jsNode.getNode("query");
+//        assertNotNull(JSNode.get("query"));
+//        JSNode queryNode = JSNode.getNode("query");
 //
 //        assertNotNull(queryNode.get("bool"));
 //
@@ -3532,7 +3532,7 @@ public class TestElasticsearchQuery {
 //        assertEquals(new Double(1.0), (Double) boolNode.get("boost"));
 //
 //        assertNotNull(boolNode.get("filter"));
-//        JSArray filterArr = boolNode.getArray("filter");
+//        JSList filterArr = boolNode.getList("filter");
 //
 //        assertEquals(2, filterArr.length());
 //
@@ -3558,7 +3558,7 @@ public class TestElasticsearchQuery {
 //                assertEquals(new Double(1.0), (Double) innerBoolNode.get("boost"));
 //
 //                assertNotNull(innerBoolNode.get("filter"));
-//                JSArray innerFilterArr = innerBoolNode.getArray("filter");
+//                JSList innerFilterArr = innerBoolNode.getList("filter");
 //
 //                assertEquals(2, innerFilterArr.length());
 //

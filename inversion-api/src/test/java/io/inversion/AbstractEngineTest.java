@@ -1,6 +1,7 @@
 package io.inversion;
 
 import io.inversion.action.db.DbAction;
+import io.inversion.action.hateoas.LinksFilter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,6 +36,7 @@ public interface AbstractEngineTest extends AbstractDbTest {
 
         Engine engine = new Engine().withApi(buildApi(db));
         setEngine(engine);
+        //engine.startup();
     }
 
     default Api buildApi(Db db) {
@@ -45,7 +47,8 @@ public interface AbstractEngineTest extends AbstractDbTest {
     default Api buildDefaultApi(Db db) {
 
         return new Api("northwind") //
-                .withEndpoint("*", db.getType() + "/*", new DbAction())//
+                .withServer(new Server("northwind/*"))
+                .withEndpoint("" + db.getType() + "/*", new LinksFilter(), new DbAction())//
                 .withDb(db);
     }
 
@@ -81,7 +84,7 @@ public interface AbstractEngineTest extends AbstractDbTest {
                 .withIndex("PK_Employees", "primary", true, "employeeId");
 
         employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
-        employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
+        employees.withIndex("fkIdx_Employees_reportsTo", Index.TYPE_FOREIGN_KEY, false, "reportsTo");
 
         employees.withRelationship(new Relationship("reportsTo", Relationship.REL_MANY_TO_ONE, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
         employees.withRelationship(new Relationship("employees", Relationship.REL_ONE_TO_MANY, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
@@ -95,8 +98,8 @@ public interface AbstractEngineTest extends AbstractDbTest {
         employeeOrderDetails.getProperty("orderId").withPk(orderDetails.getProperty("orderId"));
         employeeOrderDetails.getProperty("productId").withPk(orderDetails.getProperty("productId"));
 
-        employeeOrderDetails.withIndex("FK_EOD_employeeId", "FOREIGN_KEY", false, "employeeId");
-        employeeOrderDetails.withIndex("FK_EOD_orderdetails", "FOREIGN_KEY", false, "orderId", "productId");
+        employeeOrderDetails.withIndex("FK_EOD_employeeId", Index.TYPE_FOREIGN_KEY, false, "employeeId");
+        employeeOrderDetails.withIndex("FK_EOD_orderdetails", Index.TYPE_FOREIGN_KEY, false, "orderId", "productId");
 
         employees.withRelationship(new Relationship("orderdetails", Relationship.REL_MANY_TO_MANY, employees, orderDetails, employeeOrderDetails.getIndex("FK_EOD_employeeId"), employeeOrderDetails.getIndex("FK_EOD_orderdetails")));
 

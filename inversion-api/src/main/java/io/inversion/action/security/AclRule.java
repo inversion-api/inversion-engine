@@ -22,70 +22,96 @@ import io.inversion.Rule;
 import io.inversion.utils.Utils;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class AclRule extends Rule<AclRule> {
-    protected final List<String> permissions = new ArrayList<>();
-    protected final List<String> roles       = new ArrayList<>();
-    protected boolean allow = true;
-    protected boolean info  = false;
-    protected boolean allRolesMustMatch       = false;
-    protected boolean allPermissionsMustMatch = false;
+    protected final ArrayList<String> permissions             = new ArrayList<>();
+    protected final ArrayList<String> roles                   = new ArrayList<>();
+    protected final ArrayList<String> scopes                  = new ArrayList<>();
+    protected       boolean           allow                   = true;
+    protected       boolean           info                    = false;
+    protected       boolean           allRolesMustMatch       = false;
+    protected       boolean           allPermissionsMustMatch = false;
+    protected       boolean           allScopesMustMatch = false;
+
 
     public AclRule() {
         super();
     }
 
-    public AclRule(String name, String methods, String includePaths, String permission1, String... permissionsN) {
-        withName(name);
-        withIncludeOn(methods, includePaths);
+//    public AclRule(String name, String permissions, StringString ruleMatcherSpec, String permission1, String... permissionsN) {
+//        withName(name);
+//        withIncludeOn(ruleMatcherSpec);
+//
+//        if (permission1 != null)
+//            withPermissions(permission1);
+//
+//        if (permissionsN != null)
+//            withPermissions(permissionsN);
+//    }
 
-        if (permission1 != null)
-            withPermissions(permission1);
-
-        if (permissionsN != null)
-            withPermissions(permissionsN);
-    }
-
-    public static AclRule allowAll(String methods, String includePaths) {
-        AclRule rule = new AclRule(null, methods, includePaths, null);
+    public static AclRule allowAll(String includedOn) {
+        AclRule rule = new AclRule();
+        rule.withIncludeOn(includedOn);
         return rule;
     }
 
-    public static AclRule requireAllPerms(String methods, String includePaths, String permission1, String... permissionsN) {
-        AclRule rule = new AclRule(null, null, includePaths, permission1, permissionsN);
+    public static AclRule requireAllPerms(String permissions, String... includedOn) {
+        AclRule rule = new AclRule();
         rule.withAllPermissionsMustMatch(true);
+        rule.withPermissions(permissions);
+        rule.withIncludeOn(includedOn);
         return rule;
     }
 
-    public static AclRule requireOnePerm(String methods, String includePaths, String permission1, String... permissionsN) {
-        AclRule rule = new AclRule(null, null, includePaths, permission1, permissionsN);
+    public static AclRule requireOnePerm(String permissions, String... includedOn) {
+        AclRule rule = new AclRule();
         rule.withAllPermissionsMustMatch(false);
+        rule.withPermissions(permissions);
+        rule.withIncludeOn(includedOn);
         return rule;
     }
 
-    public static AclRule requireAllRoles(String methods, String includePaths, String role1, String... rolesN) {
-        AclRule rule = new AclRule(null, null, includePaths, null);
+    public static AclRule requireAllRoles(String roles, String... includedOn) {
+        AclRule rule = new AclRule();
         rule.withAllRolesMustMatch(true);
-        rule.withRoles(role1);
-        rule.withRoles(rolesN);
+        rule.withRoles(roles);
+        rule.withIncludeOn(includedOn);
         return rule;
     }
 
-    public static AclRule requireOneRole(String methods, String includePaths, String role1, String... rolesN) {
-        AclRule rule = new AclRule(null, null, includePaths, null);
+    public static AclRule requireOneRole(String roles, String... includedOn) {
+        AclRule rule = new AclRule();
         rule.withAllRolesMustMatch(false);
-        rule.withRoles(role1);
-        rule.withRoles(rolesN);
+        rule.withRoles(roles);
+        rule.withIncludeOn(includedOn);
         return rule;
     }
+
+    public static AclRule requireAllScopes(String scopes, String... includedOn) {
+        AclRule rule = new AclRule();
+        rule.withAllScopesMustMatch(true);
+        rule.withScopes(scopes);
+        rule.withIncludeOn(includedOn);
+        return rule;
+    }
+
+    public static AclRule requireOneScope(String scopes, String... includedOn) {
+        AclRule rule = new AclRule();
+        rule.withAllScopesMustMatch(false);
+        rule.withScopes(scopes);
+        rule.withIncludeOn(includedOn);
+        return rule;
+    }
+
+
+
 
     public boolean ruleMatches(Request req) {
+
         if (match(req.getMethod(), req.getPath()) == null)
             return false;
 
-        //short cut 
-        if (Chain.getUser() == null && (roles.size() > 0 || permissions.size() > 0))
+        if (Chain.getUser() == null && (roles.size() > 0 || permissions.size() > 0 || scopes.size() > 0))
             return false;
 
         int matches = 0;
@@ -119,6 +145,21 @@ public class AclRule extends Rule<AclRule> {
             }
         }
 
+        for (String requiredScope : scopes) {
+            boolean matched = Chain.getUser().hasScope(requiredScope);
+
+            if (matched) {
+                matches += 1;
+                if (!allScopesMustMatch) {
+                    break;
+                }
+            } else {
+                if (allScopesMustMatch) {
+                    break;
+                }
+            }
+        }
+
         boolean hasRoles = roles.size() == 0 //
                 || (allRolesMustMatch && matches == roles.size())//
                 || (!allRolesMustMatch && matches > 0);
@@ -127,7 +168,11 @@ public class AclRule extends Rule<AclRule> {
                 || (allPermissionsMustMatch && matches == permissions.size())//
                 || (!allPermissionsMustMatch && matches > 0);
 
-        return hasRoles || hasPermissions;
+        boolean hasScopes = scopes.size() == 0 //
+                || (allScopesMustMatch && matches == scopes.size())//
+                || (!allScopesMustMatch && matches > 0);
+
+        return hasRoles || hasPermissions || hasScopes;
     }
 
     public ArrayList<String> getRoles() {
@@ -157,6 +202,22 @@ public class AclRule extends Rule<AclRule> {
         }
         return this;
     }
+
+    public ArrayList<String> getScopes() {
+        return new ArrayList(scopes);
+    }
+
+    public AclRule withScopes(String... scopes) {
+        if (scopes != null) {
+            for (String scope : Utils.explode(",", scopes)) {
+                if (!this.scopes.contains(scope))
+                    this.scopes.add(scope);
+            }
+        }
+        return this;
+    }
+
+
 
     public boolean isAllow() {
         return allow;
@@ -194,4 +255,12 @@ public class AclRule extends Rule<AclRule> {
         return this;
     }
 
+    public boolean isAllScopesMustMatch() {
+        return allScopesMustMatch;
+    }
+
+    public AclRule withAllScopesMustMatch(boolean allScopesMustMatch) {
+        this.allScopesMustMatch = allScopesMustMatch;
+        return this;
+    }
 }

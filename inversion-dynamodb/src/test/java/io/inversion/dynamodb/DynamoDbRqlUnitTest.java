@@ -220,7 +220,7 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest implements AbstractDyna
     //            employees.withProperty("type", "S");
     //            employees.withIndex(DynamoDb.PRIMARY_INDEX_NAME, DynamoDb.PRIMARY_INDEX_TYPE, true, "employeeId", "type");
     //            employees.getProperty("reportsTo").withPk(employees.getProperty("employeeId"));
-    //            employees.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "reportsTo");
+    //            employees.withIndex("fkIdx_Employees_reportsTo", Index.TYPE_FOREIGN_KEY, false, "reportsTo");
     //            employees.withRelationship(new Relationship("reportsTo", Relationship.REL_MANY_TO_ONE, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
     //            employees.withRelationship(new Relationship("employees", Relationship.REL_ONE_TO_MANY, employees, employees, employees.getIndex("fkIdx_Employees_reportsTo"), null));
     //
@@ -229,8 +229,8 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest implements AbstractDyna
     //            employeeOrderDetails.getProperty("orderId").withPk(orderDetails.getProperty("orderId"));
     //            employeeOrderDetails.getProperty("productId").withPk(orderDetails.getProperty("productId"));
     //
-    //            employeeOrderDetails.withIndex("FK_EOD_employeeId", "FOREIGN_KEY", false, "employeeId");
-    //            employeeOrderDetails.withIndex("FK_EOD_orderdetails", "FOREIGN_KEY", false, "orderId", "productId");
+    //            employeeOrderDetails.withIndex("FK_EOD_employeeId", Index.TYPE_FOREIGN_KEY, false, "employeeId");
+    //            employeeOrderDetails.withIndex("FK_EOD_orderdetails", Index.TYPE_FOREIGN_KEY, false, "orderId", "productId");
     //
     //            employees.withRelationship(new Relationship("orderdetails", Relationship.REL_MANY_TO_MANY, employees, orderDetails, employeeOrderDetails.getIndex("FK_EOD_employeeId"), employeeOrderDetails.getIndex("FK_EOD_orderdetails")));
     //

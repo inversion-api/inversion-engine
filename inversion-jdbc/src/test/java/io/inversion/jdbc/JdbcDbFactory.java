@@ -3,7 +3,8 @@ package io.inversion.jdbc;
 import io.inversion.Api;
 import io.inversion.action.db.DbAction;
 import io.inversion.spring.main.InversionMain;
-import io.inversion.utils.Config;
+import io.inversion.config.Config;
+import io.inversion.utils.JdbcUtils;
 import io.inversion.utils.Utils;
 
 import java.sql.Connection;
@@ -11,7 +12,7 @@ import java.sql.DriverManager;
 
 public class JdbcDbFactory {
     public static void main(String[] args) {
-        InversionMain.run(new Api("northwind").withEndpoint("*", "*/", new DbAction()).withDb(buildDb("mysql", "northwind-running")));
+        InversionMain.run(new Api("northwind").withEndpoint(new DbAction()).withDb(buildDb("mysql", "northwind-running")));
     }
 
     public static JdbcDb buildDb(String type, String schemaName) {
@@ -51,34 +52,34 @@ public class JdbcDbFactory {
                     "", //
                     ddlUrl);
 
-            //         JdbcDb db = new JdbcDb("h2", //
-            //                                "org.h2.Driver", //
-            //                                "jdbc:h2:mem:" + database + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
-            //                                "sa", //
-            //                                "", //
-            //                                ddlUrl)
-            //            {
-            //
-            //               @Override
-            //               protected void doShutdown()
-            //               {
-            //                  try
-            //                  {
-            //                     Connection conn = getConnection();
-            //                     JdbcUtils.execute(conn, "SHUTDOWN");
-            //                     JdbcConnectionLocal.closeAll();
-            //                  }
-            //                  catch (Exception ex)
-            //                  {
-            //                     //ex.printStackTrace();
-            //                  }
-            //                  finally
-            //                  {
-            //                     super.shutdown();
-            //                  }
-            //
-            //               }
-            //            };
+//                     return new JdbcDb("h2", //
+//                                            "org.h2.Driver", //
+//                                            "jdbc:h2:mem:" + database + ";IGNORECASE=TRUE;DB_CLOSE_DELAY=-1", //
+//                                            "sa", //
+//                                            "", //
+//                                            ddlUrl)
+//                        {
+//
+//                           @Override
+//                           protected void doShutdown()
+//                           {
+//                              try
+//                              {
+//                                 Connection conn = getConnection();
+//                                 JdbcUtils.execute(conn, "SHUTDOWN");
+//                                 JdbcConnectionLocal.closeAll();
+//                              }
+//                              catch (Exception ex)
+//                              {
+//                                 //ex.printStackTrace();
+//                              }
+//                              finally
+//                              {
+//                                 super.shutdown();
+//                              }
+//
+//                           }
+//                        };
 
         } catch (Exception ex) {
             Utils.rethrow(ex);
@@ -115,10 +116,15 @@ public class JdbcDbFactory {
     public static JdbcDb bootstrapMySql(String database) throws Exception {
         database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
 
-        String driver = Config.getString("mysql.driver", "com.mysql.cj.jdbc.Driver");
-        String url    = Config.getString("mysql.url", "jdbc:mysql://localhost:3307/");
-        String user   = Config.getString("mysql.user", "root");
-        String pass   = Config.getString("mysql.pass", "password");
+//        String driver = Config.getString("mysql.driver", "com.mysql.cj.jdbc.Driver");
+//        String url    = Config.getString("mysql.url", "jdbc:mysql://localhost:3307/");
+//        String user   = Config.getString("mysql.user", "root");
+//        String pass   = Config.getString("mysql.pass", "password");
+
+        String driver = "com.mysql.cj.jdbc.Driver";
+        String url    = "jdbc:mysql://localhost:3307/";
+        String user   = "root";
+        String pass   = "password";
 
         Class.forName(driver).getDeclaredConstructor().newInstance();
 
@@ -164,10 +170,10 @@ public class JdbcDbFactory {
     public static JdbcDb bootstrapPostgres(String database) throws Exception {
         database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
 
-        String driver = Config.getString("postgres.driver", "org.postgresql.Driver");
-        String url    = Config.getString("postgres.url", "jdbc:postgresql://localhost:5433/");
-        String user   = Config.getString("postgres.user", "postgres");
-        String pass   = Config.getString("postgres.pass", "password");
+        String driver = "org.postgresql.Driver";
+        String url    = "jdbc:postgresql://localhost:5433/";
+        String user   = "postgres";
+        String pass   = "password";
 
         Class.forName(driver).getDeclaredConstructor().newInstance();
 
@@ -202,10 +208,10 @@ public class JdbcDbFactory {
     public static JdbcDb bootstrapSqlServer(String database) throws Exception {
         database = database.replaceAll("[^a-zA-Z0-9]", "_").toLowerCase();
 
-        String driver = Config.getString("sqlserver.driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
-        String url    = Config.getString("sqlserver.url", "jdbc:sqlserver://localhost:1434");
-        String user   = Config.getString("sqlserver.user", "sa");
-        String pass   = Config.getString("sqlserver.pass", "Jmk38zZVn");
+        String driver = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+        String url    = "jdbc:sqlserver://localhost:1434";
+        String user   = "sa";
+        String pass   = "Jmk38zZVn";
 
         Class.forName(driver).getDeclaredConstructor().newInstance();
 

@@ -10,7 +10,7 @@ public class ElasticsearchSelect<T extends ElasticsearchSelect, P extends Elasti
     public ElasticsearchSelect(P query) {
         super(query);
         clearFunctions();
-        withFunctions("source", "includes", "excludes");
+        withFunctions("source", "include", "exclude");
     }
 
     @Override

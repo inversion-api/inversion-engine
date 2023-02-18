@@ -26,8 +26,8 @@ import io.inversion.Engine;
 import io.inversion.Response;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDbFactory;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSList;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Utils;
 
 import java.io.Serializable;
@@ -49,8 +49,12 @@ public class DynamoDbFactory {
 
     protected static void rebuildNorthwind() {
         try {
-            DynamoDB dynamoDB = new DynamoDB(DynamoDb.buildDynamoClient("dynamo"));
-            Table    table    = dynamoDB.getTable("northwind");
+            DynamoDB dynamoDB = new DynamoDB(DynamoDb.buildDynamoClient(
+                    Utils.getSysEnvProp("dynamo.awsRegion"), //
+                    Utils.getSysEnvProp("dynamo.awsAccessKey"), //
+                    Utils.getSysEnvProp("dynamo.awsSecretKey"), //
+                    Utils.getSysEnvProp("dynamo.awsEndpoint")));
+            Table table = dynamoDB.getTable("northwind");
             if (table != null) {
                 table.delete();
                 table.waitForDelete();
@@ -109,7 +113,12 @@ public class DynamoDbFactory {
                         .withWriteCapacityUnits(50L));
             }
 
-            AmazonDynamoDB client   = DynamoDb.buildDynamoClient("dynamo");
+            AmazonDynamoDB client   =DynamoDb.buildDynamoClient(
+                    Utils.getSysEnvProp("dynamo.awsRegion"), //
+                    Utils.getSysEnvProp("dynamo.awsAccessKey"), //
+                    Utils.getSysEnvProp("dynamo.awsSecretKey"), //
+                    Utils.getSysEnvProp("dynamo.awsEndpoint"));
+
             DynamoDB       dynamoDB = new DynamoDB(client);
 
             CreateTableRequest request = new CreateTableRequest()//
@@ -131,12 +140,12 @@ public class DynamoDbFactory {
 
             Api h2Api = new Api("northwind");
             h2Api.withDb(JdbcDbFactory.bootstrapH2("dynamodbtesting" + System.currentTimeMillis()));
-            h2Api.withEndpoint("*", "/*", new DbAction());
+            h2Api.withEndpoint(new DbAction());
             Engine h2Engine = new Engine().withApi(h2Api);
 
             Engine dynamoEngine = new Engine().withApi(new Api("northwind")//
                     .withDb(new NorthwindDynamoDb())//
-                    .withEndpoint("*", "/*", new DbAction()));
+                    .withEndpoint(new DbAction()));
 
             System.out.println();
             System.out.println("RELOADING DYNAMO...");
@@ -149,18 +158,18 @@ public class DynamoDbFactory {
             String   start = "northwind/orders?pageSize=100&sort=orderid";
             String   next  = start;
             do {
-                JSArray toPost = new JSArray();
+                JSList toPost = new JSList();
 
                 res = h2Engine.get(next);
                 res.assertOk();
-                if (res.getData().size() == 0)
+                if (res.data().size() == 0)
                     break;
 
                 pages += 1;
-                next = res.next();
+                next = res.getNext();
 
                 //-- now post to DynamoDb
-                for (Object o : res.getData()) {
+                for (Object o : res.data()) {
                     total += 1;
                     JSNode js = (JSNode) o;
 

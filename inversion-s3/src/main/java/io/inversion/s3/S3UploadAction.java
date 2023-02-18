@@ -22,19 +22,19 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import io.inversion.*;
-import io.inversion.Request.Upload;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Utils;
+import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
+import io.inversion.utils.LimitInputStream;
+import io.inversion.utils.Path;
+import org.apache.commons.io.input.CountingInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -65,13 +65,19 @@ import java.util.Map;
  */
 public class S3UploadAction extends Action<S3UploadAction> {
 
-    protected final String s3AccessKey = null;
-    protected final String s3SecretKey = null;
-    protected final String s3AwsRegion = null;
+    protected String s3AccessKey = null;
+    protected String s3SecretKey = null;
+    protected String s3AwsRegion = null;
 
-    protected final String s3Bucket   = null;
-    protected final String s3BasePath = "uploads";
-    protected final String s3DatePath = "yyyy/MM/dd";
+    protected String s3Bucket   = null;
+    protected String s3BasePath = "uploads";
+    protected String s3DatePath = "yyyy/MM/dd";
+
+    protected long maxUploadLength = 1024 * 1000 * 100;
+
+    protected AmazonS3 s3Client = null;
+
+    protected String allowedCharactersRegex = "^[\\. \\(\\)\\'a-zA-Z0-9_-]*$";
 
     private static String getHash(MessageDigest digest) throws IOException {
         byte[]        md5sum = digest.digest();
@@ -87,117 +93,170 @@ public class S3UploadAction extends Action<S3UploadAction> {
 
     @Override
     public void run(Request req, Response res) throws ApiException {
-        String            requestPath  = null;
-        String            fileName     = null;
-        Long              fileSize     = null;
-        DigestInputStream uploadStream = null;
-
         try {
             List<Upload> uploads = req.getUploads();
+
+            boolean fileInUrl = req.getUrl().getParam("file") != null;
+
+            if (uploads.size() > 1 && fileInUrl) {
+                throw ApiException.new400BadRequest("You can not include a file name in your url if you post more than a single file.");
+            }
+
+            JSList arr = new JSList();
+
+            for (Upload upload : uploads) {
+                S3File file = saveFile(req, upload);
+                JSMap  json = new JSMap();
+                json.put("url", file.url);
+                json.put("path", file.path);
+                json.put("hash", file.hash);
+                json.put("bytes", file.bytes);
+                arr.add(json);
+            }
             if (uploads.size() > 0) {
-                Upload upload = uploads.get(0);
-
-                uploadStream = new DigestInputStream(upload.getInputStream(), MessageDigest.getInstance("MD5"));
-                String[] fileNameParts = upload.getFileName().split("[.]");
-                fileName = "" + fileNameParts[0] + "-" + System.currentTimeMillis() + "." + fileNameParts[1];
-                fileSize = upload.getFileSize();
-
-                requestPath = upload.getRequestPath();
-                if (requestPath.indexOf("/") == 0)
-                    requestPath = requestPath.substring(1);
+                if (fileInUrl) {
+                    req.withJson(arr.getMap(0).copy());
+                    res.withJson(arr.getMap(0).copy());
+                } else {
+                    req.withJson(arr.copy());
+                    res.withJson(arr.copy());
+                }
             }
-
-            if (uploadStream == null) {
-                error(res, null, "No file was uploaded in the multipart request");
-                return;
-            }
-
-            //String pathAndFileName = buildFullPath(fileName, requestPath);
-            Map<String, Object> responseContent;
-
-            try {
-                responseContent = saveFile(req.getChain(), uploadStream, fileName, requestPath);
-            } catch (Exception e) {
-                error(res, e, "S3 Key may be invalid - valid characters are [  0-9 a-z A-Z !-_.*'()  ] --- your requested key was: " + requestPath + "/" + fileName);
-
-                return;
-            }
-
-            responseContent.put("fileMd5", getHash(uploadStream.getMessageDigest()));
-            responseContent.put("fileSizeBytes", fileSize);
-            res.withJson(new JSNode(responseContent));
         } catch (Exception ex) {
             throw ApiException.new500InternalServerError(ex);
-        } finally {
-            if (uploadStream != null) {
-                Utils.close(uploadStream);
+        }
+    }
+
+    protected void onFileUploaded(Request req, Response resp, Upload upload, S3File file) {
+        JSMap json = new JSMap();
+        json.put("url", file.url);
+        json.put("path", file.path);
+        json.put("hash", file.hash);
+        json.put("bytes", file.bytes);
+        req.withJson(json.copy());
+        resp.withJson(json.copy());
+    }
+
+    class S3File {
+        String url;
+        String path;
+        String hash;
+        long   bytes;
+        String type;
+    }
+
+    protected S3File saveFile(Request req, Upload upload) throws ApiException {
+        AmazonS3 s3     = buildS3Client();
+        String   bucket = this.s3Bucket;
+        String   path   = buildPath(req, upload);
+
+        return uploadFile(bucket, path, upload.getInputStream(), upload.getFileSize());
+    }
+
+    protected S3File uploadFile(String bucket, String key, InputStream in, long size) throws ApiException{
+        return uploadFile(bucket, key, in, size, null, null);
+    }
+
+    protected S3File uploadFile(String bucket, String key, InputStream in, long size, Map<String, String> metadataProps, Map<String, String> tags) throws ApiException {
+
+        try {
+            long limit = size > 0 ? size : maxUploadLength;
+            if (limit > maxUploadLength)
+                throw ApiException.new400BadRequest("Your upload size is larger that maximum allowed size.");
+
+            if (size > 0) {
+                in = new LimitInputStream(in, size, true);
+            } else {
+                in = new LimitInputStream(in, limit, false);
             }
-        }
-    }
 
-    void error(Response res, Exception exception, String message) {
-        if (exception != null)
-            message += "\r\n\r\n" + Utils.getShortCause(exception);
-
-        res.withStatus(Status.SC_400_BAD_REQUEST);
-        Map<String, String> content = new HashMap<>();
-        content.put("message", message);
-        content.put("error", "Bad Request Exception");
-        res.withJson(new JSNode(content));
-
-    }
-
-    private Map<String, Object> saveFile(Chain chain, InputStream inputStream, String fileName, String requestPath) throws Exception {
-        AmazonS3 s3              = buildS3Client(chain);
-        String   bucket          = chain.getConfig("s3Bucket", this.s3Bucket);
-        String   pathAndFileName = buildFullPath(chain, requestPath, fileName);
-
-        s3.putObject(new PutObjectRequest(bucket, pathAndFileName, inputStream, new ObjectMetadata()));
-
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("url", "http://" + bucket + ".s3.amazonaws.com/" + pathAndFileName);
-        resp.put("fileName", fileName);
-        resp.put("path", pathAndFileName);
-
-        return resp;
-    }
-
-    private String buildFullPath(Chain chain, String requestPath, String name) {
-        StringBuilder sb = new StringBuilder();
-
-        String basePath = chain.getConfig("s3BasePath", this.s3BasePath);
-        String datePath = chain.getConfig("s3DatePath", this.s3DatePath);
-
-        if (basePath != null) {
-            sb.append(basePath);
-            if (!basePath.endsWith("/")) {
-                sb.append("/");
+            ObjectMetadata metadata = new ObjectMetadata();
+            if(tags != null){
+                tags.keySet().forEach(tag -> metadata.setHeader(tag, tags.get(tag)));
             }
-        }
+            if(metadataProps != null){
+                metadata.setUserMetadata(metadataProps);
+            }
 
-        if (datePath != null) {
-            datePath = new SimpleDateFormat(datePath).format(new Date());
-            sb.append(datePath).append("/");
-        }
+            CountingInputStream countIn  = new CountingInputStream(in);
+            DigestInputStream   digestIn = new DigestInputStream(countIn, MessageDigest.getInstance("SHA-256"));
+            PutObjectResult     s3Resp   = getS3Client().putObject(new PutObjectRequest(bucket, key, digestIn, metadata));
 
-        if (requestPath != null) {
-            if (requestPath.startsWith("/"))
-                sb.append(requestPath.substring(1));
+            String hash  = byteToHexString(digestIn.getMessageDigest().digest());
+            long   bytes = countIn.getByteCount();
+
+            S3File file = new S3File();
+            file.url = "http://" + bucket + ".s3.amazonaws.com/" + key;
+            file.path = key;
+            file.hash = hash;
+            file.bytes = bytes;
+            return file;
+        } catch (Exception ex) {
+            if (ex instanceof ApiException)
+                throw (ApiException) ex;
             else
-                sb.append(requestPath);
-            if (!requestPath.endsWith("/"))
-                sb.append("/");
+                throw ApiException.new500InternalServerError(ex);
         }
-        sb.append(name);
-        return sb.toString();
     }
 
-    private AmazonS3 buildS3Client(Chain chain) {
+    public String byteToHexString(byte[] input) {
+        String output = "";
+        for (int i = 0; i < input.length; ++i) {
+            output += String.format("%02x", input[i]);
+        }
+        return output;
+    }
+
+    private String buildPath(Request request, Upload upload) {
+        String urlFileName = request.getUrl().getParam("file");
+        Path   path        = request.getPath().copy();
+
+        if (urlFileName == null) {
+            path.add(upload.getFileName());
+        }
+
+        if (!isValidPath(path))
+            throw ApiException.new400BadRequest("The supplied file path is contains invalid characters");
+
+        return path.toString();
+    }
+
+    protected boolean isValidPath(Path path) {
+        if (path == null || path.size() == 0)
+            return false;
+        for (String part : path.parts()) {
+            if (!part.matches(allowedCharactersRegex))
+                return false;
+
+            part = part.replaceAll("[.]+", ".");
+            if (part.equals("."))
+                return false;
+        }
+        return true;
+    }
+
+    public AmazonS3 getS3Client() {
+        if (s3Client == null) {
+            synchronized (this) {
+                if (s3Client == null) {
+                    s3Client = buildS3Client();
+                }
+            }
+        }
+        return s3Client;
+    }
+
+    public S3UploadAction withS3Client(AmazonS3 s3Client) {
+        this.s3Client = s3Client;
+        return this;
+    }
+
+    private AmazonS3 buildS3Client() {
         //TODO make this work like dynamo client config as art of db
 
-        String accessKey = chain.getConfig("s3AccessKey", this.s3AccessKey);
-        String secretKey = chain.getConfig("s3SecretKey", this.s3SecretKey);
-        String awsRegion = chain.getConfig("s3AwsRegion", this.s3AwsRegion);
+        String accessKey = this.s3AccessKey;
+        String secretKey = this.s3SecretKey;
+        String awsRegion = this.s3AwsRegion;
 
         AmazonS3ClientBuilder builder;
         if (accessKey != null) {

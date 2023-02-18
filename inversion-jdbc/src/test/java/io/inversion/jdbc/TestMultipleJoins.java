@@ -43,7 +43,7 @@ public class TestMultipleJoins {
         api = new Api()//
                 .withName("crm")//
                 .withDb(db)//
-                .withEndpoint("GET,PUT,POST,DELETE", "/*", new DbAction());
+                .withEndpoint("GET,PUT,POST,*", new DbAction());
 
         engine = new Engine(api);
         engine.startup();
@@ -79,8 +79,8 @@ public class TestMultipleJoins {
 
         res = engine.get("crm/customers?identifiers.providerCode=vendorD_1&identifiers.identifier=SHARED");
         res.dump();
-        assertEquals(res.getData().size(), 1);
-        assertEquals("http://localhost/crm/customers/1", res.find("data.0.href"));
+        assertEquals(res.data().size(), 1);
+        assertEquals(1, res.findInt("data.0.id"));
 
     }
 }

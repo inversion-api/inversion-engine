@@ -17,8 +17,8 @@
 package io.inversion.action.misc;
 
 import io.inversion.*;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
+import io.inversion.json.*;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Utils;
 
 import java.io.BufferedInputStream;
@@ -48,19 +48,16 @@ public class MockAction extends Action<MockAction> {
     }
 
     public MockAction(String name) {
-        this(null, null, name, null);
+        this(null, name, null);
     }
 
-    public MockAction(String methods, String includePaths, String name) {
-        this(methods, includePaths, name, null);
-    }
 
-    public MockAction(String methods, String includePaths, String name, JSNode json) {
+    public MockAction(String ruleMatcherSpec, String name, JSNode json) {
         if (name != null && json == null)
-            json = new JSNode("name", name);
+            json = new JSMap("name", name);
 
         withName(name);
-        withIncludeOn(methods, includePaths);
+        withIncludeOn(ruleMatcherSpec);
         withJson(json);
     }
 
@@ -77,8 +74,8 @@ public class MockAction extends Action<MockAction> {
         JSNode json = getJson();
 
         if (json != null) {
-            if (json instanceof JSArray)
-                res.withData((JSArray) json);
+            if (json instanceof JSList)
+                res.withRecords(json.asList());
             else
                 res.withJson(json);
         }
@@ -129,7 +126,7 @@ public class MockAction extends Action<MockAction> {
             }
 
             if (stream != null) {
-                json = JSNode.parseJsonNode(Utils.read(stream));
+                json = JSParser.asJSNode(Utils.read(stream));
             } else {
                 throw ApiException.new500InternalServerError("Unable to locate jsonUrl '{}'. Please check your configuration", jsonUrl);
             }

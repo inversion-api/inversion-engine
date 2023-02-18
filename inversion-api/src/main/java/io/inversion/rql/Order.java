@@ -16,10 +16,14 @@
  */
 package io.inversion.rql;
 
+import io.inversion.Collection;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class Order<T extends Order, P extends Query> extends Builder<T, P> {
+
+    List<Sort> sorts = new ArrayList();
 
     public Order(P query) {
         super(query);
@@ -41,23 +45,67 @@ public class Order<T extends Order, P extends Query> extends Builder<T, P> {
     }
 
     public List<Sort> getSorts() {
-        List<Sort> sorts = new ArrayList<>();
-        for (Term term : getTerms()) {
-            if (term.hasToken("sort", "order")) {
-                for (Term child : term.getTerms()) {
-                    String  property = child.token;
-                    boolean asc      = true;
-                    if (property.startsWith("-")) {
-                        asc = false;
-                        property = property.substring(1);
-                    } else if (property.startsWith("+")) {
-                        property = property.substring(1);
+        if(sorts.size() == 0) {
+            for (Term term : getTerms()) {
+                if (term.hasToken("sort", "order")) {
+                    for (Term child : term.getTerms()) {
+                        String  property = child.token;
+                        boolean asc      = true;
+                        if (property.startsWith("-")) {
+                            asc = false;
+                            property = property.substring(1);
+                        } else if (property.startsWith("+")) {
+                            property = property.substring(1);
+                        }
+                        sorts.add(new Sort(property, asc));
                     }
-                    sorts.add(new Sort(property, asc));
                 }
             }
+
+//            if(sorts.size() == 0){
+//                List<Sort> sorts = new ArrayList<>();
+//                boolean    wildcard = false;
+//                List<Term> columns  = getParent().getSelect().getProjection();
+//                if (columns.size() == 0) //this is a "select *"
+//                    wildcard = true;
+//
+//                boolean aggregate = getParent().getSelect().findAggregateTerms().size() > 0;
+//                if (aggregate)
+//                    return sorts;
+//
+//                Collection collection = getParent().getCollection();
+//                boolean    hasPkCols  = collection != null && collection.getResourceIndex() != null;
+//
+//                if(collection != null){
+//                    //-- make sure we have all pk cols before adding them as sorts
+//                    for (String pkCol : collection.getResourceIndex().getColumnNames()) {
+//                        if (!wildcard && !parts.select.contains(quoteCol(pkCol))) {
+//                            hasPkCols = false;
+//                            break;
+//                        }
+//                    }
+//                    if (hasPkCols) {
+//                        for (String pkCol : collection.getResourceIndex().getColumnNames()) {
+//                            Sort sort = new Sort(pkCol, true);
+//                            sorts.add(sort);
+//                        }
+//                        return sorts;
+//                    }
+//                }
+//
+//                for (String col : getParent().getSelect().getIncludeColumns()) {
+//                    sorts.add(new Sort(col, true));
+//                }
+//
+//                return sorts;
+//            }
         }
         return sorts;
+    }
+
+    public Order withSorts(List<Sort> sorts){
+        this.sorts.addAll(sorts);
+        return this;
     }
 
     public static class Sort {

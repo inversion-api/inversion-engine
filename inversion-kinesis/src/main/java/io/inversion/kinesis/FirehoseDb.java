@@ -23,8 +23,9 @@ import com.amazonaws.services.kinesisfirehose.AmazonKinesisFirehoseClientBuilder
 import com.amazonaws.services.kinesisfirehose.model.PutRecordBatchRequest;
 import com.amazonaws.services.kinesisfirehose.model.Record;
 import io.inversion.*;
+import io.inversion.json.JSMap;
 import io.inversion.rql.Term;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Utils;
 
 import java.nio.ByteBuffer;
@@ -114,7 +115,7 @@ public class FirehoseDb extends Db<FirehoseDb> {
     }
 
     @Override
-    public void delete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
+    public void doDelete(Collection table, List<Map<String, Object>> indexValues) throws ApiException {
         throw ApiException.new400BadRequest("The Firehose handler only supports PUT/POST operations...GET and DELETE don't make sense.");
     }
 
@@ -122,7 +123,7 @@ public class FirehoseDb extends Db<FirehoseDb> {
     public List<String> doUpsert(Collection table, List<Map<String, Object>> rows) throws ApiException {
         List<Record> batch = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {
-            String string = new JSNode(rows.get(i)).toString(jsonPrettyPrint, jsonLowercaseNames);
+            String string = new JSMap(rows.get(i)).toString(jsonPrettyPrint, jsonLowercaseNames);
 
             if (jsonSeparator != null && !string.endsWith(jsonSeparator))
                 string += jsonSeparator;

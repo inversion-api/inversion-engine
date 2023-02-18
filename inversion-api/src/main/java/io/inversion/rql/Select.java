@@ -16,80 +16,35 @@
  */
 package io.inversion.rql;
 
-import io.inversion.Collection;
-import io.inversion.Index;
+import io.inversion.ApiException;
+import io.inversion.utils.Utils;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Select<T extends Select, P extends Query> extends Builder<T, P> {
 
+    static final Set<String> NON_AGGREGATE_FUNCTIONS = Collections.unmodifiableSet(Utils.add(new LinkedHashSet(), "include", "as", "distinct"));
+    static final Set<String> AGGREGATE_FUNCTIONS     = Collections.unmodifiableSet(Utils.add(new LinkedHashSet(), "count", "sum", "min", "max"));
+
+
     public Select(P query) {
         super(query);
-        withFunctions("as", "includes", "excludes", "distinct", "count", "sum", "min", "max", "if", "aggregate", "function", "countascol", "rowcount");
-    }
-
-    public boolean isDistinct() {
-        Term distinct = find("distinct");
-        return distinct != null;
-
+        withFunctions(NON_AGGREGATE_FUNCTIONS);
+        withFunctions(AGGREGATE_FUNCTIONS);
     }
 
     protected boolean addTerm(String token, Term term) {
 
-        if (term.hasToken("function", "aggregate")) {
-            String func = term.getTerm(0).getToken();
-            String col  = term.getTerm(1).getToken();
+        if (AGGREGATE_FUNCTIONS.contains(token)) {
 
-            getParent().withTerm("group", col);
+            //-- WHY:
+            //-- rewrites something like "max(myCol, 'Max My Col')" to as(max(myCol), 'Max My Col')
+            //-- if the optional trailing 'as column' prop is not define then '$$$ANON' is used
+            //-- TODO: need test cases for $$$ANON and a more user friendly solution
 
-            Term t = Term.term(null, func, col);
-
-            if (term.size() > 2) {
-                Term as = Term.term(null, "as", t, term.getTerm(2).getToken());
-                getParent().withTerm(as);
-            } else {
-                getParent().withTerm(t);
-            }
-            return true;
-        }
-
-        if (term.hasToken("countascol")) {
-            //this is done as a transformation here instead of in SqlRql.print because it requires the addition of a select and where clause
-            String     col   = term.getToken(0);
-            List<Term> terms = term.getTerms();
-
-            for (int i = 1; i < terms.size(); i++) {
-                getParent().withTerm("as(sum(if(eq(" + col + ", " + terms.get(i) + "), 1, 0))," + terms.get(i) + ")");
-            }
-
-            StringBuilder str = new StringBuilder("in(" + col);
-            for (int i = 1; i < terms.size(); i++) {
-                str.append(",").append(terms.get(i).token);
-            }
-            str.append(")");
-            getParent().withTerm(str.toString());
-
-            return true;
-
-        }
-
-        //-- make sure we always select each part of the primary index...even it may be filtered out downstream.
-        if (term.hasToken("includes")) {
-            Collection coll = getParent().getCollection();
-            if (coll != null) {
-                Index idx = coll.getPrimaryIndex();
-                for (String idxCol : idx.getColumnNames()) {
-                    if (!term.hasChildLeafToken(idxCol)) {
-                        term.withTerm(Term.term(term, idxCol));
-                    }
-                }
-            }
-        }
-
-        if (functions.contains(token.toLowerCase()) && !term.hasToken("as", "includes", "excludes", "distinct")) {
-            String asName = "$$$ANON";
-            if (term.size() > 1 && term.hasToken("count", "sum", "min", "max")) {
+            String asName = "$$$ANON_" + (getTerms().size() + 1);
+            if (term.size() > 1) {
                 Term asT = term.getTerm(1);
                 term.removeTerm(asT);
                 asName = asT.getToken();
@@ -103,46 +58,51 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
         }
     }
 
-    public List<String> getColumnNames() {
-        List<String> columns = new ArrayList<>();
+    public boolean isDistinct() {
+        Term distinct = find("distinct");
+        return distinct != null;
 
-        for (Term include : findAll("includes")) {
+    }
+
+
+    public List<Term> findAggregateTerms() {
+        List<Term> aggregates = findAll(AGGREGATE_FUNCTIONS);
+        aggregates.removeIf(p -> p.isLeaf());
+        return aggregates;
+    }
+
+    public List<String> getIncludeColumns() {
+        List<String> columns = new ArrayList<>();
+        for (Term include : findAll("include")) {
             for (Term child : include.getTerms()) {
                 columns.add(child.getToken());
             }
         }
-        return columns;//getColumnNames();
-    }
 
-    public List<Term> columns() {
-        List<Term> columns = new ArrayList<>();
-
-        for (Term include : findAll("includes")) {
-            columns.addAll(include.getTerms());
-        }
-
-        boolean hasIncludes = columns.size() > 0;
-
-        for (Term as : findAll("as")) {
-            if (!hasIncludes) {
-                columns.add(as);
-            } else {
-                String name = as.getToken(1);
-
-                boolean replaced = false;
-                for (int i = 0; i < columns.size(); i++) {
-                    Term column = columns.get(i);
-                    if (column.isLeaf() && column.hasToken(name)) {
-                        columns.set(i, as);
-                        replaced = true;
-                        break;
-                    }
-                }
-                if (!replaced) {
-                    columns.add(as);
-                }
-            }
-        }
         return columns;
     }
+
+    public LinkedCaseInsensitiveMap<Term> getProjection() {
+        LinkedCaseInsensitiveMap<Term> projection = new LinkedCaseInsensitiveMap<>();
+        for (Term include : findAll("include")) {
+            for (Term column : include.getTerms()) {
+                if (!column.isLeaf())
+                    throw ApiException.new400BadRequest("An include RQL param may not contain nested functions.");
+
+                if (!projection.containsKey(column.getToken()))
+                    projection.put(column.getToken(), column);
+            }
+        }
+
+        if (projection.size() == 0)
+            projection.put("*", Term.term(null, "*"));
+
+        for (Term as : findAll("as")) {
+            String name = as.getToken(1);
+            projection.put(name, as);
+        }
+
+        return projection;
+    }
+
 }

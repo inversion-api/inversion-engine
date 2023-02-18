@@ -22,194 +22,42 @@ public class ApiException extends RuntimeException implements Status {
     protected String status = Status.SC_500_INTERNAL_SERVER_ERROR;
 
     public ApiException() throws ApiException {
-        this(SC_500_INTERNAL_SERVER_ERROR, null, null);
+        this((Exception)null, SC_500_INTERNAL_SERVER_ERROR, null);
     }
 
     public ApiException(Throwable cause) throws ApiException {
-        this(SC_500_INTERNAL_SERVER_ERROR, cause, null);
+        this(cause, SC_500_INTERNAL_SERVER_ERROR, null);
     }
 
-    public ApiException(String httpStatus) throws ApiException {
-        this(httpStatus, null, null);
-    }
+//    public ApiException(String httpStatus) throws ApiException {
+//        this(httpStatus, null, null);
+//    }
+
+//    public ApiException(String httpStatus, String messageFormat, Object... args) throws ApiException {
+//        this(null, httpStatus, messageFormat, args);
+//    }
 
     public ApiException(String messageFormat, Object... args) throws ApiException {
-        this(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, args);
+        this((Exception)null, SC_500_INTERNAL_SERVER_ERROR, messageFormat, args);
     }
 
-    public ApiException(String httpStatus, Throwable cause, String messageFormat, Object... args) throws ApiException {
-        super(getMessage(httpStatus, cause, messageFormat, args), cause != null ? Utils.getCause(cause) : null);
+    public ApiException(Throwable cause, String httpStatus, String messageFormat, Object... args) throws ApiException {
+        super(getMessage(cause, httpStatus, messageFormat, args), cause != null ? Utils.getCause(cause) : null);
 
-        if (httpStatus == null && messageFormat != null)
+        //-- someone could have used the wrong constructor and the message format could be the httpStatus
+        if (httpStatus == null && messageFormat != null && messageFormat.matches("\\d\\d\\d .*"))
             httpStatus = messageFormat;
 
-        if (httpStatus != null && httpStatus.matches("\\d\\d\\d .*"))
-            withStatus(httpStatus);
+        if(httpStatus == null)
+            httpStatus = Status.SC_500_INTERNAL_SERVER_ERROR;
+
+        //-- someone passed in a junk httpStatus string
+        if(!httpStatus.matches("\\d\\d\\d .*"))
+            httpStatus = Status.SC_500_INTERNAL_SERVER_ERROR + " - " + httpStatus;
+
+        withStatus(httpStatus);
     }
 
-    /**
-     * Constructs a useful error message.
-     * <p>
-     * All arguments are optional but if everything is null you will get an empty string.
-     *
-     * @param httpStatus    the HTTP stats codde of the error
-     * @param cause         the cause of the error
-     * @param messageFormat the caller supplied error message with variable placeholders
-     * @param args          variables to insert into <code>messageFormat</code>
-     * @return a hopefully user friendly error message
-     * 
-     * @see Utils#format(String, Object...)
-     */
-    public static String getMessage(String httpStatus, Throwable cause, String messageFormat, Object... args) {
-        String msg = httpStatus != null ? httpStatus : "";
-
-        if(messageFormat != null || (args != null  && args.length > 0))
-            msg += " - " + Utils.format(messageFormat, args);
-
-        if (cause != null) {
-            String causeStr = Utils.getShortCause(cause);
-            msg = msg.length() > 0 ? (msg + "\r\n") + causeStr : causeStr;
-        }
-
-        return msg;
-    }
-
-    /**
-     * Rethrows <code>cause</code> as a 500  INTERNAL SERVER ERROR ApiException
-     *
-     * @param cause the cause of the error
-     * @throws ApiException always
-     */
-    public static void throwEx(Throwable cause) throws ApiException {
-        throwEx(SC_500_INTERNAL_SERVER_ERROR, cause, null);
-    }
-
-    /**
-     * Throws a 500 INTERNAL SERVER ERROR ApiException with the given message
-     *
-     * @param messageFormat the error message potentially with variables
-     * @param args          values substituted into <code>messageFormat</code>
-     * @throws ApiException always
-     */
-    public static void throwEx(String messageFormat, Object... args) throws ApiException {
-        throwEx(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, args);
-    }
-
-    public static void throwEx(String status, Throwable cause, String messageFormat, Object... args) throws ApiException {
-        throw new ApiException(status, cause, messageFormat, args);
-    }
-
-    public static ApiException new400BadRequest() throws ApiException {
-        return new ApiException(SC_400_BAD_REQUEST, null, null);
-    }
-
-    public static ApiException new400BadRequest(Throwable cause) throws ApiException {
-        return new ApiException(SC_400_BAD_REQUEST, cause, null);
-    }
-
-    public static ApiException new400BadRequest(String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_400_BAD_REQUEST, null, messageFormat, messages);
-    }
-
-    public static ApiException new400BadRequest(Throwable cause, String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_400_BAD_REQUEST, cause, messageFormat, messages);
-    }
-
-    public static ApiException new401Unauthroized() throws ApiException {
-        return new ApiException(SC_401_UNAUTHORIZED, null, null);
-    }
-
-    public static ApiException new401Unauthroized(Throwable cause) throws ApiException {
-        return new ApiException(SC_401_UNAUTHORIZED, cause, null);
-    }
-
-    public static ApiException new401Unauthroized(String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_401_UNAUTHORIZED, null, messageFormat, messages);
-    }
-
-    public static ApiException new401Unauthroized(Throwable cause, String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_401_UNAUTHORIZED, cause, messageFormat, messages);
-    }
-
-    public static ApiException new403Forbidden() throws ApiException {
-        return new ApiException(SC_403_FORBIDDEN, null, null);
-    }
-
-    public static ApiException new403Forbidden(Throwable cause) throws ApiException {
-        return new ApiException(SC_403_FORBIDDEN, cause, null);
-    }
-
-    public static ApiException new403Forbidden(String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_403_FORBIDDEN, null, messageFormat, messages);
-    }
-
-    public static ApiException new403Forbidden(Throwable cause, String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_403_FORBIDDEN, cause, messageFormat, messages);
-    }
-
-    public static ApiException new404NotFound() throws ApiException {
-        return new ApiException(SC_404_NOT_FOUND, null, null);
-    }
-
-    public static ApiException new404NotFound(Throwable cause) throws ApiException {
-        return new ApiException(SC_404_NOT_FOUND, cause, null);
-    }
-
-    public static ApiException new404NotFound(String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_404_NOT_FOUND, null, messageFormat, messages);
-    }
-
-    public static ApiException new404NotFound(Throwable cause, String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_404_NOT_FOUND, cause, messageFormat, messages);
-    }
-
-    public static ApiException new429TooManyRequests() throws ApiException {
-        return new ApiException(SC_429_TOO_MANY_REQUESTS, null, null);
-    }
-
-    public static ApiException new429TooManyRequests(Throwable cause) throws ApiException {
-        return new ApiException(SC_429_TOO_MANY_REQUESTS, cause, null);
-    }
-
-    public static ApiException new429TooManyRequests(String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_429_TOO_MANY_REQUESTS, null, messageFormat, messages);
-    }
-
-    public static ApiException new429TooManyRequests(Throwable cause, String messageFormat, Object... messages) throws ApiException {
-        return new ApiException(SC_429_TOO_MANY_REQUESTS, cause, messageFormat, messages);
-    }
-
-    public static ApiException new500InternalServerError() throws ApiException {
-        return new ApiException(SC_500_INTERNAL_SERVER_ERROR, null, null);
-    }
-
-    public static ApiException new500InternalServerError(Throwable cause) throws ApiException {
-        return new ApiException(SC_500_INTERNAL_SERVER_ERROR, cause, null);
-    }
-
-    public static ApiException new500InternalServerError(String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, args);
-    }
-
-    public static ApiException new500InternalServerError(Throwable cause, String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_500_INTERNAL_SERVER_ERROR, cause, messageFormat, args);
-    }
-
-    public static ApiException new501NotImplemented() throws ApiException {
-        return new ApiException(SC_501_NOT_IMPLEMENTED, null, null);
-    }
-
-    public static ApiException new501NotImplemented(Throwable cause) throws ApiException {
-        return new ApiException(SC_501_NOT_IMPLEMENTED, cause, null);
-    }
-
-    public static ApiException new501NotImplemented(String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_501_NOT_IMPLEMENTED, null, messageFormat, args);
-    }
-
-    public static ApiException new501NotImplemented(Throwable cause, String messageFormat, Object... args) throws ApiException {
-        return new ApiException(SC_501_NOT_IMPLEMENTED, cause, messageFormat, args);
-    }
 
     public String getStatus() {
         return status;
@@ -228,316 +76,185 @@ public class ApiException extends RuntimeException implements Status {
         return false;
     }
 
-
-    //----------------------------------------------------
-
-
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw400BadRequest() throws ApiException
-    {
-        throwEx(SC_400_BAD_REQUEST, null, null);
+    public int getStatusCode(){
+        return Integer.parseInt(status.substring(0, 3));
     }
 
     /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
+     * Constructs a useful error message.
+     * <p>
+     * All arguments are optional but if everything is null you will get an empty string.
+     *
+     * @param cause         the cause of the error
+     * @param httpStatus    the HTTP stats codde of the error
+     * @param messageFormat the caller supplied error message with variable placeholders
+     * @param args          variables to insert into <code>messageFormat</code>
+     * @return a hopefully user friendly error message
+     * 
+     * @see Utils#format(String, Object...)
      */
-    @Deprecated
-    public static void throw400BadRequest(Throwable cause) throws ApiException
-    {
-        throwEx(SC_400_BAD_REQUEST, cause, null);
+    public static String getMessage(Throwable cause, String httpStatus, String messageFormat, Object... args) {
+
+        //-- someone could have used the wrong constructor and the message format could be the httpStatus
+        if (httpStatus == null && messageFormat != null && messageFormat.matches("\\d\\d\\d .*"))
+            httpStatus = messageFormat;
+
+        if(httpStatus == null)
+            httpStatus = Status.SC_500_INTERNAL_SERVER_ERROR;
+
+        //-- someone passed in a junk httpStatus string
+        if(!httpStatus.matches("\\d\\d\\d .*"))
+            httpStatus = Status.SC_500_INTERNAL_SERVER_ERROR + " - " + httpStatus;
+
+        String msg = httpStatus;
+
+        if(messageFormat != null || (args != null  && args.length > 0))
+            msg += " - " + Utils.format(messageFormat, args);
+
+        if (cause != null) {
+            String causeStr = Utils.getShortCause(cause);
+            msg = msg.length() > 0 ? (msg + "\r\n") + causeStr : causeStr;
+        }
+
+        return msg;
     }
 
     /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
+     * Rethrows <code>cause</code> as a "500 Internal Server Error" ApiException
+     *
+     * @param cause the cause of the error
+     * @throws ApiException always
      */
-    @Deprecated
-    public static void throw400BadRequest(String messageFormat, Object... messages) throws ApiException
-    {
-        throwEx(SC_400_BAD_REQUEST, null, messageFormat, messages);
+    public static void throwEx(Throwable cause) throws ApiException {
+        throw new ApiException(cause);
     }
 
     /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
+     * Throws a "500 Internal Server Error" ApiException with the given message
+     *
+     * @param messageFormat the error message potentially with variables
+     * @param args          values substituted into <code>messageFormat</code>
+     * @throws ApiException always
      */
-    @Deprecated
-    public static void throw400BadRequest(Throwable cause, String messageFormat, Object... messages) throws ApiException
-    {
-        throwEx(SC_400_BAD_REQUEST, cause, messageFormat, messages);
+    public static void throwEx(String messageFormat, Object... args) throws ApiException {
+        throwEx(null, SC_500_INTERNAL_SERVER_ERROR, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw401Unauthroized() throws ApiException
-    {
-        throwEx(SC_401_UNAUTHORIZED, null, null);
+    public static void throwEx(Throwable cause, String status, String messageFormat, Object... args) throws ApiException {
+        throw new ApiException(cause, status, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw401Unauthroized(Throwable cause) throws ApiException
-    {
-        throwEx(SC_401_UNAUTHORIZED, cause, null);
+    public static ApiException new400BadRequest() throws ApiException {
+        return new ApiException((Throwable)null, SC_400_BAD_REQUEST, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw401Unauthroized(String messageFormat, Object... messages) throws ApiException
-    {
-        throwEx(SC_401_UNAUTHORIZED, null, messageFormat, messages);
+    public static ApiException new400BadRequest(Throwable cause) throws ApiException {
+        return new ApiException(cause, SC_400_BAD_REQUEST, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw401Unauthroized(Throwable cause, String messageFormat, Object... messages) throws ApiException
-    {
-        throwEx(SC_401_UNAUTHORIZED, cause, messageFormat, messages);
+    public static ApiException new400BadRequest(String messageFormat, Object... args) throws ApiException {
+        return new ApiException(null, SC_400_BAD_REQUEST, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw403Forbidden() throws ApiException
-    {
-        throwEx(SC_403_FORBIDDEN, null, null);
+
+    public static ApiException new400BadRequest(Throwable cause, String messageFormat, Object... args) throws ApiException {
+        return new ApiException(cause, SC_400_BAD_REQUEST, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw403Forbidden(Throwable cause) throws ApiException
-    {
-        throwEx(SC_403_FORBIDDEN, cause, null);
+    public static ApiException new401Unauthroized() throws ApiException {
+        return new ApiException((Throwable)null, SC_401_UNAUTHORIZED, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw403Forbidden(String messageFormat, Object... messages) throws ApiException
-    {
-        throwEx(SC_403_FORBIDDEN, null, messageFormat, messages);
+    public static ApiException new401Unauthroized(Throwable cause) throws ApiException {
+        return new ApiException(cause, SC_401_UNAUTHORIZED, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw403Forbidden(Throwable cause, String messageFormat, Object... messages) throws ApiException
-    {
-        throwEx(SC_403_FORBIDDEN, cause, messageFormat, messages);
+    public static ApiException new401Unauthroized(String messageFormat, Object... args) throws ApiException {
+        return new ApiException(null, SC_401_UNAUTHORIZED, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw404NotFound() throws ApiException
-    {
-        throwEx(SC_404_NOT_FOUND, null, null);
+    public static ApiException new401Unauthroized(Throwable cause, String messageFormat, Object... args) throws ApiException {
+        return new ApiException(cause, SC_401_UNAUTHORIZED, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw404NotFound(Throwable cause) throws ApiException
-    {
-        throwEx(SC_404_NOT_FOUND, cause, null);
+    public static ApiException new403Forbidden() throws ApiException {
+        return new ApiException((Throwable)null, SC_403_FORBIDDEN, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw404NotFound(String messageFormat, Object... messages) throws ApiException
-    {
-        throwEx(SC_404_NOT_FOUND, null, messageFormat, messages);
+    public static ApiException new403Forbidden(Throwable cause) throws ApiException {
+        return new ApiException(cause, SC_403_FORBIDDEN, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw404NotFound(Throwable cause, String messageFormat, Object... messages) throws ApiException
-    {
-        throwEx(SC_404_NOT_FOUND, cause, messageFormat, messages);
+    public static ApiException new403Forbidden(String messageFormat, Object... args) throws ApiException {
+        return new ApiException(null, SC_403_FORBIDDEN, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw429TooManyRequests() throws ApiException
-    {
-        throwEx(SC_429_TOO_MANY_REQUESTS, null, null);
+    public static ApiException new403Forbidden(Throwable cause, String messageFormat, Object... args) throws ApiException {
+        return new ApiException(cause, SC_403_FORBIDDEN, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw429TooManyRequests(Throwable cause) throws ApiException
-    {
-        throwEx(SC_429_TOO_MANY_REQUESTS, cause, null);
+    public static ApiException new404NotFound() throws ApiException {
+        return new ApiException((Throwable)null, SC_404_NOT_FOUND, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw429TooManyRequests(String messageFormat, Object... messages) throws ApiException
-    {
-        throwEx(SC_429_TOO_MANY_REQUESTS, null, messageFormat, messages);
+    public static ApiException new404NotFound(Throwable cause) throws ApiException {
+        return new ApiException(cause, SC_404_NOT_FOUND, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw429TooManyRequests(Throwable cause, String messageFormat, Object... messages) throws ApiException
-    {
-        throwEx(SC_429_TOO_MANY_REQUESTS, cause, messageFormat, messages);
+    public static ApiException new404NotFound(String messageFormat, Object... args) throws ApiException {
+        return new ApiException(null, SC_404_NOT_FOUND, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw500InternalServerError() throws ApiException
-    {
-        throwEx(SC_500_INTERNAL_SERVER_ERROR, null, null);
+    public static ApiException new404NotFound(Throwable cause, String messageFormat, Object... args) throws ApiException {
+        return new ApiException(cause, SC_404_NOT_FOUND, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw500InternalServerError(Throwable cause) throws ApiException
-    {
-        throwEx(SC_500_INTERNAL_SERVER_ERROR, cause, null);
+    public static ApiException new429TooManyRequests() throws ApiException {
+        return new ApiException((Throwable)null, SC_429_TOO_MANY_REQUESTS, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw500InternalServerError(String messageFormat, Object... args) throws ApiException
-    {
-        throwEx(SC_500_INTERNAL_SERVER_ERROR, null, messageFormat, args);
+    public static ApiException new429TooManyRequests(Throwable cause) throws ApiException {
+        return new ApiException(cause, SC_429_TOO_MANY_REQUESTS, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw500InternalServerError(Throwable cause, String messageFormat, Object... args) throws ApiException
-    {
-        throwEx(SC_500_INTERNAL_SERVER_ERROR, cause, messageFormat, args);
+    public static ApiException new429TooManyRequests(String messageFormat, Object... args) throws ApiException {
+        return new ApiException(null, SC_429_TOO_MANY_REQUESTS, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw501NotImplemented() throws ApiException
-    {
-        throwEx(SC_501_NOT_IMPLEMENTED, null, null);
+    public static ApiException new429TooManyRequests(Throwable cause, String messageFormat, Object... args) throws ApiException {
+        return new ApiException(cause, SC_429_TOO_MANY_REQUESTS, messageFormat, args);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw501NotImplemented(Throwable cause) throws ApiException
-    {
-        throwEx(SC_501_NOT_IMPLEMENTED, cause, null);
+    public static ApiException new500InternalServerError() throws ApiException {
+        return new ApiException((Throwable)null, SC_500_INTERNAL_SERVER_ERROR, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw501NotImplemented(String messageFormat, Object... args) throws ApiException
-    {
-        throwEx(SC_501_NOT_IMPLEMENTED, null, messageFormat, args);
+    public static ApiException new500InternalServerError(Throwable cause) throws ApiException {
+        return new ApiException(cause, SC_500_INTERNAL_SERVER_ERROR, null);
     }
 
-    /**
-     * @deprecated this pattern was throwing off static code analysis.  It is recommended to replace
-     *             the usage of this method with "throw ApiException.newXXX(...)
-     * @throws ApiException
-     */
-    @Deprecated
-    public static void throw501NotImplemented(Throwable cause, String messageFormat, Object... args) throws ApiException
-    {
-        throwEx(SC_501_NOT_IMPLEMENTED, cause, messageFormat, args);
+    public static ApiException new500InternalServerError(String messageFormat, Object... args) throws ApiException {
+        return new ApiException(null, SC_500_INTERNAL_SERVER_ERROR, messageFormat, args);
+    }
+
+    public static ApiException new500InternalServerError(Throwable cause, String messageFormat, Object... args) throws ApiException {
+        return new ApiException(cause, SC_500_INTERNAL_SERVER_ERROR, messageFormat, args);
+    }
+
+    public static ApiException new501NotImplemented() throws ApiException {
+        return new ApiException((Throwable)null, SC_501_NOT_IMPLEMENTED, null);
+    }
+
+    public static ApiException new501NotImplemented(Throwable cause) throws ApiException {
+        return new ApiException(cause, SC_501_NOT_IMPLEMENTED, null);
+    }
+
+    public static ApiException new501NotImplemented(String messageFormat, Object... args) throws ApiException {
+        return new ApiException(null, SC_501_NOT_IMPLEMENTED, messageFormat, args);
+    }
+
+    public static ApiException new501NotImplemented(Throwable cause, String messageFormat, Object... args) throws ApiException {
+        return new ApiException(cause, SC_501_NOT_IMPLEMENTED, messageFormat, args);
     }
 
 }

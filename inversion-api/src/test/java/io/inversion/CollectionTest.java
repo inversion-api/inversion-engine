@@ -18,40 +18,34 @@ package io.inversion;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class CollectionTest {
-    //   @Test
-    //   public void encodeStr_encodeDecodeMustNotModifyValue() throws Exception
-    //   {
-    //      String string = new String("kdksks*/sl&(2)".getBytes(), "UTF-8");
-    //
-    //      System.out.println("string   : '" + string + "'");
-    //
-    //      String encoded = Collection.encodeStr(string);
-    //      System.out.println("encoded  : '" + encoded + "'");
-    //
-    //      String decoded = Collection.decodeStr(encoded);
-    //      System.out.println("decoded  : '" + decoded + "'");
-    //
-    //      String reincoded = Collection.encodeStr(decoded);
-    //      System.out.println("reincoded: '" + reincoded + "'");
-    //
-    //      assertEquals(string, decoded);
-    //      assertNotEquals(string, encoded);
-    //   }
+
+    static final String MANY_TO_ESCAPE = "asdf1234-._()'!*,;-~@%<>[]{}|\\^?/#+&= ---5678910";
+
+//    @Test
+//    public void encodeStr_subsequentEncodingsDontChageValue() throws Exception {
+//        String source  = MANY_TO_ESCAPE;
+//        String encoded = Collection.encodeStr(source);
+//        String reencoded = Collection.encodeStr(encoded);
+//        assertEquals(encoded, reencoded);
+//    }
+
+    @Test
+    public void encodeStr_encodeDecodeMustNotModifyValue() throws Exception {
+        String source  = "asdf1234-._()'!*,;-~@%<>[]{}|\\^?/#+&= ---5678910";
+        String encoded = Collection.encodeStr(source);
+        assertEquals("asdf1234-._()'!*,;-@007e@0040@0025@003c@003e@005b@005d@007b@007d@007c@005c@005e@003f@002f@0023@002b@0026@003d@0020---5678910", encoded);
+        String decoded = Collection.decodeStr(encoded);
+        assertEquals(source, decoded);
+    }
 
     @Test
     public void encodeStr_dontEncodeAlwaysSafeUrlCharsOtherThanTildeAndAmpersand() throws Exception {
-        //encode these: % < > [ ] { } | \ ^ ? / # + & = 
-        String source  = "asdf1234-._()'!*:,;";
+        String source  = "asdf1234-._()'!*,;";
         String encoded = Collection.encodeStr(source);
-        System.out.println(encoded);
-        //assertEquals(source, encoded);
-
-        source = "asdf1234---~@%<>[]{}|\\^?/#+&= ---5678910";
-        encoded = Collection.encodeStr(source);
-        System.out.println(encoded);
-        //assertEquals(source, encoded);
-
+        assertEquals(source, encoded);
     }
 
 }

@@ -32,18 +32,18 @@ public class DbGetActionTest {
                         "offset" //
                 }, //
                 {//
-                        "http://localhost/northwind/source/orders?limit=5&sort=orderId", // 
-                        "http://localhost/northwind/source/orders?limit=5&sort=orderId&pageNum=2", // 
+                        "http://localhost/northwind/source/orders?size=5&sort=orderId", //
+                        "http://localhost/northwind/source/orders?size=5&sort=orderId&pageNum=2", //
                         "offest", "page", "pageNum" //
                 }, //
                 {//
-                        "http://localhost/northwind/source/orders?sort=orderId&pageNum=2", // 
-                        "http://localhost/northwind/source/orders?limit=5&sort=orderId&pageNum=2", // 
-                        "limit" //
+                        "http://localhost/northwind/source/orders?sort=orderId&page=2", //
+                        "http://localhost/northwind/source/orders?size=5&sort=orderId&page=2", //
+                        "size" //
                 }, //
                 {//
-                        "http://localhost/northwind/source/orders?limit=5&pageNum=2", // 
-                        "http://localhost/northwind/source/orders?limit=5&sort=orderId&pageNum=2", // 
+                        "http://localhost/northwind/source/orders?size=5&page=2", //
+                        "http://localhost/northwind/source/orders?size=5&sort=orderId&page=2", //
                         "sort" //
                 }//
         };

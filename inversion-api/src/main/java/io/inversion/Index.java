@@ -27,11 +27,19 @@ import java.util.stream.Collectors;
  *
  */
 public class Index implements Serializable {
+
+    public static final String TYPE_INDEX        = "INDEX";
+    public static final String TYPE_RESOURCE_KEY = "RESOURCE_KEY";
+    public static final String TYPE_PRIMARY_KEY  = "PRIMARY_KEY";
+    public static final String TYPE_FOREIGN_KEY  = "FOREIGN_KEY";
+
+
     protected final List<Property> properties = new ArrayList<>();
     protected       Collection     collection = null;
     protected       String         name       = null;
     protected       String         type       = null;           // primary, partition, sort, localsecondary, etc
     protected       boolean        unique     = true;
+    protected       Projection     projection = null;
 
     public Index() {
         super();
@@ -56,13 +64,14 @@ public class Index implements Serializable {
     }
 
     public String toString() {
-        StringBuilder buff = new StringBuilder(getCollection().getTableName()).append(".").append(name).append("(");
+
+        StringBuffer buff = new StringBuffer("[Index: ").append(collection == null ? null : collection.getName()).append(":").append(name).append("(");
         for (int i = 0; i < size(); i++) {
-            buff.append(getPropertyName(i));
+            buff.append(getJsonName(i));
             if (i < size() - 1)
                 buff.append(", ");
         }
-        buff.append(")");
+        buff.append(")]");
         return buff.toString();
     }
 
@@ -125,6 +134,10 @@ public class Index implements Serializable {
         return this;
     }
 
+    public int size() {
+        return properties.size();
+    }
+
     public Index withProperties(Property... properties) {
         for (int i = 0; properties != null && i < properties.length; i++) {
             if (properties[i] != null && !this.properties.contains(properties[i]))
@@ -141,24 +154,28 @@ public class Index implements Serializable {
         return properties.get(idx);
     }
 
-    public int size() {
-        return properties.size();
-    }
-
-    public String getPropertyName(int index) {
-        return index < properties.size() ? properties.get(index).getJsonName() : null;
-    }
-
     public String getColumnName(int index) {
         return index < properties.size() ? properties.get(index).getColumnName() : null;
-    }
-
-    public List<String> getJsonNames() {
-        return properties.stream().map(Property::getJsonName).collect(Collectors.toList());
     }
 
     public List<String> getColumnNames() {
         return properties.stream().map(Property::getColumnName).collect(Collectors.toList());
     }
 
+    public String getJsonName(int index) {
+        return index < properties.size() ? properties.get(index).getJsonName() : null;
+    }
+
+    public List<String> getJsonNames() {
+        return properties.stream().map(Property::getJsonName).collect(Collectors.toList());
+    }
+
+    public Projection getProjection() {
+        return projection;
+    }
+
+    public Index withProjection(Projection projection) {
+        this.projection = projection;
+        return this;
+    }
 }

@@ -16,65 +16,63 @@
  */
 package io.inversion;
 
-import io.inversion.utils.*;
+import io.inversion.json.*;
+import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
 
-public class Request {
+public class Request implements Headers, JSFind {
 
     public static final String COLLECTION_KEY   = "_collection";
     public static final String RESOURCE_KEY     = "_resource";
     public static final String RELATIONSHIP_KEY = "_relationship";
 
-    protected long startAt = System.currentTimeMillis();
-    protected long endAt = -1;
+    long startAt = System.currentTimeMillis();
+    long endAt   = -1;
 
-    protected Chain chain = null;
+    String referrer   = null;
+    String remoteAddr = null;
+    JSMap  headers    = new JSMap();
 
-    protected String                                 referrer   = null;
-    protected String                                 remoteAddr = null;
-    protected ArrayListValuedHashMap<String, String> headers    = new ArrayListValuedHashMap<>();
+    boolean explain  = false;
+    boolean internal = false;
 
-    protected Url    url    = null;
-    protected String method = null;
+    Engine             engine          = null;
+    Chain              chain           = null;
+    String             method          = null;
+    Url                url             = null;
+    Server             server          = null;
+    Api                api             = null;
+    Op                 op              = null;
+    Endpoint           endpoint        = null;
+    Collection         collection      = null;
+    Db                   db          = null;
+    Server.ServerMatcher serverMatch     = null;
+    Path                 serverPath      = null;
+    Path                 serverPathMatch = null;
+    Path               operationPath   = null;
+    Path               endpointPath    = null;
+    Path               dbPath          = null;
+    Path               collectionPath  = null;
+    Path               actionPath      = null;
 
-    protected Engine engine  = null;
+    List<Chain.ActionMatch> actionMatches = new ArrayList();
+    Map<String, String>     pathParams    = new HashMap<>();
 
-    protected Api    api         = null;
-    protected Path   apiPath     = null;
-    protected Path   apiMatchPath = null;
+    String body = null;
+    JSNode json = null;
 
-    protected Endpoint endpoint     = null;
-    protected Path     endpointPath = null;
-    protected Path     endpointMatchPath = null;
+    Uploader uploader = null;
 
-    protected Collection collection     = null;
-    protected Path       collectionPath = null;
-    protected Path       collectionMatchPath = null;
-
-    protected String body = null;
-    protected JSNode json = null;
-
-    protected Uploader uploader = null;
-
-    protected int retryMax = 0;
-    int  retryCount = 0;
-    File retryFile;
-
-    boolean explain = false;
 
     public Request() {
 
     }
 
     public Request(String method, String url) {
-        this(method, url, null, null, -1);
+        this(method, url, null, null);
     }
 
     public Request(String method, String url, String body) {
@@ -91,26 +89,11 @@ public class Request {
             withBody(body.toString());
     }
 
-    public Request(String method, String url, Map<String, String> headers, Map<String, String> params, String body) {
-        withMethod(method);
-        withUrl(url);
-        withBody(body);
-
-        if (headers != null) {
-            for (String key : headers.keySet())
-                withHeader(key, headers.get(key));
-        }
-
-        if (params != null) {
-            this.url.withParams(params);
-        }
+    public Request(String method, String url, String body, ArrayListValuedHashMap<String, String> headers) {
+        this(method, url, body, null, headers);
     }
 
-    public Request(String method, String url, String body, ArrayListValuedHashMap<String, String> headers, int retryAttempts) {
-        this(method, url, body, null, headers, retryAttempts);
-    }
-
-    public Request(String method, String url, String body, Map<String, String> params, ArrayListValuedHashMap<String, String> headers, int retryMax) {
+    public Request(String method, String url, String body, Map<String, String> params, ArrayListValuedHashMap<String, String> headers) {
         withMethod(method);
         withUrl(url);
         withBody(body);
@@ -119,21 +102,83 @@ public class Request {
             this.url.withParams(params);
         }
 
-        if (headers != null && headers.size() > 0)
-            this.headers = new ArrayListValuedHashMap<>(headers);
+        if (headers != null && headers.size() > 0) {
+            for (String key : headers.keySet()) {
+                List<String> values = headers.get(key);
+                for (String value : values) {
+                    addHeader(key, value);
+                }
+            }
+        }
 
-        if (retryMax > -1)
-            this.retryMax = retryMax;
+        System.out.println(this.headers);
     }
 
-    public Engine getEngine() {
-        return engine;
+    public String findParam(String name, Param.In... where) {
+
+        if (where == null || where.length == 0)
+            where = new Param.In[]{Param.In.QUERY, Param.In.URL, Param.In.PATH, Param.In.HEADER, Param.In.SERVER_PATH, Param.In.HOST};
+
+        Set<Param.In> wheres = new LinkedHashSet<>();
+        for (Param.In w : where) {
+            switch (w) {
+                case URL:
+                    Utils.add(wheres, Param.In.HOST, Param.In.SERVER_PATH, Param.In.PATH, Param.In.QUERY);
+                    break;
+                default:
+                    wheres.add(w);
+            }
+        }
+
+
+        String value = null;
+        for (Param.In w : wheres) {
+            //HOST, SERVER_PATH, PATH, QUERY, BODY, COOKIE, HEADER, USER, CHAIN, CONTEXT, ENVIRONMENT, URL, REQUEST
+            switch (w) {
+
+                case PATH:
+                    Param param = op.getParam(Param.In.PATH, name);
+                    if(param != null){
+                        value = getPath().get(param.index);
+                    }
+                    break;
+                case HEADER:
+                    value = getHeader(name);
+                    break;
+                case QUERY:
+                    value = getUrl().getParam(name);
+                    break;
+                case SERVER_PATH:
+                    Path path = getServerPathMatch();
+                    for (int i = 0; path != null && i < path.size(); i++) {
+                        if (path.isVar(i) && path.getVarName(i).equalsIgnoreCase(name)) {
+                            value = getServerPath().get(i);
+                            break;
+                        }
+                    }
+                    break;
+
+                case HOST:
+                    Path hostPath = getServerMatch().getHost();
+                    for (int i = 0; hostPath != null && i < hostPath.size(); i++) {
+                        if (hostPath.isVar(i) && hostPath.getVarName(i).equalsIgnoreCase(name)) {
+                            value = getUrl().getHostAsPath().get(i);
+                            break;
+                        }
+                    }
+                    break;
+
+                default:
+                    System.err.println("IMPLEMENT SUPPORT FOR Request.findParam(var, " + w + ")");
+                    //throw new UnsupportedOperationException();
+            }
+            if (value != null)
+                break;
+        }
+
+        return value;
     }
 
-    public Request withEngine(Engine service) {
-        this.engine = service;
-        return this;
-    }
 
     public Request withUrl(String url) {
         Url u = new Url(url);
@@ -152,18 +197,29 @@ public class Request {
         return this;
     }
 
-    public long getStartAt(){return startAt;}
+    public long getStartAt() {
+        return startAt;
+    }
 
-    public Request withStartAt(long startAt){
+    public Request withStartAt(long startAt) {
         this.startAt = startAt;
         return this;
     }
 
-    public long getEndAt(){return endAt;}
+    public long getEndAt() {
+        return endAt;
+    }
 
-    public Request withEndAt(long endAt){
+    public Request withEndAt(long endAt) {
         this.endAt = endAt;
         return this;
+    }
+
+    public long getDuration() {
+        if (endAt < 1)
+            return System.currentTimeMillis() - startAt;
+        else
+            return endAt - startAt;
     }
 
     public Request withMethod(String method) {
@@ -172,12 +228,53 @@ public class Request {
     }
 
     public Request withHeaders(String key, String value) {
-        this.headers.put(key, value);
+        addHeader(key, value);
         return this;
     }
 
-    public Request withHeaders(Map<String, String> headers) {
+    public Request withHeaders(JSMap headers) {
         this.headers.putAll(headers);
+        return this;
+    }
+
+    public JSMap getHeaders() {
+        return (JSMap) headers;
+    }
+
+    public Server getServer() {
+        return server;
+    }
+
+    public Request withServer(Server server) {
+        this.server = server;
+        return this;
+    }
+
+    public Api getApi() {
+        return api;
+    }
+
+    public Request withApi(Api api) {
+        this.api = api;
+        return this;
+    }
+
+    public Engine getEngine() {
+        return engine;
+    }
+
+    public Request withEngine(Engine engine) {
+        this.engine = engine;
+        return this;
+    }
+
+
+    public boolean isInternal() {
+        return internal;
+    }
+
+    public Request withInternal(boolean internal) {
+        this.internal = internal;
         return this;
     }
 
@@ -185,33 +282,26 @@ public class Request {
         return collection;
     }
 
-    /**
-     * @param collectionKeys the name of the collection to check for
-     * @return true if any of the <code>collectionKeys</code> case insensitive match <code>collectoinKey</code>
-     */
-    public boolean hasCollectionKey(String... collectionKeys) {
-        String collectionKey = getCollectionKey();
-        if (collectionKey != null) {
-            for (int i = 0; collectionKeys != null && i < collectionKeys.length; i++) {
-                String key = collectionKeys[i];
-                if (key != null && key.equalsIgnoreCase(collectionKey)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
     public Request withCollection(Collection collection) {
         this.collection = collection;
         return this;
     }
 
-    public Request withCollection(Collection collection, Path collectionPath, Path collectionMatchPath) {
-        this.collection = collection;
-        this.collectionPath = collectionPath;
-        this.collectionMatchPath = collectionMatchPath;
+    public Db getDb() {
+        return db;
+    }
+
+    public Request withDb(Db db) {
+        this.db = db;
+        return this;
+    }
+
+    public Path getDbPath() {
+        return dbPath;
+    }
+
+    public Request withDbPath(Path dbPath) {
+        this.dbPath = dbPath;
         return this;
     }
 
@@ -219,23 +309,117 @@ public class Request {
         return endpoint;
     }
 
-    public Request withEndpoint(Endpoint endpoint, Path endpointPath, Path endpointMatchPath) {
+    public Request withEndpoint(Endpoint endpoint) {
         this.endpoint = endpoint;
-        this.endpointPath = endpointPath;
-        this.endpointMatchPath = endpointMatchPath;
         return this;
     }
 
+    public Server.ServerMatcher getServerMatch() {
+        return serverMatch;
+    }
+
+    public Request withServerMatch(Server.ServerMatcher serverMatch) {
+        this.serverMatch = serverMatch;
+        return this;
+    }
+
+    public Path getServerPath() {
+        return serverPath;
+    }
+
+    public Request withServerPath(Path serverPath) {
+        this.serverPath = serverPath;
+        return this;
+    }
+
+    public Path getServerPathMatch() {
+        return serverPathMatch;
+    }
+
+    public Request withServerPathMatch(Path serverPathMatch) {
+        this.serverPathMatch = serverPathMatch;
+        return this;
+    }
+
+    public Path getOperationPath() {
+        return operationPath;
+    }
+
+    public Request withOperationPath(Path operationPath) {
+        this.operationPath = operationPath;
+        return this;
+    }
+
+    public Path getEndpointPath() {
+        return endpointPath;
+    }
+
+    public Request withEndpointPath(Path endpointPath) {
+        this.endpointPath = endpointPath;
+        return this;
+    }
+
+    public Path getActionPath() {
+        return actionPath;
+    }
+
+    public Request withActionPath(Path actionPath) {
+        this.actionPath = actionPath;
+        return this;
+    }
+
+    public Path getCollectionPath() {
+        return collectionPath;
+    }
+
+    public Request withCollectionPath(Path collectionPath) {
+        this.collectionPath = collectionPath;
+        return this;
+    }
+
+
+    public Request withActionMatches(List<Chain.ActionMatch> actionMatches) {
+        this.actionMatches.addAll(actionMatches);
+        return this;
+    }
+
+    public Request withActionMatch(Chain.ActionMatch actionMatch) {
+        this.actionMatches.add(actionMatch);
+        return this;
+    }
+
+
+    public List<Chain.ActionMatch> getActionMatches() {
+        return actionMatches;
+    }
+
+    public Request withPathParams(Map<String, String> pathParams) {
+        pathParams.keySet().forEach(url::clearParams);
+        pathParams.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> url.withParam(e.getKey(), e.getValue()));
+
+        return this;
+    }
+
+    public Map<String, String> getPathParams() {
+        return this.pathParams;
+    }
+
     public boolean isDebug() {
-        String url = getUrl().toString();
-        if (url.indexOf("://localhost/") > 0)
+
+        Api api = getApi();
+        if(api != null && api.isDebug())
             return true;
 
-        if (url.indexOf("://127.0.0.1/") > 0)
+        Url url = getUrl();
+        if(Chain.peek() != null)
+            url = Chain.first().getRequest().getUrl();
+
+        if(url.getHost() == null)
             return true;
 
-        if (getApi() != null)
-            return getApi().isDebug();
+        String host = url.getHost().toLowerCase();
+        if ("127.0.0.1".equals(host))
+            return true;
 
         return false;
     }
@@ -267,7 +451,7 @@ public class Request {
             return null;
 
         try {
-            json = JSNode.parseJsonNode(body);
+            json = JSParser.asJSNode(body);
         } catch (Exception ex) {
             throw ApiException.new400BadRequest("Unparsable JSON body");
         }
@@ -282,26 +466,29 @@ public class Request {
      * <p>
      * Conversion rules:
      * <ol>
-     *   <li>if getBody() is a JSArray return it.
+     *   <li>if getBody() is a JSList return it.
      *   <li>if getBody() is a JSNode with a "data" array prop, return it
+     *   <li>if getBody() is a JSNode with a "_embedded" array prop, return it
      *   <li>if getBody() is a JSNode wrap it in an array and return it.
      *   <li>if getBody() is not a JSNode and getBody() is null, return an empty array.
      * </ol>
      *
      * @return the JSON boty messaged into an array
      */
-    public JSArray getData() {
+    public JSList getData() {
         JSNode node = getJson();
         if (node != null) {
-            if (node instanceof JSArray) {
-                return (JSArray) node;
-            } else if (node.get("data") instanceof JSArray) {
-                return node.getArray("data");
+            if (node instanceof JSList) {
+                return (JSList) node;
+            } else if (node.get("data") instanceof JSList) {
+                return node.getList("data");
+            } else if (node.get("_embedded") instanceof JSList) {
+                return node.getList("_embedded");
             } else {
-                return new JSArray(node);
+                return new JSList(node);
             }
         } else if (getBody() == null)
-            return new JSArray();
+            return new JSList();
         return null;
     }
 
@@ -346,39 +533,14 @@ public class Request {
         return "delete".equalsIgnoreCase(method);
     }
 
+    public boolean isOptions() {
+        return "options".equalsIgnoreCase(method);
+    }
+
     public String getReferrer() {
         return getHeader("referrer");
     }
 
-    public String getHeader(String key) {
-        key = key.toLowerCase();
-        List<String> vals = headers.get(key);
-        if (vals != null && vals.size() > 0)
-            return vals.get(0);
-        return null;
-    }
-
-    public void removeHeader(String key) {
-        key = key.toLowerCase();
-        headers.remove(key);
-    }
-
-    /**
-     * @return the headers
-     */
-    public ArrayListValuedHashMap<String, String> getHeaders() {
-        return headers;
-    }
-
-    public void withHeader(String key, String value) {
-        key = key.toLowerCase();
-        if (!headers.containsMapping(key, value))
-            headers.put(key, value);
-    }
-
-    public Api getApi() {
-        return api;
-    }
 
     public Chain getChain() {
         return chain;
@@ -393,28 +555,6 @@ public class Request {
         return url;
     }
 
-    /**
-     * @return the request path with the apiPath subtracted from the beginning
-     */
-    public Path getPath() {
-        Path path = url.getPath();
-
-        int startIdx = apiPath == null ? 0 : apiPath.size();
-        path = path.subpath(startIdx, path.size());
-
-        return path;
-    }
-
-    public Path getSubpath() {
-        Path subpath = getPath();
-        Path ep      = this.endpointPath;
-
-        int startIdx = ep == null ? 0 : ep.size();
-
-        subpath = subpath.subpath(startIdx, subpath.size());
-
-        return subpath;
-    }
 
     /**
      * @return the collectionKey
@@ -430,85 +570,37 @@ public class Request {
         return url.getParam(RESOURCE_KEY);
     }
 
-    /**
-     * @deprecated  Replaced by {@link #getResourceKey()}
-     */
-    @Deprecated
-    public String getEntityKey() {
-        return getResourceKey();
-    }
-
     public String getRelationshipKey() {
         return url.getParam(RELATIONSHIP_KEY);
     }
 
-    /**
-     * @deprecated  Replaced by {@link #getRelationshipKey()}
-     */
-    @Deprecated
-    public String getSubCollectionKey(){
-        return getRelationshipKey();
+    public Relationship getRelationship() {
+        return op.getRelationship();
     }
 
-    /**
-     * @deprecated  Replaced by {@link Url#getParams()}
-     */
-    @Deprecated
-    public Map<String, String> getParams(){
-        return url.getParams();
-    }
-
-    /**
-     * @deprecated  Replaced by {@link Url#getParam(String)}
-     */
-    @Deprecated
-    public String getParam(String name)
-    {
-        return url.getParam(name);
-    }
-
-    /**
-     * @deprecated  Replaced by {@link Url#getQueryString()}
-     */
-    @Deprecated
-    public String getQuery()
-    {
-        return url.getQuery();
-    }
-
-    public Request withApi(Api api, Path apiPath, Path apiMatchPath) {
-        this.api = api;
-        this.apiPath = apiPath;
-        this.apiMatchPath = apiMatchPath;
-        return this;
-    }
-
+    //TODO: should this be here
     public String getApiUrl() {
-        return url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + apiPath;
+        return url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + getServerPath();
     }
 
-    public Path getApiPath() {
-        return apiPath;
+    //TODO: should this be here
+    public Path getPath() {
+        return new Path(endpointPath.toString(), actionPath.toString());
     }
 
-    public Path getEndpointPath() {
-        return endpointPath;
+    //TODO: should this be here
+    public Path getSubpath() {
+        return actionPath;
     }
 
-    public Path getApiMatchPath() {
-        return apiMatchPath;
+
+    public Op getOp() {
+        return op;
     }
 
-    public Path getEndpointMatchPath() {
-        return endpointMatchPath;
-    }
-
-    public Path getCollectionPath() {
-        return collectionPath;
-    }
-
-    public Path getCollectionMatchPath() {
-        return collectionMatchPath;
+    public Request withOp(Op op) {
+        this.op = op;
+        return this;
     }
 
     public String getRemoteAddr() {
@@ -546,6 +638,12 @@ public class Request {
         return this;
     }
 
+
+    public List<Upload> getUploads() {
+        return uploader.getUploads();
+    }
+
+
     public Validation validate(String propOrJsonPath) {
         return validate(propOrJsonPath, null);
     }
@@ -554,429 +652,10 @@ public class Request {
         return new Validation(this, propOrJsonPath, customErrorMessage);
     }
 
-    public boolean isLocalRequest() {
-        String url = getUrl().toString();
-        return chain != null && !(url.startsWith("http:") || url.startsWith("https://"));
+    public void check(boolean value, String message, Object... args) {
+        if (!value)
+            throw ApiException.new400BadRequest(message, args);
     }
 
-    public int getRetryMax() {
-        return retryMax;
-    }
-
-    public Request withRetryMax(int retryMax) {
-        this.retryMax = retryMax;
-        return this;
-    }
-
-    public int getRetryCount() {
-        return retryCount;
-    }
-
-    public void incrementRetryCount() {
-        this.retryCount++;
-    }
-
-    public File getRetryFile() {
-        return retryFile;
-    }
-
-    public void setRetryFile(File retryFile) {
-        this.retryFile = retryFile;
-    }
-
-    public List<Upload> getUploads() {
-        return uploader.getUploads();
-    }
-
-    /**
-     * Replaces path parameters with their corresponding request params
-     */
-    public String buildPath(String path){
-        StringBuffer buff = new StringBuffer();
-        Pattern p        = Pattern.compile("(\\[?+)\\:([\\w\\-\\_]*)(\\]?+)");
-        Matcher m        = p.matcher(path);
-        boolean optional = false;
-        while (m.find()) {
-            String key   = m.group(2);
-            String param = getUrl().getParam(key);
-            if (param == null)//replacement value was not there
-            {
-                if("[".equals(m.group(1)) && "]".equals(m.group(3))) {
-                    optional = true;
-                    break;
-                }
-                param = ":" + key;
-            }
-
-            String value = Matcher.quoteReplacement(param);
-            m.appendReplacement(buff, value);
-        }
-        if(!optional)
-            m.appendTail(buff);
-
-        return buff.toString();
-    }
-
-    /**
-     * Implemented by different runtimes, for example a servlet vs a lambda, to enable different file upload mechanisms.
-     */
-    public interface Uploader {
-        List<Upload> getUploads();
-    }
-
-    public static class Upload {
-
-        String      fileName;
-        long        fileSize;
-        String      requestPath;
-        InputStream inputStream;
-
-        public Upload(String fileName, long fileSize, String requestPath, InputStream inputStream) {
-            super();
-            this.fileName = fileName;
-            this.fileSize = fileSize;
-            this.requestPath = requestPath;
-            this.inputStream = inputStream;
-        }
-
-        public String getFileName() {
-            return fileName;
-        }
-
-        public void setFileName(String fileName) {
-            this.fileName = fileName;
-        }
-
-        public long getFileSize() {
-            return fileSize;
-        }
-
-        public void setFileSize(long fileSize) {
-            this.fileSize = fileSize;
-        }
-
-        public String getRequestPath() {
-            return requestPath;
-        }
-
-        public void setRequestPath(String requestPath) {
-            this.requestPath = requestPath;
-        }
-
-        public InputStream getInputStream() {
-            return inputStream;
-        }
-
-        public void setInputStream(InputStream inputStream) {
-            this.inputStream = inputStream;
-        }
-
-    }
-
-    /**
-     * Utility designed to make it easy to validate request properties or request body
-     * json values while you are retrieving them.
-     *
-     * <h3>Required (Not Null)</h3>
-     * <p>
-     * To ensure a field is not null, use the required() method:
-     * <ul>
-     *     <li>String nameFirst = request.validate("nameFirst", "A first name is required").required().asString();</li>
-     * </ul>
-     *
-     * <h3>Comparison</h3>
-     * <p>
-     * To validate a number is greater than 5, then return its value:
-     * <ul>
-     * <li>int myParam = request.validate("myParamName", "optional_custom_error_message").gt(5).asInt();
-     * </ul>
-     *
-     * @see Request#validate(String)
-     * @see Request#validate(String, String)
-     */
-    public static class Validation {
-
-        final String customErrorMessage;
-        final String propOrPath;
-        Object value;
-
-        public Validation(Request req, String propOrPath, String customErrorMessage) {
-            value = req.getUrl().getParam(propOrPath);
-            if (value == null && req.getJson() != null)
-                value = req.getJson().find(propOrPath);
-
-            this.propOrPath = null;
-            this.customErrorMessage = customErrorMessage;
-        }
-
-        public Validation(Response res, String jsonPath, String customErrorMessage) {
-            this.value = res.find(jsonPath);
-            this.propOrPath = null;
-            this.customErrorMessage = customErrorMessage;
-        }
-
-        /**
-         * If there are any <code>childProps</code> they must exist on the JSNode
-         * found at <code>pathOrProp</code>.  If <code>childProps</code> are null/empty
-         * then  <code>pathOrProp</code> must not be null.
-         *
-         * @param childProps the child properties to check for
-         * @return this
-         * @throws ApiException 400 if the referenced validation is null.
-         */
-        public Validation required(String... childProps) {
-            if (Utils.empty(value))
-                fail("Required field '" + propOrPath + "' is missing.");
-
-            if (childProps != null && value instanceof JSNode && !((JSNode) value).isArray()) {
-                for (String childProp : childProps) {
-                    if (Utils.empty(((JSNode) value).get(childProp))) {
-                        fail("Required field '" + propOrPath + "." + childProp + "' is missing.");
-                    }
-                }
-            }
-
-            return this;
-        }
-
-        public Validation matches(String regex) {
-            if (value == null)
-                return this;
-
-            if (!value.toString().matches(regex))
-                fail("Field '" + propOrPath + "' does not match the required pattern.");
-
-            return this;
-        }
-
-        public Validation in(Object... possibleValues) {
-            if (value == null)
-                return this;
-
-            if (!Utils.in(value, possibleValues))
-                fail("Field '" + propOrPath + "' is not one of the possible values.");
-
-            return this;
-        }
-
-        public Validation out(Object... excludedValues) {
-            if (value == null)
-                return this;
-
-            if (Utils.in(value, excludedValues))
-                fail("Field '" + propOrPath + "' has a restricted value.");
-
-            return this;
-        }
-
-        protected int compareTo(Object compareTo) {
-            Object value = this.value;
-
-            if (compareTo instanceof Number) {
-                try {
-                    value = Double.parseDouble(value.toString());
-                    compareTo = Double.parseDouble(compareTo.toString());
-                } catch (Exception ex) {
-                    //ignore numeric type conversion error.
-                }
-            }
-            if (value instanceof Comparable)
-                return ((Comparable) value).compareTo(compareTo);
-
-            return (value + "").compareTo(compareTo + "");
-        }
-
-        public Validation gt(Object compareTo) {
-            if (value == null)
-                return this;
-
-            if (compareTo(compareTo) < 1)
-                fail("Field '" + propOrPath + "' is less than the required value.");
-
-            return this;
-        }
-
-        public Validation ge(Object compareTo) {
-            if (value == null)
-                return this;
-
-            if (compareTo(compareTo) < 0)
-                fail("Field '" + propOrPath + "' is less than the required value.");
-
-            return this;
-        }
-
-        public Validation lt(Object compareTo) {
-            if (value == null)
-                return this;
-
-            if (compareTo(compareTo) > -1)
-                fail("Field '" + propOrPath + "' is greater than the required value.");
-
-            return this;
-        }
-
-        public Validation le(Object compareTo) {
-            if (value == null)
-                return this;
-
-            if (compareTo(compareTo) > 0)
-                fail("Field '" + propOrPath + "' is greater than the required value.");
-
-            return this;
-        }
-
-        public Validation eq(Object compareTo) {
-            if (value == null)
-                return this;
-
-            if (compareTo(compareTo) != 0)
-                fail("Field '" + propOrPath + "' is not equal to the required value.");
-
-            return this;
-        }
-
-        public Validation ne(Object compareTo) {
-            if (value == null)
-                return this;
-
-            if (compareTo(compareTo) != 0)
-                fail("Field '" + propOrPath + "' is equal to a restricted value.");
-
-            return this;
-        }
-
-        public Validation length(int max) {
-            if (value == null)
-                return this;
-
-            if (value.toString().length() > max)
-                fail("Field '" + propOrPath + "' is longer than the max allowed length of '" + max + "'.");
-
-            return this;
-        }
-
-        public Validation length(int min, int max) {
-            if (value == null)
-                return this;
-
-            int length = value.toString().length();
-
-            if (length > max)
-                fail("Field '" + propOrPath + "' is longer than the maximum allowed length of '" + max + "'.");
-
-            if (length < min)
-                fail("Field '" + propOrPath + "' is shorter than the minimum allowed length of '" + max + "'.");
-
-            return this;
-        }
-
-        public Validation minMax(Number min, Number max) {
-            if (value == null)
-                return this;
-
-            max(max);
-            min(min);
-            return this;
-        }
-
-        public Validation max(Number max) {
-            if (value == null)
-                return this;
-
-            if (Double.parseDouble(max.toString()) < Double.parseDouble(value.toString()))
-                fail("Field '" + propOrPath + "' is greater than the required maximum of '" + max + "'.");
-
-            return this;
-        }
-
-        public Validation min(Number min) {
-            if (value == null)
-                return this;
-
-            if (Double.parseDouble(min.toString()) > Double.parseDouble(value.toString()))
-                fail("Field '" + propOrPath + "' is less than the required minimum of '" + min + "'.");
-
-            return this;
-        }
-
-        public Object value() {
-            return value;
-        }
-
-        public JSNode asNode() {
-            if (value == null)
-                return null;
-
-            if (value instanceof String)
-                value = JSNode.parseJson(value.toString());
-
-            return ((JSNode) value);
-        }
-
-        public JSArray asArray() {
-            if (value == null)
-                return null;
-
-            if (value instanceof String)
-                value = JSNode.parseJsonArray(value.toString());
-
-            return ((JSArray) value);
-        }
-
-        public String asString() {
-            if (value == null)
-                return null;
-
-            return value.toString();
-        }
-
-        public int asInt() {
-            if (value == null)
-                return -1;
-
-            try {
-                return Integer.parseInt(value + "");
-            } catch (Exception ex) {
-                fail("Field '" + propOrPath + "' must be an integer.");
-            }
-
-            return -1;
-        }
-
-        public double asDouble() {
-            if (value == null)
-                return -1;
-
-            try {
-                return Double.parseDouble(value + "");
-            } catch (Exception ex) {
-                fail("Field '" + propOrPath + "' must be an number.");
-            }
-
-            return -1;
-        }
-
-        public boolean asBoolean() {
-            try {
-                return Boolean.parseBoolean(value + "");
-            } catch (Exception ex) {
-                fail("Field '" + propOrPath + "' must be a boolean.");
-            }
-
-            return false;
-        }
-
-        /**
-         * Throws an ApiException 400 using customErrorMessage or defaultErrorMessage
-         *
-         * @param defaultErrorMessage the default error message
-         * @throws ApiException always
-         */
-        protected void fail(String defaultErrorMessage) throws ApiException {
-            String message = customErrorMessage != null ? customErrorMessage : defaultErrorMessage;
-            throw ApiException.new400BadRequest(message);
-        }
-    }
 
 }

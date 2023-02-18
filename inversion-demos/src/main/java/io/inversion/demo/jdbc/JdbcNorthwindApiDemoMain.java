@@ -42,7 +42,7 @@ public class JdbcNorthwindApiDemoMain {
 
                 //-- DATABASE CONFIGURATION OPTION #1.
                 //-- you can set your database connection information explicitly in the code here...
-                .withDb(new JdbcDb("northwind", //the database name used as the properties key prefix when
+                .withDb(new JdbcDb("northwindDb", //the database name used as the properties key prefix when
                         "org.h2.Driver", //-- jdbc driver
                         "jdbc:h2:mem:northwind;DB_CLOSE_DELAY=-1", //-- jdbc url
                         "sa", //-- jdbc user
@@ -66,7 +66,7 @@ public class JdbcNorthwindApiDemoMain {
                 //--  northwind.pass=${YOUR_JDBC_PASSWORD}
 
                 //-- the RestAction performs CRUD operations on Db objects.
-                .withEndpoint("GET,POST,PUT,PATCH,DELETE", "/*", new DbAction());
+                .withEndpoint("GET,POST,PUT,PATCH,DELETE,/*", new DbAction());
 
     }
 
@@ -75,7 +75,7 @@ public class JdbcNorthwindApiDemoMain {
         InversionMain.run(buildApi());
 
         //this simply prints out the README to the console
-        System.out.println(Utils.read("README-JdbcNorthwindApiDemoMain.md"));
+        System.out.println(Utils.read(JdbcNorthwindApiDemoMain.class, "README-JdbcNorthwindApiDemoMain.md"));
     }
 
 }

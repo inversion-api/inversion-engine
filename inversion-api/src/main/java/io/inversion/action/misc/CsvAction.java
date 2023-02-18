@@ -20,8 +20,8 @@ import io.inversion.Action;
 import io.inversion.ApiException;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSList;
+import io.inversion.json.JSNode;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
@@ -42,21 +42,13 @@ public class CsvAction extends Action<CsvAction> {
             return;
         }
 
-        if (!"csv".equalsIgnoreCase(req.getUrl().getParam("format")) && !"csv".equalsIgnoreCase(req.getChain().getConfig("format", null))) {
+        if (!"csv".equalsIgnoreCase(req.getUrl().getParam("format"))) {
             return;
         }
 
         //support result being an array, a single object, or an inversion state object where we will pull results from the data field.
-        JSNode arr = res.getJson();
-        if (!(arr instanceof JSArray)) {
-            if (res.getJson().hasProperty("data")) {
-                arr = res.getJson().getArray("data");
-            } else {
-                arr = new JSArray(arr);
-            }
-        }
-
-        byte[] bytes = toCsv((JSArray) arr).getBytes();
+        JSList arr = res.data();
+        byte[] bytes = toCsv((JSList) arr).getBytes();
 
         res.withHeader("Content-Length", bytes.length + "");
         res.debug("Content-Length " + bytes.length + "");
@@ -65,17 +57,17 @@ public class CsvAction extends Action<CsvAction> {
         res.withText(new String(bytes));
     }
 
-    public String toCsv(JSArray arr) throws ApiException {
+    public String toCsv(JSList arr) throws ApiException {
         try {
             StringBuilder buff = new StringBuilder();
             LinkedHashSet<String> keys = new LinkedHashSet<>();
 
-            for (int i = 0; i < arr.length(); i++) {
+            for (int i = 0; i < arr.size(); i++) {
                 JSNode obj = (JSNode) arr.get(i);
                 if (obj != null) {
                     for (String key : obj.keySet()) {
                         Object val = obj.get(key);
-                        if (!(val instanceof JSArray) && !(val instanceof JSNode))
+                        if (!(val instanceof JSList) && !(val instanceof JSNode))
                             keys.add(key);
                     }
                 }
@@ -89,7 +81,10 @@ public class CsvAction extends Action<CsvAction> {
             }
             printer.println();
 
-            for (int i = 0; i < arr.length(); i++) {
+            System.out.println(arr);
+            System.out.println("asdf");
+
+            for (int i = 0; i < arr.size(); i++) {
                 for (String key : keysList) {
                     Object val = ((JSNode) arr.get(i)).get(key);
                     if (val != null) {

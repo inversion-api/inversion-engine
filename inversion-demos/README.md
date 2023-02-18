@@ -14,7 +14,7 @@ NOTE: This project is designed to run against a local project copy of inversion.
 
 An Inversion Engine is reflectively configured by name value pairs that are found in properties files, environment variables and system properties.  
 
-Developers can customize the configuration parameter lookup routine to add additional data sources such as pulling name value pairs from an Azure KeyVault to enable runtime configuration of secure secrets.
+Developers can customize the configuration param lookup routine to add additional data sources such as pulling name value pairs from an Azure KeyVault to enable runtime configuration of secure secrets.
 
 The Inversion Config object is a static convenience wrapper around a singleton Commons Configuration CompositeConfiguration object.  
 

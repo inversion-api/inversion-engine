@@ -19,7 +19,11 @@ package io.inversion.rql;
 public class From<T extends From, P extends Query> extends Builder<T, P> {
     public From(P query) {
         super(query);
-        withFunctions("_table", "_subquery", "_alias");
+        withFunctions("_table", "_query", "_subquery", "_alias");
+    }
+
+    public String getQuery() {
+        return (String) find("_query", 0);
     }
 
     public String getSubquery() {

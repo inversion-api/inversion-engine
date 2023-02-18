@@ -24,7 +24,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-class JdbcConnectionLocal {
+public class JdbcConnectionLocal {
 
     static final Map<Db, Map<Thread, Connection>> dbToThreadMap = new Hashtable();
     static final Map<Thread, Map<Db, Connection>> threadToDbMap = new Hashtable();

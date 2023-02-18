@@ -16,131 +16,204 @@
  */
 package io.inversion;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.inversion.utils.Utils;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
 public class User {
-    protected final Set<String> groups      = new HashSet();
-    protected final Set<String> roles       = new HashSet();
-    protected final Set<String> permissions = new HashSet();
-    protected int    id       = 0;
-    protected String tenant   = null;
-    protected String username = null;
-    protected String password = null;
-    protected String displayName = null;
-    protected String accessKey = null;
-    protected String secretKey = null;
 
-    /**
-     * the time of the last request
-     */
-    protected long   requestAt  = -1;
-    /**
-     * the remote host of the last request
-     */
-    protected String remoteAddr = null;
+    protected String issuer   = null;
+    protected String account  = null;
+    protected String subject = null;
 
-    /**
-     * the number of consecutive failed logins
-     */
-    protected int failedNum = 0;
+    protected Set<String> audiences      = new LinkedHashSet();
+    protected Set<String> groups      = new LinkedHashSet();
+    protected Set<String> roles       = new LinkedHashSet();
+    protected Set<String> permissions = new LinkedHashSet();
+    protected Set<String> scopes      = new LinkedHashSet();
+
+
+    protected final Map<String, Object> claims = new HashMap();
+
 
     public User() {
 
     }
 
     public User(String username, String roles, String permissions) {
-        withUsername(username);
+        setSubject(username);
         withRoles(roles);
         withPermissions(permissions);
     }
 
-    /**
-     * @deprecated  Replaced by url mapped parameters such as host://myApi/{tenant}/endpoint
-     * @return the "tenant" url parameter
-     */
-    @Deprecated
-    public String getTenantCode(){
-       if(Chain.peek() != null)
-           return Chain.peek().getRequest().getUrl().getParam("tenant");
-       return null;
+    @JsonAnyGetter
+    public Map<String, Object> getClaims() {
+        return claims;
     }
 
-    public String getUsername() {
-        return username;
-    }
+    @JsonAnySetter
+    public User withClaim(String name, Object value) {
 
-    public User withUsername(String username) {
-        this.username = username;
+        if("iss".equalsIgnoreCase(name))
+            name = "issuer";
+        else if("aud".equalsIgnoreCase(name))
+            name = "audiences";
+        else if("sub".equalsIgnoreCase(name))
+            name = "subject";
+        else if("scp".equalsIgnoreCase(name))
+            name = "scopes";
+        else if("rol".equalsIgnoreCase(name))
+            name = "roles";
+        else if("prm".equalsIgnoreCase(name))
+            name = "permissions";
+
+        String lc = name.toLowerCase();
+        if (value instanceof List && Utils.in(name, "audience", "group", "role", "permission", "scope", "audiences", "groups", "roles", "permissions", "scopes")) {
+            java.util.Collection list = (java.util.Collection) value;
+            for (Object listVal : list) {
+                withClaim(name, listVal);
+            }
+            return this;
+        }
+
+        switch (lc) {
+            case "group":
+            case "groups":
+                withGroups((String) value);
+                return this;
+            case "role":
+            case "roles":
+                withRoles((String) value);
+                return this;
+            case "permission":
+            case "permissions":
+                withPermissions((String) value);
+                return this;
+            case "scope":
+            case "scopes":
+                withScopes((String) value);
+                return this;
+            case "audiences":
+                withAudiences((String) value);
+                return this;
+        }
+
+        Field f = Utils.getField(name, this.getClass());
+        if (f != null) {
+            try {
+                f.set(this, value.toString());
+                return this;
+            } catch (Exception ex) {
+                Utils.rethrow(ex);
+            }
+        }
+        claims.put(name, value);
         return this;
     }
 
-    public int getId() {
-        return id;
+    public Object getClaim(String name) {
+
+        if("iss".equalsIgnoreCase(name))
+            name = "issuer";
+        else if("aud".equalsIgnoreCase(name))
+            name = "audiences";
+        else if("sub".equalsIgnoreCase(name))
+            name = "subject";
+        else if("scp".equalsIgnoreCase(name))
+            name = "scopes";
+        else if("rol".equalsIgnoreCase(name))
+            name = "roles";
+        else if("prm".equalsIgnoreCase(name))
+            name = "permissions";
+
+        Field f = Utils.getField(name, this.getClass());
+        if (f != null) {
+            try {
+                Object claim =  f.get(this);
+                if(claim instanceof Set)
+                    claim = toString((Set)claim);
+                return claim;
+            } catch (Exception ex) {
+                Utils.rethrow(ex);
+            }
+        }
+        return claims.get(name);
     }
 
-    public User withId(int id) {
-        this.id = id;
+
+    @JsonProperty("iss")
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
+
+    @JsonProperty("sub")
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getAccount() {
+        return account;
+    }
+
+    public User withAccount(String account) {
+        this.account = account;
         return this;
     }
 
-    public long getRequestAt() {
-        return requestAt;
+//-- Audience ----------------------------------------------------------------------------------------------------------
+
+    @JsonProperty("aud")
+    public String getAudiences() {
+        return toString(audiences);
     }
 
-    public User withRequestAt(long requestAt) {
-        this.requestAt = requestAt;
+    public void setAudiences(String audiences) {
+        this.audiences = fromString(audiences);
+    }
+
+    public boolean hasAudience(String... audiences) {
+        if (audiences == null)
+            return true;
+
+        for (String audience : Utils.explode(",", audiences)) {
+            if (!this.audiences.contains(audience))
+                return false;
+        }
+        return true;
+    }
+
+    public User withAudiences(String... audiences) {
+        if (audiences != null) {
+            this.audiences.addAll(Utils.explode(",", audiences));
+        }
+
         return this;
     }
 
-    public String getRemoteAddr() {
-        return remoteAddr;
+
+
+    //-- Permissions ----------------------------------------------------------------------------------------------------------
+
+    @JsonProperty("prm")
+    public String getPermissions() {
+        return toString(permissions);
     }
 
-    public User withRemoteAddr(String remoteAddr) {
-        this.remoteAddr = remoteAddr;
-        return this;
-    }
-
-    public int getFailedNum() {
-        return failedNum;
-    }
-
-    public User withFailedNum(int failedNum) {
-        this.failedNum = failedNum;
-        return this;
-    }
-
-    public String getAccessKey() {
-        return accessKey;
-    }
-
-    public User withAccessKey(String accessKey) {
-        this.accessKey = accessKey;
-        return this;
-    }
-
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    public User withSecretKey(String secretKey) {
-        this.secretKey = secretKey;
-        return this;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public User withPassword(String password) {
-        this.password = password;
-        return this;
-    }
-
-    public List<String> getPermissions() {
-        return new ArrayList(permissions);
+    public void setPermissions(String permissions) {
+        this.permissions = fromString(permissions);
     }
 
     public boolean hasPermissions(String... permissions) {
@@ -162,6 +235,17 @@ public class User {
         return this;
     }
 
+    //-- Groups ----------------------------------------------------------------------------------------------------------
+
+    @JsonIgnore
+    public String getGroups() {
+        return toString(groups);
+    }
+
+    public void setGroups(String groups) {
+        this.groups = fromString(groups);
+    }
+
     public boolean hasGroups(String... groups) {
         if (groups == null)
             return true;
@@ -173,10 +257,6 @@ public class User {
         return true;
     }
 
-    public List<String> getGroups() {
-        return new ArrayList(groups);
-    }
-
     public User withGroups(String... groups) {
         if (groups != null) {
             this.groups.addAll(Utils.explode(",", groups));
@@ -185,8 +265,15 @@ public class User {
         return this;
     }
 
-    public Set<String> getRoles() {
-        return new HashSet(roles);
+    //-- Roles ----------------------------------------------------------------------------------------------------------
+
+    @JsonProperty("rol")
+    public String getRoles() {
+        return toString(roles);
+    }
+
+    public void setRoles(String roles) {
+        this.roles = fromString(roles);
     }
 
     public boolean hasRoles(String... roles) {
@@ -208,22 +295,52 @@ public class User {
         return this;
     }
 
-    public String getTenant() {
-        return tenant;
+    //-- Scopes ----------------------------------------------------------------------------------------------------------
+
+    public String getScopes() {
+        return toString(scopes);
     }
 
-    public User withTenant(String tenant) {
-        this.tenant = tenant;
+    @JsonProperty("scp")
+    public void setScopes(String scopes) {
+        this.scopes = fromString(scopes);
+    }
+
+    public boolean hasScope(String... scopes) {
+        if (scopes == null)
+            return true;
+
+        for (String permission : Utils.explode(",", scopes)) {
+            if (!this.scopes.contains(scopes))
+                return false;
+        }
+        return true;
+    }
+
+    public User withScopes(String... scopes) {
+        if (scopes != null) {
+            this.scopes.addAll(Utils.explode(",", scopes));
+        }
+
         return this;
     }
 
-    public String getDisplayName() {
-        return displayName;
+
+    //-- Encoding Utils ----------------------------------------------------------------------------------------------------------
+
+
+    String toString(Set<String> c) {
+        StringBuilder builder = new StringBuilder();
+        c.forEach(str -> builder.append(str).append(" "));
+        return builder.toString().trim();
     }
 
-    public User withDisplayName(String displayName) {
-        this.displayName = displayName;
-        return this;
+    LinkedHashSet<String> fromString(String str) {
+        LinkedHashSet set = new LinkedHashSet<>();
+        for (String part : str.split(" ")) {
+            set.add(part.trim());
+        }
+        return set;
     }
 
 }

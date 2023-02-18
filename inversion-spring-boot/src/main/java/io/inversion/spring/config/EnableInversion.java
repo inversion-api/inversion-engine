@@ -25,6 +25,6 @@ import java.lang.annotation.Target;
 
 @Target(value = ElementType.TYPE)
 @Retention(value = RetentionPolicy.RUNTIME)
-@Import({InversionRegistrar.class, InversionServletConfig.class})
+@Import({InversionRegistrar.class, InversionConfig.class})
 public @interface EnableInversion {
 }

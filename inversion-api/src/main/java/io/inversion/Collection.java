@@ -17,8 +17,6 @@
 package io.inversion;
 
 import io.inversion.utils.Path;
-import io.inversion.utils.Rows;
-import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.text.StringEscapeUtils;
@@ -54,7 +52,8 @@ import java.util.regex.Pattern;
  * TODO: check on test cases related to hasName and path matching
  * TODO: need tests for resource keys with commas
  */
-public class Collection extends Rule<Collection> implements Serializable {
+public class Collection  extends Rule<Collection>  implements Serializable {
+
     /**
      * Additional names that should cause this Collection to match to a Request.
      * <p>
@@ -83,6 +82,16 @@ public class Collection extends Rule<Collection> implements Serializable {
      * The tableName might be "ORDER_DETAIL" but the Collection might be named "orderDetails".
      */
     protected String tableName = null;
+
+    protected String pluralDisplayName = null;
+
+    protected String singularDisplayName = null;
+
+    /**
+     * A reference to an externa OpenAPI schema that will be used in OpenAPI/documentation generation.
+     */
+    protected String schemaRef = null;
+
     /**
      * Set this to true to prevent it from being automatically exposed through your Api.
      */
@@ -98,144 +107,33 @@ public class Collection extends Rule<Collection> implements Serializable {
     }
 
     /**
-     * Encodes the potentially multiple values of an index into a url path and query string safe single value.
-     * <p>
-     * In a typical REST Api configuration where you url paths might map to something like
-     * "${endpoint}/${collection}/[${resource}][?{querystring}]", ${resource} is
-     * the primary index of the resource that has been encoded here.
-     * <p>
-     * That might look like "/bookstore/books/12345" or in the case of a compound primary index
-     * It might look like "/bookstore/orders/4567~abcde" where the "~" character is used to
-     * separate parts of the key.
-     * <p>
-     * The names of the index fields are not encoded, only the values, relying on index property order to remain consistent.
-     * <p>
-     * This methods is used by various actions when constructing hypermedia urls that allow you to
-     * uniquely identify individual resources (records in a Db) or to traverse Relationships.
-     * <p>
-     * The inverse of this method is {@link #decodeResourceKeys(Index, String)} which is used to
-     * decode inbound Url path and query params to determine which resource is being referenced.
-     *
-     * @param values column name to Property value mapping for a resource
-     * @param index  the index identifying the values that should be encoded
-     * @return a url safe encoding of the index values separated by "~" characters or null if any of the values for an index key is null.
-     * @see #encodeStr(String)
-     * @see #decodeResourceKeys(Index, String)
-     */
-    public static String encodeResourceKey(Map values, Index index) {
-        StringBuilder key = new StringBuilder();
-        for (String colName : index.getColumnNames()) {
-            Object val = values.get(colName);
-            if (Utils.empty(val))
-                return null;
-
-            val = encodeStr(val.toString());
-
-            if (key.length() > 0)
-                key.append("~");
-
-            key.append(val);
-        }
-
-        return key.toString();
-    }
-
-    /**
-     * Creates a "~" separated url safe concatenation of <code>pieces</code>
-     *
-     * @param pieces key parts to be encoded
-     * @return a url safe encoding of the <code>pieces</code> separated by "~" characters
-     * @see #encodeStr(String)
-     * @see #encodeResourceKey(Map, Index)
-     */
-    public static String encodeResourceKey(List pieces) {
-        StringBuilder resourceKey = new StringBuilder();
-        for (int i = 0; i < pieces.size(); i++) {
-            Object piece = pieces.get(i);
-            if (piece == null)
-                throw ApiException.new500InternalServerError("Trying to encode an resource key with a null component: '{}'.", pieces);
-
-            resourceKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
-            if (i < pieces.size() - 1)
-                resourceKey.append("~");
-        }
-        return resourceKey.toString();
-    }
-
-    public static void main(String[] args) {
-        System.out.println(encodeStr("abcd/efg"));
-
-    }
-
-    /**
-     * Encodes non url safe characters into a friendly "@FOUR_DIGIT_HEX_VALUE" equivalent that itself will not be modified by URLEncoder.encode(String).
-     * <p>
-     * For example, encodeing "abcd/efg" would result in "abcd@002fefg" where "@002f" is the hex encoding for "/".
-     * <p>
-     * While "~" characters are considered url safe, the are specifically included for encoding so that
-     * {@link #decodeResourceKeys(Index, String)} can split a value on "~" before decoding its parts.
-     *
-     * @param string the string to encode
-     * @return a url safe string with non safe characters encoded as '@FOUR_DIGIT_HEX_VALUE'
-     * @see <a href="https://stackoverflow.com/questions/695438/safe-characters-for-friendly-url">Safe characters for friendly urls</a>
-     * @see #encodeResourceKey(Map, Index)
-     * @see #decodeResourceKeys(Index, String)
-     * @see #decodeStr(String)
-     */
-    public static String encodeStr(String string) {
-        //- . _ ~ ( ) ' ! * : @ , ;
-        Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\:\\,\\;\\*]");
-
-        Matcher      m  = p.matcher(string);
-        StringBuffer sb = new StringBuffer();
-        while (m.find()) {
-            String        chars = m.group();
-            StringBuilder hex   = new StringBuilder("@").append(Hex.encodeHex(chars.getBytes()));
-            while (hex.length() < 5)
-                hex.insert(1, "0");
-
-            m.appendReplacement(sb, hex.toString());
-        }
-        m.appendTail(sb);
-        return sb.toString();
-    }
-
-    /**
-     * The reciprocal of {@link #encodeStr(String)} that replaces "\@[0-9a-f]{4}" hex sequences with the unescaped oritional unescaped character.
-     *
-     * @param string the string to decode
-     * @return a string with characters escaped to their hex equivalent replaced with the unescaped value.
-     * @see #encodeResourceKey(Map, Index)
-     * @see #decodeResourceKeys(Index, String)
-     * @see #encodeStr(String)
-     */
-    public static String decodeStr(String string) {
-        try {
-            Pattern      p  = Pattern.compile("\\@[0-9a-f]{4}");
-            Matcher      m  = p.matcher(string);
-            StringBuffer sb = new StringBuffer();
-            while (m.find()) {
-                String group = m.group();
-                String hex   = group.substring(1);
-                String chars = StringEscapeUtils.unescapeJava("\\u" + hex);
-                m.appendReplacement(sb, chars);
-            }
-            m.appendTail(sb);
-            return sb.toString();
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    /**
-     * @return the default collection match rule: "{_collection:" + getName() + "}/[:_resource]/[:_relationship]/*"
+     * @return the default collection match rule: "{_collection:" + getName() + "}/[{_resource}]/[{_relationship}]/*"
      * @see Request#COLLECTION_KEY
      * @see Request#RESOURCE_KEY
      * @see Request#RELATIONSHIP_KEY
      */
     @Override
-    protected RuleMatcher getDefaultIncludeMatch() {
-        return new RuleMatcher(null, new Path("{" + Request.COLLECTION_KEY + ":" + getName() + "}/[:" + Request.RESOURCE_KEY + "]/[:" + Request.RELATIONSHIP_KEY + "]/*"));
+    protected List<RuleMatcher> getDefaultIncludeMatchers() {
+
+        String collection = "{" + Request.COLLECTION_KEY + ":" + getName() + "}";
+        String resource = "[{" + Request.RESOURCE_KEY + "}]";
+        String relationship = "[{" + Request.RELATIONSHIP_KEY + "}]";
+
+        Index pk =  getResourceIndex();
+        if(pk != null) {
+            if (pk.size() == 1) {
+                String regex = pk.getProperty(0).getRegex();
+                if (regex != null) {
+                    regex += "(," + regex + ")*";//-- this is here to add support for comma separated lists of entity keys
+                    resource = "[{" + Request.RESOURCE_KEY + ":" + regex + "}]";
+                }
+            }
+        }
+
+        //RuleMatcher matcher = new RuleMatcher();
+        //matcher.withPaths(new Path(collection + "/" + resource + "/"));
+
+        return Utils.asList(new RuleMatcher(null, new Path(collection + "/" + resource + "/" + relationship + "/*")));
     }
 
     /**
@@ -379,6 +277,24 @@ public class Collection extends Rule<Collection> implements Serializable {
         return name != null ? name : tableName;
     }
 
+    public Collection withSingularDispalyName(String singularName){
+        this.singularDisplayName = singularName;
+        return this;
+    }
+
+    public String getSingularDisplayName(){
+        return singularDisplayName != null ? singularDisplayName : getName();
+    }
+
+    public Collection withPluralDisplayName(String pluralName){
+        this.pluralDisplayName = pluralName;
+        return this;
+    }
+
+    public String getPluralDisplayName(){
+        return pluralDisplayName != null ? pluralDisplayName : getName();
+    }
+
     /**
      * @return a shallow copy of <code>properties</code>
      */
@@ -440,18 +356,36 @@ public class Collection extends Rule<Collection> implements Serializable {
     }
 
     /**
-     * Finds the first unique Index with the fewest number of Properties.
+     * Finds best index to be used to uniquely identify the resource.
+     * Priority is given to Indexes in this order
+     * <ol>
+     *     <li>Index.TYPE_RESOURCE_KEY</li>
+     *     <li>Index.TYPE_PRIMARY_KEY</li>
+     *     <li>The first unique index found in iteration order with size = 1</li>
+     *     <li>The unique index with the fewest columns</li>
+     * </ol>
      *
-     * @return the Index that should be treated as the primary key for the Collection
+     * @return the Index that should be treated as the resource key for the Collection
      * @see Index#isUnique()
      */
-    public Index getPrimaryIndex() {
+    public Index getResourceIndex() {
+
+        for (Index index : indexes) {
+            if(Index.TYPE_RESOURCE_KEY.equals(index.type))
+                return index;
+        }
+
+        for (Index index : indexes) {
+            if(Index.TYPE_PRIMARY_KEY.equals(index.type))
+                return index;
+        }
+
         Index found = null;
         for (Index index : indexes) {
             if (!index.isUnique())
                 continue;
 
-            if (index.size() == 0)
+            if (index.size() == 1)
                 return index;
 
             if (found == null) {
@@ -549,6 +483,26 @@ public class Collection extends Rule<Collection> implements Serializable {
         return this;
     }
 
+    public Collection withForeignKey(Collection related, String... myProperties){
+        Property[] properties = new Property[myProperties.length];
+        for (int i = 0; i < myProperties.length; i++) {
+            String   propName = myProperties[i];
+            Property prop     = getProperty(propName);
+            if (prop == null) {
+                throw ApiException.new500InternalServerError("Property {} does not exist so it can't be added to the index {}", myProperties[i], name);
+            }
+
+            properties[i] = prop;
+        }
+        Index fk = new Index(null, Index.TYPE_FOREIGN_KEY, false, properties);
+        Index pk = related.getResourceIndex();
+        for(int i=0; i<fk.size(); i++){
+            fk.getProperty(i).withPk(pk.getProperty(i));
+        }
+        withIndexes(fk);
+        return this;
+    }
+
     public void removeIndex(Index index) {
         indexes.remove(index);
     }
@@ -615,28 +569,7 @@ public class Collection extends Rule<Collection> implements Serializable {
         return this;
     }
 
-    /**
-     * Fluent utility method to construct a Relationship and associated Indexes.
-     *
-     * @param parentCollection  the parent collection of the relationship being created
-     * @param childPropertyName name of the json property that will hold this relationship reference
-     * @param childFkProps      names of the existing Properties that make up the foreign key
-     * @return this
-     * @see #withManyToOneRelationship(Collection, String, Property...)
-     */
-    public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, String... childFkProps) {
-        Property[] properties = new Property[childFkProps.length];
-        for (int i = 0; i < childFkProps.length; i++) {
-            Property prop = getProperty(childFkProps[i]);
 
-            if (prop == null)
-                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", getName(), childFkProps[i]);
-
-            properties[i] = prop;
-        }
-
-        return withManyToOneRelationship(parentCollection, childPropertyName, properties);
-    }
 
     /**
      * Fluent utility method to construct a Relationship and associated Indexes.
@@ -644,57 +577,40 @@ public class Collection extends Rule<Collection> implements Serializable {
      * In addition to the new Relationship a new foreign key Index will be created from <code>childFkProps</code>
      * to <code>parentCollection</code>'s primary Index.
      *
+     * @param thisCollectionsRelationshipJsonPropertyName what to call this relationship in the json representation of this Collection's resources.
      * @param parentCollection  the related parent Collection
-     * @param childPropertyName what to call this relationship in the json representation of this Collection's resources.
-     * @param childFkProps      the Collections Properties that make up the foreign key
+     * @param thisCollectionsForeignKeyProps      the Collections Properties that make up the foreign key
      * @return this
      */
-    public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, Property... childFkProps) {
+    public Collection withManyToOneRelationship(String thisCollectionsRelationshipJsonPropertyName, Collection parentCollection, String... thisCollectionsForeignKeyProps) {
 
-        if (childFkProps == null || childFkProps.length == 0)
+        if (thisCollectionsForeignKeyProps == null || thisCollectionsForeignKeyProps.length == 0)
             throw ApiException.new500InternalServerError("A relationship must include at least one childFkProp");
 
-        Index fkIdx = new Index(this.getName() + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
-        withIndexes(fkIdx);
-
-        withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, this, parentCollection, fkIdx, null));
-
-        Index primaryIdx = parentCollection.getPrimaryIndex();
-        if (primaryIdx != null && childFkProps.length == primaryIdx.size()) {
-            for (int i = 0; i < childFkProps.length; i++) {
-                childFkProps[i].withPk(primaryIdx.getProperty(i));
-            }
-        }
-
-        return this;
-    }
-
-    /**
-     * Fluent utility method to construct a Relationship and associated Indexes.
-     * <p>
-     * This is a convenience overload of withOneToManyRelationship(String, Collection, String, Property...) to be used
-     * when code wiring Apis and you don't want to lookup references to the actual Property objects.
-     * </p>
-     *
-     * @param parentPropertyName the name of the json property for the parent that references the child
-     * @param childCollection    the target child collection
-     * @param childPropertyName  the name of hte json property for the child that references the parent
-     * @param childFkProps       names of the existing Properties that make up the foreign key
-     * @return this
-     * @see #withOneToManyRelationship(String, Collection, String, Property...)
-     */
-    public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, String... childFkProps) {
-        Property[] properties = new Property[childFkProps.length];
-        for (int i = 0; i < childFkProps.length; i++) {
-            Property prop = childCollection.getProperty(childFkProps[i]);
+        Property[] properties = new Property[thisCollectionsForeignKeyProps.length];
+        for (int i = 0; i < thisCollectionsForeignKeyProps.length; i++) {
+            Property prop = getProperty(thisCollectionsForeignKeyProps[i]);
 
             if (prop == null)
-                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", childCollection.getName(), childFkProps[i]);
+                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", getName(), properties[i]);
 
             properties[i] = prop;
         }
 
-        return withOneToManyRelationship(parentPropertyName, childCollection, childPropertyName, properties);
+
+        Index fkIdx = new Index(this.getName() + "_" + Arrays.asList(thisCollectionsForeignKeyProps), Index.TYPE_FOREIGN_KEY, false, properties);
+        withIndexes(fkIdx);
+
+        withRelationship(new Relationship(thisCollectionsRelationshipJsonPropertyName, Relationship.REL_MANY_TO_ONE, this, parentCollection, fkIdx, null));
+
+        Index primaryIdx = parentCollection.getResourceIndex();
+        if (primaryIdx != null && thisCollectionsForeignKeyProps.length == primaryIdx.size()) {
+            for (int i = 0; i < thisCollectionsForeignKeyProps.length; i++) {
+                properties[i].withPk(primaryIdx.getProperty(i));
+            }
+        }
+
+        return this;
     }
 
     /**
@@ -703,28 +619,92 @@ public class Collection extends Rule<Collection> implements Serializable {
      * In addition to the new Relationship a new foreign key Index will be created from <code>childFkProps</code>
      * to this Collection's primary Index.
      *
-     * @param parentPropertyName the name of the json property for the parent that references the child
+     * @param thisCollectionsRelationshipJsonPropertyName the name of the json property for the parent that references the child
      * @param childCollection    the target child collection
-     * @param childPropertyName  the name of hte json property for the child that references the parent
-     * @param childFkProps       Properties that make up the foreign key
+     * @param childCollectionsForeignKeyProps       Properties that make up the foreign key
      * @return this
      */
-    public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String childPropertyName, Property... childFkProps) {
-        Index fkIdx = new Index(childCollection.getName() + "_" + Arrays.asList(childFkProps), "FOREIGN_KEY", false, childFkProps);
+    public Collection withOneToManyRelationship(String thisCollectionsRelationshipJsonPropertyName, Collection childCollection, String... childCollectionsForeignKeyProps) {
+
+        if (childCollectionsForeignKeyProps == null || childCollectionsForeignKeyProps.length == 0)
+            throw ApiException.new500InternalServerError("A relationship must include at least one childFkProp");
+
+        Property[] properties = new Property[childCollectionsForeignKeyProps.length];
+        for (int i = 0; i < childCollectionsForeignKeyProps.length; i++) {
+            Property prop = childCollection.getProperty(childCollectionsForeignKeyProps[i]);
+
+            if (prop == null)
+                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", childCollection.getName(), properties[i]);
+
+            properties[i] = prop;
+        }
+
+
+        Index fkIdx = new Index(childCollection.getName() + "_" + Arrays.asList(properties), Index.TYPE_FOREIGN_KEY, false, properties);
         childCollection.withIndexes(fkIdx);
 
-        withRelationship(new Relationship(parentPropertyName, Relationship.REL_ONE_TO_MANY, this, childCollection, fkIdx, null));
-        childCollection.withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, childCollection, this, fkIdx, null));
+        withRelationship(new Relationship(thisCollectionsRelationshipJsonPropertyName, Relationship.REL_ONE_TO_MANY, this, childCollection, fkIdx, null));
+        //childCollection.withRelationship(new Relationship(childPropertyName, Relationship.REL_MANY_TO_ONE, childCollection, this, fkIdx, null));
 
-        Index primaryIdx = getPrimaryIndex();
-        if (primaryIdx != null && childFkProps.length == primaryIdx.size()) {
-            for (int i = 0; i < childFkProps.length; i++) {
-                childFkProps[i].withPk(primaryIdx.getProperty(i));
+        Index primaryIdx = getResourceIndex();
+        if (primaryIdx != null && properties.length == primaryIdx.size()) {
+            for (int i = 0; i < properties.length; i++) {
+                properties[i].withPk(primaryIdx.getProperty(i));
             }
         }
 
         return this;
     }
+
+//    /**
+//     * Fluent utility method to construct a Relationship and associated Indexes.
+//     * <p>
+//     * This is a convenience overload of withOneToManyRelationship(String, Collection, String, Property...) to be used
+//     * when code wiring Apis and you don't want to lookup references to the actual Property objects.
+//     * </p>
+//     *
+//     * @param parentPropertyName the name of the json property for the parent that references the child
+//     * @param childCollection    the target child collection
+//     * @param childFkProps       names of the existing Properties that make up the foreign key
+//     * @return this
+//     * @see #withOneToManyRelationship(String, Collection, Property...)
+//     */
+//    public Collection withOneToManyRelationship(String parentPropertyName, Collection childCollection, String... childFkProps) {
+//        Property[] properties = new Property[childFkProps.length];
+//        for (int i = 0; i < childFkProps.length; i++) {
+//            Property prop = childCollection.getProperty(childFkProps[i]);
+//
+//            if (prop == null)
+//                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", childCollection.getName(), childFkProps[i]);
+//
+//            properties[i] = prop;
+//        }
+//
+//        return withOneToManyRelationship(parentPropertyName, childCollection, properties);
+//    }
+//    /**
+//     * Fluent utility method to construct a Relationship and associated Indexes.
+//     *
+//     * @param parentCollection  the parent collection of the relationship being created
+//     * @param childPropertyName name of the json property that will hold this relationship reference
+//     * @param childFkProps      names of the existing Properties that make up the foreign key
+//     * @return this
+//     * @see #withManyToOneRelationship(String, Collection, Property...)
+//     */
+//    public Collection withManyToOneRelationship(Collection parentCollection, String childPropertyName, String... childFkProps) {
+//        Property[] properties = new Property[childFkProps.length];
+//        for (int i = 0; i < childFkProps.length; i++) {
+//            Property prop = getProperty(childFkProps[i]);
+//
+//            if (prop == null)
+//                throw ApiException.new500InternalServerError("Child foreign key property '{}.{}' can not be found.", getName(), childFkProps[i]);
+//
+//            properties[i] = prop;
+//        }
+//
+//        return withManyToOneRelationship(childPropertyName, parentCollection, properties);
+//    }
+
 
     /**
      * @param nameOrAlias the name or alias to check for
@@ -749,184 +729,14 @@ public class Collection extends Rule<Collection> implements Serializable {
         return this;
     }
 
-    /**
-     * Encodes the potentially multiple values of a resources primary index into a url path safe single value.
-     *
-     * @param values the key value pairs to encode
-     * @return a url safe encoding of the resources primary index values
-     * @see #encodeResourceKey(Map, Index)
-     */
-    public String encodeResourceKey(Map<String, Object> values) {
-        Index index = getPrimaryIndex();
-        if (index == null)
-            return null;
-
-        return encodeResourceKey(values, index);
+    public String getSchemaRef() {
+        return schemaRef;
     }
 
-    /**
-     * Decodes a resource key into its columnName / value parts.
-     *
-     * @param inKey the resource key to decode
-     * @return the decoded columnName / value pairs.
-     * @see #decodeResourceKeys(Index, String)
-     * @see #encodeResourceKey(Map, Index)
-     */
-    public Row decodeResourceKey(String inKey) {
-        return decodeResourceKeys(inKey).iterator().next();
+    public Collection withSchemaRef(String schemaRef) {
+        this.schemaRef = schemaRef;
+        return this;
     }
-
-    //parses val1~val2,val3~val4,val5~valc6
-    public Rows decodeResourceKeys(String inKeys) {
-        Index index = getPrimaryIndex();
-        if (index == null)
-            throw ApiException.new500InternalServerError("Table '{}' does not have a unique index", this.getTableName());
-
-        return decodeResourceKeys(index, inKeys);
-    }
-
-    /**
-     * Decodes a resource key into its columnName / value parts.
-     *
-     * @param index identifies the columnNames by position
-     * @param inKey the encoded string to decode
-     * @return the decoded columnName / value pairs.
-     * @see #decodeResourceKeys(Index, String)
-     * @see #encodeResourceKey(Map, Index)
-     */
-    public Row decodeResourceKey(Index index, String inKey) {
-        return decodeResourceKeys(index, inKey).iterator().next();
-    }
-
-    /**
-     * Decodes a comma separated list of encoded resource keys.
-     *
-     * @param index  identifies the columnNames to decode
-     * @param inKeys a comma separated list of encoded resource keys
-     * @return a list of decoded columnName value pairs
-     * @see #encodeResourceKey(Map, Index)
-     * @see #encodeStr(String)
-     * @see #decodeStr(String)
-     */
-    public Rows decodeResourceKeys(Index index, String inKeys) {
-        //someone passed in the whole href...no problem, just strip it out.
-        if (inKeys.startsWith("http") && inKeys.indexOf("/") > 0)
-            inKeys = inKeys.substring(inKeys.lastIndexOf("/") + 1);
-
-        List<String> colNames = index.getColumnNames();
-
-        Rows rows = new Rows(colNames);
-        for (String key : Utils.explode(",", inKeys)) {
-            List row = Utils.explode("~", key);
-
-            if (row.size() != colNames.size())
-                throw ApiException.new400BadRequest("Supplied resource key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
-
-            for (int i = 0; i < colNames.size(); i++) {
-                Object value = decodeStr(row.get(i).toString());//.replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
-
-                if (((String) value).length() == 0)
-                    throw ApiException.new400BadRequest("A key component can not be empty '{}'", inKeys);
-
-                value = getDb().castJsonInput(index.getProperty(i), value);
-                row.set(i, value);
-            }
-            rows.addRow(row);
-        }
-
-        return rows;
-    }
-
-    //   //parses val1~val2,val3~val4,val5~valc6
-    //   public Rows decodeResourceKeys(Index index, String inKeys)
-    //   {
-    //      //someone passed in the whole href...no problem, just strip it out.
-    //      if (inKeys.startsWith("http") && inKeys.indexOf("/") > 0)
-    //         inKeys = inKeys.substring(inKeys.lastIndexOf("/") + 1, inKeys.length());
-    //
-    //      List colNames = index.getColumnNames();
-    //
-    //      Rows rows = new Rows(colNames);
-    //      for (List row : parseKeys(inKeys))
-    //      {
-    //         if (row.size() != colNames.size())
-    //            throw ApiException.new400BadRequest("Supplied resource key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
-    //
-    //         for (int i = 0; i < colNames.size(); i++)
-    //         {
-    //            Object value = decodeStr(row.get(i).toString());//.replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
-    //
-    //            if (((String) value).length() == 0)
-    //               throw ApiException.new400BadRequest("A key component can not be empty '{}'", inKeys);
-    //
-    //            value = getDb().cast(index.getProperty(i), value);
-    //            row.set(i, value);
-    //         }
-    //         rows.addRow(row);
-    //      }
-    //
-    //      return rows;
-    //   }
-    //
-    //   //parses val1~val2,val3~val4,val5~valc6
-    //   public static List<List<String>> parseKeys(String inKeys)
-    //   {
-    //      String resourceKeys = inKeys;
-    //      List<String> splits = new ArrayList<>();
-    //
-    //      List<List<String>> rows = new ArrayList<>();
-    //
-    //      boolean escaped = false;
-    //      for (int i = 0; i < resourceKeys.length(); i++)
-    //      {
-    //         char c = resourceKeys.charAt(i);
-    //         switch (c)
-    //         {
-    //            case '\\':
-    //               escaped = !escaped;
-    //               continue;
-    //            case ',':
-    //               if (!escaped)
-    //               {
-    //                  rows.add(splits);
-    //                  splits = new ArrayList<>();
-    //                  resourceKeys = resourceKeys.substring(i + 1, resourceKeys.length());
-    //                  i = 0;
-    //                  continue;
-    //               }
-    //            case '~':
-    //               if (!escaped)
-    //               {
-    //                  splits.add(resourceKeys.substring(0, i));
-    //                  resourceKeys = resourceKeys.substring(i + 1, resourceKeys.length());
-    //                  i = 0;
-    //                  continue;
-    //               }
-    //            default :
-    //               escaped = false;
-    //         }
-    //      }
-    //      if (resourceKeys.length() > 0)
-    //      {
-    //         splits.add(resourceKeys);
-    //      }
-    //
-    //      if (splits.size() > 0)
-    //      {
-    //         rows.add(splits);
-    //      }
-    //
-    //      for (List<String> row : rows)
-    //      {
-    //         for (int i = 0; i < row.size(); i++)
-    //         {
-    //            String value = row.get(i).replace("\\\\", "\\").replace("\\~", "~").replace("\\,", ",");
-    //            row.set(i, value);
-    //         }
-    //      }
-    //
-    //      return rows;
-    //   }
 
     /**
      * Performs a deep clone operation via object serialization/deserialization.
@@ -960,4 +770,233 @@ public class Collection extends Rule<Collection> implements Serializable {
         }
         return null;
     }
+
+    /**
+     * Encodes the resourceKey from the values using column names from the primary index.
+     *
+     * @param values a map containing key value pairs for the Collection's primary index using column names not json names.
+     * @return a url safe encoding of the resources primary index values
+     * @see #encodeKey(Map, Index, boolean)
+     */
+    public String encodeKeyFromColumnNames(Map<String, Object> values) {
+        Index index = getResourceIndex();
+        if (index == null)
+            return null;
+
+        return encodeKey(values, index, false);
+    }
+
+    /**
+     * Encodes the resourceKey from the values using json names from the primary index.
+     *
+     * @param values the key value pairs to encode
+     * @return a url safe encoding of the resources primary index values
+     * @see #encodeKey(Map, Index, boolean)
+     */
+    public String encodeKeyFromJsonNames(Map<String, Object> values) {
+        Index index = getResourceIndex();
+        if (index == null)
+            return null;
+
+        return encodeKey(values, index, true);
+    }
+
+    public String encodeKeyFromJsonNames(Map<String, Object> values, Index index) {
+        return encodeKey(values, index, true);
+    }
+
+
+    /**
+     * Encodes the potentially multiple values of an index into a url path and query string safe single value.
+     * <p>
+     * In a typical REST Api configuration where you url paths might map to something like
+     * "${endpoint}/${collection}/[${resource}][?{querystring}]", ${resource} is
+     * the primary index of the resource that has been encoded here.
+     * <p>
+     * That might look like "/bookstore/books/12345" or in the case of a compound primary index
+     * It might look like "/bookstore/orders/4567~abcde" where the "~" character is used to
+     * separate parts of the key.
+     * <p>
+     * The names of the index fields are not encoded, only the values, relying on index property order to remain consistent.
+     * <p>
+     * This methods is used by various actions when constructing hypermedia urls that allow you to
+     * uniquely identify individual resources (records in a Db) or to traverse Relationships.
+     * <p>
+     * The inverse of this method is {@link #decodeKey(Index, String, boolean)} which is used to
+     * decode inbound Url path and query params to determine which resource is being referenced.
+     *
+     * @param values column name to Property value mapping for a resource
+     * @param index  the index identifying the values that should be encoded
+     * @param useJsonPropertyNames use json prop names vs db col names
+     * @return a url safe encoding of the index values separated by "~" characters or null if any of the values for an index key is null.
+     * @see #encodeStr(String)
+     * @see #decodeKey(Index, String, boolean)
+     */
+    public static String encodeKey(Map<String, Object> values, Index index, boolean useJsonPropertyNames) {
+        StringBuilder key = new StringBuilder();
+        for (String name : (useJsonPropertyNames ? index.getJsonNames() : index.getColumnNames())) {
+            Object val = values.get(name);
+            if (Utils.empty(val))
+                return null;
+
+            val = encodeStr(val.toString());
+
+            if (key.length() > 0)
+                key.append("~");
+
+            key.append(val);
+        }
+
+        return key.toString();
+    }
+
+    /**
+     * Creates a "~" separated url safe concatenation of <code>pieces</code>
+     *
+     * @param pieces key parts to be encoded
+     * @return a url safe encoding of the <code>pieces</code> separated by "~" characters
+     * @see #encodeStr(String)
+     * @see #encodeKey(Map, Index, boolean)
+     */
+    public static String encodeKey(List pieces) {
+        StringBuilder resourceKey = new StringBuilder();
+        for (int i = 0; i < pieces.size(); i++) {
+            Object piece = pieces.get(i);
+            if (piece == null)
+                throw ApiException.new500InternalServerError("Trying to encode an resource key with a null component: '{}'.", pieces);
+
+            resourceKey.append(decodeStr(piece.toString()));//piece.toString().replace("\\", "\\\\").replace("~", "\\~").replaceAll(",", "\\,"));
+            if (i < pieces.size() - 1)
+                resourceKey.append("~");
+        }
+        return resourceKey.toString();
+    }
+    /**
+     * Encodes non url safe characters into a friendly "@FOUR_DIGIT_HEX_VALUE" equivalent that itself will not be modified by URLEncoder.encode(String).
+     * <p>
+     * For example, encodeing "abcd/efg" would result in "abcd@002fefg" where "@002f" is the hex encoding for "/".
+     * <p>
+     * While "~" characters are considered url safe, the are specifically included for encoding so that
+     * {@link #decodeKey(Index, String, boolean)} can split a value on "~" before decoding its parts.
+     *
+     * @param string the string to encode
+     * @return a url safe string with non safe characters encoded as '@FOUR_DIGIT_HEX_VALUE'
+     * @see <a href="https://stackoverflow.com/questions/695438/safe-characters-for-friendly-url">Safe characters for friendly urls</a>
+     * @see #encodeKey(Map, Index, boolean)
+     * @see #decodeKey(Index, String, boolean)
+     * @see #decodeStr(String)
+     */
+    static String encodeStr(String string) {
+        //- . _ ~ ( ) ' ! * : @ , ;
+        Pattern p = Pattern.compile("[^A-Za-z0-9\\-\\.\\_\\(\\)\\'\\!\\,\\;\\*]");
+
+        Matcher      m  = p.matcher(string);
+        StringBuffer sb = new StringBuffer();
+        while (m.find()) {
+            String        chars = m.group();
+            StringBuilder hex   = new StringBuilder("@").append(Hex.encodeHex(chars.getBytes()));
+            while (hex.length() < 5)
+                hex.insert(1, "0");
+
+            m.appendReplacement(sb, hex.toString());
+        }
+        m.appendTail(sb);
+        String encoded = sb.toString();
+        return encoded;
+    }
+
+
+    /**
+     * Decodes a resource key into its columnName / value parts.
+     *
+     * @param index identifies the columnNames by position
+     * @param inKey the encoded string to decode
+     * @return the decoded columnName / value pairs.
+     * @see #decodeKey(Index, String, boolean)
+     * @see #encodeKey(Map, Index, boolean)
+     */
+    public Map<String, Object> decodeKeyToColumnNames(Index index, String inKey) {
+        return decodeKey(index, inKey, false);
+    }
+
+    /**
+     * Decodes a resource key into its columnName / value parts.
+     *
+     * @param inKeys the resource key to decode
+     * @return the decoded columnName / value pairs.
+     * @see #decodeKey(Index, String, boolean)
+     * @see #encodeKey(Map, Index, boolean)
+     */
+    public Map<String, Object> decodeKeyToJsonNames(String inKeys) {
+        Index index = getResourceIndex();
+        if (index == null)
+            throw ApiException.new500InternalServerError("Table '{}' does not have a unique index", this.getTableName());
+
+        return decodeKey(index, inKeys, true);
+    }
+
+    /**
+     * Decodes a resource key.
+     *
+     * @param index  identifies the columnNames to decode
+     * @param key a comma separated list of encoded resource keys
+     * @param useJsonPropertyNames indicates to preserve json prop names/types and not convert to db column name/types
+     * @return a list of decoded name value pairs
+     * @see #encodeKey(Map, Index, boolean)
+     * @see #encodeStr(String)
+     * @see #decodeStr(String)
+     */
+    public Map<String, Object> decodeKey(Index index, String key, boolean useJsonPropertyNames) {
+
+        List<String> names = useJsonPropertyNames ? index.getJsonNames() : index.getColumnNames();
+        Map<String, Object> row = new LinkedHashMap<>();
+        List parts = Utils.explode("~", key);
+
+        if (parts.size() != names.size())
+            throw ApiException.new400BadRequest("Supplied resource key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
+
+        for (int i = 0; i < names.size(); i++) {
+            Object value = decodeStr(parts.get(i).toString());
+
+            if (((String) value).length() == 0)
+                throw ApiException.new400BadRequest("A key component can not be empty '{}'", key);
+
+            if(!useJsonPropertyNames)
+                value = getDb().castJsonInput(index.getProperty(i), value);
+
+            row.put(names.get(i), value);
+        }
+
+        return row;
+    }
+
+    /**
+     * The reciprocal of {@link #encodeStr(String)} that replaces "\@[0-9a-f]{4}" hex sequences with the unescaped character.
+     *
+     * @param string the string to decode
+     * @return a string with characters escaped to their hex equivalent replaced with the unescaped value.
+     * @see #encodeKey(Map, Index, boolean)
+     * @see #encodeStr(String)
+     */
+    static String decodeStr(String string) {
+        try {
+            Pattern      p  = Pattern.compile("\\@[0-9a-f]{4}");
+            Matcher      m  = p.matcher(string);
+            StringBuffer sb = new StringBuffer();
+            while (m.find()) {
+                String group = m.group();
+                String hex   = group.substring(1);
+                String chars = StringEscapeUtils.unescapeJava("\\u" + hex);
+                if(chars.equals("\\"))
+                        chars = "\\\\";
+                m.appendReplacement(sb, chars);
+            }
+            m.appendTail(sb);
+            return sb.toString();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+
 }

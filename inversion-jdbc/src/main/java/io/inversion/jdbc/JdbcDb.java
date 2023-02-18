@@ -21,12 +21,15 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.inversion.*;
 import io.inversion.Collection;
 import io.inversion.Api.ApiListener;
-import io.inversion.jdbc.JdbcUtils.SqlListener;
+import io.inversion.config.Config;
+import io.inversion.utils.JdbcUtils;
+import io.inversion.utils.JdbcUtils.SqlListener;
 import io.inversion.rql.Term;
-import io.inversion.utils.Config;
 import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
 import org.apache.commons.configuration2.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Field;
@@ -53,14 +56,14 @@ public class JdbcDb extends Db<JdbcDb> {
     static {
         JdbcUtils.addSqlListener(new SqlListener() {
 
-            final ch.qos.logback.classic.Logger log = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(JdbcDb.class);
+            Logger log = LoggerFactory.getLogger(JdbcDb.class.getName());
 
             @Override
             public void onError(String method, String sql, Object args, Exception ex) {
                 if (method != null && method.equals("selectRows")) {
                     log.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
                 } else {
-                    log.warn(ex.getMessage(), ex);
+                    log.error("SQL error in '" + method + "' [" + sql.replace("\r\n", "") + "] " + ex.getMessage());
                 }
             }
 
@@ -70,7 +73,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             @Override
             public void afterStmt(String method, String sql, Object args, Exception ex, Object result) {
-                String debugPrefix = "SqlDb: ";
+                String debugPrefix = "JdbcDb: ";
 
                 String debugType = "unknown";
 
@@ -186,15 +189,7 @@ public class JdbcDb extends Db<JdbcDb> {
         api.withApiListener(new ApiListener() {
 
             @Override
-            public void onStartup(Api api) {
-            }
-
-            @Override
-            public void onShutdown(Api api) {
-            }
-
-            @Override
-            public void afterRequest(Request req, Response res) {
+            public void onAfterRequest(Request req, Response res) {
                 try {
                     JdbcConnectionLocal.commit();
                 } catch (Exception ex) {
@@ -203,7 +198,7 @@ public class JdbcDb extends Db<JdbcDb> {
             }
 
             @Override
-            public void afterError(Request req, Response res) {
+            public void onAfterError(Request req, Response res) {
 
                 try {
                     JdbcConnectionLocal.rollback();
@@ -214,7 +209,7 @@ public class JdbcDb extends Db<JdbcDb> {
             }
 
             @Override
-            public void beforeFinally(Request req, Response res) {
+            public void onBeforeFinally(Request req, Response res) {
                 try {
                     JdbcConnectionLocal.close();
                 } catch (Throwable t) {
@@ -230,7 +225,7 @@ public class JdbcDb extends Db<JdbcDb> {
         if (isType("h2") && getUrl() != null) {
             try {
                 String url = getUrl().toUpperCase();
-                if (url.indexOf(":MEM:") > 0 && url.indexOf("DB_CLOSE_DELAY=-1") > 0) {
+                if (url.indexOf("MEM:") > 0 && url.indexOf("DB_CLOSE_DELAY=-1") > 0) {
                     JdbcUtils.execute(getConnection(), "SHUTDOWN");
                 }
 
@@ -274,10 +269,10 @@ public class JdbcDb extends Db<JdbcDb> {
 
         log.warn("Unable to determine db type. type='{}', driver='{}', url='{}'", this.type, this.driver, this.url);
 
-        if(Chain.peek() != null) {
+        if (Chain.peek() != null) {
             Chain.peek().getResponse().debug("Unable to determine db type. type='{}', driver='{}', url='{}'", this.type, this.driver, this.url);
         }
-        
+
         return "UNKNOWN";
     }
 
@@ -297,15 +292,15 @@ public class JdbcDb extends Db<JdbcDb> {
                 }
             }
 
-            List<Row> upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
-            return upserted.stream().map(table::encodeResourceKey).collect(Collectors.toList());
+            List<Row> upserted = JdbcUtils.upsert(getConnection(), table.getTableName(), table.getResourceIndex().getColumnNames(), rows);
+            return upserted.stream().map(table::encodeKeyFromColumnNames).collect(Collectors.toList());
         } catch (Exception ex) {
             throw ApiException.new500InternalServerError(ex);
         }
     }
 
     @Override
-    public void doPatch(Collection table, List<Map<String, Object>> rows) throws ApiException {
+    public List<String> doPatch(Collection table, List<Map<String, Object>> rows) throws ApiException {
         try {
             for (Map<String, Object> row : rows) {
                 for (String key : new ArrayList<>(row.keySet())) {
@@ -314,14 +309,30 @@ public class JdbcDb extends Db<JdbcDb> {
                 }
             }
 
-            JdbcUtils.update(getConnection(), table.getTableName(), table.getPrimaryIndex().getColumnNames(), rows);
+            List<String>  resourceKeys = new ArrayList<>();
+            List<Integer> updateCounts = JdbcUtils.update(getConnection(), table.getTableName(), table.getResourceIndex().getColumnNames(), rows);
+            for (int i = 0; i < rows.size(); i++) {
+                Integer count = updateCounts.get(i);
+                if (count == null)
+                    count = 0;
+
+                if (count <= 0)
+                    continue;
+                else if (count == 1) {
+                    resourceKeys.add(table.encodeKeyFromColumnNames(rows.get(i)));
+                } else {
+                    throw new ApiException("A patch requested reported that it updated more than one row");
+                }
+            }
+
+            return resourceKeys;
         } catch (Exception ex) {
             throw ApiException.new500InternalServerError(ex);
         }
     }
 
     @Override
-    public void delete(Collection table, List<Map<String, Object>> columnMappedIndexValues) throws ApiException {
+    public void doDelete(Collection table, List<Map<String, Object>> columnMappedIndexValues) throws ApiException {
         try {
             if (columnMappedIndexValues.size() == 0)
                 return;
@@ -465,7 +476,7 @@ public class JdbcDb extends Db<JdbcDb> {
             }
         }
 
-        System.out.println("CREATING CONNECTION POOL: " + getUser() + "@" + getUrl());
+        //System.out.println("CREATING CONNECTION POOL: " + getUser() + "@" + getUrl());
 
         HikariConfig config = new HikariConfig();
         String       driver = getDriver();
@@ -568,11 +579,11 @@ public class JdbcDb extends Db<JdbcDb> {
                             continue;
                     }
 
-                    if (includeTables.size() > 0 && !includeTables.containsKey(tableName))
+                    if(excludeTable(tableName))
                         continue;
 
-                    Collection table = new Collection(tableName);
-                    withCollection(table);
+                    Collection collection = new Collection(tableName);
+                    withCollection(collection);
 
                     ResultSet colsRs = dbmd.getColumns(tableCat, tableSchem, tableName, "%");
 
@@ -581,17 +592,24 @@ public class JdbcDb extends Db<JdbcDb> {
                         Object type    = colsRs.getString("DATA_TYPE");
                         String colType = types.get(type);
 
-                        boolean nullable = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
+                        boolean nullable      = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
+                        boolean autoincrement = Utils.in((colsRs.getObject("IS_AUTOINCREMENT") + "").toLowerCase(), "yes", "true", "1");
+
+                        
 
                         Property column = new Property(colName, colType, nullable);
-                        table.withProperties(column);
+
+                        if (autoincrement)
+                            column.withReadOnly(true);
+
+                        collection.withProperties(column);
                     }
                     colsRs.close();
 
-                    ResultSet indexMd = dbmd.getIndexInfo(conn.getCatalog(), null, tableName, true, false);
+                    ResultSet indexMd = dbmd.getIndexInfo(conn.getCatalog(), null, tableName, false, false);
                     while (indexMd.next()) {
                         String idxName = indexMd.getString("INDEX_NAME");
-                        String idxType = "Other";
+                        String idxType = Index.TYPE_INDEX;
                         String colName = indexMd.getString("COLUMN_NAME");
 
                         if (idxName == null || colName == null) {
@@ -600,6 +618,7 @@ public class JdbcDb extends Db<JdbcDb> {
                             continue;
                         }
 
+                        /*
                         switch (indexMd.getInt("TYPE")) {
                             case DatabaseMetaData.tableIndexClustered:
                                 idxType = "Clustered";
@@ -614,18 +633,33 @@ public class JdbcDb extends Db<JdbcDb> {
                                 idxType = "Statistic";
                                 break;
                         }
+                        */
 
-                        Property column    = table.getProperty(colName);
                         Object   nonUnique = indexMd.getObject("NON_UNIQUE") + "";
                         boolean  unique    = !(nonUnique.equals("true") || nonUnique.equals("1"));
 
                         //this looks like it only supports single column indexes but if
                         //an index with this name already exists, that means this is another
                         //column in that index.
-                        table.withIndex(idxName, idxType, unique, column.getColumnName());
+                        collection.withIndex(idxName, idxType, unique, colName);
 
                     }
                     indexMd.close();
+
+                    ResultSet pkMd = dbmd.getPrimaryKeys(conn.getCatalog(), null, tableName);
+                    while (pkMd.next()) {
+                        String   idxName = pkMd.getString("PK_NAME");
+                        String   idxType = Index.TYPE_PRIMARY_KEY;
+                        String   colName = pkMd.getString("COLUMN_NAME");
+                        Property column  = collection.getProperty(colName);
+
+                        int   keySeq = pkMd.getInt("KEY_SEQ");
+
+                        collection.withIndex(idxName, idxType, true, colName);
+                        //System.out.println("Primary key: " + colName);
+                    }
+                    pkMd.close();
+
 
                 } while (rs.next());
 
@@ -647,6 +681,9 @@ public class JdbcDb extends Db<JdbcDb> {
                 do {
                     String tableName = rs.getString("TABLE_NAME");
 
+                    if(excludeTable(tableName))
+                        continue;
+
                     //            System.out.println(tableName);
                     //
                     //            ResultSetMetaData rsmd = rs.getMetaData();
@@ -661,20 +698,20 @@ public class JdbcDb extends Db<JdbcDb> {
                     while (keyMd.next()) {
                         //String pkName = keyMd.getString("PK_NAME");
                         String fkName = keyMd.getString("FK_NAME");
-
                         String fkTableName  = keyMd.getString("FKTABLE_NAME");
-                        String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
-                        String pkTableName  = keyMd.getString("PKTABLE_NAME");
-                        String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
-
-                        Property fk = getProperty(fkTableName, fkColumnName);
-                        Property pk = getProperty(pkTableName, pkColumnName);
-                        fk.withPk(pk);
 
                         Collection coll = getCollectionByTableName(fkTableName);
                         if (coll != null) {
-                            //System.out.println("FOREIGN_KEY: " + tableName + " - " + pkName + " - " + fkName + "- " + fkTableName + "." + fkColumnName + " -> " + pkTableName + "." + pkColumnName);
-                            coll.withIndex(fkName, "FOREIGN_KEY", false, fk.getColumnName());
+
+                            String fkColumnName = keyMd.getString("FKCOLUMN_NAME");
+                            String pkTableName  = keyMd.getString("PKTABLE_NAME");
+                            String pkColumnName = keyMd.getString("PKCOLUMN_NAME");
+
+                            Property fk = getProperty(fkTableName, fkColumnName);
+                            Property pk = getProperty(pkTableName, pkColumnName);
+                            fk.withPk(pk);
+
+                            coll.withIndex(fkName, Index.TYPE_FOREIGN_KEY, false, fk.getColumnName());
                         }
 
                     }
@@ -683,6 +720,7 @@ public class JdbcDb extends Db<JdbcDb> {
 
             rs.close();
         } catch (Exception ex) {
+            ex.printStackTrace();
             throw ApiException.new500InternalServerError(ex);
         } finally {
             Utils.close(rs);

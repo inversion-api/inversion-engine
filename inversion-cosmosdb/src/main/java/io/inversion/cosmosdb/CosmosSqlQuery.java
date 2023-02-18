@@ -20,10 +20,11 @@ import com.microsoft.azure.documentdb.*;
 import io.inversion.Index;
 import io.inversion.*;
 import io.inversion.jdbc.SqlQuery;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSParser;
 import io.inversion.rql.Order.Sort;
 import io.inversion.rql.Term;
 import io.inversion.rql.Where;
-import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
 
@@ -67,7 +68,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
     }
 
     public Results doSelect() throws ApiException {
-        Results<JSNode> results = new Results(this);
+        Results results = new Results(this);
         CosmosDb        db      = getDb();
 
         String collectionUri = db.getCollectionUri(collection);
@@ -77,8 +78,8 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         sql = sql.replaceAll("\n", " ");
 
         SqlParameterCollection params = new SqlParameterCollection();
-        for (int i = 0; i < values.size(); i++) {
-            KeyValue kv      = values.get(i);
+        for (int i = 0; i < castValues.size(); i++) {
+            KeyValue kv      = castValues.get(i);
             String   varName = asVariableName(i);
             params.add(new SqlParameter(varName, kv.getValue()));
         }
@@ -130,6 +131,9 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         Chain.debug(debug);
         results.withTestQuery(debug);
 
+        System.out.println(debug);
+
+
         if (partKeyMissing)
             throw ApiException.new400BadRequest("CosmosSqlQuery.allowCrossPartitionQueries is false.");
 
@@ -146,7 +150,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
             for (Document doc : queryResults.getQueryIterable()) {
                 String json = doc.toJson();
-                JSNode node = JSNode.parseJsonNode(json);
+                JSMap  node = JSParser.asJSMap(json);
 
                 //-- removes all cosmos applied system keys that start with "_"
                 //-- TODO: might want to make this a configuration option and/or
@@ -158,7 +162,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
                         node.remove(key);
                 }
                 //-- the JSON returned from cosmos looks crazy, keys are all jumbled up.
-                node.sortKeys();
+                node.sort();
                 results.withRow(node);
 
             }
@@ -210,23 +214,17 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
      *
      * @see <a href="https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-offset-limit">Cosmos Offset and Limit</a>
      */
+    @Override
     protected String printLimitClause(Parts parts, int offset, int limit) {
-        if(Utils.empty(parts.order))
-            return "";
+        if (offset < 0)
+            offset = 0;
 
-        String s = null;
-        if (offset >= 0 || limit >= 0) {
-            if (offset < 0)
-                offset = 0;
+        if (limit <= 0)
+            limit = 100;
 
-            if (limit <= 0)
-                limit = 100;
-
-            s = "OFFSET " + offset + " LIMIT " + limit;
-        }
-
-        parts.limit = s;
-        return parts.limit;
+        String clause =  "OFFSET " + offset + " LIMIT " + limit;
+        parts.limit = clause;
+        return clause;
     }
 
     /**
@@ -235,7 +233,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
      */
     @Override
     protected String asVariableName(int valuesPairIdx) {
-        KeyValue kv = values.get(valuesPairIdx);
+        KeyValue kv = castValues.get(valuesPairIdx);
         return "@" + kv.getKey() + (valuesPairIdx + 1);
     }
 

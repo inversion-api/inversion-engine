@@ -16,44 +16,47 @@
  */
 package io.inversion;
 
-import io.inversion.Request.Validation;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
+import io.inversion.json.*;
+import io.inversion.utils.MimeTypes;
+import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
-public class Response {
+/**
+ * This class serves as holder for the Response returned from a RestClient call AND as the object
+ * used to construct your own response to an Engine request.
+ */
+public class Response implements JSFind {
+
+    protected Chain   chain   = null;
+    protected Request request = null;
+
+    protected int    statusCode = 200;
+    protected String statusMesg = "OK";
+
+    protected String url      = null;
+    protected String fileName = null;
+
+    protected final ArrayListValuedHashMap<String, String> headers = new ArrayListValuedHashMap<>();
+
+    protected JSNode       json   = new JSMap("meta", new JSMap(), "data", new JSList());
+    protected String       text   = null;
+    protected StreamBuffer stream = null;
+
+    protected Throwable error = null;
+
+    protected final StringBuilder debug   = new StringBuilder();
+    protected final List<Change>  changes = new ArrayList<>();
 
     protected long startAt = System.currentTimeMillis();
-    protected long endAt = -1;
-
-    protected Request request = null;
-    protected final ArrayListValuedHashMap<String, String> headers = new ArrayListValuedHashMap<>();
-    protected final List<Change>  changes = new ArrayList<>();
-    protected final StringBuilder debug   = new StringBuilder();
-    protected String url = null;
-    protected Chain chain = null;
-    protected int    statusCode  = 200;
-    protected String statusMesg  = "OK";
-    protected String redirect    = null;
-    protected String        contentType = null;
-    protected StringBuilder out         = new StringBuilder();
-    protected JSNode        json        = new JSNode("meta", new JSNode("createdOn", Utils.formatIso8601(new Date())), "data", new JSArray());
-    protected String        text        = null;
-    protected String fileName = null;
-    protected File   file     = null;
-    protected Throwable error = null;
-    protected String contentRangeUnit  = null;
-    protected long   contentRangeStart = -1;
-    protected long   contentRangeEnd   = -1;
-    protected long   contentRangeSize  = -1;
+    protected long endAt   = -1;
 
     public Response() {
 
@@ -63,63 +66,475 @@ public class Response {
         withUrl(url);
     }
 
-    public long getStartAt() { return startAt;}
 
-    public Response withStartAt(long startAt){
+    /**
+     * Sets the root output json document...you should use withData and withMeta
+     * instead unless you REALLY want to change to wrapper document structure.
+     *
+     * @param json the json to set
+     * @return this
+     */
+    public Response withJson(JSNode json) {
+        this.json = json;
+        this.text = null;
+        this.stream = null;
+        return this;
+    }
+
+    public Response withJson(String json) {
+        if (json == null)
+            withJson((JSNode) null);
+        else
+            withJson((JSNode) JSParser.parseJson(json));
+        return this;
+    }
+
+    public Response withText(String text) {
+        this.text = text;
+        this.json = null;
+        this.stream = null;
+        return this;
+    }
+
+    public Response withBody(StreamBuffer stream, String fileName) {
+        withBody(stream);
+        withFileName(fileName);
+        return this;
+    }
+
+    public Response withBody(StreamBuffer stream) {
+        this.text = null;
+        this.json = null;
+        this.stream = stream;
+        if (getContentType() == null && stream.getContentType() != null)
+            withContentType(stream.getContentType());
+        return this;
+    }
+
+    public JSNode getJson() {
+        if (stream != null) {
+            if (!MimeTypes.TYPE_APPLICATION_JSON.equalsIgnoreCase(getContentType()))
+                return null;
+
+            try {
+                json = (JSNode) JSParser.parseJson(stream.getInputStream());
+            } catch (Exception e) {
+                throw new ApiException(e);
+            } finally {
+                stream = null;
+            }
+        }
+        if (json == null && text != null) {
+            try
+            {
+                json = (JSNode) JSParser.parseJson(text);
+                text = null;
+            }
+            catch(Exception ex){
+                //maybe not json, OK
+            }
+        }
+
+        return json;
+    }
+
+    public String getText() {
+        if (stream != null) {
+            try {
+                text = Utils.read(stream.getInputStream());
+            } catch (Exception e) {
+                throw new ApiException(e);
+            } finally {
+                stream = null;
+            }
+        }
+
+        if (text == null && json != null)
+            return json.toString();
+
+        return text;
+    }
+
+    public StreamBuffer getBody() {
+        boolean explain = false;
+        Request req     = getRequest();
+        if (req == null && Chain.getDepth() > 0)
+            req = Chain.peek().getRequest();
+
+        if (req != null)
+            explain = req.isDebug() && req.isExplain();
+
+        return getBody(explain);
+    }
+
+    public StreamBuffer getBody(boolean explain) {
+
+        StreamBuffer output = stream;
+        try {
+            if (output == null) {
+
+                if (json != null) {
+                    output = new StreamBuffer();
+                    output.write(json.toString().getBytes(StandardCharsets.UTF_8));
+                    output.withContentType(MimeTypes.TYPE_APPLICATION_JSON);
+                } else if (text != null) {
+                    output = new StreamBuffer();
+                    output.write(text.getBytes(StandardCharsets.UTF_8));
+
+                    String contentType = getContentType();
+                    if (contentType == null)
+                        contentType = MimeTypes.TYPE_TEXT_PLAIN;
+
+                    output.withContentType(contentType);
+                }
+            }
+
+            if (explain) {
+                StringBuilder buff = new StringBuilder("");
+                buff.append(debug.toString());
+                if (error != null) {
+                    buff.append("\r\n<< error ----------------");
+                    buff.append("\r\n").append(Utils.getShortCause(error));
+                }
+                buff.append("\r\n<< response -------------");
+                buff.append("\r\n").append(getStatus());
+                buff.append("\r\n");
+                for (String key : getHeaders().keySet()) {
+                    buff.append("\r\n").append(key).append(" ").append(getHeader(key));
+                }
+                buff.append("\r\n");
+
+                if (output != null) {
+                    String text = Utils.read(output.getInputStream());
+                    buff.append(text);
+                }
+                output = new StreamBuffer();
+                output.withContentType(MimeTypes.TYPE_TEXT_PLAIN);
+                output.write(buff.toString().getBytes(StandardCharsets.UTF_8));
+            }
+
+        } catch (IOException e) {
+            throw new ApiException(e);
+        }
+        return output;
+    }
+
+    public Response debug(String format, Object... args) {
+        debug.append(Utils.format(format, args)).append("\r\n");
+        return this;
+    }
+
+    public String getDebug() {
+        try {
+            return Utils.read(getBody(true).getInputStream());
+        } catch (IOException ex) {
+            throw new ApiException(ex);
+        }
+    }
+
+    public Response dump() {
+        System.out.println(getDebug());
+        return this;
+    }
+
+
+    public long getStartAt() {
+        return startAt;
+    }
+
+    public Response withStartAt(long startAt) {
         this.startAt = startAt;
         return this;
     }
 
-    public long getEndAt(){return endAt;}
+    public long getEndAt() {
+        return endAt;
+    }
 
-    public Response withEndAt(long endAt){
+    public Response withEndAt(long endAt) {
         this.endAt = endAt;
         return this;
     }
 
-    public boolean hasStatus(int... statusCodes) {
-        for (int statusCode : statusCodes) {
-            if (this.statusCode == statusCode)
-                return true;
+    public Response withUrl(String url) {
+        if (!Utils.empty(url)) {
+            url = url.trim();
+            url = url.replaceAll(" ", "%20");
         }
-        return false;
-    }
 
-    public Response withMeta(String key, String value) {
-        getJson().getNode("meta").put(key, value);
+        this.url = url;
+
+        if (Utils.empty(fileName)) {
+            try {
+                String fileName = new URL(url).getFile();
+                withFileName(fileName);
+            } catch (Exception ex) {
+                //intentionally blank
+            }
+        }
         return this;
     }
 
-    public void write(StringBuilder buff, Object... msgs) {
-        write0(buff, msgs);
-        buff.append("\r\n");
+    public Response withFileName(String fileName) {
+        this.fileName = fileName;
+        return this;
     }
 
-    protected void write0(StringBuilder buff, Object... msgs) {
-        if (msgs != null && msgs.length == 0)
-            return;
+    public String getUrl() {
+        if (url == null && request != null)
+            return request.getUrl().toString();
+        return url;
+    }
 
-        if (msgs != null && msgs.length == 1 && msgs[0] != null && msgs[0].getClass().isArray())
-            msgs = (Object[]) msgs[0];
+    public Response withRequest(Request request) {
+        this.request = request;
+        return this;
+    }
 
-        for (int i = 0; msgs != null && i < msgs.length; i++) {
-            Object msg = msgs[i];
+    public Request getRequest() {
+        return request;
+    }
 
-            if (msg == null)
-                continue;
+    public Op getOp() {
+        return request != null ? request.getOp() : null;
+    }
 
-            if (msg instanceof byte[])
-                msg = new String((byte[]) msg);
+    public Chain getChain() {
+        if (chain == null && request != null)
+            return request.getChain();
+        return chain;
+    }
 
-            if (msg.getClass().isArray()) {
-                write0(buff, (Object[]) msg);
-            } else {
-                if (i > 0)
-                    buff.append(" ");
-                buff.append(msg);
-            }
+    public Response withChain(Chain chain) {
+        this.chain = chain;
+        return this;
+    }
 
+    public Engine getEngine() {
+        return getChain() != null ? getChain().getEngine() : null;
+    }
+
+    @Override
+    public String toString() {
+        return debug.toString();
+    }
+
+
+    public Response withError(Throwable ex) {
+        this.error = ex;
+        return this;
+    }
+
+    public Throwable getError() {
+        return error;
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------------------------------
+    //Meta Construction
+
+    public Response withMeta(String key, Object value) {
+        JSNode json = getJson();
+        JSNode meta = json.getMap("meta");
+        if (meta == null)
+            meta = json;
+        meta.put(key, value);
+        return this;
+    }
+
+    public JSNode getMeta() {
+        JSNode json = getJson();
+        JSNode meta = json.getMap("meta");
+        if (meta == null)
+            meta = json;
+        return meta;
+    }
+
+    public Response withFoundRows(int foundRows) {
+        withMeta("foundRows", foundRows);
+        updatePageCount();
+        return this;
+    }
+
+    public int getFoundRows() {
+        return getMeta().findInt("foundRows");
+    }
+
+    public Response withLastKey(String lastKey) {
+        withMeta("lastKey", lastKey);
+        return this;
+    }
+
+    public String getLastKey() {
+        return getMeta().findString("lastKey");
+    }
+
+
+    public Response withPageSize(int pageSize) {
+        withMeta("pageSize", pageSize);
+        return this;
+    }
+
+    public int getPageSize() {
+        return getMeta().findInt("pageSize");
+    }
+
+    public Response withPageNum(int pageNum) {
+        withMeta("pageNum", pageNum);
+        updatePageCount();
+        return this;
+    }
+
+    public int getPageNum() {
+        return getMeta().findInt("pageNum");
+    }
+
+    public Response withPageCount(int pageCount) {
+        withMeta("pageCount", pageCount);
+        return this;
+    }
+
+    public int getPageCount() {
+        return getMeta().findInt("pageCount");
+    }
+
+    protected void updatePageCount() {
+        int ps = getPageSize();
+        int fr = getFoundRows();
+        if (ps > 0 && fr > 0) {
+            int pageCount = fr / ps + (fr % ps == 0 ? 0 : 1);
+            withPageCount(pageCount);
         }
+    }
+
+    public Response withLink(String name, String url) {
+        JSNode links = getJson().findMap("_links");
+        if (links != null) {
+            links.put(name, new JSMap("href", url));
+        } else {
+            getMeta().put(name, url);
+        }
+        return this;
+    }
+
+    public String getLink(String name) {
+        JSNode links = getJson().findMap("_links");
+        if (links != null) {
+            JSNode link = links.getNode(name);
+            if (link != null)
+                return link.getString("href");
+        } else {
+            Object link = getMeta().get(name);
+            if (link instanceof String)
+                return (String) link;
+        }
+        return null;
+    }
+
+    public String getSelf() {
+        return getLink("self");
+    }
+
+    public Response withSelf(String url) {
+        withLink("self", url);
+        return this;
+    }
+
+    public String getNext() {
+        return getLink("next");
+    }
+
+    public Response withNext(String url) {
+        withLink("next", url);
+        return this;
+    }
+
+    public String getPrev() {
+        return getLink("prev");
+    }
+
+    public Response withPrev(String url) {
+        withLink("prev", url);
+        return this;
+    }
+
+    public String getFirst() {
+        return getLink("first");
+    }
+
+    public Response withFirst(String url) {
+        withLink("first", url);
+        return this;
+    }
+
+    public String getLast() {
+        return getLink("last");
+    }
+
+    public Response withLast(String url) {
+        withLink("last", url);
+        return this;
+    }
+
+
+    //----------------------------------------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------------------------------
+    //Data Construction
+
+    public JSList data() {
+        JSNode json = getJson();
+
+        if (json == null)
+            return null;
+
+        if (json instanceof JSList)
+            return (JSList) json;
+
+        if (json.get("data") instanceof JSList)
+            return json.getList("data");
+
+        if (json.get("_embedded") instanceof JSList)
+            return json.getList("_embedded");
+
+        if (json.get("items") instanceof JSList)
+            return json.getList("items");
+
+        //-- there is a single object in the payload without a meta or payload section
+        //-- this could mess up some callers that try to add to the returned
+        //-- JSList instead of calling withRecord
+        return new JSList(json);
+    }
+
+    public JSMap getFirstRecordAsMap() {
+        JSList data = data();
+        if (data == null || data.size() == 0)
+            return null;
+        return data.getMap(0);
+    }
+
+    public Response withRecord(Object record) {
+        JSList data = data();
+        if (data == null) {
+            data = new JSList();
+            getJson().put("data", data);
+        }
+        data.add(record);
+        return this;
+    }
+
+    public Response withRecords(List records) {
+        for (Object record : records)
+            withRecord(record);
+        return this;
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------------------------------
+    //Status & Headers
+
+
+    public boolean isSuccess() {
+        return statusCode >= 200 && statusCode <= 300 && error == null;
     }
 
     /**
@@ -142,6 +557,14 @@ public class Response {
         return this;
     }
 
+    public boolean hasStatus(int... statusCodes) {
+        for (int statusCode : statusCodes) {
+            if (this.statusCode == statusCode)
+                return true;
+        }
+        return false;
+    }
+
     public String getStatus() {
         return statusCode + " " + statusMesg;
     }
@@ -151,58 +574,25 @@ public class Response {
         return this;
     }
 
+    /**
+     * @return the statusCode
+     */
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+
+    /**
+     * @return the statusMesg
+     */
+    public String getStatusMesg() {
+        return statusMesg;
+    }
+
+
     public Response withStatusMesg(String statusMesg) {
         this.statusMesg = statusMesg;
         return this;
-    }
-
-    public Chain getChain() {
-        return chain;
-    }
-
-    public Engine getEngine() {
-        return chain != null ? chain.getEngine() : null;
-    }
-
-    public Response withChain(Chain chain) {
-        this.chain = chain;
-        return this;
-    }
-
-    public Response debug(String format, Object... args) {
-        write(debug, Utils.format(format, args));
-        return this;
-    }
-
-    public Response out(Object... msgs) {
-        debug(Utils.format(null, msgs));
-        write(out, msgs);
-        return this;
-    }
-
-    public Response withOutput(String output) {
-        out = new StringBuilder(output);
-        return this;
-    }
-
-    public String getOutput() {
-        return out.toString();
-    }
-
-    public Response dump() {
-        System.out.println(getDebug());
-        return this;
-    }
-
-    public String getDebug() {
-        return debug.toString();
-    }
-
-    public String getHeader(String key) {
-        List<String> vals = headers.get(key);
-        if (vals != null && vals.size() > 0)
-            return vals.get(0);
-        return null;
     }
 
     /**
@@ -216,204 +606,88 @@ public class Response {
         this.headers.putAll(headers);
     }
 
+    public String getHeader(String key) {
+        List<String> vals = headers.get(key);
+        if (vals != null && vals.size() > 0)
+            return Utils.implode(",", vals);
+        return null;
+    }
+
     public void withHeader(String key, String value) {
         if (!headers.containsMapping(key, value))
             headers.put(key, value);
     }
 
-
-    /**
-     * Sets the root output json document...you should use withData and withMeta
-     * instead unless you REALLY want to change to wrapper document structure.
-     *
-     * @param json the json to set
-     * @return this
-     */
-    public Response withJson(JSNode json) {
-        this.json = json;
-        return this;
-    }
-
-    public String findString(String path) {
-        return getJson().findString(path);
-    }
-
-    public int findInt(String path) {
-        return getJson().findInt(path);
-    }
-
-    public boolean findBoolean(String path) {
-        return getJson().findBoolean(path);
-    }
-
-    public JSNode findNode(String path) {
-        return getJson().findNode(path);
-    }
-
-    public JSArray findArray(String path) {
-        return getJson().findArray(path);
-    }
-
-    public Object find(String path) {
-        return getJson().find(path);
-    }
-
-    public Validation validate(String jsonPath) {
-        return validate(jsonPath, null);
-    }
-
-    public Validation validate(String jsonPath, String customErrorMessage) {
-        return new Validation(this, jsonPath, customErrorMessage);
-    }
-
-    public JSArray data() {
-        return getData();
-    }
-
-    public JSArray getData() {
-        JSNode json = getJson();
-        if (json != null) {
-            return json.getArray("data");
-        }
-        return null;
-    }
-
-    public Response withData(JSArray data) {
-        getJson().put("data", data);
-        return this;
-    }
-
-    public Response withRecord(Object record) {
-        getData().add(record);
-        return this;
-    }
-
-    public Response withRecords(List records) {
-        for (Object record : records)
-            getData().add(record);
-        return this;
-    }
-
-    public JSNode getMeta() {
-        return getJson().getNode("meta");
-    }
-
-    public Response withMeta(String key, Object value) {
-        getMeta().put(key, value);
-        return this;
-    }
-
-    public Response withFoundRows(int foundRows) {
-        withMeta("foundRows", foundRows);
-        updatePageCount();
-        return this;
-    }
-
-    public int getFoundRows() {
-        return findInt("meta.foundRows");
-    }
-
-    public Response withPageSize(int pageSize) {
-        withMeta("pageSize", pageSize);
-        return this;
-    }
-
-    public Response withPageNum(int pageNum) {
-        withMeta("pageNum", pageNum);
-        updatePageCount();
-
-        return this;
-    }
-
-    public Response withPageCount(int pageCount) {
-        withMeta("pageCount", pageCount);
-        return this;
-    }
-
-    public int getPageSize() {
-        int pageSize = getJson().findInt("meta.pageSize");
-        if (pageSize < 0) {
-            Object arr = getJson().find("data.0.name");
-            if (arr instanceof JSArray) {
-                pageSize = ((JSArray) arr).size();
-            }
-        }
-        return pageSize;
-    }
-
-    protected void updatePageCount() {
-        int ps = getPageSize();
-        int fr = getFoundRows();
-        if (ps > 0 && fr > 0) {
-            int pageCount = fr / ps + (fr % ps == 0 ? 0 : 1);
-            withPageCount(pageCount);
-        }
-    }
-
-    public int getPageCount() {
-        return getJson().findInt("meta.pageCount");
-    }
-
-    public String next() {
-        return findString("meta.next");
-    }
-
-    public Response withNext(String nextPageUrl) {
-        withMeta("next", nextPageUrl);
-        return this;
-    }
-
-    /**
-     * @return the statusMesg
-     */
-    public String getStatusMesg() {
-        return statusMesg;
-    }
-
-    /**
-     * @return the statusCode
-     */
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    public Response withText(String text) {
-        this.json = null;
-        this.text = text;
-        return this;
-    }
-
-    public String getResourceKey() {
-        JSNode json = getJson();
-        if (json != null) {
-            String href = json.getString("href");
-            if (href != null) {
-                String[] parts = href.split("/");
-                return parts[parts.length - 1];
-            }
-        }
-        return null;
+    public void clearHeaders(){
+        this.headers.clear();
     }
 
     public String getRedirect() {
-        return redirect;
+        return getHeader("Location");
     }
 
     public Response withRedirect(String redirect) {
-        this.redirect = redirect;
+        if (redirect == null) {
+            headers.remove("Location");
+            if (308 == getStatusCode())
+                withStatus(Status.SC_200_OK);
+        } else {
+            withHeader("Location", redirect);
+            withStatus(Status.SC_308_PERMANENT_REDIRECT);
+        }
         return this;
-    }
-
-    public String getContentType() {
-        return contentType;
     }
 
     public Response withContentType(String contentType) {
         headers.remove("Content-Type");
-        headers.put("Content-Type", contentType);
-        this.contentType = contentType;
+        withHeader("Content-Type", contentType);
         return this;
     }
+
+    public String getContentType() {
+        String contentType = getHeader("Content-Type");
+
+        if (contentType != null)
+            return contentType;
+
+        if (json != null) {
+            return MimeTypes.TYPE_APPLICATION_JSON;
+        }
+
+        if (fileName != null) {
+            int dot = fileName.lastIndexOf('.');
+            if (dot > 0) {
+                String ext = fileName.substring(dot + 1);
+                contentType = MimeTypes.getMimeType(ext);
+                if (contentType != null)
+                    return contentType;
+            }
+        }
+
+        if (stream != null)
+            return stream.getContentType();
+
+        return contentType;
+    }
+
+    /**
+     * This is the value returned from the server via the "Content-Length" header
+     * NOTE: this will not match file length, for partial downloads, consider also using ContentRangeSize
+     *
+     * @return the value of the Content-Length header if it exists else 0
+     */
+    public long getContentLength() {
+        String length = getHeader("Content-Length");
+        if (length != null) {
+            return Long.parseLong(length);
+        }
+        return 0;
+    }
+
+    //----------------------------------------------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------------------------------------------
+    //Changes
+
 
     public List<Change> getChanges() {
         return changes;
@@ -442,310 +716,6 @@ public class Response {
         return this;
     }
 
-    public boolean isSuccess() {
-        return statusCode >= 200 && statusCode <= 300 && error == null;
-    }
-
-    public Throwable getError() {
-        return error;
-    }
-
-    //   public String getLog()
-    //   {
-    //      return log;
-    //   }
-
-    //   public LinkedHashMap<String, String> getHeaders()
-    //   {
-    //      return new LinkedHashMap(headers);
-    //   }
-
-    //   public String getHeader(String header)
-    //   {
-    //      String value = headers.get(header);
-    //      if (value == null)
-    //      {
-    //         for (String key : headers.keySet())
-    //         {
-    //            if (key.equalsIgnoreCase(header))
-    //               return headers.get(key);
-    //         }
-    //      }
-    //      return value;
-    //   }
-
-    public InputStream getInputStream() throws IOException {
-        if (file != null)
-            return new BufferedInputStream(new FileInputStream(file));
-
-        return null;
-    }
-
-    /**
-     * @return the json
-     */
-    public JSNode getJson() {
-        if (json == null) {
-            //lazy loads text/json
-            getContent();
-        }
-
-        return json;
-    }
-
-    public String getText() {
-        if (text == null) {
-            //lazy loads text/json
-            getContent();
-        }
-
-        return text;
-    }
-
-    public String getContent() {
-        try {
-            if (text == null && json == null && file != null && file.length() > 0) {
-                String string = Utils.read(getInputStream());
-                if (string != null) {
-                    try {
-                        json = JSNode.parseJsonNode(string);
-                    } catch (Exception ex) {
-                        //OK
-                        text = string;
-                    }
-                }
-            }
-
-            if (text != null) {
-                return text;
-            } else if (json != null) {
-                return json.toString();
-            }
-        } catch (Exception ex) {
-            Utils.rethrow(ex);
-        }
-        return null;
-    }
-
-    public String getErrorContent() {
-        if (!isSuccess() && error != null)
-            return Utils.getShortCause(error);
-
-        try {
-            if (!isSuccess()) {
-                String message = findString("message");
-                return getStatus() + (!Utils.empty(message) ? " - " + message : "");
-            }
-        } catch (Exception ex) {
-            Utils.rethrow(ex);
-        }
-
-        return getStatus();
-    }
-
-    public long getFileLength() {
-        if (file != null) {
-            return file.length();
-        }
-        return -1;
-    }
-
-    public Response withFile(File file) {
-        this.json = null;
-        this.file = file;
-        return this;
-    }
-
-    public File getFile() {
-        return file;
-    }
-
-    /**
-     * This is the value returned from the server via the "Content-Length" header
-     * NOTE: this will not match file length, for partial downloads, consider also using ContentRangeSize
-     *
-     * @return the value of the Content-Length header if it exists else 0
-     */
-    public long getContentLength() {
-        String length = getHeader("Content-Length");
-        if (length != null) {
-            return Long.parseLong(length);
-        }
-        return 0;
-    }
-
-    /**
-     * This value come from the "Content-Range" header and is the unit part
-     * Content-Range: unit range-start-range-end/size
-     *
-     * @return the units from the content-range header
-     */
-    public String getContentRangeUnit() {
-        parseContentRange();
-        return contentRangeUnit;
-    }
-
-    /**
-     * This value come from the "Content-Range" header and is the first part
-     * Content-Range: unit range-start-range-end/size
-     *
-     * @return the start value from the content-range header
-     */
-    public long getContentRangeStart() {
-        parseContentRange();
-        return contentRangeStart;
-    }
-
-    /**
-     * This value come from the "Content-Range" header and is the middle part
-     * Content-Range: unit range-start-range-end/size
-     *
-     * @return then end value from the content-range header
-     */
-    public long getContentRangeEnd() {
-        parseContentRange();
-        return contentRangeEnd;
-    }
-
-    /**
-     * This value come from the "Content-Range" header and is the last part
-     * Content-Range: unit range-start-range-end/size
-     *
-     * @return then size value from the content-range header
-     */
-    public long getContentRangeSize() {
-        parseContentRange();
-        return contentRangeSize;
-    }
-
-    /**
-     * Parses the "Content-Range" header
-     * Content-Range: <unit> <range-start>-<range-end>/<size>
-     */
-    private void parseContentRange() {
-        if (contentRangeUnit == null) {
-            String range = getHeader("Content-Range");
-            if (range != null) {
-                String[] parts = range.split(" ");
-                contentRangeUnit = parts[0];
-                parts = parts[1].split("/");
-                contentRangeSize = Long.parseLong(parts[1]);
-                parts = parts[0].split("-");
-                if (parts.length == 2) {
-                    contentRangeStart = Long.parseLong(parts[0]);
-                    contentRangeEnd = Long.parseLong(parts[1]);
-                }
-            }
-        }
-    }
-
-    public Response withUrl(String url) {
-        if (!Utils.empty(url)) {
-            url = url.trim();
-            url = url.replaceAll(" ", "%20");
-        }
-
-        this.url = url;
-
-        if (Utils.empty(fileName)) {
-            try {
-                fileName = new URL(url).getFile();
-                if (Utils.empty(fileName))
-                    fileName = null;
-            } catch (Exception ex) {
-                //intentionally blank
-            }
-        }
-        return this;
-    }
-
-    public Response withError(Throwable ex) {
-        this.error = ex;
-        return this;
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public Response withRequest(Request request){
-        this.request = request;
-        return this;
-    }
-
-    public Request getRequest(){
-        return request;
-    }
-
-
-    //   public Response onSuccess(ResponseHandler handler)
-    //   {
-    //      if (isSuccess())
-    //      {
-    //         try
-    //         {
-    //            handler.onResponse(this);
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //            logger.error("Error handling onSuccess", ex);
-    //         }
-    //      }
-    //      return this;
-    //   }
-    //
-    //   public Response onFailure(ResponseHandler handler)
-    //   {
-    //      if (!isSuccess())
-    //      {
-    //         try
-    //         {
-    //            handler.onResponse(this);
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //            logger.error("Error handling onFailure", ex);
-    //         }
-    //      }
-    //      return this;
-    //   }
-    //
-    //   public Response onResponse(ResponseHandler handler)
-    //   {
-    //      try
-    //      {
-    //         handler.onResponse(this);
-    //      }
-    //      catch (Exception ex)
-    //      {
-    //         logger.error("Error handling onResponse", ex);
-    //      }
-    //      return this;
-    //   }
-
-    @Override
-    public String toString() {
-        return debug.toString();
-    }
-
-    @Override
-    //TODO replace with Cleaner or something similar
-    public void finalize() throws Throwable {
-        if (file != null) {
-            try {
-                File tempFile = file;
-                file = null;
-                tempFile.delete();
-            } catch (Throwable t) {
-                // ignore
-            }
-        }
-        super.finalize();
-    }
 
     //----------------------------------------------------------------------------------------------------------------------
     //----------------------------------------------------------------------------------------------------------------------
@@ -784,7 +754,7 @@ public class Response {
         String message = getText();
         try {
             while (message != null && message.startsWith("{") && message.contains("\\\"message\\\"")) {
-                message = JSNode.parseJsonNode(message).getString("message");
+                message = JSParser.asJSNode(message).getString("message");
             }
         } catch (Exception ex) {
             //igore
@@ -793,7 +763,7 @@ public class Response {
         if (message != null)
             msg.append(" ").append(message.trim());
 
-        throw new ApiException(statusCode + "", null, msg.toString());
+        throw new ApiException(statusCode + "", (msg != null ? msg.toString() : null));
     }
 
     public Response assertStatus(int... statusCodes) {
@@ -832,7 +802,6 @@ public class Response {
         }
 
         String debug = getDebug();
-
         debug = debug.substring(0, debug.indexOf("<< response"));
 
         int idx = debug.indexOf(" " + lineMatch + " ");
@@ -861,5 +830,4 @@ public class Response {
         }
         return this;
     }
-
 }

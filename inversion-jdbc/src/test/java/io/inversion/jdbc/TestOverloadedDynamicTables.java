@@ -2,9 +2,9 @@ package io.inversion.jdbc;
 
 import io.inversion.*;
 import io.inversion.action.db.DbAction;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows.Row;
+import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Utils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -13,6 +13,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,8 +66,8 @@ public class TestOverloadedDynamicTables {
 
         };
 
-        api = new Api("crm").withIncludeOn(null, "crm/:tenant/[:type]/*") //
-                .withEndpoint("*", "*", new Action() {
+        api = new Api("crm").withServer(new Server("crm/{tenant}/[{type}]/*")) //
+                .withEndpoint(new Action() {
                     public void run(Request req, Response res) throws ApiException {
                         //-- requires "type" param and forces to lower case
                         String tenant = req.getUrl().getParam("tenant").toLowerCase();
@@ -89,8 +90,8 @@ public class TestOverloadedDynamicTables {
 
                             if (resourceKey != null) {
                                 //-- handles /addresses/$resourceKey1,$resourceKey2,$resourceKey3
-                                List<String> resourceKeys = Utils.explode(",", resourceKey);
-                                Row          row          = req.getCollection().decodeResourceKey(resourceKeys.get(0));
+                                List<String>        resourceKeys = Utils.explode(",", resourceKey);
+                                Map<String, Object> row          = req.getCollection().decodeKeyToJsonNames(resourceKeys.get(0));
                                 partitionKey = row.get(partitionProp);
                             }
 
@@ -101,10 +102,10 @@ public class TestOverloadedDynamicTables {
                         JSNode json = req.getJson();
 
                         if (json != null) {
-                            for (JSNode node : json.asNodeList()) {
+                            for (JSNode node : json.asMapList()) {
                                 //-- not necessary for RDBMS stores but prevents
                                 //-- unintended props in document stores
-                                node.removeAll("collection", "resource", "relationship");
+                                node.remove("_collection", "_resource", "_relationship");
 
                                 //-- forces correct case
                                 node.put("tenant", tenant);
@@ -130,7 +131,7 @@ public class TestOverloadedDynamicTables {
                                             String customerKey = (String) customerNode;
                                             customerKey = customerKey.substring(customerKey.lastIndexOf("/") + 1);
 
-                                            Row row = req.getApi().getCollection("customers").decodeResourceKey(customerKey);
+                                            Map<String, Object> row = req.getApi().getCollection("customers").decodeKeyToJsonNames(customerKey);
                                             customerId = row.get("id");
                                         }
 
@@ -184,9 +185,12 @@ public class TestOverloadedDynamicTables {
         Engine   e   = engine;
         Response res = null;
 
-        res = e.post("crm/acmeco/customers", new JSNode("firstName", "myFirstName", "lastName", "myLastName", "addresses", //
-                new JSArray(new JSNode("alias", "home", "address1", "1234 hometown rd."), //
-                        new JSNode("alias", "office", "address1", "6789 workville st.")))).assertOk();
+        res = e.post("crm/acmeco/customers", new JSMap("firstName", "myFirstName", "lastName", "myLastName", "addresses", //
+                new JSList(new JSMap("alias", "home", "address1", "1234 hometown rd."), //
+                        new JSMap("alias", "office", "address1", "6789 workville st."))));
+
+        res.dump();
+        res.assertOk();
 
         String customerHref = res.findString("data.0.href");
         String customerKey  = customerHref.substring(customerHref.lastIndexOf("/") + 1);
@@ -208,7 +212,7 @@ public class TestOverloadedDynamicTables {
         //-- this will fail because there is no customerKey to establish the partition
         e.get("crm/acmeco/customers").assertStatus(400);
 
-        JSNode apartment = new JSNode("alias", "apartment", "address1", "1234 downtown rd.");
+        JSNode apartment = new JSMap("alias", "apartment", "address1", "1234 downtown rd.");
         e.post("crm/acmeco/addresses", apartment).assertStatus(400);
 
         apartment.put("customer", customerKey);
@@ -217,7 +221,7 @@ public class TestOverloadedDynamicTables {
         res = e.get(customerHref + "/addresses").assertOk();
         assertEquals(3, res.data().size());
 
-        for (JSNode address : res.data().asNodeList()) {
+        for (JSNode address : res.data().asMapList()) {
             e.delete(address.getString("href")).assertOk();
         }
 

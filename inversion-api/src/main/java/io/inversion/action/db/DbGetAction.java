@@ -18,12 +18,12 @@ package io.inversion.action.db;
 
 import io.inversion.Collection;
 import io.inversion.*;
+import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
 import io.inversion.rql.Page;
 import io.inversion.rql.Term;
-import io.inversion.utils.JSArray;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Rows.Row;
-import io.inversion.utils.Url;
+import io.inversion.utils.*;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
 import org.apache.commons.collections4.ListValuedMap;
@@ -33,43 +33,84 @@ import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.util.*;
 
-public class DbGetAction extends Action<DbGetAction> {
+public class DbGetAction<A extends DbGetAction> extends Action<A>  {
 
     protected int maxRows = 100;
 
-    protected static boolean exclude(String path, Set<String> includes, Set<String> excludes) {
-        boolean exclude = false;
+    public DbGetAction() {
+//        Param expand = new Param();
+//        expand.withDescription("An optional comma separated lists of relationship names that should be expanded in the response. You can reference any number of nesting using 'dot' path notation.");
+//        expand.withIn(Param.In.QUERY);
+//        expand.withKey("expand");
+//        withParam(expand);
 
-        if (includes.size() > 0 || excludes.size() > 0) {
-            path = path.toLowerCase();
+        Param page = new Param();
+        page.withDescription("An optional value used to compute the 'offset' of the first item returned as 'offset'='pageNumber'*'pageSize'.  If an 'offset' parameter is also supplied it will be used instead of the 'pageNumber' parameter.");
+        page.withKey("pageNumber");
+        page.withIn(Param.In.QUERY);
+        withParam(page);
 
-            if (includes.size() > 0)
-                if (!(path.endsWith("href") || path.endsWith(".href")))
-                    if (!find(includes, path, true))
-                        exclude = true;
+        Param size = new Param();
+        size.withDescription("An optional number of items to return.  Unless overridden by other configuration the default value is '100'");
+        size.withKey("pageSize");
+        size.withIn(Param.In.QUERY);
+        withParam(size);
 
-            if (excludes != null && excludes.size() > 0)
-                if (find(excludes, path, false))
-                    exclude = true;
-        }
-        //System.out.println("exclude(" + path + ", " + includes + ", " + excludes + ") -> " + exclude);
+        Param offset = new Param();
+        offset.withDescription("An optional value used to compute the offset.  This value overrides the 'pageNumber' parameters.");
+        offset.withKey("offset");
+        offset.withIn(Param.In.QUERY);
+        withParam(offset);
 
-        return exclude;
+
+        Param sort = new Param();
+        sort.withDescription("An optional comma separated list of json property names used to order the results.  Each property may optionally be prefixed with '-' to specify descending order.");
+        sort.withKey("sort");
+        sort.withIn(Param.In.QUERY);
+        withParam(sort);
+
+        //TODO build a somewhat real example from the collectin attributes
+        //q.setExample("q=eq(jsonPropertyName,value1),in(anotherJsonProperty,value2)");
+        Param  q    = new Param();
+        String desc = "An RQL formatted filter statement that allows you to retrieve only the specific resources you require.  See 'Overview->Querying' for more documentation on available functions and syntax.";
+        q.withDescription(desc);
+        q.withKey("q");
+        q.withIn(Param.In.QUERY);
+        withParam(q);
     }
 
-    protected static String getResourceKey(Object obj) {
-        if (obj == null)
-            return null;
+    /**
+     * This task has been selected to run as part of the supplied operation, this
+     * callback allows actions to perform any custom configuration on the op.
+     * @param task
+     * @param op
+     */
+    public void configureOp(Task task, Op op) {
+        if(Op.OpFunction.FIND == op.getFunction())
+            getParams().forEach(p -> op.withParam(p));
+    }
 
-        if (obj instanceof JSNode)
-            obj = ((JSNode) obj).get("href");
+    @Override
+    protected List<RuleMatcher> getDefaultIncludeMatchers() {
+        return Utils.asList(new RuleMatcher("GET", "{" + Request.COLLECTION_KEY + "}/[{" + Request.RESOURCE_KEY + "}]/[{" + Request.RELATIONSHIP_KEY + "}]"));
+    }
 
-        String str = (String) obj;
-        int    idx = str.lastIndexOf('/');
-        if (idx > 0)
-            str = str.substring(idx + 1);
-        return str;
 
+    protected static String getForeignKey(Relationship rel, JSMap node) {
+        Index idx = rel.getFkIndex1();
+        if (idx.size() == 1 && node.get(idx.getJsonName(0)) != null)
+            return node.getString(idx.getJsonName(0));
+
+        String key = rel.getCollection().encodeKeyFromJsonNames(node, rel.getFkIndex1());
+        return key;
+    }
+
+
+    protected static String getResourceKey(Collection collection, JSMap node) {
+        String key = collection.encodeKeyFromJsonNames(node);
+        if (key == null)
+            throw ApiException.new500InternalServerError("The primary key '{}' could not be constructed from the data provided.", collection.getResourceIndex());
+        return key;
     }
 
     public static String stripTerms(String url, String... tokens) {
@@ -78,41 +119,6 @@ public class DbGetAction extends Action<DbGetAction> {
         return u.toString();
     }
 
-    protected static String stripTerm(String str, String startToken, char... endingTokens) {
-        Set<Character> tokens = new HashSet<>();
-        for (char c : endingTokens)
-            tokens.add(c);
-
-        while (true) {
-            int start = str.toLowerCase().indexOf(startToken);
-
-            //this makes sure the char before the start token is not a letter or number which would mean we are in the
-            //middle of another token, not at the start of a token.
-            while (start > 0 && (Character.isAlphabetic(str.charAt(start - 1)) || Character.isDigit(start - 1)))
-                start = str.toLowerCase().indexOf(startToken, start + 1);
-
-            if (start > -1) {
-                String beginning = str.substring(0, start);
-
-                int end = start + startToken.length() + 1;
-                while (end < str.length()) {
-                    char c = str.charAt(end);
-                    if (tokens.contains(c))
-                        break;
-                    end += 1;
-                }
-
-                if (end == str.length())
-                    str = beginning;
-                else
-                    str = beginning + str.substring(end + 1);
-            } else {
-                break;
-            }
-        }
-
-        return str;
-    }
 
     protected static String expandPath(String path, Object next) {
         if (Utils.empty(path))
@@ -127,6 +133,7 @@ public class DbGetAction extends Action<DbGetAction> {
         path = path.toLowerCase();
 
         for (String ep : expands) {
+            ep = ep.toLowerCase();
             if (ep.startsWith(path) && (ep.length() == path.length() || ep.charAt(path.length()) == '.')) {
                 expand = true;
                 break;
@@ -138,32 +145,8 @@ public class DbGetAction extends Action<DbGetAction> {
         return expand;
     }
 
-    protected static boolean find(java.util.Collection<String> params, String path, boolean matchStart) {
-        boolean rtval = false;
 
-        if (params.contains(path)) {
-            rtval = true;
-        } else {
-            for (String param : params) {
-                if (matchStart) {
-                    if (param.startsWith(path + ".")) {
-                        rtval = true;
-                        break;
-                    }
-                }
 
-                if (Utils.wildcardMatch(param, path))
-                    rtval = true;
-            }
-        }
-
-        //System.out.println("find(" + params + ", " + path + ", " + matchStart + ") -> " + path);
-
-        return rtval;
-
-    }
-
-    @Override
     public void run(Request req, Response res) throws ApiException {
         if (req.getRelationshipKey() != null) {
             //-- all URLs with a subcollection key will be rewritten and
@@ -174,9 +157,9 @@ public class DbGetAction extends Action<DbGetAction> {
             Relationship rel         = collection.getRelationship(req.getRelationshipKey());
 
             if (rel == null)
-                throw ApiException.new404NotFound("'{}' is not a valid relationship", req.getRelationshipKey());
+                throw ApiException.new400BadRequest("'{}' is not a valid relationship", req.getRelationshipKey());
 
-            StringBuilder newHref;
+            StringBuilder newHref = null;
 
             if (rel.isOneToMany()) {
                 //-- CONVERTS: http://localhost/northwind/sql/orders/10395/orderdetails
@@ -187,10 +170,10 @@ public class DbGetAction extends Action<DbGetAction> {
 
                 //TODO: need a compound key test case here
                 Collection relatedCollection = rel.getRelated();
-                newHref = new StringBuilder(Chain.buildLink(relatedCollection, null, null) + "?");
-                Row resourceKeyRow = collection.decodeResourceKey(req.getResourceKey());
+                newHref = new StringBuilder(Chain.buildLink(relatedCollection) + "?");
+                Map<String, Object> resourceKeyRow = collection.decodeKeyToJsonNames(req.getResourceKey());
 
-                if (rel.getFkIndex1().size() != collection.getPrimaryIndex().size() //
+                if (rel.getFkIndex1().size() != collection.getResourceIndex().size() //
                         && rel.getFkIndex1().size() == 1)//assume the single fk prop is an encoded resourceKey
                 {
                     String propName = rel.getFk1Col1().getJsonName();
@@ -198,11 +181,11 @@ public class DbGetAction extends Action<DbGetAction> {
                 } else {
                     //TODO: test this change
                     Index fkIdx = rel.getFkIndex1();
-                    Index pkIdx = collection.getPrimaryIndex();
+                    Index pkIdx = collection.getResourceIndex();
 
                     for (int i = 0; i < fkIdx.size(); i++) {
                         Property fk     = fkIdx.getProperty(i);
-                        String   pkName = pkIdx.getPropertyName(i);
+                        String   pkName = pkIdx.getJsonName(i);
                         Object   pkVal  = resourceKeyRow.get(pkName);
 
                         if (pkVal == null)
@@ -226,25 +209,58 @@ public class DbGetAction extends Action<DbGetAction> {
                     Collection relatedCollection = rel.getRelated();
                     String     resourceKeys      = Utils.implode(",", foreignKeys.toArray());
 
-                    newHref = new StringBuilder(Chain.buildLink(relatedCollection, resourceKeys, null));
+                    newHref = new StringBuilder(Chain.buildLink(relatedCollection, resourceKeys));
                 } else {
                     return;
                 }
-            } else {
+            }
+//            else if(rel.isOneToOneParent() || rel.isOneToOneChild()){
+//                //-- TODO: need to optimize for one to one relatinships, there is no need to requery the DB here.
+//            }
+            else {
                 //-- The link was requested like this  : http://localhost/northwind/source/orderdetails/XXXXX/order
-                //-- The system would have written out : http://localhost/northwind/source/orders/YYYYY
-                throw new UnsupportedOperationException("FIX ME IF FOUND...implementation logic error.");
+                //-- By default, the system would have written out : http://localhost/northwind/source/orders/YYYYY
+                //-- We are going to have to re-query to get the FK value from the resource of the passed in link
+
+                String url = req.getUrl().getOriginal();
+                //String query = Utils.substringAfter(url, "?");
+
+                url = Utils.substringBefore(url, "?");
+                if (url.endsWith("/"))
+                    url = url.substring(0, url.length() - 1);
+
+                url = url.substring(0, url.lastIndexOf("/"));
+
+                Response tempRes = res.getEngine().get(url).assertOk();
+                JSMap   node    = tempRes.getFirstRecordAsMap();
+
+                String link = Chain.buildLink(node, rel);
+                newHref = new StringBuilder(link);
+
+//                String fk = data.findString(rel.getName());
+//                if(fk == null)
+//                    fk = data.findString("_links." + rel.getName() + ".href");
+//
+//                if(fk != null && fk.startsWith("http")){
+//                    newHref = new StringBuilder(fk);
+//                }
+
+                if (newHref == null)
+                    throw ApiException.new500InternalServerError("Unable to locate foreign key value for relationship '{}'", rel.getName());
+
+
             }
 
-            String query = req.getUrl().getQueryString();
-
-            if (query != null) {
+            Map<String, String> params = req.getUrl().getParams();
+            Utils.filter(params, Request.COLLECTION_KEY, Request.RESOURCE_KEY, Request.RELATIONSHIP_KEY);
+            if (params.size() > 0) {
+                String queryString = Url.toQueryString(params);
                 if (!newHref.toString().contains("?"))
                     newHref.append("?");
                 else
                     newHref.append("&");
 
-                newHref.append(query);
+                newHref.append(queryString);
             }
 
             Response included = req.getEngine().get(newHref.toString());
@@ -253,17 +269,34 @@ public class DbGetAction extends Action<DbGetAction> {
             return;
         } else if (req.getCollection() != null && !Utils.empty(req.getResourceKey())) {
             List<String> resourceKeys = Utils.explode(",", req.getResourceKey());
-            Term         term         = Term.term(null, "_key", req.getCollection().getPrimaryIndex().getName(), resourceKeys.toArray());
+            Term         term         = Term.term(null, "_key", req.getCollection().getResourceIndex().getName(), resourceKeys.toArray());
             req.getUrl().withParams(term.toString(), null);
         }
 
         Results results = select(req, req.getCollection(), req.getApi());
 
         if (results.size() == 0 && req.getResourceKey() != null && req.getCollectionKey() != null) {
+            res.withJson((JSNode)null);
             res.withStatus(Status.SC_404_NOT_FOUND);
         } else {
             //-- copy data into the response
             res.withRecords(results.getRows());
+
+            if(res.data().size() > 0) {
+                Collection coll = null;
+                if (req.getOp().getFunction() == Op.OpFunction.RELATED) {
+                    if (req.getRelationship() != null)
+                        coll = req.getRelationship().getCollection();
+                } else if (req.getOp().getFunction() == Op.OpFunction.FIND) {
+                    if (req.getCollection() != null)
+                        coll = req.getCollection();
+                }
+                if(coll != null){
+                    String lastKey = coll.encodeKeyFromJsonNames((JSMap)res.data().last());
+                    if(lastKey != null)
+                        res.withLastKey(lastKey);
+                }
+            }
 
             //------------------------------------------------
             //-- setup all of the meta section
@@ -285,7 +318,7 @@ public class DbGetAction extends Action<DbGetAction> {
                 res.withFoundRows(foundRows);
             }
 
-            if (results.size() > 0) {
+            if (results.size() > 0 && results.size() >= limit) {
                 if (req.getCollection() != null && req.getResourceKey() == null) {
                     List<Term> nextTerms = results.getNext();
                     if (nextTerms != null && !nextTerms.isEmpty()) {
@@ -304,15 +337,14 @@ public class DbGetAction extends Action<DbGetAction> {
                         res.withNext(next);
                     } else if (results.size() == limit && (foundRows < 0 || (offest + limit) < foundRows)) {
                         String next = req.getUrl().getOriginal();
-
-                        next = stripTerms(next, "offset", "page", "pageNum");
+                        next = stripTerms(next, "offset", "page", "pageNum", "pageNumber", "after");
 
                         if (!next.contains("?"))
                             next += "?";
                         if (!next.endsWith("?"))
                             next += "&";
 
-                        next += "pageNum=" + (page.getPageNum() + 1);
+                        next += "pageNumber=" + (page.getPageNum() + 1);
 
                         res.withNext(next);
                     }
@@ -330,14 +362,10 @@ public class DbGetAction extends Action<DbGetAction> {
 
             if (db == null) {
                 List<Db> dbs = api.getDbs();
-                if (dbs.size() == 1) {
-                    db = dbs.get(0);
-                } else {
-                    for (Db candidate : dbs) {
-                        if (candidate.getEndpointPath() != null && candidate.getEndpointPath().matches(req.getEndpointPath())) {
-                            db = candidate;
-                            break;
-                        }
+                for (Db candidate : dbs) {
+                    if (candidate.matches(req.getMethod(), req.getPath())) {
+                        db = candidate;
+                        break;
                     }
                 }
             }
@@ -352,51 +380,12 @@ public class DbGetAction extends Action<DbGetAction> {
 
         if (results.size() > 0) {
             if (collection != null)
-                expand(req, collection, (List<JSNode>) results.getRows(), null, null, null);
-
-            exclude(results.getRows());
+                expand(req, collection, (List<JSMap>) results.getRows(), null, null, null);
         }
 
         return results;
     }
 
-    protected void exclude(List<JSNode> nodes) {
-        Set<String> includes = Chain.peek().mergeEndpointActionParamsConfig("includes");
-        Set<String> excludes = Chain.peek().mergeEndpointActionParamsConfig("excludes");
-
-        if (includes.size() > 0 || excludes.size() > 0) {
-            for (JSNode node : nodes) {
-                exclude(node, includes, excludes, null);
-            }
-        }
-    }
-
-    //-------------------------------------------------------------------------------------
-    //-------------------------------------------------------------------------------------
-    //-Static Utils -----------------------------------------------------------------------
-    //-------------------------------------------------------------------------------------
-
-    protected void exclude(JSNode node, Set<String> includes, Set<String> excludes, String path) {
-        for (String key : node.keySet()) {
-            String attrPath = path != null ? (path + "." + key) : key;
-            if (exclude(attrPath, includes, excludes)) {
-                node.remove(key);
-            } else {
-                Object value = node.get(key);
-
-                if (value instanceof JSArray) {
-                    JSArray arr = (JSArray) value;
-                    for (int i = 0; i < arr.size(); i++) {
-                        if (arr.get(i) instanceof JSNode) {
-                            exclude((JSNode) arr.get(i), includes, excludes, attrPath);
-                        }
-                    }
-                } else if (value instanceof JSNode) {
-                    exclude((JSNode) value, includes, excludes, attrPath);
-                }
-            }
-        }
-    }
 
     /**
      * This is more complicated than it seems like it would need to be because
@@ -413,12 +402,17 @@ public class DbGetAction extends Action<DbGetAction> {
      * @param expandsPath the path we are currently on
      * @param pkCache     a cache of things already looked up
      */
-    protected void expand(Request request, Collection collection, List<JSNode> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) {
+    protected void expand(Request request, Collection collection, List<JSMap> parentObjs, Set expands, String expandsPath, MultiKeyMap pkCache) {
         if (parentObjs.size() == 0)
             return;
 
-        if (expands == null)
-            expands = Chain.peek().mergeEndpointActionParamsConfig("expands");
+        if (expands == null) {
+            String expandsStr = request.getUrl().getParam("expand");
+            if (expandsStr == null)
+                return;
+
+            expands = new LinkedHashSet(Utils.explode(",", expandsStr));
+        }
 
         if (expandsPath == null)
             expandsPath = "";
@@ -439,8 +433,8 @@ public class DbGetAction extends Action<DbGetAction> {
                     // already retrieved.
                     pkCache = new MultiKeyMap();
 
-                    for (JSNode node : parentObjs) {
-                        pkCache.put(collection, getResourceKey(node), node);
+                    for (JSMap node : parentObjs) {
+                        pkCache.put(collection, getResourceKey(collection, node), node);
                     }
                 }
 
@@ -457,7 +451,7 @@ public class DbGetAction extends Action<DbGetAction> {
                 List<KeyValue> relatedEks    = null;
 
                 if (rel.isManyToOne()) {
-                    idxToMatch = collection.getPrimaryIndex();
+                    idxToMatch = collection.getResourceIndex();
                     idxToRetrieve = rel.getFkIndex1();
 
                     //NOTE: expands() is only getting the paired up related keys.  For a MANY_TO_ONE
@@ -469,40 +463,55 @@ public class DbGetAction extends Action<DbGetAction> {
                     //would be exactly the same you would just end up running an extra db query
 
                     relatedEks = new ArrayList<>();
-                    for (JSNode parentObj : parentObjs) {
-                        String parentEk = getResourceKey(parentObj);
-                        String childEk  = parentObj.getString(rel.getName());
+                    for (JSMap parentObj : parentObjs) {
+                        String parentEk = getResourceKey(collection, parentObj);
+                        String childEk  = getForeignKey(rel, parentObj);
                         if (childEk != null) {
-                            childEk = getResourceKey(childEk);
                             relatedEks.add(new DefaultKeyValue(parentEk, childEk));
                         }
                     }
                 } else if (rel.isOneToMany()) {
-                    //               idxToMatch = rel.getFkIndex1();
-                    //               idxToRetrieve = rel.getRelated().getTable().getPrimaryIndex();//Resource().getKey().getColumn();
-
                     idxToMatch = rel.getFkIndex1();
-                    idxToRetrieve = rel.getRelated().getPrimaryIndex();
-
+                    idxToRetrieve = rel.getRelated().getResourceIndex();
                 } else if (rel.isManyToMany()) {
                     idxToMatch = rel.getFkIndex1();
                     idxToRetrieve = rel.getFkIndex2();
+                } else if(rel.isOneToOneParent()){
+                    relatedEks = new ArrayList<>();
+                    for (JSMap parentObj : parentObjs) {
+                        String parentEk = getResourceKey(collection, parentObj);
+                        String childEk  = parentEk; //TODO: this will not work if the columns are not in the same order
+                        if (childEk != null) {
+                            relatedEks.add(new DefaultKeyValue(parentEk, childEk));
+                        }
+                    }
                 }
+                else if(rel.isOneToOneChild()){
+                    relatedEks = new ArrayList<>();
+                    for (JSMap parentObj : parentObjs) {
+                        String parentEk = getResourceKey(collection, parentObj);
+                        String childEk  = parentEk; //TODO: this will not work if the columns are not in the same order
+                        if (childEk != null) {
+                            relatedEks.add(new DefaultKeyValue(parentEk, childEk));
+                        }
+                    }
+                }
+
 
                 if (relatedEks == null) {
                     List toMatchEks = new ArrayList<>();
-                    for (JSNode parentObj : parentObjs) {
-                        String parentEk = getResourceKey(parentObj);
+                    for (JSMap parentObj : parentObjs) {
+                        String parentEk = getResourceKey(collection, parentObj);
                         if (!toMatchEks.contains(parentEk)) {
-                            if (parentObj.get(rel.getName()) instanceof JSArray)
-                                throw ApiException.new500InternalServerError("Algorithm implementation error...this relationship seems to have already been expanded.");
+                            if (parentObj.get(rel.getName()) instanceof JSList)
+                                throw ApiException.new500InternalServerError("This relationship seems to have already been expanded.");//-- this is an implementation logic error. If it ever happens...FIX IT.
 
                             toMatchEks.add(parentEk);
 
                             if (rel.isManyToOne()) {
                                 parentObj.remove(rel.getName());
                             } else {
-                                parentObj.put(rel.getName(), new JSArray());
+                                parentObj.put(rel.getName(), new JSList());
                             }
                         }
                     }
@@ -527,7 +536,7 @@ public class DbGetAction extends Action<DbGetAction> {
                 }
 
                 //this recursive call populates the pkCache
-                List<JSNode> newChildObjs = recursiveGet(pkCache, relatedCollection, unfetchedChildEks, expandPath(expandsPath, rel.getName()));
+                List<JSMap> newChildObjs = recursiveGet(pkCache, relatedCollection, unfetchedChildEks, expandPath(expandsPath, rel.getName()));
 
                 for (KeyValue<String, String> row : relatedEks) {
                     String parentEk  = row.getKey();
@@ -536,11 +545,11 @@ public class DbGetAction extends Action<DbGetAction> {
                     JSNode parentObj = (JSNode) pkCache.get(collection, parentEk);
                     JSNode childObj  = (JSNode) pkCache.get(relatedCollection, relatedEk);
 
-                    if (rel.isManyToOne()) {
+                    if (rel.isManyToOne() || rel.isOneToOneParent() || rel.isOneToOneChild()) {
                         parentObj.put(rel.getName(), childObj);
                     } else {
                         if (childObj != null) {
-                            parentObj.getArray(rel.getName()).add(childObj);
+                            parentObj.getList(rel.getName()).add(childObj);
                         }
                     }
                 }
@@ -563,14 +572,14 @@ public class DbGetAction extends Action<DbGetAction> {
         columns.addAll(idxToRetrieve.getColumnNames());
 
         Term termKeys = Term.term(null, "_key", idxToMatch.getName(), toMatchEks);
-        Term includes = Term.term(null, "includes", columns);
+        Term includes = Term.term(null, "include", columns);
         Term sort     = Term.term(null, "sort", columns);
         Term notNull  = Term.term(null, "nn", columns);
 
         String   link = Chain.buildLink(idxToRetrieve.getCollection());
         Response res  = Chain.peek().getEngine().get(link, Arrays.asList(termKeys, includes, sort, notNull)).assertOk();
 
-        for (JSNode node : res.data().asNodeList()) {
+        for (JSNode node : res.data().asMapList()) {
             List idxToMatchVals = new ArrayList<>();
 
             for (String property : idxToMatch.getJsonNames()) {
@@ -600,8 +609,8 @@ public class DbGetAction extends Action<DbGetAction> {
                 idxToRetrieveVals.add(propVal);
             }
 
-            String parentEk  = Collection.encodeResourceKey(idxToMatchVals);
-            String relatedEk = Collection.encodeResourceKey(idxToRetrieveVals);
+            String parentEk  = Collection.encodeKey(idxToMatchVals);
+            String relatedEk = Collection.encodeKey(idxToRetrieveVals);
 
             related.add(new DefaultKeyValue<>(parentEk, relatedEk));
         }
@@ -609,11 +618,11 @@ public class DbGetAction extends Action<DbGetAction> {
         return related;
     }
 
-    protected List<JSNode> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection resourceKeys, String expandsPath) throws ApiException {
+    protected List<JSMap> recursiveGet(MultiKeyMap pkCache, Collection collection, java.util.Collection resourceKeys, String expandsPath) throws ApiException {
         if (resourceKeys.size() == 0)
             return Collections.EMPTY_LIST;
 
-        String url = Chain.buildLink(collection, Utils.implode(",", resourceKeys), null);
+        String url = Chain.buildLink(collection, Utils.implode(",", resourceKeys));
 
         //      //--
         //      //-- Nested param support
@@ -650,12 +659,12 @@ public class DbGetAction extends Action<DbGetAction> {
         } else if (sc == 500) {
             res.rethrow();
         } else if (sc == 200) {
-            List<JSNode> nodes = (List<JSNode>) res.getData().asList();
+            List<JSMap> nodes = res.data().asMapList();
 
-            for (JSNode node : nodes) {
-                Object resourceKey = getResourceKey(node);
+            for (JSMap node : nodes) {
+                Object resourceKey = getResourceKey(collection, node);
                 if (pkCache.containsKey(collection, resourceKey)) {
-                    throw ApiException.new500InternalServerError("FIX ME IF FOUND.  Algorithm Implementation Error");
+                    throw ApiException.new500InternalServerError("The requested resource has already been retrieved.");//-- logic error...fix me if found.
                 }
 
                 pkCache.put(collection, resourceKey, node);

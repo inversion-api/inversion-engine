@@ -112,54 +112,54 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
         withTestRequest("manyTManyNotExistsNe", "employees?ne(orderdetails.quantity,12)");
         withTestRequest("eqNonexistantColumn", "orders?ge(orderId, 1000)&eq(nonexistantColumn,12)");
 
-        //        withExpectedResult("eq", "PUT YOUR SQL HERE");//
-        //        withExpectedResult("ne", "");//
-        //        withExpectedResult("n", "");
-        //        withExpectedResult("nn", "");
-        //        withExpectedResult("emp", "");
-        //        withExpectedResult("nemp", "");
-        //        withExpectedResult("likeMiddle", "");
-        //        withExpectedResult("likeStartsWith", "");
-        //        withExpectedResult("likeEndsWith", "");
-        //        withExpectedResult("sw", "");
-        //        withExpectedResult("ew", "");
-        //        withExpectedResult("w", "");
-        //        withExpectedResult("wo", "");
-        //        withExpectedResult("lt", "");
-        //        withExpectedResult("le", "");
-        //        withExpectedResult("gt", "");
-        //        withExpectedResult("ge", "");
-        //        withExpectedResult("in", "");
-        //        withExpectedResult("out", "");
-        //        withExpectedResult("and", "");
-        //        withExpectedResult("or", "");
-        //        withExpectedResult("not", "");
-        //        withExpectedResult("as", "");
-        //        withExpectedResult("includes", "");
-        //        withExpectedResult("distinct", "");
-        //        withExpectedResult("count1", "");
-        //        withExpectedResult("count2", "");
-        //        withExpectedResult("count3", "");
-        //        withExpectedResult("countAs", "");
-        //        withExpectedResult("sum", "");
-        //        withExpectedResult("sumAs", "");
-        //        withExpectedResult("sumIf", "");
-        //        withExpectedResult("min", "");
-        //        withExpectedResult("max", "");
-        //        withExpectedResult("groupCount", "");
-        //        withExpectedResult("offset", "");
-        //        withExpectedResult("limit", "");
-        //        withExpectedResult("page", "");
-        //        withExpectedResult("pageNum", "");
-        //        withExpectedResult("after", "");
-        //        withExpectedResult("sort", "");
-        //        withExpectedResult("order", "");
-        //        withExpectedResult("onToManyExistsEq", "");
-        //        withExpectedResult("onToManyNotExistsNe", "");
-        //        withExpectedResult("manyToOneExistsEq", "");
-        //        withExpectedResult("manyToOneNotExistsNe", "");
-        //        withExpectedResult("manyTManyNotExistsNe", "");
-        //        withExpectedResult("eqNonexistantColumn", "");
+                withExpectedResult("eq", "PUT YOUR SQL HERE");//
+                withExpectedResult("ne", "");//
+                withExpectedResult("n", "");
+                withExpectedResult("nn", "");
+                withExpectedResult("emp", "");
+                withExpectedResult("nemp", "");
+                withExpectedResult("likeMiddle", "");
+                withExpectedResult("likeStartsWith", "");
+                withExpectedResult("likeEndsWith", "");
+                withExpectedResult("sw", "");
+                withExpectedResult("ew", "");
+                withExpectedResult("w", "");
+                withExpectedResult("wo", "");
+                withExpectedResult("lt", "");
+                withExpectedResult("le", "");
+                withExpectedResult("gt", "");
+                withExpectedResult("ge", "");
+                withExpectedResult("in", "");
+                withExpectedResult("out", "");
+                withExpectedResult("and", "");
+                withExpectedResult("or", "");
+                withExpectedResult("not", "");
+                withExpectedResult("as", "");
+                withExpectedResult("includes", "");
+                withExpectedResult("distinct", "");
+                withExpectedResult("count1", "");
+                withExpectedResult("count2", "");
+                withExpectedResult("count3", "");
+                withExpectedResult("countAs", "");
+                withExpectedResult("sum", "");
+                withExpectedResult("sumAs", "");
+                withExpectedResult("sumIf", "");
+                withExpectedResult("min", "");
+                withExpectedResult("max", "");
+                withExpectedResult("groupCount", "");
+                withExpectedResult("offset", "");
+                withExpectedResult("limit", "");
+                withExpectedResult("page", "");
+                withExpectedResult("pageNum", "");
+                withExpectedResult("after", "");
+                withExpectedResult("sort", "");
+                withExpectedResult("order", "");
+                withExpectedResult("onToManyExistsEq", "");
+                withExpectedResult("onToManyNotExistsNe", "");
+                withExpectedResult("manyToOneExistsEq", "");
+                withExpectedResult("manyToOneNotExistsNe", "");
+                withExpectedResult("manyTManyNotExistsNe", "");
+                withExpectedResult("eqNonexistantColumn", "");
     }
 
     @Test
@@ -181,9 +181,9 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
 
             Results.LAST_QUERY = null;
 
-            Response res = runTest(getEngine(), urlPrefix, testKey, queryString);
+            Response res = runTest(getEngine(), urlPrefix, testKey, queryString + "&explain=true");
 
-            String maybeMatch = !Utils.empty(Results.LAST_QUERY) ? Results.LAST_QUERY : res.findString("message");
+            String maybeMatch = !Utils.empty(Results.LAST_QUERY) ? Results.LAST_QUERY : res.findString("error");
 
             if (Utils.empty(expected))
                 expected = "YOU NEED TO SUPPLY A MATCH FOR THIS TEST: " + maybeMatch;
@@ -191,7 +191,12 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
             if (!verifyTest(testKey, queryString, expected, res)) {
                 System.out.println("FAILED: " + testKey);
                 System.out.println(" - expected: " + expected);
-                System.out.println(" - received: " + (Results.LAST_QUERY != null ? Results.LAST_QUERY : maybeMatch));
+
+                String received = (Results.LAST_QUERY != null ? Results.LAST_QUERY : maybeMatch);
+                if(received != null && received.indexOf(":") > 0)
+                    received = received.substring(received.indexOf(":")+1).trim();
+
+                System.out.println(" - received: " + received);
 
                 res.dump();
                 failures.put(testKey, res.getStatus() + " - " + maybeMatch);
@@ -247,6 +252,11 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
                 return false;
         }
 
+        if(res.getError() != null)
+            res.getError().printStackTrace();
+
+        //res.dump();
+
         String debug = res.getDebug();
         if (debug == null)
             return false;
@@ -258,7 +268,13 @@ public abstract class AbstractRqlTest implements AbstractEngineTest {
         {
             //if the tests produced an error, make sure the users is matching against the error
             if(res.getError() != null) {
+                res.getError().printStackTrace();
                 String errorContent = res.getError().getMessage();
+                if(errorContent == null){
+                    res.getError().printStackTrace();
+                    Utils.rethrow(res.getError());
+                }
+
                 doesContain = errorContent.contains(expectedMatch);
             }
         }

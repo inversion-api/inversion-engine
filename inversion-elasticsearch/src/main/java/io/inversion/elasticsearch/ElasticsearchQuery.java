@@ -20,9 +20,10 @@ import io.inversion.ApiException;
 import io.inversion.Chain;
 import io.inversion.Collection;
 import io.inversion.Results;
+import io.inversion.json.JSParser;
 import io.inversion.rql.*;
 import io.inversion.rql.Order.Sort;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSNode;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -64,7 +65,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
         Results         results = new Results(this);
         ElasticsearchDb db      = getDb();
 
-        Chain.debug(collection);
+        Chain.debug(collection + "");
 
         //-- for test cases and query explain
         String debug = "ElasticsearchDb: index: " + collection.getName() + ", QueryBuilder=" + this.getJson();
@@ -278,14 +279,14 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
 
             for (Term term : select.getTerms()) {
                 String token = term.getToken();
-                if (token.equalsIgnoreCase("source") || token.equalsIgnoreCase("includes")) {
+                if (token.equalsIgnoreCase("source") || token.equalsIgnoreCase("include")) {
                     if (includesList == null)
                         includesList = new ArrayList<>();
 
                     for (Term selectTerm : term.getTerms()) {
                         includesList.add(selectTerm.getToken());
                     }
-                } else if (token.equalsIgnoreCase("excludes")) {
+                } else if (token.equalsIgnoreCase("exclude")) {
                     if (excludesList == null)
                         excludesList = new ArrayList<>();
 
@@ -367,7 +368,7 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
     }
 
     public JSNode getJson() {
-        return JSNode.parseJsonNode(getSearchBuilder().toString());
+        return JSParser.asJSNode(getSearchBuilder().toString());
     }
 
     /**

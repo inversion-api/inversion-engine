@@ -19,8 +19,7 @@ package io.inversion.cosmosdb;
 import io.inversion.*;
 import io.inversion.action.db.DbAction;
 import io.inversion.jdbc.JdbcDbFactory;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Path;
+import io.inversion.json.JSNode;
 import io.inversion.utils.Utils;
 
 import java.util.HashSet;
@@ -40,7 +39,7 @@ public class CosmosDbFactory {
         final Api api = new Api("northwind");
 
         api.withDb(cosmosdb);
-        api.withEndpoint("GET,PUT,POST,DELETE", "cosmosdb/*", new Action() {
+        api.withEndpoint("GET,PUT,POST,:cosmosdb/*", new Action() {
 
                     public void run(Request req, Response res) throws ApiException {
                         String collectionKey = req.getCollectionKey().toLowerCase();
@@ -51,7 +50,7 @@ public class CosmosDbFactory {
 
                         JSNode json = req.getJson();
                         if (json != null) {
-                            json.asNodeList().forEach(node -> node.put("type", collectionKey.toLowerCase()));
+                            json.asMapList().forEach(node -> node.put("type", collectionKey.toLowerCase()));
                         }
                     }
                 }//
@@ -60,7 +59,7 @@ public class CosmosDbFactory {
         Engine dstEngine = new Engine(api);
 
         Engine srcEngine = new Engine().withApi(new Api("northwind") //
-                .withEndpoint("*", "source" + "/*", new DbAction())//
+                .withEndpoint("source" + "/*", new DbAction())//
                 .withDb(JdbcDbFactory.bootstrapH2("cosmos_source")));
 
         //if (rebuildCosmos)
@@ -78,7 +77,7 @@ public class CosmosDbFactory {
             //Set<Object> orderIds = new HashSet<>();
             Set<Object> customerIds = new HashSet<>();
 
-            for (JSNode order : res.getData().asNodeList()) {
+            for (JSNode order : res.data().asMapList()) {
                 cleanSourceNode("orders", order);
 
                 //orderIds.add(order.get("orderid"));
@@ -86,13 +85,13 @@ public class CosmosDbFactory {
 
                 res = srcEngine.get("/northwind/source/orderDetails?orderId=" + order.get("orderid"));
 
-                for (JSNode details : res.getData().asNodeList()) {
+                for (JSNode details : res.data().asMapList()) {
                     cleanSourceNode("orderDetails", details);
                     details.remove("employees");
                     details.remove("order");
                     details.remove("orderid");
                 }
-                order.put("orderDetails", res.getData());
+                order.put("orderDetails", res.data());
                 dstEngine.post("/northwind/cosmosdb/orders", order).assertOk();
             }
 
@@ -106,13 +105,13 @@ public class CosmosDbFactory {
 
             String getCustomers = "/northwind/source/customers?in(customerid," + Utils.implode(",", customerIds) + ")";
             res = srcEngine.get(getCustomers).assertOk();
-            for (JSNode customer : res.getData().asNodeList()) {
+            for (JSNode customer : res.data().asMapList()) {
                 cleanSourceNode("customers", customer);
                 dstEngine.post("/northwind/cosmosdb/customers", customer).assertOk();
             }
 
             res = srcEngine.get("/northwind/source/employees").assertOk();
-            for (JSNode employee : res.getData().asNodeList()) {
+            for (JSNode employee : res.data().asMapList()) {
                 employee.remove("employees");
                 cleanSourceNode("employees", employee);
                 dstEngine.post("/northwind/cosmosdb/employees", employee).assertOk();
@@ -163,10 +162,10 @@ public class CosmosDbFactory {
 
             res = e.get(url).assertOk();
 
-            if (res.getData().size() == 0)
+            if (res.data().size() == 0)
                 break;
 
-            for (JSNode order : res.getData().asNodeList()) {
+            for (JSNode order : res.data().asMapList()) {
                 res = e.delete(order.getString("href"));
                 res.assertOk();
             }
@@ -182,7 +181,7 @@ public class CosmosDbFactory {
         @Override
         public void configDb() throws ApiException {
             withDb("inversion-testing-cosmos1");
-            withEndpointPath(new Path("cosmosdb/[:type]/*"));
+            withIncludeOn("cosmosdb/[:type]/*");
 
             Collection customersTbl = new Collection("customers").withTableName("Northwind")//
 
@@ -221,7 +220,7 @@ public class CosmosDbFactory {
                     .withProperty("reportsTo", "number")//
                     .withProperty("salary", "number");
 
-            //         employeesTbl.withIndex("fkIdx_Employees_reportsTo", "FOREIGN_KEY", false, "type", "reportsTo");
+            //         employeesTbl.withIndex("fkIdx_Employees_reportsTo", Index.TYPE_FOREIGN_KEY, false, "type", "reportsTo");
             //         employeesTbl.getProperty("type").withPk(employeesTbl.getProperty("type"));
             //         employeesTbl.getProperty("reportsTo").withPk(employeesTbl.getProperty("employeeId"));
 

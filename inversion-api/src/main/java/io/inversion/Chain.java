@@ -16,23 +16,29 @@
  */
 package io.inversion;
 
-import io.inversion.utils.*;
+import io.inversion.json.JSList;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.utils.Path;
+import io.inversion.utils.Utils;
 import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import java.util.*;
 
-public class Chain {
-    static          ThreadLocal<Stack<Chain>>          chainLocal = new ThreadLocal<>();
+public final class Chain {
+
+    public static final Set<String> APPEND_PARAMS = Collections.unmodifiableSet(Utils.add(new HashSet(), "include", "exclude", "collapse"));
+
+    static          ThreadLocal<Stack<Chain>>          chainLocal         = new ThreadLocal<>();
     protected final Engine                             engine;
-    protected final List<ActionMatch>                  actions    = new ArrayList<>();
+    protected final List<ActionMatch>                  actions            = new ArrayList<>();
     protected final Request                            request;
     protected final Response                           response;
-    protected final CaseInsensitiveMap<String, Object> vars       = new CaseInsensitiveMap<>();
-    protected       int                                next       = 0;
-    protected       boolean                            canceled   = false;
-    protected       User                               user       = null;
-    protected       Chain                              parent     = null;
-    protected       Map<String, String>                pathParams = new HashMap();
+    protected final CaseInsensitiveMap<String, Object> vars               = new CaseInsensitiveMap<>();
+    protected       int                                next               = 0;
+    protected       boolean                            canceled           = false;
+    protected       User                               user               = null;
+    protected       Chain                              parent             = null;
     protected       Set<String>                        pathParamsToRemove = new HashSet();
 
     private Chain(Engine engine, Request req, Response res) {
@@ -56,6 +62,11 @@ public class Chain {
 
     public static int getDepth() {
         return get().size();
+    }
+
+    public static boolean isRoot() {
+        Stack<Chain> stack = get();
+        return stack.isEmpty() || stack.size() == 1;
     }
 
     public static Chain first() {
@@ -113,7 +124,11 @@ public class Chain {
         return get().size();
     }
 
-    public static void debug(Object... msgs) {
+    public static void debug(String format, Object... args) {
+
+        if (format == null || format.trim().length() == 0)
+            return;
+
         Stack<Chain> stack = get();
         if (stack.size() < 1) {
             return;
@@ -123,145 +138,47 @@ public class Chain {
         for (int i = 1; i < stack.size(); i++)
             prefix.append("   ");
 
-        if (msgs != null && msgs.length == 1 && msgs[0].toString().trim().length() == 0)
-            return;
+        format = prefix.toString() + format;
 
         Chain root = stack.get(0);
-        root.response.debug(prefix.toString(), msgs);
+        root.response.debug(format, args);
+    }
+
+    public static String buildLink(JSMap fromHere, Relationship toHere) {
+        String link = null;
+        if (toHere.isManyToOne()) {
+            String fkval = null;
+            if (toHere.getRelated().getResourceIndex().size() != toHere.getFkIndex1().size() && toHere.getFkIndex1().size() == 1) {
+                fkval = toHere.getCollection().encodeKeyFromJsonNames(fromHere, toHere.getFkIndex1());
+            } else {
+                //this value is already an encoded resourceKey
+                Object obj = fromHere.get(toHere.getFk1Col1().getJsonName());
+                if (obj != null)
+                    fkval = obj.toString();
+            }
+
+            if (fkval != null) {
+                link = Chain.buildLink(toHere.getRelated(), fkval);
+            }
+        } else {
+            //link = Chain.buildLink(req.getCollection(), resourceKey, rel.getName());
+            String resourceKey = toHere.getCollection().encodeKeyFromJsonNames(fromHere);
+            link = Chain.buildLink(toHere.getCollection(), resourceKey);
+        }
+        return link;
     }
 
     public static String buildLink(Collection collection) {
-        return buildLink(collection, null, null);
+        return buildLink(collection, null);
     }
 
-    public static String buildLink(String collectionKey, String entityKey)
-    {
-        Request req = Chain.peek().getRequest();
-        String url = req.getUrl().toString();
-        if (url.indexOf("?") >= 0)
-            url = url.substring(0, url.indexOf("?"));
-
-        if (req.getSubCollectionKey() != null)
-        {
-            url = url.substring(0, url.lastIndexOf("/"));
-        }
-
-        if (req.getEntityKey() != null)
-        {
-            url = url.substring(0, url.lastIndexOf("/"));
-        }
-
-        if (collectionKey != null && req.getCollectionKey() != null)
-        {
-            url = url.substring(0, url.lastIndexOf("/"));
-        }
-
-        if (collectionKey != null)
-            url += "/" + collectionKey;
-
-        if (entityKey != null)
-            url += "/" + entityKey;
-
-        if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
-        {
-            String newUrl = req.getApi().getUrl();
-            while (newUrl.endsWith("/"))
-                newUrl = newUrl.substring(0, newUrl.length() - 1);
-
-            url = newUrl + url.substring(url.indexOf("/", 8));
-        }
-
-        return url;
+    public static String buildLink(Collection collection, String resourceKey) {
+        return buildLink(collection, resourceKey, null);
     }
 
-    public static String buildLink(Collection collection, Object resourceKey, String subCollectionKey) {
+    public static String buildLink(Collection collection, String resourceKey, String relationshipKey) {
         Request req = top().getRequest();
-
-        String collectionKey = collection.getName();
-
-        if (req.getCollection() == collection)
-            collectionKey = req.getCollectionKey();
-
-        StringBuilder url = new StringBuilder(Utils.empty(req.getApiUrl()) ? "" : req.getApiUrl());
-
-        if (!Utils.endsWith(url, "/"))
-            url.append("/");
-
-        if (req.getCollection() != null && (collection == req.getCollection() || collection.getDb() == req.getCollection().getDb()))//
-        {
-            //going after the same collection...so must be going after the same endpoint
-            //so get the endpoint path from the current request and ame sure it is on the url.
-
-            Path epp = req.getEndpointPath();
-
-            if (epp != null && epp.size() > 0) {
-                url.append(epp).append("/");
-            }
-        } else if (collection.getDb().getEndpointPath() != null) {
-            Path epP = collection.getDb().getEndpointPath();
-
-            for (int i = 0; i < epP.size(); i++) {
-                if (epP.isWildcard(i))
-                    break;
-
-                if (epP.isVar(i)) {
-                    String value;
-                    String name = epP.getVarName(i);
-                    switch (name.toLowerCase()) {
-                        case "collection":
-                            value = collection.getName();
-                            break;
-                        case "resource":
-                            value = resourceKey + "";
-                            break;
-                        case "relationship":
-                            value = subCollectionKey;
-                            break;
-                        default:
-                            value = req.getUrl().getParam(name);
-                    }
-                    if (value == null)
-                        throw ApiException.new500InternalServerError("Unable to determine path for link to collection '{}', resource '{}', relationship '{}'", collection.getName(), resourceKey + "", subCollectionKey + "");
-
-                    url.append(epP.get(i)).append("/");
-                } else {
-                    url.append(epP.get(i)).append("/");
-                }
-            }
-
-            url.append(collection.getDb().getEndpointPath()).append("/");
-        }
-
-        if (!Utils.empty(collectionKey)) {
-            if (!Utils.endsWith(url, "/"))
-                url.append("/");
-
-            url.append(collectionKey);
-        }
-
-        if (!Utils.empty(resourceKey))
-            url.append("/").append(resourceKey.toString());
-
-        if (!Utils.empty(subCollectionKey))
-            url.append("/").append(subCollectionKey);
-
-        if (req.getApi().getUrl() != null && !Utils.startsWith(url, req.getApi().getUrl())) {
-            String newUrl = req.getApi().getUrl();
-            while (newUrl.endsWith("/"))
-                newUrl = newUrl.substring(0, newUrl.length() - 1);
-
-            url = new StringBuilder(newUrl).append(url.substring(url.indexOf("/", 8)));
-        }
-
-        if (req.getApi() != null) {
-            if (Utils.empty(req.getApi().getUrl())) {
-                String proto = req.getHeader("x-forwarded-proto");
-                if (!Utils.empty(proto)) {
-                    url = new StringBuilder(proto).append(url.substring(url.indexOf(":")));
-                }
-            }
-        }
-        return url.toString();
+        return req.getApi().getLinker().buildLink(req, collection, resourceKey, relationshipKey);
     }
 
     public Chain withUser(User user) {
@@ -298,16 +215,9 @@ public class Chain {
         if (vars.containsKey(key))
             return vars.get(key);
 
-        Object value = getConfig(key);
+        Object value = request.getUrl().getParam(key);
         if (value != null)
             return value;
-
-        //      for (int i = next - 1; i >= 0; i--)
-        //      {
-        //         Object param = actions.get(i).getConfig(key);
-        //         if (!Utils.empty(param))
-        //            return param;
-        //      }
 
         if (parent != null)
             return parent.get(key);
@@ -319,141 +229,45 @@ public class Chain {
         if (vars.containsKey(key))
             return vars.remove(key);
 
-        return getConfig(key + "");
-    }
-
-    /**
-     * Returns the combined list of endpoint/action stack/request params
-     * for the supplied key
-     * <p>
-     * This for example, allows you to add to but not remove from
-     * a configured "excludes" parameter
-     * <p>
-     * All returned values are lower case
-     *
-     * @param key the name of the param to merge
-     * @return the combined list of values found for key
-     */
-    public Set<String> mergeEndpointActionParamsConfig(String key) {
-        List<String> values = new LinkedList<>();
-
-        String value = request.getEndpoint().getConfig(key);
-        if (value != null) {
-            value = value.toLowerCase();
-            values.addAll(Utils.explode(",", value));
-        }
-
-        for (int i = next - 1; i >= 0; i--) {
-            value = actions.get(i).action.getConfig(key);
-            if (value != null) {
-                value = value.toLowerCase();
-                values.addAll(Utils.explode(",", value));
-            }
-        }
-
-        value = request.getUrl().getParam(key);
-        if (value != null) {
-            value = value.toLowerCase();
-            values.addAll(Utils.explode(",", value));
-        }
-
-        for (int i = 0; i < values.size(); i++) {
-            value = values.get(i);
-            value = Utils.dequote(value);
-            values.set(i, value);
-        }
-
-        return new LinkedHashSet<>(values);
-    }
-
-    public Map<String, String> getConfig() {
-        Map<String, String> config = new HashMap<>();
-        for (String key : getConfigKeys()) {
-            config.put(key, getConfig(key));
-        }
-        return config;
-    }
-
-    public Set<String> getConfigKeys() {
-        Set<String> keys = request.getEndpoint().getConfigKeys();
-        for (int i = next - 1; i >= 0; i--) {
-            keys.addAll(actions.get(i).action.getConfigKeys());
-        }
-
-        return keys;
-    }
-
-    public int getConfig(String key, int defaultValue) {
-        return Integer.parseInt(getConfig(key, defaultValue + ""));
-    }
-
-    public boolean getConfig(String key, boolean defaultValue) {
-        return Boolean.parseBoolean(getConfig(key, defaultValue + ""));
-    }
-
-    public String getConfig(String key) {
-        return getConfig(key, null);
-    }
-
-    public String getConfig(String key, String defaultValue) {
-        if (request == null) {
-            System.out.println("The Request on the Chain is null, this should never happen");
-        } else if (request.getEndpoint() == null) {
-            System.out.println("The Endpoint on the Request is null, this should never happen");
-            System.out.println(" -- Chain stack starting with this chain and then every parent after");
-
-            Chain tempChain = this;
-            while (tempChain != null) {
-                System.out.println(" ----  " + tempChain + " ::: " + tempChain.getRequest() + " ::: " + tempChain.getRequest().getUrl());
-                tempChain = tempChain.getParent();
-            }
-        }
-
-        String value;
-
-        for (int i = next - 1; i >= 0; i--) {
-            value = actions.get(i).action.getConfig(key);
-            if (!Utils.empty(value)) {
-                return value;
-            }
-        }
-
-        value = request.getEndpoint().getConfig(key);
-        if (!Utils.empty(value)) {
-            return value;
-        }
-
-        return defaultValue;
+        return get(key);
     }
 
     public void go() throws ApiException {
         boolean root = next == 0;
-        if(root && pathParams.size() > 0){
-            applyPathParams(pathParams, request.getUrl(), request.getJson());
-        }
-
         try {
+            //TODO: this is not correct, the Params in the op should have a source and get applied from the op params based on the source not being an action
+////////            if (root)
+////////                applyRuleParams(getRequest().getUrl(), getServer(), getEndpoint());
+
+
             while (next()) {
                 //-- intentionally empty
             }
-        }
-        finally{
-            if(root) {
-                JSNode json = response.getJson();
-                filterPathParams(json);
+
+        } finally {
+            if (root) {
+                JSNode json = null;
+                try{
+                    json = request.getJson();
                 }
+                catch(Exception ex){
+                    //response not json, OK
+                }
+                filterPathParams(json);
             }
+        }
     }
 
     /**
      * Recursively removes any url path params that appear as properties in the json
+     *
      * @param json the json node to clean
      * @return this
      */
-    public Chain filterPathParams(JSNode json){
-        if (json != null && pathParams.size() > 0) {
+    public Chain filterPathParams(JSNode json) {
+        if (json != null && request.pathParams.size() > 0) {
             json.streamAll()
-                    .filter(node -> node instanceof JSNode && !(node instanceof JSArray))
+                    .filter(node -> node instanceof JSNode && !(node instanceof JSList))
                     .forEach(node -> {
                         pathParamsToRemove.forEach(key -> ((JSNode) node).remove(key));
                     });
@@ -461,25 +275,13 @@ public class Chain {
         return this;
     }
 
-
-    public Chain doNext(Action... newActions){
-        for(int i=0; newActions != null && i<newActions.length; i++){
-            Action action = newActions[i];
-            if(action == null)
-                continue;
-            ActionMatch am = new ActionMatch(new Path("*"), new Path("*"), action);
-            actions.add(next + i, am);
-        }
-        return this;
-    }
-
-    public Chain skipNext(){
-        next +=1;
+    public Chain skipNext() {
+        next += 1;
         return this;
     }
 
     public Action getNext() {
-        if(hasNext())
+        if (hasNext())
             return actions.get(next).action;
         return null;
     }
@@ -490,33 +292,63 @@ public class Chain {
             next += 1;
 
             Map<String, String> pathParams = new HashMap<>();
-            actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
-
-            applyPathParams(pathParams, request.getUrl(), request.getJson());
-
+            if (actionMatch.path != null) {
+                actionMatch.rule.extract(pathParams, new Path(actionMatch.path));
+                JSNode json = null;
+                try {
+                    json = request.getJson();
+                } catch (Exception ex) {
+                    //--body might not be json, OK to be null below
+                    //ex.printStackTrace();
+                }
+                applyPathParams(pathParams, request.getUrl(), json);
+            }
+////////            applyRuleParams(request.getUrl(), actionMatch.action);
             actionMatch.action.run(request, response);
             return true;
         }
         return false;
     }
 
-    public Chain withPathParams(Map<String, String> pathParams){
-        this.pathParams.putAll(pathParams);
-        return this;
-    }
+//    public Chain withPathParams(Map<String, String> pathParams){
+//        this.pathParams.putAll(pathParams);
+//        return this;
+//    }
 
-    public void applyPathParams(Map<String, String> pathParamsToAdd, Url url, JSNode json) {
+    void applyPathParams(Map<String, String> pathParamsToAdd, Url url, JSNode json) {
         pathParamsToAdd.keySet().forEach(url::clearParams);
         pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null)).forEach(e -> url.withParam(e.getKey(), e.getValue()));
 
         if (json != null) {
-            json.stream()
-                    .filter(node -> node instanceof JSNode && !(node instanceof JSArray))
+            json.asList().stream()
+                    .filter(node -> node instanceof JSMap)
                     .forEach(node -> pathParamsToAdd.entrySet().stream().filter((e -> e.getValue() != null && !e.getKey().startsWith("_"))).forEach(e -> ((JSNode) node).put(e.getKey(), e.getValue())));
         }
 
         pathParamsToRemove.addAll(pathParamsToAdd.keySet());
     }
+
+
+//    public Chain applyRuleParams(Url url, Rule... rules) {
+//        for (Rule rule : rules) {
+//            if (rule == null)
+//                continue;
+//            String query = rule.getQuery();
+//            if (query != null) {
+//                Url temp = new Url("http://127.0.0.1?" + query);
+//                for (String name : temp.getParams().keySet()) {
+//                    String value = temp.getParam(name);
+//                    if (APPEND_PARAMS.contains(name.toLowerCase())) {
+//                        String previous = url.getParam(name);
+//                        if (previous != null)
+//                            value = value + "," + previous;
+//                    }
+//                    url.withParam(name, value);
+//                }
+//            }
+//        }
+//        return this;
+//    }
 
     public boolean hasNext() {
         return !isCanceled() && next < actions.size();
@@ -536,6 +368,10 @@ public class Chain {
 
     public Api getApi() {
         return request.getApi();
+    }
+
+    public Server getServer() {
+        return request.getServer();
     }
 
     public Endpoint getEndpoint() {
@@ -568,7 +404,7 @@ public class Chain {
         return response;
     }
 
-    static class ActionMatch implements Comparable<ActionMatch> {
+    public static class ActionMatch implements Comparable<ActionMatch> {
         final Path   rule;
         final Path   path;
         final Action action;
@@ -587,6 +423,18 @@ public class Chain {
 
         public String toString() {
             return rule + " " + path + " " + action;
+        }
+
+        public Path getRule() {
+            return rule;
+        }
+
+        public Path getPath() {
+            return path;
+        }
+
+        public Action getAction() {
+            return action;
         }
     }
 

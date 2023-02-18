@@ -22,14 +22,16 @@ import io.inversion.Api;
 import io.inversion.Engine;
 import io.inversion.Request;
 import io.inversion.Response;
-import io.inversion.utils.JSNode;
-import io.inversion.utils.Url;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSParser;
+import io.inversion.Url;
 import io.inversion.utils.Utils;
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,12 +49,12 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
 
         String input = Utils.read(new BufferedInputStream(inputStream));
 
-        JSNode    responseBody = new JSNode();
+        JSNode    responseBody = new JSMap();
         JSNode    config       = null;
         Exception ex           = null;
 
         try {
-            JSNode json = JSNode.parseJsonNode(input);
+            JSNode json = JSParser.asJSNode(input);
 
             debug("Request Event");
             debug(json.toString(false));
@@ -76,7 +78,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
                 servletPath = pathStr.substring(0, pathStr.length() - proxyStr.length());
             }
 
-            config = new JSNode("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
+            config = new JSMap("method", method, "host", host, "path", path, "url", url.toString(), "profile", profile, "proxyPath", proxyPath, "servletPath", servletPath);
 
             if (engine == null) {
                 synchronized (this) {
@@ -87,11 +89,14 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
                 }
             }
 
-            JSNode              jsonHeaders = json.getNode("headers");
-            Map<String, String> headers     = jsonHeaders == null ? new HashMap<>() : (Map<String, String>) jsonHeaders.asMap();
+
+            ArrayListValuedHashMap<String, String> headers     = new ArrayListValuedHashMap<>();
+            JSMap                                 jsonHeaders = json.getMap("headers");
+            if(jsonHeaders != null)
+                headers.putAll((Map<String, String>)headers);
 
             JSNode              jsonParams = json.getNode("queryStringParameters");
-            Map<String, String> params     = jsonParams == null ? new HashMap<>() : (Map<String, String>) jsonParams.asMap();
+            Map<String, String> params     = jsonParams == null ? new HashMap<>() : (Map<String, String>) jsonParams;
 
             String body = json.getString("body");
 
@@ -100,7 +105,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
                 params.putAll(postParams);
             }
 
-            Request  req = new Request(method, url.toString(), headers, params, body);
+            Request  req = new Request(method, url.toString(), body, params, headers);
             Response res = new Response();
 
             engine.service(req, res);
@@ -118,12 +123,12 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
 
                 responseBody.put("error", Utils.getShortCause(ex));
 
-                responseBody.put("request", JSNode.parseJsonNode(input));
+                responseBody.put("request", JSParser.asJSNode(input));
 
-                JSNode responseJson = new JSNode();
+                JSNode responseJson = new JSMap();
                 responseJson.put("isBase64Encoded", false);
                 responseJson.put("statusCode", "500");
-                responseJson.put("headers", new JSNode("Access-Control-Allow-Origin", "*"));
+                responseJson.put("headers", new JSMap("Access-Control-Allow-Origin", "*"));
 
                 responseJson.put("body", responseBody.toString());
                 OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
@@ -144,7 +149,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
      *
      * @param configProfile the configuration runtime profile
      * @param servletPath   the servlet path
-     * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Config/Configurator.
+     * @return an Engine with an Api already set if one was supplied otherwise an empty Engine that will be configured via via Config/Wirer.
      * @see #buildApi
      */
     protected Engine buildEngine(String configProfile, String servletPath) {
@@ -169,7 +174,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
      * Optional subclass override hook to supply your own custom wired up Api.
      * <p>
      * If you don't set your <code>api</code> via <code>setApi()</code> and you don't override <code>buildApi()</code> to supply an Api
-     * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Config/Configurator.
+     * or otherwise wire your custom Api and Engine in an overridden buildEngine() method, you will need to define your Api in inversion.properties files for autowiring via Config/Wirer.
      *
      * @param engine the engine that will host the Api
      * @return null unless you override this method to construct an Api.
@@ -181,30 +186,31 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
     }
 
     protected void writeResponse(Response res, OutputStream outputStream) throws IOException {
-        JSNode responseJson = new JSNode();
-
-        responseJson.put("isBase64Encoded", false);
-        responseJson.put("statusCode", res.getStatusCode());
-        JSNode headers = new JSNode();
-        responseJson.put("headers", headers);
-
-        for (String key : res.getHeaders().keySet()) {
-            List          values = res.getHeaders().get(key);
-            StringBuilder buff   = new StringBuilder();
-            for (int i = 0; i < values.size(); i++) {
-                buff.append(values.get(i));
-                if (i < values.size() - 1)
-                    buff.append(",");
-            }
-            headers.put(key, buff.toString());
-        }
-
-        String output = res.getOutput();
-
-        responseJson.put("body", output);
-        OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
-        writer.write(responseJson.toString());
-        writer.close();
+//        JSNode responseJson = new JSMap();
+//
+//        responseJson.put("isBase64Encoded", false);
+//        responseJson.put("statusCode", res.getStatusCode());
+//        JSNode headers = new JSMap();
+//        responseJson.put("headers", headers);
+//
+//        asdfasdf
+//        for (String key : res.getHeaders().keySet()) {
+//            List          values = res.getHeaders().get(key);
+//            StringBuilder buff   = new StringBuilder();
+//            for (int i = 0; i < values.size(); i++) {
+//                buff.append(values.get(i));
+//                if (i < values.size() - 1)
+//                    buff.append(",");
+//            }
+//            headers.put(key, buff.toString());
+//        }
+//
+//        String output = res.getOutput();
+//
+//        responseJson.put("body", output);
+//        OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+//        writer.write(responseJson.toString());
+//        writer.close();
     }
 
     public void debug(String msg) {

@@ -141,14 +141,14 @@ public class DynamoDbGetActionIntegTest extends AbstractDbGetActionIntegTest imp
     //      res = engine.get("northwind/dynamodb/orders?limit=5").assertOk();
     //      json = res.getJson();
     //
-    //      assertEquals(5, json.getArray("data").length());
+    //      assertEquals(5, json.getList("data").length());
     //      //res.assertDebug("DynamoDb  ScanSpec maxPageSize=5 scanIndexForward=true nameMap={} valueMap={} keyConditionExpression='' filterExpression='' projectionExpression=''");
     //
     //      res = engine.get("northwind/dynamodb/orders?limit=1000&sort=orderid&type=ORDER");
     //      //res.assertDebug("DynamoDb  QuerySpec:'gs3' maxPageSize=1000 scanIndexForward=true nameMap={#var1=sk} valueMap={:val1=ORDER} keyConditionExpression='(#var1 = :val1)' filterExpression='' projectionExpression=''");
     //
     //      json = res.getJson();
-    //      assertEquals(830, json.getArray("data").length());
+    //      assertEquals(830, json.getList("data").length());
     //      String first = json.findString("data.0.href");
     //      //assertTrue(first.endsWith("/dynamodb/orders/10641~ORDER"));
     //      assertTrue(first.endsWith("/dynamodb/orders/10248~ORDER"));

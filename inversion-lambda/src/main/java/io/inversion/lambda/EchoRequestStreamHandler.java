@@ -18,7 +18,9 @@ package io.inversion.lambda;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
-import io.inversion.utils.JSNode;
+import io.inversion.json.JSMap;
+import io.inversion.json.JSNode;
+import io.inversion.json.JSParser;
 import io.inversion.utils.Utils;
 
 import java.io.*;
@@ -29,15 +31,15 @@ import java.nio.charset.StandardCharsets;
  */
 public class EchoRequestStreamHandler implements RequestStreamHandler {
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-        JSNode responseBody = new JSNode();
-        JSNode responseJson = new JSNode();
+        JSNode responseBody = new JSMap();
+        JSNode responseJson = new JSMap();
         responseJson.put("isBase64Encoded", false);
         responseJson.put("statusCode", "200");
-        responseJson.put("headers", new JSNode("Access-Control-Allow-Origin", "*"));
+        responseJson.put("headers", new JSMap("Access-Control-Allow-Origin", "*"));
         try {
             String input = Utils.read(new BufferedInputStream(inputStream));
             context.getLogger().log(input);
-            JSNode request = JSNode.parseJsonNode(input);
+            JSNode request = JSParser.asJSNode(input);
             responseBody.put("request", request);
 
         } catch (Exception ex) {

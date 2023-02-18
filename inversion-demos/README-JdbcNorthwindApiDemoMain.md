@@ -2,7 +2,7 @@
 ##README - JdbcNorthwindApiDemoMain.java
 
 This demo launches an API that exposes SQL database tables as REST collection endpoints.  
-The demo supports full GET,PUT,POST,DELETE operations with an extensive Resource Query Language
+The demo supports full GET,PUT,POST,DELETE ops with an extensive Resource Query Language
 (RQL) for GET requests
 
 After running JdbcNorthwindApiDemoMain.java, your API will be running at 
@@ -10,7 +10,7 @@ After running JdbcNorthwindApiDemoMain.java, your API will be running at
 
 You can get started by exploring some of these urls:
   - GET http://localhost:8080/northwind/products
-  - GET http://localhost:8080/northwind/orders?expands=orderDetails&page=2
+  - GET http://localhost:8080/northwind/orders?expand=orderDetails&page=2
   - GET http://localhost:8080/northwind/customers?in(country,France,Spain)&sort=-customerid&pageSize=10
   - GET http://localhost:8080/northwind/customers?orders.shipCity=Mannheim
 
@@ -19,7 +19,7 @@ Append '&explain=true' to any query string to see an explanation of what is happ
 
 
 The demo connects to an in memory H2 sql db that gets initialized from scratch each time this 
-demo is run.  That means you can fully explore modifying operations (PUT,POST,DELETE) and 'break'
+demo is run.  That means you can fully explore modifying ops (PUT,POST,DELETE) and 'break'
 whatever you want then restart and have a clean demo app again
 
 If you want to explore your own JDBC DB, you can swap the "withDb()" line with the commented
