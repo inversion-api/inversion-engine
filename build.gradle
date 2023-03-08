@@ -32,6 +32,8 @@ plugins {
   id "maven-publish"
   id "signing"
   id("io.github.gradle-nexus.publish-plugin") version "1.0.0"
+  //-- provides the "dependencyUpdates" task that reports available updates for your dependencies
+  id "com.github.ben-manes.versions" version "${dependencyUpdatesVersion}"
 }
 apply plugin: 'nebula-aggregate-javadocs'
 
@@ -88,8 +90,15 @@ subprojects {
     apply plugin: 'maven-publish'
 	apply plugin: 'signing'
 
-    sourceCompatibility = 1.8
-	targetCompatibility = 1.8
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(11)
+		}
+	}
+
+	test {
+		exclude '**'
+	}
 
 	repositories {
 		mavenCentral()
@@ -100,7 +109,7 @@ subprojects {
 	}
 
 	dependencies {
-		testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
+		testImplementation "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
 	}
 	
 	javadoc.failOnError = false

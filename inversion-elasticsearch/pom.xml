@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-elasticsearch</artifactId>
-  <version>0.9.27.2</version>
+  <version>0.9.27.2.1</version>
   <name>inversion-elasticsearch</name>
   <description>Inversion Cloud API Engine</description>
   <url>https://inversion.io</url>
@@ -36,25 +36,25 @@
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-api</artifactId>
-      <version>0.9.27.2</version>
+      <version>0.9.27.2.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-jdbc</artifactId>
-      <version>0.9.27.2</version>
+      <version>0.9.27.2.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-elasticsearch</artifactId>
-      <version>1.11.901</version>
+      <version>1.12.410</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>elasticsearch-rest-high-level-client</artifactId>
-      <version>7.10.0</version>
+      <version>7.13.4</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

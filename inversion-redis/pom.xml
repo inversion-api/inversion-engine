@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-redis</artifactId>
-  <version>0.9.27.2</version>
+  <version>0.9.27.2.1</version>
   <name>inversion-redis</name>
   <description>Inversion Cloud API Engine</description>
   <url>https://inversion.io</url>
@@ -36,13 +36,13 @@
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-api</artifactId>
-      <version>0.9.27.2</version>
+      <version>0.9.27.2.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>redis.clients</groupId>
       <artifactId>jedis</artifactId>
-      <version>3.3.0</version>
+      <version>4.3.1</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
