@@ -1058,7 +1058,7 @@ ALTER TABLE `Territories` ADD CONSTRAINT `FK_Territories_Region`
     FOREIGN KEY (`RegionID`) REFERENCES `Region` (`RegionID`);
     
 
-/* This table was added to support test cases with a multi part foreign key */
+--- This table was added to support test cases with a multi part foreign key */
 CREATE TABLE `EmployeeOrderDetails` (
 	`EmployeeID` INTEGER NOT NULL,
 	`OrderID` INTEGER NOT NULL,
@@ -1079,7 +1079,7 @@ ALTER TABLE `EmployeeOrderDetails` ADD CONSTRAINT `FK_EmpoyeeOrderDetails2`
 
 
     
-/* This table was added to support test cases for standalone table with 1 pk and no FK constaints */	
+--- This table was added to support test cases for standalone table with 1 pk and no FK constaints */
 CREATE TABLE `IndexLog` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `tenantCode` VARCHAR(100) NOT NULL,
@@ -1113,7 +1113,7 @@ INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `
 INSERT INTO `IndexLog` (`id`, `tenantCode`, `entityId`, `entityType`, `error`, `noIndex`, `modifiedAt`) VALUES (20, 'us', 567, 'ads', 'some ERROR MSG', 0, '2019-03-02 12:21:22'); 
 
 
-/* This table was added to support test cases for keys that have non url save characters in them */	
+--- This table was added to support test cases for keys that have non url save characters in them */
 CREATE TABLE `Urls` (
     `url` VARCHAR(512) NOT NULL,
     `short` VARCHAR(100) NOT NULL,

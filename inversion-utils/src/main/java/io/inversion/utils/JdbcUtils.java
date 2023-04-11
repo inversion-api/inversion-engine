@@ -1073,7 +1073,12 @@ public class JdbcUtils {
                     for (String s : sql) {
                         try {
                             stmt.execute(s);
+                            s = s.replace("\r", " ");
+                            s = s.replace("\n", " ");
+                            //System.out.println((s.length() < 21 ? s.substring(0, 20) : Utils.pad(s, 50)) + " - OK");
                         } catch (SQLException ex) {
+                            s = s.replace("\r", " ");
+                            s = s.replace("\n", " ");
                             System.err.println("Error trying to run sql statement: \r\n" + s + "\r\n\r\n");
                             ex.printStackTrace();
                             throw ex;

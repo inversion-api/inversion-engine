@@ -573,13 +573,11 @@ public class JdbcDb extends Db<JdbcDb> {
                     String tableSchem = rs.getString("TABLE_SCHEM");
                     String tableName  = rs.getString("TABLE_NAME");
 
-                    //-- double check not to add system tables in sqlserver
-                    if (isType("sqlserver")) {
-                        if (tableSchem.equalsIgnoreCase("sys") || tableSchem.equalsIgnoreCase("INFORMATION_SCHEMA"))
-                            continue;
-                    }
+                    //-- double check not to add system tables, seen in mssql and h2
+                    if (tableSchem.equalsIgnoreCase("sys") || tableSchem.equalsIgnoreCase("INFORMATION_SCHEMA"))
+                        continue;
 
-                    if(excludeTable(tableName))
+                    if (excludeTable(tableName))
                         continue;
 
                     Collection collection = new Collection(tableName);
@@ -595,7 +593,6 @@ public class JdbcDb extends Db<JdbcDb> {
                         boolean nullable      = colsRs.getInt("NULLABLE") == DatabaseMetaData.columnNullable;
                         boolean autoincrement = Utils.in((colsRs.getObject("IS_AUTOINCREMENT") + "").toLowerCase(), "yes", "true", "1");
 
-                        
 
                         Property column = new Property(colName, colType, nullable);
 
@@ -635,8 +632,8 @@ public class JdbcDb extends Db<JdbcDb> {
                         }
                         */
 
-                        Object   nonUnique = indexMd.getObject("NON_UNIQUE") + "";
-                        boolean  unique    = !(nonUnique.equals("true") || nonUnique.equals("1"));
+                        Object  nonUnique = indexMd.getObject("NON_UNIQUE") + "";
+                        boolean unique    = !(nonUnique.equals("true") || nonUnique.equals("1"));
 
                         //this looks like it only supports single column indexes but if
                         //an index with this name already exists, that means this is another
@@ -653,7 +650,7 @@ public class JdbcDb extends Db<JdbcDb> {
                         String   colName = pkMd.getString("COLUMN_NAME");
                         Property column  = collection.getProperty(colName);
 
-                        int   keySeq = pkMd.getInt("KEY_SEQ");
+                        int keySeq = pkMd.getInt("KEY_SEQ");
 
                         collection.withIndex(idxName, idxType, true, colName);
                         //System.out.println("Primary key: " + colName);
@@ -681,7 +678,7 @@ public class JdbcDb extends Db<JdbcDb> {
                 do {
                     String tableName = rs.getString("TABLE_NAME");
 
-                    if(excludeTable(tableName))
+                    if (excludeTable(tableName))
                         continue;
 
                     //            System.out.println(tableName);
@@ -697,8 +694,8 @@ public class JdbcDb extends Db<JdbcDb> {
                     ResultSet keyMd = dbmd.getImportedKeys(conn.getCatalog(), null, tableName);
                     while (keyMd.next()) {
                         //String pkName = keyMd.getString("PK_NAME");
-                        String fkName = keyMd.getString("FK_NAME");
-                        String fkTableName  = keyMd.getString("FKTABLE_NAME");
+                        String fkName      = keyMd.getString("FK_NAME");
+                        String fkTableName = keyMd.getString("FKTABLE_NAME");
 
                         Collection coll = getCollectionByTableName(fkTableName);
                         if (coll != null) {

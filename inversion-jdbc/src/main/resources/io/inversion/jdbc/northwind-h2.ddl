@@ -86,7 +86,7 @@ CREATE TABLE "OrderDetails" (
     "OrderID" INTEGER NOT NULL,
     "ProductID" INTEGER NOT NULL,
     "UnitPrice" DECIMAL(10,4) NOT NULL DEFAULT 0,
-    "Quantity" SMALLINT(2) NOT NULL DEFAULT 1,
+    "Quantity" INTEGER NOT NULL DEFAULT 1,
     "Discount" DECIMAL(8,0) NOT NULL DEFAULT 0,
     CONSTRAINT "PK_OrderDetails" PRIMARY KEY ("OrderID", "ProductID")
 );
@@ -122,10 +122,10 @@ CREATE TABLE "Products" (
     "CategoryID" INTEGER,
     "QuantityPerUnit" VARCHAR(20),
     "UnitPrice" DECIMAL(10,4) DEFAULT 0,
-    "UnitsInStock" SMALLINT(2) DEFAULT 0,
-    "UnitsOnOrder" SMALLINT(2) DEFAULT 0,
-    "ReorderLevel" SMALLINT(2) DEFAULT 0,
-    "Discontinued" BIT NOT NULL DEFAULT 0,
+    "UnitsInStock" INTEGER DEFAULT 0,
+    "UnitsOnOrder" INTEGER DEFAULT 0,
+    "ReorderLevel" INTEGER DEFAULT 0,
+    "Discontinued" BOOLEAN NOT NULL DEFAULT 0,
     CONSTRAINT "PK_Products" PRIMARY KEY ("ProductID")
 );
 
@@ -178,14 +178,14 @@ CREATE TABLE "Territories" (
 
 
 TRUNCATE TABLE "Categories";
-INSERT INTO "Categories" VALUES(null,'Beverages','Soft drinks, coffees, teas, beers, and ales','/images/northwind-icons/category_beverages.png');
-INSERT INTO "Categories" VALUES(null,'Condiments','Sweet and savory sauces, relishes, spreads, and seasonings','/images/northwind-icons/category_condiments.png');
-INSERT INTO "Categories" VALUES(null,'Confections','Desserts, candies, and sweet breads','/images/northwind-icons/category_confections.png');
-INSERT INTO "Categories" VALUES(null,'Dairy Products','Cheeses','/images/northwind-icons/category_dairy.png');
-INSERT INTO "Categories" VALUES(null,'Grains/Cereals','Breads, crackers, pasta, and cereal','/images/northwind-icons/category_cereals.png');
-INSERT INTO "Categories" VALUES(null,'Meat/Poultry','Prepared meats','/images/northwind-icons/category_meat.png');
-INSERT INTO "Categories" VALUES(null,'Produce','Dried fruit and bean curd','/images/northwind-icons/category_produce.png');
-INSERT INTO "Categories" VALUES(null,'Seafood','Seaweed and fish','/images/northwind-icons/category_seafood.png');
+INSERT INTO "Categories" ("CategoryName", "Description", "Picture") VALUES('Beverages','Soft drinks, coffees, teas, beers, and ales','/images/northwind-icons/category_beverages.png');
+INSERT INTO "Categories" ("CategoryName", "Description", "Picture") VALUES('Condiments','Sweet and savory sauces, relishes, spreads, and seasonings','/images/northwind-icons/category_condiments.png');
+INSERT INTO "Categories" ("CategoryName", "Description", "Picture") VALUES('Confections','Desserts, candies, and sweet breads','/images/northwind-icons/category_confections.png');
+INSERT INTO "Categories" ("CategoryName", "Description", "Picture") VALUES('Dairy Products','Cheeses','/images/northwind-icons/category_dairy.png');
+INSERT INTO "Categories" ("CategoryName", "Description", "Picture") VALUES('Grains/Cereals','Breads, crackers, pasta, and cereal','/images/northwind-icons/category_cereals.png');
+INSERT INTO "Categories" ("CategoryName", "Description", "Picture") VALUES('Meat/Poultry','Prepared meats','/images/northwind-icons/category_meat.png');
+INSERT INTO "Categories" ("CategoryName", "Description", "Picture") VALUES('Produce','Dried fruit and bean curd','/images/northwind-icons/category_produce.png');
+INSERT INTO "Categories" ("CategoryName", "Description", "Picture") VALUES('Seafood','Seaweed and fish','/images/northwind-icons/category_seafood.png');
 
 
 TRUNCATE TABLE "Customers";
@@ -380,15 +380,15 @@ VALUES('WOLZA', 'Wolski  Zajazd', 'Zbyszek Piestrzeniewicz', 'Owner', 'ul. Filtr
 
 
 TRUNCATE TABLE "Employees";
-INSERT INTO "Employees" VALUES(null,'Davolio','Nancy','Sales Representative','Ms.','1948-12-08','1992-05-01','507 - 20th Ave. E.Apt. 2A','Seattle','WA','98122','USA','(206) 555-9857','5467','Education includes a BA in psychology from Colorado State University in 1970.  She also completed "The Art of the Cold Call."  Nancy is a member of Toastmasters International.',2,'/images/northwind-icons/employee_woman_1.png','2954.55');
-INSERT INTO "Employees" VALUES(null,'Fuller','Andrew','Vice President, Sales','Dr.','1952-02-19','1992-08-14','908 W. Capital Way','Tacoma','WA','98401','USA','(206) 555-9482','3457','Andrew received his BTS commercial in 1974 and a Ph.D. in international marketing from the University of Dallas in 1981.  He is fluent in French and Italian and reads German.  He joined the company as a sales representative, was promoted to sales manager in January 1992 and to vice president of sales in March 1993.  Andrew is a member of the Sales Management Roundtable, the Seattle Chamber of Commerce, and the Pacific Rim Importers Association.',NULL,'/images/northwind-icons/employee_man_1.png','2254.49');
-INSERT INTO "Employees" VALUES(null,'Leverling','Janet','Sales Representative','Ms.','1963-08-30','1992-04-01','722 Moss Bay Blvd.','Kirkland','WA','98033','USA','(206) 555-3412','3355','Janet has a BS degree in chemistry from Boston College (1984).  She has also completed a certificate program in food retailing management.  Janet was hired as a sales associate in 1991 and promoted to sales representative in February 1992.',2,'/images/northwind-icons/employee_woman_2.png','3119.15');
-INSERT INTO "Employees" VALUES(null,'Peacock','Margaret','Sales Representative','Mrs.','1937-09-19','1993-05-03','4110 Old Redmond Rd.','Redmond','WA','98052','USA','(206) 555-8122','5176','Margaret holds a BA in English literature from Concordia College (1958) and an MA from the American Institute of Culinary Arts (1966).  She was assigned to the London office temporarily from July through November 1992.',2,'/images/northwind-icons/employee_woman_3.png','1861.08');
-INSERT INTO "Employees" VALUES(null,'Buchanan','Steven','Sales Manager','Mr.','1955-03-04','1993-10-17','14 Garrett Hill','London',NULL,'SW1 8JR','UK','(71) 555-4848','3453','Steven Buchanan graduated from St. Andrews University, Scotland, with a BSC degree in 1976.  Upon joining the company as a sales representative in 1992, he spent 6 months in an orientation program at the Seattle office and then returned to his permanent post in London.  He was promoted to sales manager in March 1993.  Mr. Buchanan has completed the courses "Successful Telemarketing" and "International Sales Management."  He is fluent in French.',2,'/images/northwind-icons/employee_man_2.png','1744.21');
-INSERT INTO "Employees" VALUES(null,'Suyama','Michael','Sales Representative','Mr.','1963-07-02','1993-10-17','Coventry House Miner Rd.','London',NULL,'EC2 7JR','UK','(71) 555-7773','428','Michael is a graduate of Sussex University (MA, economics, 1983) and the University of California at Los Angeles (MBA, marketing, 1986).  He has also taken the courses "Multi-Cultural Selling" and "Time Management for the Sales Professional."  He is fluent in Japanese and can read and write French, Portuguese, and Spanish.',5,'/images/northwind-icons/employee_man_3.png','2004.07');
-INSERT INTO "Employees" VALUES(null,'King','Robert','Sales Representative','Mr.','1960-05-29','1994-01-02','Edgeham Hollow Winchester Way','London',NULL,'RG1 9SP','UK','(71) 555-5598','465','Robert King served in the Peace Corps and traveled extensively before completing his degree in English at the University of Michigan in 1992, the year he joined the company.  After completing a course entitled "Selling in Europe," he was transferred to the London office in March 1993.',5,'/images/northwind-icons/employee_man_4.png','1991.55');
-INSERT INTO "Employees" VALUES(null,'Callahan','Laura','Inside Sales Coordinator','Ms.','1958-01-09','1994-03-05','4726 - 11th Ave. N.E.','Seattle','WA','98105','USA','(206) 555-1189','2344','Laura received a BA in psychology from the University of Washington.  She has also completed a course in business French.  She reads and writes French.',2,'/images/northwind-icons/employee_woman_4.png','2100.50');
-INSERT INTO "Employees" VALUES(null,'Dodsworth','Anne','Sales Representative','Ms.','1966-01-27','1994-11-15','7 Houndstooth Rd.','London',NULL,'WG2 7LT','UK','(71) 555-4444','452','Anne has a BA degree in English from St. Lawrence College.  She is fluent in French and German.',5,'/images/northwind-icons/employee_woman_5.png','2333.33');
+INSERT INTO "Employees" ("LastName", "FirstName", "Title", "TitleOfCourtesy", "BirthDate", "HireDate", "Address", "City", "Region", "PostalCode","Country","HomePhone","Extension","Notes","ReportsTo","PhotoPath","Salary") VALUES('Davolio','Nancy','Sales Representative','Ms.','1948-12-08','1992-05-01','507 - 20th Ave. E.Apt. 2A','Seattle','WA','98122','USA','(206) 555-9857','5467','Education includes a BA in psychology from Colorado State University in 1970.  She also completed "The Art of the Cold Call."  Nancy is a member of Toastmasters International.',2,'/images/northwind-icons/employee_woman_1.png','2954.55');
+INSERT INTO "Employees" ("LastName", "FirstName", "Title", "TitleOfCourtesy", "BirthDate", "HireDate", "Address", "City", "Region", "PostalCode","Country","HomePhone","Extension","Notes","ReportsTo","PhotoPath","Salary") VALUES('Fuller','Andrew','Vice President, Sales','Dr.','1952-02-19','1992-08-14','908 W. Capital Way','Tacoma','WA','98401','USA','(206) 555-9482','3457','Andrew received his BTS commercial in 1974 and a Ph.D. in international marketing from the University of Dallas in 1981.  He is fluent in French and Italian and reads German.  He joined the company as a sales representative, was promoted to sales manager in January 1992 and to vice president of sales in March 1993.  Andrew is a member of the Sales Management Roundtable, the Seattle Chamber of Commerce, and the Pacific Rim Importers Association.',NULL,'/images/northwind-icons/employee_man_1.png','2254.49');
+INSERT INTO "Employees" ("LastName", "FirstName", "Title", "TitleOfCourtesy", "BirthDate", "HireDate", "Address", "City", "Region", "PostalCode","Country","HomePhone","Extension","Notes","ReportsTo","PhotoPath","Salary") VALUES('Leverling','Janet','Sales Representative','Ms.','1963-08-30','1992-04-01','722 Moss Bay Blvd.','Kirkland','WA','98033','USA','(206) 555-3412','3355','Janet has a BS degree in chemistry from Boston College (1984).  She has also completed a certificate program in food retailing management.  Janet was hired as a sales associate in 1991 and promoted to sales representative in February 1992.',2,'/images/northwind-icons/employee_woman_2.png','3119.15');
+INSERT INTO "Employees" ("LastName", "FirstName", "Title", "TitleOfCourtesy", "BirthDate", "HireDate", "Address", "City", "Region", "PostalCode","Country","HomePhone","Extension","Notes","ReportsTo","PhotoPath","Salary") VALUES('Peacock','Margaret','Sales Representative','Mrs.','1937-09-19','1993-05-03','4110 Old Redmond Rd.','Redmond','WA','98052','USA','(206) 555-8122','5176','Margaret holds a BA in English literature from Concordia College (1958) and an MA from the American Institute of Culinary Arts (1966).  She was assigned to the London office temporarily from July through November 1992.',2,'/images/northwind-icons/employee_woman_3.png','1861.08');
+INSERT INTO "Employees" ("LastName", "FirstName", "Title", "TitleOfCourtesy", "BirthDate", "HireDate", "Address", "City", "Region", "PostalCode","Country","HomePhone","Extension","Notes","ReportsTo","PhotoPath","Salary") VALUES('Buchanan','Steven','Sales Manager','Mr.','1955-03-04','1993-10-17','14 Garrett Hill','London',NULL,'SW1 8JR','UK','(71) 555-4848','3453','Steven Buchanan graduated from St. Andrews University, Scotland, with a BSC degree in 1976.  Upon joining the company as a sales representative in 1992, he spent 6 months in an orientation program at the Seattle office and then returned to his permanent post in London.  He was promoted to sales manager in March 1993.  Mr. Buchanan has completed the courses "Successful Telemarketing" and "International Sales Management."  He is fluent in French.',2,'/images/northwind-icons/employee_man_2.png','1744.21');
+INSERT INTO "Employees" ("LastName", "FirstName", "Title", "TitleOfCourtesy", "BirthDate", "HireDate", "Address", "City", "Region", "PostalCode","Country","HomePhone","Extension","Notes","ReportsTo","PhotoPath","Salary") VALUES('Suyama','Michael','Sales Representative','Mr.','1963-07-02','1993-10-17','Coventry House Miner Rd.','London',NULL,'EC2 7JR','UK','(71) 555-7773','428','Michael is a graduate of Sussex University (MA, economics, 1983) and the University of California at Los Angeles (MBA, marketing, 1986).  He has also taken the courses "Multi-Cultural Selling" and "Time Management for the Sales Professional."  He is fluent in Japanese and can read and write French, Portuguese, and Spanish.',5,'/images/northwind-icons/employee_man_3.png','2004.07');
+INSERT INTO "Employees" ("LastName", "FirstName", "Title", "TitleOfCourtesy", "BirthDate", "HireDate", "Address", "City", "Region", "PostalCode","Country","HomePhone","Extension","Notes","ReportsTo","PhotoPath","Salary") VALUES('King','Robert','Sales Representative','Mr.','1960-05-29','1994-01-02','Edgeham Hollow Winchester Way','London',NULL,'RG1 9SP','UK','(71) 555-5598','465','Robert King served in the Peace Corps and traveled extensively before completing his degree in English at the University of Michigan in 1992, the year he joined the company.  After completing a course entitled "Selling in Europe," he was transferred to the London office in March 1993.',5,'/images/northwind-icons/employee_man_4.png','1991.55');
+INSERT INTO "Employees" ("LastName", "FirstName", "Title", "TitleOfCourtesy", "BirthDate", "HireDate", "Address", "City", "Region", "PostalCode","Country","HomePhone","Extension","Notes","ReportsTo","PhotoPath","Salary") VALUES('Callahan','Laura','Inside Sales Coordinator','Ms.','1958-01-09','1994-03-05','4726 - 11th Ave. N.E.','Seattle','WA','98105','USA','(206) 555-1189','2344','Laura received a BA in psychology from the University of Washington.  She has also completed a course in business French.  She reads and writes French.',2,'/images/northwind-icons/employee_woman_4.png','2100.50');
+INSERT INTO "Employees" ("LastName", "FirstName", "Title", "TitleOfCourtesy", "BirthDate", "HireDate", "Address", "City", "Region", "PostalCode","Country","HomePhone","Extension","Notes","ReportsTo","PhotoPath","Salary") VALUES('Dodsworth','Anne','Sales Representative','Ms.','1966-01-27','1994-11-15','7 Houndstooth Rd.','London',NULL,'WG2 7LT','UK','(71) 555-4444','452','Anne has a BA degree in English from St. Lawrence College.  She is fluent in French and German.',5,'/images/northwind-icons/employee_woman_5.png','2333.33');
 
 
 
@@ -963,7 +963,7 @@ ALTER TABLE "Products" ADD CONSTRAINT "FK_Products_Suppliers"
 ALTER TABLE "Territories" ADD CONSTRAINT "FK_Territories_Region"
     FOREIGN KEY ("RegionID") REFERENCES "Region" ("RegionID");
 
-/* This table was added to support test cases with a multi part foreign key */
+--- This table was added to support test cases with a multi part foreign key */
 
 CREATE TABLE "EmployeeOrderDetails" (
 	"EmployeeID" INTEGER NOT NULL,
@@ -984,14 +984,14 @@ SELECT o."EmployeeID", od."OrderID", od."ProductID" FROM "Orders" o JOIN "OrderD
 
 
 
-/* This table was added to support test cases for standalone table with 1 pk and no FK constaints */
+--- This table was added to support test cases for standalone table with 1 pk and no FK constaints */
 CREATE TABLE "IndexLog" (
     "id" INTEGER NOT NULL AUTO_INCREMENT,
     "tenantCode" VARCHAR(100) NOT NULL,
     "entityId" INTEGER,
     "entityType" VARCHAR(100),
     "error" VARCHAR(1024),
-    "noIndex" tinyint(1) DEFAULT '0',
+    "noIndex" tinyint DEFAULT '0',
     "modifiedAt" timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY ("id")
 );
@@ -1019,7 +1019,7 @@ INSERT INTO "IndexLog" ("id", "tenantCode", "entityId", "entityType", "error", "
 
 
 
-/* This table was added to support test cases for keys that have non url save characters in them */
+--- This table was added to support test cases for keys that have non url safe characters in them
 CREATE TABLE "Urls" (
     "url" VARCHAR(512) NOT NULL,
     "short" VARCHAR(100) NOT NULL,

@@ -143,6 +143,10 @@ public final class Url {
                     withHost(url.substring(0, slash));
                     url = url.substring(slash);
                 }
+                else{
+                    withHost(url);
+                    url = "";
+                }
 
                 if(url.startsWith(":")){
                     slash = url.indexOf("/");

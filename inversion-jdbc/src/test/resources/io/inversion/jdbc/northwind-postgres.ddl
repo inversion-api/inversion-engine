@@ -914,7 +914,7 @@ ALTER TABLE public.employeeorderdetails OWNER TO postgres;
 
 
 
-/* This table was added to support test cases for standalone table with 1 pk and no FK constaints */	
+--- This table was added to support test cases for standalone table with 1 pk and no FK constaints */
 CREATE TABLE "indexlog" (
     "id" SERIAL PRIMARY KEY,
     "tenantCode" VARCHAR(100) NOT NULL,
@@ -949,7 +949,7 @@ INSERT INTO "indexlog" ("id", "tenantCode", "entityId", "entityType", "error", "
 
 
 
-/* This table was added to support test cases for keys that have non url save characters in them */	
+--- This table was added to support test cases for keys that have non url save characters in them */
 CREATE TABLE "urls" (
     "url" VARCHAR(512) NOT NULL,
     "short" VARCHAR(100) NOT NULL,

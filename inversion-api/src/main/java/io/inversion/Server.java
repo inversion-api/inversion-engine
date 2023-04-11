@@ -31,6 +31,7 @@ public final class Server {// extends Rule<Server> {
     boolean documented = true;
 
     public Server() {
+        //System.out.println("Server()<>");
     }
 
     public Server(String... urls) {
@@ -136,6 +137,9 @@ public final class Server {// extends Rule<Server> {
     }
 
     public ServerMatcher match(Url url){
+        if(urls.size() == 0){
+            withUrls("/");
+        }
         for(ServerMatcher matcher : urls.values()){
             if(matcher.match(url)){
                 return matcher;

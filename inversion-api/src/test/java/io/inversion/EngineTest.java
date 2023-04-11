@@ -670,9 +670,9 @@ public class EngineTest {
                 .withEndpoint(new Endpoint("[{collection:collection2}]/*").withName("ep2"));
 
 
-        assertOp("GET", "http://127.0.0.1/test/collectionA", 200, "getEpACollectionByCollection", api1);
-        assertOp("GET", "http://127.0.0.1/test/collection1", 200, "getEp1CollectionByCollection", api1);
-        assertOp("GET", "http://127.0.0.1/test/collection2", 200, "getEp2CollectionByCollection", api1);
+        assertOp("GET", "http://127.0.0.1/test/collectionA", 200, "getEpAByCollection", api1);
+        assertOp("GET", "http://127.0.0.1/test/collection1", 200, "getEp1ByCollection", api1);
+        assertOp("GET", "http://127.0.0.1/test/collection2", 200, "getEp2ByCollection", api1);
     }
 
 

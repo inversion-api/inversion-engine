@@ -350,6 +350,9 @@ public final class Op implements Comparable<Op> {
         defaultName = cleanNamePart(defaultName);
         defaultName = Utils.beautifyName(defaultName);
 
+        if(defaultName.endsWith("*") && defaultName.length() > 1)
+            defaultName = defaultName.substring(0, defaultName.length()-1);
+
 
         String singular = Utils.capitalize(collection == null ? defaultName : collection.getSingularDisplayName());
         String plural   = Utils.capitalize(collection == null ? defaultName : collection.getPluralDisplayName());

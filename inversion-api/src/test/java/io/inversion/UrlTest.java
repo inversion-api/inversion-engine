@@ -39,31 +39,31 @@ public class UrlTest {
     @Test
     public void test_pass_parsing(){
 
+        passUrl("http://asdf?offset=5", "http://asdf?offset=5");
+
         passUrl("http://localhost:8080?someField1=value1", "http://localhost:8080?someField1=value1");
 
 
         passUrl("https://some.my.host/path/v1/{var1}/{var2}", "https://some.my.host/path/v1/{var1}/{var2}/", "remove trailing slash");
-        passUrl("http://127.0.0.1:8080", "/", "default host with no trailing slash");
+        passUrl("//127.0.0.1:8080", "/", "default host with no trailing slash");
 
-        passUrl("http://127.0.0.1:8080/path", "path/");
-        passUrl("http://127.0.0.1:8080/path", "/path");
-        passUrl("http://127.0.0.1:8080/path", "/path/");
+        passUrl("//127.0.0.1:8080/path", "path/");
+        passUrl("//127.0.0.1:8080/path", "/path");
+        passUrl("//127.0.0.1:8080/path", "/path/");
 
-        passUrl("http://127.0.0.1:8080/path", "path///");
+        passUrl("//127.0.0.1:8080/path", "path///");
 
         passUrl("http://127.0.0.1:8080/a/b", "http://127.0.0.1:8080////a///b///");
         passUrl("https://127.0.0.1:8080/a/b", "https://127.0.0.1:8080////a///b///");
         passUrl("http://127.0.0.1/a/b", "http://127.0.0.1////a///b///");
 
-        passUrl("http://127.0.0.1:8080/{asdf...asdf}", "{asdf...asdf}");
+        passUrl("//127.0.0.1:8080/{asdf...asdf}", "{asdf...asdf}");
 
         //passUrl("http://host:8080/abc", "http:/host:8080/abc");
         //passUrl("http://host:8080/abc", "http://///host:8080////abc");
         //passUrl("http://host:8080/abc", "http:host:8080////abc");
 
-        passUrl("http://127.0.0.1:8080", "");
-        passUrl("http://127.0.0.1:8080", "");
-        passUrl("http://127.0.0.1:8080", "");
+        passUrl("//127.0.0.1:8080", "");
     }
 
 //    @Test

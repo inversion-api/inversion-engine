@@ -20,7 +20,7 @@ public class ApiTest {
 
         bookDb.startup(api);
         String actual = api.generatePaths().toString();
-        String expected = "{GET={Endpoint - includes: [[GET,[authors]/*]]=[[authors], [authors/{authorId}], [authors/{authorId}/books]], Endpoint - includes: [[GET,[books]/[{bookKey}]/*]]=[[books], [books/{bookKey}], [books/{bookKey}/author]]}}";
+        String expected = "{GET={Endpoint - includes: [GET,[authors]/*]=[[authors], [authors/{authorId}], [authors/{authorId}/books]], Endpoint - includes: [GET,[books]/[{bookKey}]/*]=[[books], [books/{bookKey}], [books/{bookKey}/author]]}}";
         System.out.println(actual);
         assertEquals(expected, actual);
     }
@@ -32,7 +32,7 @@ public class ApiTest {
                 .withEndpoint("GET,openapi.json,openapi.yaml", new MockAction())
                 .withEndpoint("GET,rapidoc.html", new MockAction());
 
-        String expected = "{GET={Endpoint - includes: [[GET,openapi.json,openapi.yaml]]=[[openapi.json], [openapi.yaml]], Endpoint - includes: [[GET,rapidoc.html]]=[[rapidoc.html]]}}";
+        String expected = "{GET={Endpoint - includes: [GET,openapi.json,openapi.yaml]=[[openapi.json], [openapi.yaml]], Endpoint - includes: [GET,rapidoc.html]=[[rapidoc.html]]}}";
         String actual = api.generatePaths().toString();
         System.out.println(actual);
         assertEquals(expected, actual);
@@ -47,7 +47,7 @@ public class ApiTest {
         ep1.withAction(booksA);
         api.withEndpoint(ep1);
 
-        String expected = "{GET={Endpoint - includes: [[GET,catalog/*]]=[[catalog], [catalog/{collection}], [catalog/{collection}/{resource}], [catalog/{collection}/{resource}/{relationship}]]}}";
+        String expected = "{GET={Endpoint - includes: [GET,catalog/*]=[[catalog], [catalog/{collection}], [catalog/{collection}/{resource}], [catalog/{collection}/{resource}/{relationship}]]}}";
         String actual   = api.generatePaths().toString();
         assertEquals(expected, actual);
     }
@@ -58,7 +58,7 @@ public class ApiTest {
                 new Endpoint().withIncludeOn("GET,catalog/[books]/*")
                         .withAction(new MockAction().withIncludeOn("[{collection}]/[{resource}]/[{relationship}]")));
 
-        String expected = "{GET={Endpoint - includes: [[GET,catalog/[books]/*]]=[[catalog], [catalog/books], [catalog/books/{resource}], [catalog/books/{resource}/{relationship}]]}}";
+        String expected = "{GET={Endpoint - includes: [GET,catalog/[books]/*]=[[catalog], [catalog/books], [catalog/books/{resource}], [catalog/books/{resource}/{relationship}]]}}";
         String actual   = api.generatePaths().toString();
         assertEquals(expected, actual);
     }
@@ -70,7 +70,7 @@ public class ApiTest {
         api.withAction(new MockAction().withIncludeOn("a/b/{named3}/{named4}/*"));
         api.withEndpoint("GET,{endpointNamed1}/b/{endpointNamed2}/[{Ecoll}]/[{Eent:e}]/[{Eid}]/*");
 
-        String expected = "{GET={Endpoint - includes: [[GET,{endpointNamed1}/b/{endpointNamed2}/[{Ecoll}]/[{Eent:e}]/[{Eid}]/*]]=[[a/b/{endpointNamed2}/{Ecoll}], [a/b/{endpointNamed2}/{Ecoll}/{Eent:e}], [a/b/{endpointNamed2}/{Ecoll}/{Eent:e}/{Eid}]]}}";
+        String expected = "{GET={Endpoint - includes: [GET,{endpointNamed1}/b/{endpointNamed2}/[{Ecoll}]/[{Eent:e}]/[{Eid}]/*]=[[a/b/{endpointNamed2}/{Ecoll}], [a/b/{endpointNamed2}/{Ecoll}/{Eent:e}], [a/b/{endpointNamed2}/{Ecoll}/{Eent:e}/{Eid}/*]]}}";
         String actual   = api.generatePaths().toString();
         System.out.println(actual);
         assertEquals(expected, actual);
@@ -85,7 +85,7 @@ public class ApiTest {
         api.withEndpoint(ep1);
 
         String actual = api.generatePaths().toString();
-        String expected = "{GET={Endpoint - includes: [[GET,catalog/[{collection}]/*]]=[[catalog/books], [catalog/books/{resource}], [catalog/books/{resource}/{relationship}]]}}";
+        String expected = "{GET={Endpoint - includes: [GET,catalog/[{collection}]/*]=[[catalog/books], [catalog/books/{resource}], [catalog/books/{resource}/{relationship}]]}}";
         System.out.println(actual);
         assertEquals(expected, actual);
     }
@@ -101,8 +101,9 @@ public class ApiTest {
                 ;
 
         String actual = api.generatePaths().toString();
-        String expected = "{GET={Endpoint:ep1 - includes: [[[{collection:collection1}]/*]]=[[{collection:collection1}]], Endpoint:ep2 - includes: [[[{collection:collection2}]/*]]=[[{collection:collection2}]], Endpoint:epA - includes: [[[{collection:collectionA}]/*]]=[[{collection:collectionA}]]}, POST={Endpoint:ep1 - includes: [[[{collection:collection1}]/*]]=[[{collection:collection1}]], Endpoint:ep2 - includes: [[[{collection:collection2}]/*]]=[[{collection:collection2}]], Endpoint:epA - includes: [[[{collection:collectionA}]/*]]=[[{collection:collectionA}]]}, PUT={Endpoint:ep1 - includes: [[[{collection:collection1}]/*]]=[[{collection:collection1}]], Endpoint:ep2 - includes: [[[{collection:collection2}]/*]]=[[{collection:collection2}]], Endpoint:epA - includes: [[[{collection:collectionA}]/*]]=[[{collection:collectionA}]]}, PATCH={Endpoint:ep1 - includes: [[[{collection:collection1}]/*]]=[[{collection:collection1}]], Endpoint:ep2 - includes: [[[{collection:collection2}]/*]]=[[{collection:collection2}]], Endpoint:epA - includes: [[[{collection:collectionA}]/*]]=[[{collection:collectionA}]]}, DELETE={Endpoint:ep1 - includes: [[[{collection:collection1}]/*]]=[[{collection:collection1}]], Endpoint:ep2 - includes: [[[{collection:collection2}]/*]]=[[{collection:collection2}]], Endpoint:epA - includes: [[[{collection:collectionA}]/*]]=[[{collection:collectionA}]]}}";
-        System.out.println(actual);
+        String expected = "{GET={Endpoint:ep1 - includes: [[{collection:collection1}]/*]=[[{collection:collection1}/*]], Endpoint:ep2 - includes: [[{collection:collection2}]/*]=[[{collection:collection2}/*]], Endpoint:epA - includes: [[{collection:collectionA}]/*]=[[{collection:collectionA}/*]]}, POST={Endpoint:ep1 - includes: [[{collection:collection1}]/*]=[[{collection:collection1}/*]], Endpoint:ep2 - includes: [[{collection:collection2}]/*]=[[{collection:collection2}/*]], Endpoint:epA - includes: [[{collection:collectionA}]/*]=[[{collection:collectionA}/*]]}, PUT={Endpoint:ep1 - includes: [[{collection:collection1}]/*]=[[{collection:collection1}/*]], Endpoint:ep2 - includes: [[{collection:collection2}]/*]=[[{collection:collection2}/*]], Endpoint:epA - includes: [[{collection:collectionA}]/*]=[[{collection:collectionA}/*]]}, PATCH={Endpoint:ep1 - includes: [[{collection:collection1}]/*]=[[{collection:collection1}/*]], Endpoint:ep2 - includes: [[{collection:collection2}]/*]=[[{collection:collection2}/*]], Endpoint:epA - includes: [[{collection:collectionA}]/*]=[[{collection:collectionA}/*]]}, DELETE={Endpoint:ep1 - includes: [[{collection:collection1}]/*]=[[{collection:collection1}/*]], Endpoint:ep2 - includes: [[{collection:collection2}]/*]=[[{collection:collection2}/*]], Endpoint:epA - includes: [[{collection:collectionA}]/*]=[[{collection:collectionA}/*]]}}";
+        System.out.println("Expected: " + expected);
+        System.out.println("Actual  : " + actual);
         assertEquals(expected, actual);
     }
 
