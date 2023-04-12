@@ -45,3 +45,4 @@ northwind.trace.db
 
 /cd/codesigning.asc
 /cd/gradle.properties
+**/pom.xml.asc

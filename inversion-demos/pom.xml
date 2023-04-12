@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-demos</artifactId>
-  <version>0.10.3</version>
+  <version>0.11.1</version>
   <name>inversion-demos</name>
   <description>Inversion Cloud API Engine</description>
   <url>https://inversion.io</url>
@@ -36,73 +36,73 @@
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-api</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-azure-functions</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-cosmosdb</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-dynamodb</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-elasticsearch</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-jdbc</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-kinesis</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-lambda</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-redis</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-s3</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-script</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-spring-boot</artifactId>
-      <version>0.10.3</version>
+      <version>0.11.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

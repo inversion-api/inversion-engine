@@ -10,8 +10,8 @@ name: Build Gradle project
 on:
   push:
     branches: [ "main", "release-*"]
-  pull_request:
-    branches: [ "main", "release-*"]
+#  pull_request:
+#    branches: [ "main", "release-*"]
 
 jobs:
   build-gradle-project:
