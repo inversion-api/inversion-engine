@@ -29,8 +29,8 @@ jobs:
       - name: Install gpg secret key then publish to Sonotype and OSSRH
         if: ${{github.event_name == 'push' && startsWith(github.ref, 'release-')}}
         env:
-          SONATYPE_USERNAME: ${{ secrets.$SONATYPE_USERNAME }}
-          SONATYPE_PASSWORD: ${{ secrets.$SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
         run: |
           cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
           gpg --list-secret-keys --keyid-format LONG
