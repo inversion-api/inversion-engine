@@ -27,7 +27,7 @@ jobs:
       - name: Execute Gradle build
         run: ./gradlew build
       - name: Install gpg secret key then publish to Sonotype and OSSRH
-        if: ${{github.event_name == 'push' && startsWith(github.ref, 'release-')}}
+#        if: ${{github.event_name == 'push' && startsWith(github.ref, 'release-')}}
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
