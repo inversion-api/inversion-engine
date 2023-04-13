@@ -24,8 +24,8 @@ jobs:
           java-version: 11
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
-      - name: Execute Gradle build
-        run: ./gradlew build
+#      - name: Execute Gradle build
+#        run: ./gradlew build
       - name: Publish to Sonotype and OSSRH
 #        if: ${{github.event_name == 'push' && startsWith(github.ref, 'release-')}}
         env:
@@ -35,7 +35,8 @@ jobs:
           cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
           cat <(echo -e "${{ secrets.SONOTYPE_SIGNING }}") >> gradle.properties
           gpg --list-secret-keys --keyid-format LONG
-          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
+          ls -la /home/runner/.gnupg/
+#          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
 #          ./gradlew --stacktrace -DsonatypeUsername=$SONATYPE_USERNAME -DsonatypePassword=$SONATYPE_PASSWORD publishToSonatype closeAndReleaseSonatypeStagingRepository
 
 
