@@ -28,12 +28,11 @@ jobs:
         run: ./gradlew build
       - name: Publish to Sonotype and OSSRH
         run: |
-          gpg --keyring secring.gpg --export-secret-keys > ~/.gnupg/secring.gpg
-          gpg --list-secret-keys --keyid-format LONG
           cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
+          gpg --list-secret-keys --keyid-format LONG
+          gpg --keyring secring.gpg --export-secret-keys > ~/.gnupg/secring.gpg
           ls -la /home/runner/.gnupg/
-          
-          cat <(echo -e "${{ secrets.SONOTYPE_LOGIN }}") >> gradle.properties
+          cat <(echo -e "${{ secrets.SIGNING_PROPERTIES }}") >> gradle.properties
           ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
 
 #        if: ${{github.event_name == 'push' && startsWith(github.ref, 'release-')}}
