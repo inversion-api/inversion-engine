@@ -24,23 +24,22 @@ jobs:
           java-version: 11
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
-#      - name: Execute Gradle build
-#        run: ./gradlew build
+      - name: Execute Gradle build
+        run: ./gradlew build
       - name: Publish to Sonotype and OSSRH
-#        if: ${{github.event_name == 'push' && startsWith(github.ref, 'release-')}}
         env:
- #         ORG_GRADLE_PROJECT_SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
- #         ORG_GRADLE_PROJECT_SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGNING_PASSWORD }}
         run: |
-#          cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
           cat <(echo -e "${{ secrets.SONOTYPE_LOGIN }}") >> gradle.properties
+          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
+
+
+#        if: ${{github.event_name == 'push' && startsWith(github.ref, 'release-')}}
+#          cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
 #          gpg --list-secret-keys --keyid-format LONG
 #          ls -la /home/runner/.gnupg/
-           ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
 #          ./gradlew --stacktrace -DsonatypeUsername=$SONATYPE_USERNAME -DsonatypePassword=$SONATYPE_PASSWORD publishToSonatype closeAndReleaseSonatypeStagingRepository
-
 
 #        run: |
 #          cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
