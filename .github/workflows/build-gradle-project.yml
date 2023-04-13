@@ -27,8 +27,6 @@ jobs:
       - name: Execute Gradle build
         run: ./gradlew build
       - name: Publish to Sonotype and OSSRH
-        env:
-
         run: |
           gpg --keyring secring.gpg --export-secret-keys > ~/.gnupg/secring.gpg
           gpg --list-secret-keys --keyid-format LONG
