@@ -1,0 +1,11 @@
+dependencies {
+
+    api project(':inversion-core-api')
+    api project(':inversion-module-jdbc')
+    api "com.microsoft.azure:azure-documentdb:${azureCosmosVersion}"
+
+    testImplementation project(':inversion-core-api').sourceSets.test.output
+    testImplementation project(':inversion-module-jdbc').sourceSets.test.output
+    testImplementation project(':inversion-module-spring-boot')
+}
+

@@ -1,7 +1,0 @@
-dependencies {
-
-    api project(':inversion-api')
-    api "com.amazonaws:aws-java-sdk-kinesis:${awsVersion}"
-
-
-}

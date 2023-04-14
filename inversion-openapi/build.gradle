@@ -1,8 +1,0 @@
-dependencies {
-
-    api project(':inversion-api')
-
-    testImplementation project(':inversion-jdbc')
-    testImplementation project(':inversion-jdbc').sourceSets.test.output
-    testImplementation project(':inversion-spring-boot')
-}
