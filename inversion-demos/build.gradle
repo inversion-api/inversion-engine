@@ -1,17 +1,17 @@
 dependencies {
 
-	api project(':inversion-api')
-	api project(':inversion-azure-functions')
-	api project(':inversion-cosmosdb')
-	api project(':inversion-dynamodb')
-	api project(':inversion-elasticsearch')
-	api project(':inversion-jdbc')
-	api project(':inversion-kinesis')
-	api project(':inversion-lambda')
-	api project(':inversion-redis')
-	api project(':inversion-s3')
-	api project(':inversion-script')
-	api project(':inversion-spring-boot')
+	api project(':inversion-core-api')
+	api project(':inversion-module-azure-functions')
+	api project(':inversion-module-azure-cosmosdb')
+	api project(':inversion-module-aws-dynamodb')
+	api project(':inversion-incubator-elasticsearch')
+	api project(':inversion-module-jdbc')
+	api project(':inversion-incubator-aws-kinesis')
+	api project(':inversion-module-aws-lambda')
+	api project(':inversion-incubator-redis')
+	api project(':inversion-module-aws-s3')
+	api project(':inversion-module-script')
+	api project(':inversion-module-spring-boot')
 
 
 	api group: "com.azure", name: "azure-data-appconfiguration", version: "${azureAppconfigurationVersion}"

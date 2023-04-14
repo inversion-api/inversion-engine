@@ -1,0 +1,5 @@
+dependencies {
+
+    api project(':inversion-core-api')
+    api group: "javax.servlet", name: "javax.servlet-api", version: "${servletApiVersion}"
+}

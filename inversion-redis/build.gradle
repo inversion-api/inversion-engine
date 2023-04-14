@@ -1,7 +1,0 @@
-dependencies {
-
-	api project(':inversion-api')
-	api "redis.clients:jedis:${jedisVersion}"
-
-
-}

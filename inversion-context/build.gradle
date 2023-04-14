@@ -1,7 +1,0 @@
-dependencies {
-    api project(':inversion-utils')
-    api group: "org.slf4j", name: "slf4j-api", version: "${slf4jVersion}"
-    api group: "org.apache.commons", name: "commons-text", version: "${commonsTextVersion}"
- //   api group: "org.apache.commons", name: "commons-configuration2", version: "${commonsConfiguration2Version}"
-    api group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
-}

@@ -1,0 +1,7 @@
+dependencies {
+
+    api project(':inversion-core-api')
+    api "com.amazonaws:aws-java-sdk-s3:${awsVersion}"
+    api group: 'commons-io', name: 'commons-io', version: '2.11.0'
+
+}

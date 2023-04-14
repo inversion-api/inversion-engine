@@ -1,0 +1,5 @@
+dependencies {
+    api project(':inversion-core-api')
+    api group: 'com.microsoft.azure.functions', name: 'azure-functions-java-library', version: "${azureFunctionsVersion}"
+}
+

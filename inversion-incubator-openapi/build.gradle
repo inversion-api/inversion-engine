@@ -1,0 +1,13 @@
+dependencies {
+
+    api project(':inversion-core-api')
+
+    testImplementation project(':inversion-module-jdbc')
+    testImplementation project(':inversion-module-jdbc').sourceSets.test.output
+    testImplementation project(':inversion-module-spring-boot')
+
+    api group: "io.swagger.core.v3", name: "swagger-models", version: "${swaggerModelsVersion}"
+    api group: "io.swagger.core.v3", name: "swagger-core", version: "${swaggerCoreVersion}"
+    api group: "io.swagger.parser.v3", name: "swagger-parser", version: "${swaggerParserVersion}"
+
+}

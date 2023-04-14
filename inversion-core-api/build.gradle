@@ -1,0 +1,14 @@
+dependencies {
+
+    api project(':inversion-core-config')
+    api project(':inversion-core-context')
+    api project(':inversion-core-json')
+
+    //JWT support
+    api group: "com.auth0", name: "java-jwt", version: "${auth0JwtVersion}"
+
+    testImplementation project(':inversion-core-context').sourceSets.test.output
+
+
+
+}
