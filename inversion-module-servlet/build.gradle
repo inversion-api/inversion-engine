@@ -1,5 +1,6 @@
 dependencies {
 
-    api project(':inversion-core-api')
-    api group: "javax.servlet", name: "javax.servlet-api", version: "${servletApiVersion}"
+    implementation project(':inversion-core-api')
+    implementation group: "javax.servlet", name: "javax.servlet-api", version: "${servletApiVersion}"
+    implementation group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
 }

@@ -42,7 +42,7 @@ public class Encoder {
             if (bean == null)
                 return null;
 
-            if(bean.getClass().isEnum()){
+            if (bean.getClass().isEnum()) {
                 String val = bean.toString();
                 return val;
             }
@@ -62,26 +62,29 @@ public class Encoder {
             List<Field> fields = Utils.getFields(bean.getClass());
             if (!defaults.containsKey(bean.getClass())) {
                 Object clean = null;
+
                 try {
+                    clean = bean.getClass().getDeclaredConstructor().newInstance();
+                } catch (Exception ex) {
+                    defaults.put(bean.getClass(), "__none", "__none");
+                }
+
+                if (clean != null) {
                     for (Field field : fields) {
                         if (!includer.includeField(context, field))
                             continue;
 
-                        if (clean == null)
-                            clean = bean.getClass().getDeclaredConstructor().newInstance();
-
                         try {
-                            Object defaultValue   = field.get(clean);
-                            if(defaultValue != null){
+                            Object defaultValue = field.get(clean);
+                            if (defaultValue != null) {
                                 Codec defaultCodec = context.getCodec(defaultValue.getClass());
-                                if(defaultCodec != null && defaultCodec instanceof ToStringCodec){
-                                    String encodedDefault = ((ToStringCodec)defaultCodec).toString(defaultValue);
+                                if (defaultCodec != null && defaultCodec instanceof ToStringCodec) {
+                                    String encodedDefault = ((ToStringCodec) defaultCodec).toString(defaultValue);
                                     defaults.put(bean.getClass(), field.getName(), encodedDefault);
-                                }
-                                else{
-                                    if(defaultValue instanceof Map && ((Map)defaultValue).size() == 0){
+                                } else {
+                                    if (defaultValue instanceof Map && ((Map) defaultValue).size() == 0) {
                                         defaults.put(bean.getClass(), field.getName(), "{}");
-                                    }else if(defaultValue instanceof Collection && ((Collection)defaultValue).size() == 0){
+                                    } else if (defaultValue instanceof Collection && ((Collection) defaultValue).size() == 0) {
                                         defaults.put(bean.getClass(), field.getName(), "[]");
                                     }
                                 }
@@ -92,10 +95,6 @@ public class Encoder {
                             Object defaultValue = field.get(clean);
                         }
                     }
-                } catch (NoSuchMethodException ex) {
-                    //-- probably no empty constructor
-                    //-- put this here so future encoders won't try to load defaults
-                    defaults.put(bean.getClass(), "__none", "__none");
                 }
             }
 
@@ -105,7 +104,7 @@ public class Encoder {
 
                 Object fieldValue = field.get(bean);
                 if (fieldValue != null) {
-                    String fieldKey = name + "." + field.getName();
+                    String fieldKey    = name + "." + field.getName();
                     String encodedProp = encode0(context, new CodecPath(codecPath, field.getGenericType(), field.getName(), fieldValue), props, encoded);
                     Object defaultProp = defaults.get(bean.getClass(), field.getName());
                     if (!Utils.equal(encodedProp, defaultProp))
@@ -115,6 +114,7 @@ public class Encoder {
 
             return name;
         } catch (Throwable ex) {
+            ex.printStackTrace();
             log.error("Error encoding bean path: " + codecPath, ex);
             Context.dump("PROPERTIES THROUGH ERROR:", props);
             ex = Utils.getCause(ex);

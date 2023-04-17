@@ -250,7 +250,7 @@ class DbPostAction<A extends DbPostAction> extends Action<A>  {
         //-- Step 1. Upsert this generation including many-to-one relationships where the fk is known
         //--
 
-        System.out.println("UPSERT: " + collection.getName() + ":\r\n" + nodes);
+        //System.out.println("UPSERT: " + collection.getName() + ":\r\n" + nodes);
         List<String> returnList = collection.getDb().upsert(collection, nodes);
 
         for (int i = 0; i < nodes.size(); i++) {

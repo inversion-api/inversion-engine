@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.rql;
+package io.inversion.query;
 
-import io.inversion.Collection;
+import io.inversion.rql.Term;
 
 import java.util.ArrayList;
 import java.util.List;

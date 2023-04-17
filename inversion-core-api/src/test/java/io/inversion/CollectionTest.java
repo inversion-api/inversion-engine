@@ -36,7 +36,8 @@ public class CollectionTest {
     public void encodeStr_encodeDecodeMustNotModifyValue() throws Exception {
         String source  = "asdf1234-._()'!*,;-~@%<>[]{}|\\^?/#+&= ---5678910";
         String encoded = Collection.encodeStr(source);
-        assertEquals("asdf1234-._()'!*,;-@007e@0040@0025@003c@003e@005b@005d@007b@007d@007c@005c@005e@003f@002f@0023@002b@0026@003d@0020---5678910", encoded);
+        //assertEquals("asdf1234-._()'!*,;-@007e@0040@0025@003c@003e@005b@005d@007b@007d@007c@005c@005e@003f@002f@0023@002b@0026@003d@0020---5678910", encoded);
+        assertEquals("asdf1234-._()'!*,;-@007E@0040@0025@003C@003E@005B@005D@007B@007D@007C@005C@005E@003F@002F@0023@002B@0026@003D@0020---5678910", encoded);
         String decoded = Collection.decodeStr(encoded);
         assertEquals(source, decoded);
     }

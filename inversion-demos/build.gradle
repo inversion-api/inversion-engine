@@ -1,28 +1,24 @@
 dependencies {
 
-	api project(':inversion-core-api')
-	api project(':inversion-module-azure-functions')
-	api project(':inversion-module-azure-cosmosdb')
-	api project(':inversion-module-aws-dynamodb')
-	api project(':inversion-incubator-elasticsearch')
-	api project(':inversion-module-jdbc')
-	api project(':inversion-incubator-aws-kinesis')
-	api project(':inversion-module-aws-lambda')
-	api project(':inversion-incubator-redis')
-	api project(':inversion-module-aws-s3')
-	api project(':inversion-module-script')
-	api project(':inversion-module-spring-boot')
+	implementation project(':inversion-core-api')
+	implementation project(':inversion-module-azure-functions')
+	implementation project(':inversion-module-azure-cosmosdb')
+	implementation project(':inversion-module-aws-dynamodb')
+	implementation project(':inversion-incubator-elasticsearch')
+	implementation project(':inversion-module-jdbc')
+	implementation project(':inversion-incubator-aws-kinesis')
+	implementation project(':inversion-module-aws-lambda')
+	implementation project(':inversion-incubator-redis')
+	implementation project(':inversion-module-aws-s3')
+	implementation project(':inversion-module-script')
+	implementation project(':inversion-module-spring-boot')
 
 
-	api group: "com.azure", name: "azure-data-appconfiguration", version: "${azureAppconfigurationVersion}"
-	api group: "com.azure", name: "azure-security-keyvault-secrets", version: "${azureKeyVaultVersion}"
-	api group: "com.azure", name: "azure-identity", version: "${azureIdentityVersion}"
+	implementation group: "com.azure", name: "azure-data-appconfiguration", version: "${azureAppconfigurationVersion}"
+	implementation group: "com.azure", name: "azure-security-keyvault-secrets", version: "${azureKeyVaultVersion}"
+	implementation group: "com.azure", name: "azure-identity", version: "${azureIdentityVersion}"
 
-	//api group: "mysql", name: "mysql-connector-java", version: "8.0.19"
-	//api group: "org.postgresql", name: "postgresql", version: "42.2.10"
-	//api group: "com.microsoft.sqlserver", name: "mssql-jdbc", version: "8.2.0.jre8"
-	
-
+	implementation group: "org.apache.commons", name: "commons-configuration2", version: "${commonsConfiguration2Version}"
 
 }
 

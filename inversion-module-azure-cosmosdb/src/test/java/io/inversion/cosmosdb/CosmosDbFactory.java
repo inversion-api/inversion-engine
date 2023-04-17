@@ -176,12 +176,13 @@ public class CosmosDbFactory {
 
         public NorthwindCosmosDb() {
             withName("cosmos");
+            withAllowCrossPartitionQueries(false);
         }
 
         @Override
         public void configDb() throws ApiException {
             withDb("inversion-testing-cosmos1");
-            withIncludeOn("cosmosdb/[:type]/*");
+            withIncludeOn("cosmosdb/[{type}]/*");
 
             Collection customersTbl = new Collection("customers").withTableName("Northwind")//
 

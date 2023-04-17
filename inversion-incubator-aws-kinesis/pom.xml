@@ -37,13 +37,13 @@
       <groupId>io.inversion</groupId>
       <artifactId>inversion-core-api</artifactId>
       <version>0.12.1</version>
-      <scope>compile</scope>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk-kinesis</artifactId>
-      <version>1.12.410</version>
-      <scope>compile</scope>
+      <version>1.12.450</version>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 </project>

@@ -229,7 +229,7 @@ public class Context {
                     nameField = Utils.getField("name", object.getClass());
                 }
                 catch(Exception ex){
-                    System.out.println("Unable to make name for " + object.getClass());
+                    System.err.println("Unable to make name for " + object.getClass());
                     ex.printStackTrace();
                 }
 
@@ -250,7 +250,6 @@ public class Context {
                             name = n.toString();
                     }
                 } catch (Throwable ex) {
-                    System.out.println(getter);
                     throw Utils.ex(ex, "Unable to determine name for class '{}' with getName method {}", object.getClass(), getter);
                 }
             }

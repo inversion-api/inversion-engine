@@ -51,36 +51,36 @@ import java.util.regex.Pattern;
  * TODO: check on test cases related to hasName and path matching
  * TODO: need tests for resource keys with commas
  */
-public class Collection  extends Rule<Collection>  implements Serializable {
+public class Collection extends Rule<Collection> implements Serializable {
 
     /**
      * Additional names that should cause this Collection to match to a Request.
      * <p>
      * For example, in an e-commerce environment, you may overload the "orders" collection with aliases "cart", "basket", and "bag".
      */
-    protected final Set<String> aliases = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    protected final     Set<String>             aliases       = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
     /**
      * Properties map database column names to JSON property names.
      */
-    protected final ArrayList<Property> properties = new ArrayList<>();
+    protected final     ArrayList<Property>     properties    = new ArrayList<>();
     /**
      * Representation of underlying Db datasource indexes.
      */
-    protected final ArrayList<Index> indexes = new ArrayList<>();
+    protected final     ArrayList<Index>        indexes       = new ArrayList<>();
     /**
      * Relationships like resources in one collection to the resources in another collection.
      */
-    protected final ArrayList<Relationship> relationships = new ArrayList<>();
+    protected final     ArrayList<Relationship> relationships = new ArrayList<>();
     /**
      * The backend storage adapter that probably generated this Collection and associated Indexes and Relationships.
      */
-    transient protected Db db = null;
+    transient protected Db                      db            = null;
     /**
      * The backend datasource name that this Collection operates on.
      * <p>
      * The tableName might be "ORDER_DETAIL" but the Collection might be named "orderDetails".
      */
-    protected String tableName = null;
+    protected           String                  tableName     = null;
 
     protected String pluralDisplayName = null;
 
@@ -114,12 +114,12 @@ public class Collection  extends Rule<Collection>  implements Serializable {
     @Override
     protected List<RuleMatcher> getDefaultIncludeMatchers() {
 
-        String collection = "{" + Request.COLLECTION_KEY + ":" + getName() + "}";
-        String resource = "[{" + Request.RESOURCE_KEY + "}]";
+        String collection   = "{" + Request.COLLECTION_KEY + ":" + getName() + "}";
+        String resource     = "[{" + Request.RESOURCE_KEY + "}]";
         String relationship = "[{" + Request.RELATIONSHIP_KEY + "}]";
 
-        Index pk =  getResourceIndex();
-        if(pk != null) {
+        Index pk = getResourceIndex();
+        if (pk != null) {
             if (pk.size() == 1) {
                 String regex = pk.getProperty(0).getRegex();
                 if (regex != null) {
@@ -276,21 +276,21 @@ public class Collection  extends Rule<Collection>  implements Serializable {
         return name != null ? name : tableName;
     }
 
-    public Collection withSingularDispalyName(String singularName){
+    public Collection withSingularDispalyName(String singularName) {
         this.singularDisplayName = singularName;
         return this;
     }
 
-    public String getSingularDisplayName(){
+    public String getSingularDisplayName() {
         return singularDisplayName != null ? singularDisplayName : getName();
     }
 
-    public Collection withPluralDisplayName(String pluralName){
+    public Collection withPluralDisplayName(String pluralName) {
         this.pluralDisplayName = pluralName;
         return this;
     }
 
-    public String getPluralDisplayName(){
+    public String getPluralDisplayName() {
         return pluralDisplayName != null ? pluralDisplayName : getName();
     }
 
@@ -370,12 +370,12 @@ public class Collection  extends Rule<Collection>  implements Serializable {
     public Index getResourceIndex() {
 
         for (Index index : indexes) {
-            if(Index.TYPE_RESOURCE_KEY.equals(index.type))
+            if (Index.TYPE_RESOURCE_KEY.equals(index.type))
                 return index;
         }
 
         for (Index index : indexes) {
-            if(Index.TYPE_PRIMARY_KEY.equals(index.type))
+            if (Index.TYPE_PRIMARY_KEY.equals(index.type))
                 return index;
         }
 
@@ -400,8 +400,7 @@ public class Collection  extends Rule<Collection>  implements Serializable {
      * @param indexType the case insensative index type identifier
      * @return the first index with type = indexType
      */
-    public Index getIndexByType(String indexType)
-    {
+    public Index getIndexByType(String indexType) {
         for (Index index : indexes) {
             if (indexType.equalsIgnoreCase(index.getType()))
                 return index;
@@ -482,7 +481,28 @@ public class Collection  extends Rule<Collection>  implements Serializable {
         return this;
     }
 
-    public Collection withForeignKey(Collection related, String... myProperties){
+    public Collection withIndex(String name, String type, boolean unique, int sequence, String propertyName) {
+
+        Property prop = getProperty(propertyName);
+        if (prop == null) {
+            throw ApiException.new500InternalServerError("Property {} does not exist so it can't be added to the index {}", propertyName, name);
+        }
+
+        Index index = getIndex(name);
+        if (index == null) {
+            index = new Index(name, type, unique, sequence, prop);
+            withIndexes(index);
+        } else {
+            index.withType(type);
+            index.withUnique(unique);
+            index.withProperty(sequence, prop);
+        }
+
+        return this;
+    }
+
+
+    public Collection withForeignKey(Collection related, String... myProperties) {
         Property[] properties = new Property[myProperties.length];
         for (int i = 0; i < myProperties.length; i++) {
             String   propName = myProperties[i];
@@ -495,7 +515,7 @@ public class Collection  extends Rule<Collection>  implements Serializable {
         }
         Index fk = new Index(null, Index.TYPE_FOREIGN_KEY, false, properties);
         Index pk = related.getResourceIndex();
-        for(int i=0; i<fk.size(); i++){
+        for (int i = 0; i < fk.size(); i++) {
             fk.getProperty(i).withPk(pk.getProperty(i));
         }
         withIndexes(fk);
@@ -569,7 +589,6 @@ public class Collection  extends Rule<Collection>  implements Serializable {
     }
 
 
-
     /**
      * Fluent utility method to construct a Relationship and associated Indexes.
      * <p>
@@ -577,8 +596,8 @@ public class Collection  extends Rule<Collection>  implements Serializable {
      * to <code>parentCollection</code>'s primary Index.
      *
      * @param thisCollectionsRelationshipJsonPropertyName what to call this relationship in the json representation of this Collection's resources.
-     * @param parentCollection  the related parent Collection
-     * @param thisCollectionsForeignKeyProps      the Collections Properties that make up the foreign key
+     * @param parentCollection                            the related parent Collection
+     * @param thisCollectionsForeignKeyProps              the Collections Properties that make up the foreign key
      * @return this
      */
     public Collection withManyToOneRelationship(String thisCollectionsRelationshipJsonPropertyName, Collection parentCollection, String... thisCollectionsForeignKeyProps) {
@@ -619,8 +638,8 @@ public class Collection  extends Rule<Collection>  implements Serializable {
      * to this Collection's primary Index.
      *
      * @param thisCollectionsRelationshipJsonPropertyName the name of the json property for the parent that references the child
-     * @param childCollection    the target child collection
-     * @param childCollectionsForeignKeyProps       Properties that make up the foreign key
+     * @param childCollection                             the target child collection
+     * @param childCollectionsForeignKeyProps             Properties that make up the foreign key
      * @return this
      */
     public Collection withOneToManyRelationship(String thisCollectionsRelationshipJsonPropertyName, Collection childCollection, String... childCollectionsForeignKeyProps) {
@@ -824,8 +843,8 @@ public class Collection  extends Rule<Collection>  implements Serializable {
      * The inverse of this method is {@link #decodeKey(Index, String, boolean)} which is used to
      * decode inbound Url path and query params to determine which resource is being referenced.
      *
-     * @param values column name to Property value mapping for a resource
-     * @param index  the index identifying the values that should be encoded
+     * @param values               column name to Property value mapping for a resource
+     * @param index                the index identifying the values that should be encoded
      * @param useJsonPropertyNames use json prop names vs db col names
      * @return a url safe encoding of the index values separated by "~" characters or null if any of the values for an index key is null.
      * @see #encodeStr(String)
@@ -870,6 +889,7 @@ public class Collection  extends Rule<Collection>  implements Serializable {
         }
         return resourceKey.toString();
     }
+
     /**
      * Encodes non url safe characters into a friendly "@FOUR_DIGIT_HEX_VALUE" equivalent that itself will not be modified by URLEncoder.encode(String).
      * <p>
@@ -937,8 +957,8 @@ public class Collection  extends Rule<Collection>  implements Serializable {
     /**
      * Decodes a resource key.
      *
-     * @param index  identifies the columnNames to decode
-     * @param key a comma separated list of encoded resource keys
+     * @param index                identifies the columnNames to decode
+     * @param key                  a comma separated list of encoded resource keys
      * @param useJsonPropertyNames indicates to preserve json prop names/types and not convert to db column name/types
      * @return a list of decoded name value pairs
      * @see #encodeKey(Map, Index, boolean)
@@ -947,9 +967,9 @@ public class Collection  extends Rule<Collection>  implements Serializable {
      */
     public Map<String, Object> decodeKey(Index index, String key, boolean useJsonPropertyNames) {
 
-        List<String> names = useJsonPropertyNames ? index.getJsonNames() : index.getColumnNames();
-        Map<String, Object> row = new LinkedHashMap<>();
-        List parts = Utils.explode("~", key);
+        List<String>        names = useJsonPropertyNames ? index.getJsonNames() : index.getColumnNames();
+        Map<String, Object> row   = new LinkedHashMap<>();
+        List                parts = Utils.explode("~", key);
 
         if (parts.size() != names.size())
             throw ApiException.new400BadRequest("Supplied resource key '{}' has {} part(s) but the primary index for table '{}' has {} part(s)", row, row.size(), getTableName(), index.size());
@@ -960,7 +980,7 @@ public class Collection  extends Rule<Collection>  implements Serializable {
             if (((String) value).length() == 0)
                 throw ApiException.new400BadRequest("A key component can not be empty '{}'", key);
 
-            if(!useJsonPropertyNames)
+            if (!useJsonPropertyNames)
                 value = getDb().castJsonInput(index.getProperty(i), value);
 
             row.put(names.get(i), value);
@@ -979,15 +999,15 @@ public class Collection  extends Rule<Collection>  implements Serializable {
      */
     static String decodeStr(String string) {
         try {
-            Pattern      p  = Pattern.compile("\\@[0-9a-f]{4}");
+            Pattern      p  = Pattern.compile("\\@[0-9A-F]{4}");
             Matcher      m  = p.matcher(string);
             StringBuffer sb = new StringBuffer();
             while (m.find()) {
                 String group = m.group();
                 String hex   = group.substring(1);
                 String chars = StringEscapeUtils.unescapeJava("\\u" + hex);
-                if(chars.equals("\\"))
-                        chars = "\\\\";
+                if (chars.equals("\\"))
+                    chars = "\\\\";
                 m.appendReplacement(sb, chars);
             }
             m.appendTail(sb);

@@ -26,6 +26,7 @@ import java.util.*;
 public class LinksFilter extends HATEOASFilter<LinksFilter> {
 
     public void run(Request req, Response res) throws ApiException {
+
         if (Chain.isRoot() && req.getCollection() != null){
             if(req.getJson() != null){
                 req.getData().asMapList().forEach(node -> removeLinks(req.getCollection(), node));
@@ -47,10 +48,11 @@ public class LinksFilter extends HATEOASFilter<LinksFilter> {
 
     protected void removeLinks(Collection coll, final JSMap node) {
 
+
         if (node.get("href") instanceof String){
             String href = (String)node.remove("href");
 
-            if(href.startsWith("http://") || href.startsWith("https://")){
+            if(href.startsWith("http://") || href.startsWith("https://") || href.startsWith("/")){
                 href = href.substring(href.lastIndexOf("/") + 1);
             }
 
@@ -70,7 +72,7 @@ public class LinksFilter extends HATEOASFilter<LinksFilter> {
                     if (rel.isManyToOne()) {
                         if (value != null && value instanceof String) {
                             String href = (String)value;
-                            if(href.startsWith("http://") || href.startsWith("https://")) {
+                            if(href.startsWith("http://") || href.startsWith("https://") || href.startsWith("/")) {
                                 node.remove(rel.getName());
                                 href = href.substring(href.lastIndexOf("/") + 1);
                                 Map<String, Object> primaryKey = rel.getRelated().decodeKeyToJsonNames(href);

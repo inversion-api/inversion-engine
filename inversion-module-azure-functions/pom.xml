@@ -37,13 +37,19 @@
       <groupId>io.inversion</groupId>
       <artifactId>inversion-core-api</artifactId>
       <version>0.12.1</version>
-      <scope>compile</scope>
+      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.microsoft.azure.functions</groupId>
       <artifactId>azure-functions-java-library</artifactId>
       <version>1.4.2</version>
-      <scope>compile</scope>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-collections4</artifactId>
+      <version>4.4</version>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 </project>

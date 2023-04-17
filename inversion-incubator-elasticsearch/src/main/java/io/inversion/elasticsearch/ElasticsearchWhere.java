@@ -19,8 +19,7 @@ package io.inversion.elasticsearch;
 import io.inversion.ApiException;
 import io.inversion.Index;
 import io.inversion.rql.Term;
-import io.inversion.rql.Where;
-import io.inversion.utils.Rows.Row;
+import io.inversion.query.Where;
 
 import java.util.List;
 import java.util.Map;

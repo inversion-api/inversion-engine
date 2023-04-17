@@ -29,7 +29,14 @@ import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes;
 import io.inversion.Collection;
 import io.inversion.Index;
 import io.inversion.*;
-import io.inversion.rql.Page;
+import io.inversion.query.Projection;
+import io.inversion.query.Select;
+import io.inversion.query.Where;
+import io.inversion.query.Group;
+import io.inversion.query.Order;
+import io.inversion.query.Page;
+import io.inversion.query.From;
+import io.inversion.query.Query;
 import io.inversion.rql.*;
 import io.inversion.utils.Utils;
 
@@ -215,8 +222,8 @@ public class DynamoDbQuery extends Query<DynamoDbQuery, DynamoDb, Select<Select<
                         }
 
                         HashSet<String> projectionColumns = new HashSet();
-                        for (Property p : proj.getProperties()) {
-                            projectionColumns.add(p.getColumnName());
+                        for (String column : proj.keySet()) {
+                            projectionColumns.add(column);
                         }
 
                         boolean columnsCovered = true;

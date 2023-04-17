@@ -16,7 +16,7 @@
  */
 package io.inversion.jdbc;
 
-import io.inversion.rql.AbstractRqlTest;
+import io.inversion.query.AbstractRqlTest;
 
 public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements AbstractJdbcDbEngineTest {
 
@@ -56,7 +56,10 @@ public abstract class AbstractSqlQueryRqlTest extends AbstractRqlTest implements
         withExpectedResult("sumIf", "SELECT SUM(CASE WHEN \"orders\".\"shipCountry\" = ? THEN 1 ELSE 0 END) AS \"French Orders\" FROM \"orders\" LIMIT 100 OFFSET 0 args=[France]");
         withExpectedResult("min", "SELECT MIN(\"orders\".\"freight\") FROM \"orders\" LIMIT 100 OFFSET 0 args=[]");
         withExpectedResult("max", "SELECT MAX(\"orders\".\"freight\") FROM \"orders\" LIMIT 100 OFFSET 0 args=[]");
-        withExpectedResult("groupCount", "SELECT \"orders\".\"shipCountry\", COUNT(*) AS \"countryCount\" FROM \"orders\" GROUP BY \"orders\".\"shipCountry\" ORDER BY \"orders\".\"shipCountry\" ASC LIMIT 100 OFFSET 0 args=[]");
+        //withExpectedResult("groupCount", "SELECT \"orders\".\"shipCountry\", COUNT(*) AS \"countryCount\" FROM \"orders\" GROUP BY \"orders\".\"shipCountry\" ORDER BY \"orders\".\"shipCountry\" ASC LIMIT 100 OFFSET 0 args=[]");
+        withExpectedResult("groupCount", "SELECT \"orders\".\"shipCountry\", COUNT(*) AS \"countryCount\" FROM \"orders\" GROUP BY \"orders\".\"shipCountry\" ORDER BY \"orders\".\"shipCountry\" ASC, \"orders\".\"countryCount\" ASC LIMIT 100 OFFSET 0 args=[]");
+
+
         withExpectedResult("offset", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 100 OFFSET 3 args=[]");
         withExpectedResult("limit", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 7 OFFSET 0 args=[]");
         withExpectedResult("page", "SELECT \"orders\".* FROM \"orders\" ORDER BY \"orders\".\"orderId\" ASC LIMIT 7 OFFSET 14 args=[]");

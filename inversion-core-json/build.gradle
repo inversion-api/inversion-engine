@@ -1,9 +1,9 @@
 dependencies {
-    api project(':inversion-core-utils')
+    implementation project(':inversion-core-utils')
 
     //JSON parsing
-    api group: "com.fasterxml.jackson.core", name: "jackson-core", version: "${jacksonCoreVersion}"
-    api group: "com.fasterxml.jackson.core", name: "jackson-databind", version: "${jacksonDatabindVersion}"
+    implementation group: "com.fasterxml.jackson.core", name: "jackson-core", version: "${jacksonCoreVersion}"
+    implementation group: "com.fasterxml.jackson.core", name: "jackson-databind", version: "${jacksonDatabindVersion}"
 
     testImplementation group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
 

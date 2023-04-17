@@ -39,6 +39,9 @@ public class UrlTest {
     @Test
     public void test_pass_parsing(){
 
+
+        passUrl("//127.0.0.1:8080/persons?expand=props", "/persons?expand=props");
+
         passUrl("http://asdf?offset=5", "http://asdf?offset=5");
 
         passUrl("http://localhost:8080?someField1=value1", "http://localhost:8080?someField1=value1");

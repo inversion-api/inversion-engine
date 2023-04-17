@@ -59,7 +59,8 @@ public class DbAction extends Action<DbAction> {
     @Override
     protected LinkedHashSet<Path> getIncludePaths(Api api, Db db, String method) {
         LinkedHashSet<Path> includePaths = new LinkedHashSet<>();
-        for (Path actionPath : super.getIncludePaths(api, db, method)) {
+        LinkedHashSet<Path> paths = super.getIncludePaths(api, db, method);
+        for (Path actionPath : paths) {
             int collectionIdx   = actionPath.getVarIndex("_collection");
             int resourceIdx     = actionPath.getVarIndex("_resource");
             int relationshipIdx = actionPath.getVarIndex("_relationship");

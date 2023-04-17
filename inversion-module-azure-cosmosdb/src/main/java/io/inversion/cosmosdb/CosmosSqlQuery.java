@@ -22,9 +22,9 @@ import io.inversion.*;
 import io.inversion.jdbc.SqlQuery;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSParser;
-import io.inversion.rql.Order.Sort;
+import io.inversion.query.Order.Sort;
 import io.inversion.rql.Term;
-import io.inversion.rql.Where;
+import io.inversion.query.Where;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
 
@@ -95,7 +95,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
             //-- have a single partition key identified in your query.
             //-- If we have a pk term but it is nested in an expression
             //-- the we can't be sure the cosmos query planner can use it.
-            partKeyCol = partKeyIdx.getName();//getProperty(0).getColumnName();
+            partKeyCol = partKeyIdx.getProperty(0).getColumnName();
             Term partKeyTerm = findTerm(partKeyCol, "eq");
 
             if(partKeyTerm == null) {

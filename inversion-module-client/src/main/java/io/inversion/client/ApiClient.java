@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 
-package io.inversion;
+package io.inversion.client;
 
+import io.inversion.*;
 import io.inversion.context.Context;
 import io.inversion.json.JSNode;
 import io.inversion.utils.Path;
 import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
@@ -441,7 +441,7 @@ public class ApiClient {
     public Request buildRequest(String method, String fullUrlOrRelativePath, Map<String, String> params, Object body, ArrayListValuedHashMap<String, String> headers) {
 
         String url         = buildUrl(fullUrlOrRelativePath);
-        String queryString = StringUtils.substringAfter(url, "?");
+        String queryString = Utils.substringAfter(url, "?");
         if (!Utils.empty(queryString)) {
             url = Utils.substringBefore(url, "?");
             Map newParams = Utils.parseQueryString(queryString);

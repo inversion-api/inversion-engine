@@ -14,12 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.rql;
+package io.inversion.query;
 
-import io.inversion.utils.Utils;
+import io.inversion.rql.Term;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 
 public class Group<T extends Group, P extends Query> extends Builder<T, P> {

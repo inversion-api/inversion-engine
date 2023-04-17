@@ -82,7 +82,10 @@ public class Linker {
                 Path serverPath = new Path(req.getServerPath());
                 Url  url        = req.getUrl();
 
-                String link = req.getUrl().getProtocol() + "://" + req.getUrl().getHost() + (req.getUrl().getPort() > 0 ? (":" + req.getUrl().getPort()) : "");
+                //System.out.println(serverPath);
+                //System.out.println(url);
+
+                String link = "";//req.getUrl().getProtocol() + "://" + req.getUrl().getHost() + (req.getUrl().getPort() > 0 ? (":" + req.getUrl().getPort()) : "");
                 Path   path = new Path(req.getServerPath().toString(), opPath.toString());
                 link += "/" + path;
 

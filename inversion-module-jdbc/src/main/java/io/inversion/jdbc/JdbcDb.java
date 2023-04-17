@@ -27,7 +27,6 @@ import io.inversion.utils.JdbcUtils.SqlListener;
 import io.inversion.rql.Term;
 import io.inversion.utils.Rows.Row;
 import io.inversion.utils.Utils;
-import org.apache.commons.configuration2.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +115,7 @@ public class JdbcDb extends Db<JdbcDb> {
      * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
      *
      * @see Config
-     * @see Configuration
+     *
      */
     protected       String       url                      = null;
     /**
@@ -126,7 +125,7 @@ public class JdbcDb extends Db<JdbcDb> {
      * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
      *
      * @see Config
-     * @see Configuration
+     * 
      */
     protected       String       user                     = null;
     /**
@@ -136,7 +135,7 @@ public class JdbcDb extends Db<JdbcDb> {
      * where it can be discovered by <code>Config</code>...for example as an environment variable or in an inversion.properties file.
      *
      * @see Config
-     * @see Configuration
+     * 
      */
     protected       String       pass                     = null;
     /**
@@ -604,6 +603,12 @@ public class JdbcDb extends Db<JdbcDb> {
                     colsRs.close();
 
                     ResultSet indexMd = dbmd.getIndexInfo(conn.getCatalog(), null, tableName, false, false);
+
+//                    ResultSetMetaData idxMd = indexMd.getMetaData();
+//                    for(int i=0; i<idxMd.getColumnCount(); i++){
+//                        System.out.println(idxMd.getColumnName(i+1));
+//                    }
+
                     while (indexMd.next()) {
                         String idxName = indexMd.getString("INDEX_NAME");
                         String idxType = Index.TYPE_INDEX;
@@ -615,22 +620,7 @@ public class JdbcDb extends Db<JdbcDb> {
                             continue;
                         }
 
-                        /*
-                        switch (indexMd.getInt("TYPE")) {
-                            case DatabaseMetaData.tableIndexClustered:
-                                idxType = "Clustered";
-                                break;
-                            case DatabaseMetaData.tableIndexHashed:
-                                idxType = "Hashed";
-                                break;
-                            case DatabaseMetaData.tableIndexOther:
-                                idxType = "Other";
-                                break;
-                            case DatabaseMetaData.tableIndexStatistic:
-                                idxType = "Statistic";
-                                break;
-                        }
-                        */
+                        int keySeq = indexMd.getInt("ORDINAL_POSITION");
 
                         Object  nonUnique = indexMd.getObject("NON_UNIQUE") + "";
                         boolean unique    = !(nonUnique.equals("true") || nonUnique.equals("1"));
@@ -638,7 +628,7 @@ public class JdbcDb extends Db<JdbcDb> {
                         //this looks like it only supports single column indexes but if
                         //an index with this name already exists, that means this is another
                         //column in that index.
-                        collection.withIndex(idxName, idxType, unique, colName);
+                        collection.withIndex(idxName, idxType, unique, keySeq, colName);
 
                     }
                     indexMd.close();
@@ -651,8 +641,8 @@ public class JdbcDb extends Db<JdbcDb> {
                         Property column  = collection.getProperty(colName);
 
                         int keySeq = pkMd.getInt("KEY_SEQ");
-
-                        collection.withIndex(idxName, idxType, true, colName);
+                        System.out.println(keySeq);
+                        collection.withIndex(idxName, idxType, true, keySeq, colName);
                         //System.out.println("Primary key: " + colName);
                     }
                     pkMd.close();

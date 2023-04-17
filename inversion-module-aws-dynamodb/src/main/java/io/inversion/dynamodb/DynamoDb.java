@@ -430,23 +430,23 @@ public class DynamoDb<T extends DynamoDb> extends Db<T> {
         }
 
         if(projection != null){
-            io.inversion.Projection invProj = new io.inversion.Projection();
+            io.inversion.query.Projection invProj = new io.inversion.query.Projection();
             invProj.withType(projection.getProjectionType());
 
             for(Property prop : primaryIndex.getProperties()){
-                invProj.withProperty(prop);
+                invProj.add(prop.getColumnName());
             }
 
             for (KeySchemaElement keyInfo : keySchemaList) {
                 Property property = collection.getProperty(keyInfo.getAttributeName());
-                invProj.withProperty(property);
+                invProj.add(property.getColumnName());
             }
 
             List<String> nonKeys = projection.getNonKeyAttributes();
             if(nonKeys != null){
                 for(String name : nonKeys){
                     Property property = collection.getProperty(name);
-                    invProj.withProperty(property);
+                    invProj.add(property.getColumnName());
                 }
             }
 

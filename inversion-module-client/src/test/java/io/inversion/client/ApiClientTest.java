@@ -1,8 +1,8 @@
-package io.inversion;
+package io.inversion.client;
 
-import io.inversion.ApiClient.FutureResponse;
-import io.inversion.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.*;
+import io.inversion.client.ApiClient;
+import io.inversion.client.ApiClient.FutureResponse;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;

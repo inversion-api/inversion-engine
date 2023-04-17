@@ -93,24 +93,26 @@ subprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
 
+    //./gradlew printSubDependencies --configuration runtimeClasspath
+    task printSubDependencies(type: DependencyReportTask) {}
+
     java {
         toolchain {
             languageVersion = JavaLanguageVersion.of(11)
         }
     }
 
+    /*
     test {
         exclude '**'
     }
+    */
 
     repositories {
         mavenCentral()
     }
 
     signing {
-        //def signingKey = findProperty("signingKey")
-        //def signingPassword = findProperty("signingPassword")
-        //useInMemoryPgpKeys(signingKey, signingPassword)
         sign publishing.publications
     }
 

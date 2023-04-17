@@ -15,10 +15,14 @@
  * limitations under the License.
  */
 
-package io.inversion;
+package io.inversion.query;
+
+import io.inversion.rql.Term;
+import io.inversion.utils.LinkedCaseInsensitiveMap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class Projection {
 
@@ -26,23 +30,39 @@ public class Projection {
     //KEYS_ONLY("KEYS_ONLY"),
     //INCLUDE("INCLUDE");
 
-    String              type           = "KEYS_ONLY";
-    ArrayList<Property> properties = new ArrayList();
+    String                   type  = "KEYS_ONLY";
+    LinkedCaseInsensitiveMap terms = new LinkedCaseInsensitiveMap();
 
-    public Projection withProperty(Property property){
-        if(property != null && !properties.contains(property)){
-            properties.add(property);
-        }
+
+
+    public int size(){
+        return terms.size();
+    }
+
+    public Set<String> keySet(){
+        return terms.keySet();
+    }
+
+    public boolean containsKey(String key){
+        return terms.containsKey(key);
+    }
+
+    public Projection add(String column){
+        terms.put(column, Term.term(null, column));
         return this;
     }
 
-    public Projection withProperties(Property... properties){
-        for(int i=0; properties != null && i<properties.length; i++){
-            if(properties[i] != null){
-                withProperty(properties[i]);
-            }
-        }
+    public Projection add(String key, Term term){
+        terms.put(key, term);
         return this;
+    }
+
+    public Term get(String key){
+        return (Term)terms.get(key);
+    }
+
+    public List<Term> getTerms(){
+        return new ArrayList(terms.values());
     }
 
     public String getType() {
@@ -54,12 +74,4 @@ public class Projection {
         return this;
     }
 
-    public List<Property> getProperties() {
-        return properties;
-    }
-
-    public Projection withProperties(List<Property> properties) {
-        this.properties = new ArrayList(properties);
-        return this;
-    }
 }

@@ -17,8 +17,6 @@
 
 package io.inversion.rql;
 
-import io.inversion.utils.Utils;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,16 +24,20 @@ public class Rql {
 
     public static Term parse(String paramName, String paramValue) {
         String termStr;
-        if (Utils.empty(paramValue) && paramName.contains("(")) {
+        if (empty(paramValue) && paramName.contains("(")) {
             termStr = paramName;
         } else {
-            if (Utils.empty(paramValue))
+            if (empty(paramValue))
                 paramValue = "true";
 
             termStr = "eq(" + paramName + "," + paramValue + ")";
         }
         Term term = parse(termStr);
         return term;
+    }
+
+    public static boolean empty(String str) {
+        return str == null || str.length() == 0 || str.trim().length() == 0;
     }
 
     public static Term parse(String clause) {

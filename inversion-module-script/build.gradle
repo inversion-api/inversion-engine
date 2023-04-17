@@ -1,5 +1,5 @@
 dependencies {
-	api project(':inversion-core-api')
-	api  "org.graalvm.js:js-scriptengine:${graalvmJsVersion}"
-	api  "org.apache.velocity:velocity-engine-core:${velocityEngineVersion}"
+	implementation project(':inversion-core-api')
+	implementation  "org.graalvm.js:js-scriptengine:${graalvmJsVersion}"
+	implementation  "org.apache.velocity:velocity-engine-core:${velocityEngineVersion}"
 }

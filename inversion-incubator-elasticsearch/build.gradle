@@ -1,9 +1,9 @@
 dependencies {
-    api project(':inversion-core-api')
-    api project(':inversion-module-jdbc')
-    api "com.amazonaws:aws-java-sdk-elasticsearch:${awsVersion}"
-    api "org.elasticsearch.client:elasticsearch-rest-high-level-client:${elasticsearchVersion}"
-
+    implementation project(':inversion-core-api')
+    implementation project(':inversion-module-jdbc')
+    implementation "com.amazonaws:aws-java-sdk-elasticsearch:${awsVersion}"
+    implementation "org.elasticsearch.client:elasticsearch-rest-high-level-client:${elasticsearchVersion}"
+    implementation group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
 
     testImplementation  project(':inversion-core-api').sourceSets.test.output
     testImplementation  project(':inversion-module-jdbc').sourceSets.test.output

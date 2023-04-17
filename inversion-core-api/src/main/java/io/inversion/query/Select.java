@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.rql;
+package io.inversion.query;
 
 import io.inversion.ApiException;
-import io.inversion.utils.LinkedCaseInsensitiveMap;
+import io.inversion.rql.Term;
 import io.inversion.utils.Utils;
 
 
@@ -83,24 +83,24 @@ public class Select<T extends Select, P extends Query> extends Builder<T, P> {
         return columns;
     }
 
-    public LinkedCaseInsensitiveMap<Term> getProjection() {
-        LinkedCaseInsensitiveMap<Term> projection = new LinkedCaseInsensitiveMap<>();
+    public Projection getProjection() {
+        Projection projection = new Projection();
         for (Term include : findAll("include")) {
             for (Term column : include.getTerms()) {
                 if (!column.isLeaf())
                     throw ApiException.new400BadRequest("An include RQL param may not contain nested functions.");
 
                 if (!projection.containsKey(column.getToken()))
-                    projection.put(column.getToken(), column);
+                    projection.add(column.getToken(), column);
             }
         }
 
         if (projection.size() == 0)
-            projection.put("*", Term.term(null, "*"));
+            projection.add("*", Term.term(null, "*"));
 
         for (Term as : findAll("as")) {
             String name = as.getToken(1);
-            projection.put(name, as);
+            projection.add(name, as);
         }
 
         return projection;

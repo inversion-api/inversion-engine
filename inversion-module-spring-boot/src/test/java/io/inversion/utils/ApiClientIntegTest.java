@@ -1,5 +1,6 @@
 package io.inversion.utils;
 
+import io.inversion.client.ApiClient;
 import io.inversion.*;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
@@ -18,7 +19,7 @@ import java.util.zip.GZIPInputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ApiClientLiveTest {
+public class ApiClientIntegTest {
 
     @Test
     public void testConcurrentConnections() throws Exception {

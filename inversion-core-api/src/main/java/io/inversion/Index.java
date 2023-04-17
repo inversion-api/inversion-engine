@@ -16,6 +16,7 @@
  */
 package io.inversion;
 
+import io.inversion.query.Projection;
 import io.inversion.utils.Utils;
 
 import java.io.Serializable;
@@ -38,8 +39,8 @@ public class Index implements Serializable {
     protected       Collection     collection = null;
     protected       String         name       = null;
     protected       String         type       = null;           // primary, partition, sort, localsecondary, etc
-    protected       boolean        unique     = true;
-    protected       Projection     projection = null;
+    protected boolean    unique     = true;
+    protected Projection projection = null;
 
     public Index() {
         super();
@@ -50,6 +51,13 @@ public class Index implements Serializable {
         withType(type);
         withUnique(unique);
         withProperties(properties);
+    }
+
+    public Index(String name, String type, boolean unique, int sequence, Property property) {
+        withName(name);
+        withType(type);
+        withUnique(unique);
+        withProperty(sequence, property);
     }
 
     public boolean equals(Object object) {
@@ -136,6 +144,22 @@ public class Index implements Serializable {
 
     public int size() {
         return properties.size();
+    }
+
+
+    public Index withProperty(int sequence, Property property){
+        if(!this.properties.contains(property)){
+            if(sequence > 0){
+                while(this.properties.size() < sequence){
+                    this.properties.add(null);
+                }
+                this.properties.set(sequence -1, property);
+            }
+            else{
+                this.properties.add(property);
+            }
+        }
+        return this;
     }
 
     public Index withProperties(Property... properties) {

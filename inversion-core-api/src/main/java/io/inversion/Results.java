@@ -16,7 +16,7 @@
  */
 package io.inversion;
 
-import io.inversion.rql.Query;
+import io.inversion.query.Query;
 import io.inversion.rql.Term;
 
 import java.util.ArrayList;

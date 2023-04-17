@@ -607,6 +607,24 @@ public final class Op implements Comparable<Op> {
 
     public Op withDbPathMatch(Path dbPathMatch) {
         this.dbPathMatch = dbPathMatch;
+        if(dbPathMatch != null) {
+            int offset = 0;
+            for (int i = 0; i < dbPathMatch.size(); i++) {
+                if (offset + i >= path.size())
+                    break;
+                if (dbPathMatch.isVar(i)) {
+                    Param p = new Param();
+                    p.withIn(Param.In.PATH);
+                    p.withIndex(i + offset);
+                    p.withKey(dbPathMatch.getVarName(i));
+                    String regex = dbPathMatch.getRegex(i);
+                    if (regex != null)
+                        p.withRegex(regex);
+                    withParam(p);
+                }
+            }
+        }
+
         return this;
     }
 

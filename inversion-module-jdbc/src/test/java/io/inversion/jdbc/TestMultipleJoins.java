@@ -77,7 +77,7 @@ public class TestMultipleJoins {
         //      res.dump();
         //      assertTrue(res.data().size() == 2);
 
-        res = engine.get("crm/customers?identifiers.providerCode=vendorD_1&identifiers.identifier=SHARED");
+        res = engine.get("customers?identifiers.providerCode=vendorD_1&identifiers.identifier=SHARED");
         res.dump();
         assertEquals(res.data().size(), 1);
         assertEquals(1, res.findInt("data.0.id"));

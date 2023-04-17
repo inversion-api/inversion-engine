@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.inversion.rql;
+package io.inversion.query;
 
 public class From<T extends From, P extends Query> extends Builder<T, P> {
     public From(P query) {

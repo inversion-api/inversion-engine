@@ -1,14 +1,15 @@
 dependencies {
-
     api project(':inversion-core-config')
     api project(':inversion-core-context')
     api project(':inversion-core-json')
+    api project(':inversion-core-rql')
+    api project(':inversion-core-utils')
+    api group: "org.slf4j", name: "slf4j-api", version: "${slf4jVersion}"
 
-    //JWT support
-    api group: "com.auth0", name: "java-jwt", version: "${auth0JwtVersion}"
+    implementation group: "org.apache.commons", name: "commons-text", version: "${commonsTextVersion}"
+    implementation group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
+    implementation group: "com.fasterxml.jackson.core", name: "jackson-core", version: "${jacksonCoreVersion}"
+    implementation group: "com.fasterxml.jackson.core", name: "jackson-databind", version: "${jacksonDatabindVersion}"
 
     testImplementation project(':inversion-core-context').sourceSets.test.output
-
-
-
 }

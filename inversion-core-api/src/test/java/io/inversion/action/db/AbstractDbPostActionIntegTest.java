@@ -251,7 +251,7 @@ public abstract class AbstractDbPostActionIntegTest extends AbstractDbActionInte
         res.dump();
 
         //-- confirms that a the new region was created and assigned to territory 30346
-        assertEquals(url("regions/5"), res.findString("data.0.region.href"));
+        assertTrue(res.findString("data.0.region.href").endsWith("/northwind/h2/regions/5"));
         assertEquals("HotLanta", res.findString("data.0.region.regiondescription"));
 
         //--now go back to steve and unhook several many-to-one reportsTo relationships

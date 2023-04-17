@@ -1,7 +1,8 @@
 dependencies {
 
-	api project(':inversion-core-api')
-	api "com.amazonaws:aws-lambda-java-core:${awsLambdaVersion}"
+	implementation project(':inversion-core-api')
+	implementation "com.amazonaws:aws-lambda-java-core:${awsLambdaVersion}"
+	implementation group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
 	
 
 }

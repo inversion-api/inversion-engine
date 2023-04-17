@@ -117,15 +117,15 @@ public final class Api {
                 db.startup(this);
             }
 
+            for (Runnable r : delayedConfig)
+                r.run();
+
             removeExcludes();
 
             configureServers();
             configureOps();
 
             started = true;
-
-            for (Runnable r : delayedConfig)
-                r.run();
 
             for (ApiListener listener : listeners) {
                 try {
@@ -599,7 +599,19 @@ public final class Api {
 
         for (Op op : ops) {
             Task.buildTask(op.getActions(), "configureOp", op).go();
+
+            if(op.getCollection() != null && op.getCollection().getDb() != null && op.getDb() == null && op.getDbPathMatch() == null){
+                Db db = op.getCollection().getDb();
+                Path match = db.match(op.getMethod(), op.getPath());
+
+                op.withDb(db);
+                op.withDbPathMatch(match);
+            }
         }
+
+
+
+
 
         ops.removeIf(o -> o.getFunction() == null);
         ops.removeIf(o -> o.getPath().toString().indexOf("{_") > 0);

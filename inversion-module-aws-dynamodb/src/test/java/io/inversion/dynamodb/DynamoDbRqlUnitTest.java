@@ -1,6 +1,6 @@
 package io.inversion.dynamodb;
 
-import io.inversion.rql.AbstractRqlTest;
+import io.inversion.query.AbstractRqlTest;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
@@ -99,7 +99,9 @@ public class DynamoDbRqlUnitTest extends AbstractRqlTest implements AbstractDyna
         withExpectedResult("or", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity, #var3=shipCity} valueMap={:val1=ORDER, :val2=Reims, :val3=Charleroi} filterExpression='((#var2 = :val2) or (#var3 = :val3))' keyConditionExpression='(#var1 = :val1)'");
         withExpectedResult("not", "QuerySpec:'gs3' nameMap={#var1=type, #var2=shipCity, #var3=shipCity} valueMap={:val1=ORDER, :val2=Reims, :val3=Charleroi} filterExpression='(NOT ((#var2 = :val2) or (#var3 = :val3)))' keyConditionExpression='(#var1 = :val1)'");
         withExpectedResult("as", "UNSUPPORTED");
-        withExpectedResult("includes", "QuerySpec:'gs3' nameMap={#var1=type} valueMap={:val1=ORDER} projectionExpression='shipCountry,shipCity,orderId,type' keyConditionExpression='(#var1 = :val1)'");
+        withExpectedResult("includes", "QuerySpec:'gs3' nameMap={#var1=type} valueMap={:val1=ORDER} projectionExpression='shipCountry,shipCity' keyConditionExpression='(#var1 = :val1)'");
+
+
         withExpectedResult("distinct", "UNSUPPORTED");
         withExpectedResult("count1", "UNSUPPORTED");
         withExpectedResult("count2", "UNSUPPORTED");

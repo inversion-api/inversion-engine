@@ -16,7 +16,7 @@
  */
 package io.inversion.elasticsearch;
 
-import io.inversion.rql.Page;
+import io.inversion.query.Page;
 
 public class ElasticsearchPage<T extends ElasticsearchPage, P extends ElasticsearchQuery> extends Page<T, P> {
     public ElasticsearchPage(P query) {

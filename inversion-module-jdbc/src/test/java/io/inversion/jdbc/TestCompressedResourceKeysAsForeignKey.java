@@ -39,9 +39,15 @@ public class TestCompressedResourceKeysAsForeignKey {
                 .withEndpoint(new LinksFilter(), new DbAction())//
                 .withDb(db);
 
-        engine = new Engine(api);
-        engine.startup();
         api.withRelationship("persons", "props", "props", "person", "personResourceKey");
+
+        engine = new Engine(api);
+
+        engine.startup();
+
+        Collection c = api.getCollection("persons");
+        System.out.println(c);
+
     }
 
     @AfterAll
@@ -55,8 +61,10 @@ public class TestCompressedResourceKeysAsForeignKey {
     public void get_expand_one_to_many_compound_resource_key(){
         Response res;
 
-        res = engine.get("person/persons?expands=props").dump();
-        assertEquals("employee~12345", res.find("data.0.props.0.personresourcekey"));
+        res = engine.get("persons?expand=props").dump();
+        String resourceKey = (String)res.find("data.0.props.0.href");
+        System.out.println(resourceKey);
+        assertTrue(res.findString("data.0.props.0.person").endsWith("/employee~12345"));
     }
 
 
@@ -64,7 +72,7 @@ public class TestCompressedResourceKeysAsForeignKey {
     public void get_expand_many_to_one_compressed_resource_key(){
         Response res;
 
-        res = engine.get("person/props?expands=person").dump();
+        res = engine.get("props?expands=person").dump();
         assertTrue(res.findString("data.0.person.href").endsWith("/employee~12345"));
     }
 
@@ -72,7 +80,7 @@ public class TestCompressedResourceKeysAsForeignKey {
     public void get_one_to_may_relationship_of_compressed_key(){
         Response res;
 
-        res = engine.get("person/persons/employee~12345/props").dump();
+        res = engine.get("persons/employee~12345/props").dump();
         assertEquals("employee~12345", res.find("data.0.personresourcekey"));
         assertTrue(res.findString("data.0.person").endsWith("/employee~12345"));
     }

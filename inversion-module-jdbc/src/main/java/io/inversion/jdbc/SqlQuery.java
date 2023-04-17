@@ -17,13 +17,13 @@
 package io.inversion.jdbc;
 
 import io.inversion.*;
-import io.inversion.rql.*;
-import io.inversion.rql.Order.Sort;
+import io.inversion.query.*;
+import io.inversion.query.Projection;
+import io.inversion.query.Order.Sort;
+import io.inversion.rql.Term;
 import io.inversion.utils.JdbcUtils;
-import io.inversion.utils.LinkedCaseInsensitiveMap;
 import io.inversion.utils.Rows;
 import io.inversion.utils.Utils;
-
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ import java.util.Map.Entry;
 /**
  * Composes and executes a SQL SELECT based on supplied RQL <code>Terms</code>.
  */
-public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Select, SqlQuery>, SqlQuery>, From<From<From, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>> {
+public class SqlQuery<D extends Db> extends io.inversion.query.Query<SqlQuery, D, Select<Select<Select, SqlQuery>, SqlQuery>, From<From<From, SqlQuery>, SqlQuery>, Where<Where<Where, SqlQuery>, SqlQuery>, Group<Group<Group, SqlQuery>, SqlQuery>, Order<Order<Order, SqlQuery>, SqlQuery>, Page<Page<Page, SqlQuery>, SqlQuery>> {
 
     protected char stringQuote = '\'';
     protected char columnQuote = '"';
@@ -257,7 +257,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
 
     protected String printTermsSelect(Parts parts, boolean preparedStmt) {
         StringBuilder                  cols       = new StringBuilder();
-        LinkedCaseInsensitiveMap<Term> projection = getSelect().getProjection();
+        Projection projection = getSelect().getProjection();
         int                            i          =0;
         for (String column : projection.keySet()){
             i+=1;
@@ -476,7 +476,7 @@ public class SqlQuery<D extends Db> extends Query<SqlQuery, D, Select<Select<Sel
         List<Sort> sorts = new ArrayList<>();
 
         boolean    wildcard = false;
-        LinkedCaseInsensitiveMap<Term> columns  = getSelect().getProjection();
+        Projection columns  = getSelect().getProjection();
 
         if (columns.size() == 1 && columns.containsKey("*")) //this is a "select *"
             wildcard = true;

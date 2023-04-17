@@ -21,7 +21,7 @@ import io.inversion.*;
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
-import io.inversion.rql.Page;
+import io.inversion.query.Page;
 import io.inversion.rql.Term;
 import io.inversion.utils.*;
 import io.inversion.utils.Utils;

@@ -1,0 +1,6 @@
+dependencies {
+    implementation project(':inversion-core-api')
+    implementation group: "com.auth0", name: "java-jwt", version: "${auth0JwtVersion}"
+    implementation group: "com.fasterxml.jackson.core", name: "jackson-core", version: "${jacksonCoreVersion}"
+    implementation group: "com.fasterxml.jackson.core", name: "jackson-databind", version: "${jacksonDatabindVersion}"
+}

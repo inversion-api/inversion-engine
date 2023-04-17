@@ -1,6 +1,6 @@
 package io.inversion.elasticsearch;
 
-import io.inversion.rql.Select;
+import io.inversion.query.Select;
 import io.inversion.rql.Term;
 
 /**
