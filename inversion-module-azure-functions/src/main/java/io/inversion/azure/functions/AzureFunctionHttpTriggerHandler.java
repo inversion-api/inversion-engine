@@ -25,7 +25,7 @@ import io.inversion.Api;
 import io.inversion.Engine;
 import io.inversion.Request;
 import io.inversion.Response;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 
 import java.util.List;
 import java.util.Optional;
@@ -76,7 +76,7 @@ public class AzureFunctionHttpTriggerHandler {
 
         String body = request.getBody().isPresent() ? request.getBody().get() : null;
 
-        ArrayListValuedHashMap headers = new ArrayListValuedHashMap();
+        ListMap headers = new ListMap();
         headers.putAll(request.getHeaders());
 
         Request req = new Request(method, url, body, request.getQueryParameters(), headers);

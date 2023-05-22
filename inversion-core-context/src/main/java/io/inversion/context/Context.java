@@ -20,7 +20,7 @@ import io.inversion.context.codec.CollectionCodec;
 import io.inversion.context.codec.MapCodec;
 import io.inversion.context.codec.PrimitiveCodec;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +116,7 @@ public class Context {
 
     String nameRegex = "^[a-zA-Z0-9_]*$";
 
-    ArrayListValuedHashMap<Class, Codec> codecs  = new ArrayListValuedHashMap();
+    ListMap<Class, Codec> codecs  = new ListMap();
     Encoder                              encoder = new Encoder();
     Decoder                              decoder = new Decoder();
     Namer                                namer   = null;
@@ -324,7 +324,7 @@ public class Context {
         return this;
     }
 
-    public ArrayListValuedHashMap<Class, Codec> getCodecs() {
+    public ListMap<Class, Codec> getCodecs() {
         return codecs;
     }
 

@@ -75,7 +75,7 @@ public class JdbcNorthwindApiDemoMain {
         InversionMain.run(buildApi());
 
         //this simply prints out the README to the console
-        System.out.println(Utils.read(JdbcNorthwindApiDemoMain.class, "README-JdbcNorthwindApiDemoMain.md"));
+        System.out.println(Utils.read(JdbcNorthwindApiDemoMain.class, "./inversion-demos/README-JdbcNorthwindApiDemoMain.md", "README-JdbcNorthwindApiDemoMain.md"));
     }
 
 }

@@ -23,7 +23,7 @@ import io.inversion.json.JSNode;
 import io.inversion.utils.Path;
 import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
@@ -118,7 +118,7 @@ public class ApiClient {
      * <p>
      * This list is initially empty.
      */
-    protected final ArrayListValuedHashMap<String, String> forcedHeaders = new ArrayListValuedHashMap();
+    protected final ListMap<String, String> forcedHeaders = new ListMap();
 
     protected final List<RequestListener> requestListeners = new ArrayList<>();
 
@@ -307,7 +307,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ListMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @return a FutureResponse that will asynchronously resolve to a Response
@@ -317,7 +317,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ListMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @param queryString           additional query string params in name=value@amp;name2=value2 style
@@ -328,7 +328,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ListMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @param params                query strings passed in as a map
@@ -339,7 +339,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a GET request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ListMap)} to perform a GET request.
      *
      * @param fullUrlOrRelativePath     may be a full url or relative to the {@link #url} property if set, can have a query string or not
      * @param queryStringNameValuePairs additional query string name/value pairs
@@ -350,7 +350,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a POST request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ListMap)} to perform a POST request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @param body                  the optional JSON to post
@@ -361,7 +361,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a PUT request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ListMap)} to perform a PUT request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @param body                  the optional JSON to put
@@ -372,7 +372,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a PATCH request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ListMap)} to perform a PATCH request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @param body                  the optional JSON patch
@@ -383,7 +383,7 @@ public class ApiClient {
     }
 
     /**
-     * Convenience overloading of {@link #call(String, String, Map, Object, ArrayListValuedHashMap)} to perform a DELETE request.
+     * Convenience overloading of {@link #call(String, String, Map, Object, ListMap)} to perform a DELETE request.
      *
      * @param fullUrlOrRelativePath may be a full url or relative to the {@link #url} property if set
      * @return a FutureResponse that will asynchronously resolve to a Response
@@ -402,7 +402,7 @@ public class ApiClient {
      * @param headers               headers that will always be sent regardless of {@link #includeForwardHeaders}, {@link #excludeForwardHeaders} but may be overwritten by {@link #forcedHeaders}
      * @return a FutureResponse that will asynchronously resolve to a Response
      */
-    public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, Object body, ArrayListValuedHashMap<String, String> headers) {
+    public FutureResponse call(String method, String fullUrlOrRelativePath, Map<String, String> params, Object body, ListMap<String, String> headers) {
         Request request = buildRequest(method, fullUrlOrRelativePath, params, body, headers);
         return call(request);
     }
@@ -438,7 +438,7 @@ public class ApiClient {
      * @param headers               - request headers to pass
      * @return the configure request
      */
-    public Request buildRequest(String method, String fullUrlOrRelativePath, Map<String, String> params, Object body, ArrayListValuedHashMap<String, String> headers) {
+    public Request buildRequest(String method, String fullUrlOrRelativePath, Map<String, String> params, Object body, ListMap<String, String> headers) {
 
         String url         = buildUrl(fullUrlOrRelativePath);
         String queryString = Utils.substringAfter(url, "?");
@@ -864,7 +864,7 @@ public class ApiClient {
         return this;
     }
 
-    public ArrayListValuedHashMap<String, String> getForcedHeaders() {
+    public ListMap<String, String> getForcedHeaders() {
         return forcedHeaders;
     }
 

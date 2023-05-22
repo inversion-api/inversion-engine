@@ -27,7 +27,8 @@ import java.util.List;
 
 /**
  * Actions perform some work when matched to a Request and potentially contribute to the content of the Response.
- * <h3>The Action Sandwich</h3>
+ *
+ * <p><b>The Action Sandwich</b>
  * <p>
  * Nearly the entire job of the Engine and Api Endpoint configuration is to match one or more Action subclass instances to a Request.
  * All matched actions are sorted by their <code>order</code> property and executed in sequence as a Chain of Responsibility pattern.
@@ -44,7 +45,7 @@ import java.util.List;
  * Api registered Actions and relative to the Endpoint path for Endpoint registered actions.  They are all sorted togeter in one big group according to order.
  *
  *
- * <h3>Handling Requests</h3>
+ * <h2>Handling Requests</h2>
  * <p>
  * Once the Engine has selected the Actions to run for a given request (creating the 'action sandwich'), they are all loaded into a Chain object
  * which is responsible for invoking {@link #run(Request, Response)} on each one in sequence.

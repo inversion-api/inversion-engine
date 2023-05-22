@@ -20,7 +20,7 @@ import io.inversion.json.*;
 import io.inversion.utils.MimeTypes;
 import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 
 import java.io.IOException;
 import java.net.URL;
@@ -44,7 +44,7 @@ public class Response implements JSFind {
     protected String url      = null;
     protected String fileName = null;
 
-    protected final ArrayListValuedHashMap<String, String> headers = new ArrayListValuedHashMap<>();
+    protected final ListMap<String, String> headers = new ListMap<>();
 
     protected JSNode       json   = new JSMap("meta", new JSMap(), "data", new JSList());
     protected String       text   = null;
@@ -598,11 +598,11 @@ public class Response implements JSFind {
     /**
      * @return the headers
      */
-    public ArrayListValuedHashMap<String, String> getHeaders() {
+    public ListMap<String, String> getHeaders() {
         return headers;
     }
 
-    public void withHeaders(ArrayListValuedHashMap headers) {
+    public void withHeaders(ListMap headers) {
         this.headers.putAll(headers);
     }
 

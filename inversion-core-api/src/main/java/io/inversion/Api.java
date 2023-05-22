@@ -19,7 +19,7 @@ package io.inversion;
 import io.inversion.utils.Path;
 import io.inversion.utils.Task;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -753,7 +753,7 @@ public final class Api {
     }
 
     List<Path> removeObscuredWildcards(List<Path> paths){
-        ArrayListValuedHashMap<String, Path> templates = new ArrayListValuedHashMap();
+        ListMap<String, Path> templates = new ListMap();
         for(Path path : paths){
             String template = path.getTemplate();
             templates.put(template, path);
@@ -840,7 +840,7 @@ public final class Api {
 
     void deduplicateOperationNames(List<Op> ops) {
         Collections.sort(ops);
-        ArrayListValuedHashMap<String, Op> map = new ArrayListValuedHashMap<>();
+        ListMap<String, Op> map = new ListMap<>();
         ops.forEach(op -> map.put(op.getName(), op));
 
         for (String operationName : map.keySet()) {

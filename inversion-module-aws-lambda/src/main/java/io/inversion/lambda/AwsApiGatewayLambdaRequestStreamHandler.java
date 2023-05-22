@@ -27,7 +27,7 @@ import io.inversion.json.JSNode;
 import io.inversion.json.JSParser;
 import io.inversion.Url;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -90,7 +90,7 @@ public class AwsApiGatewayLambdaRequestStreamHandler implements RequestStreamHan
             }
 
 
-            ArrayListValuedHashMap<String, String> headers     = new ArrayListValuedHashMap<>();
+            ListMap<String, String> headers     = new ListMap<>();
             JSMap                                 jsonHeaders = json.getMap("headers");
             if(jsonHeaders != null)
                 headers.putAll((Map<String, String>)headers);

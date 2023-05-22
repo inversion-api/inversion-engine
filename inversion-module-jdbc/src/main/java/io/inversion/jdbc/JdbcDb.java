@@ -641,7 +641,6 @@ public class JdbcDb extends Db<JdbcDb> {
                         Property column  = collection.getProperty(colName);
 
                         int keySeq = pkMd.getInt("KEY_SEQ");
-                        System.out.println(keySeq);
                         collection.withIndex(idxName, idxType, true, keySeq, colName);
                         //System.out.println("Primary key: " + colName);
                     }

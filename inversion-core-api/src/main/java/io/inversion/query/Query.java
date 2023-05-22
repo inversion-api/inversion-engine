@@ -18,8 +18,8 @@ package io.inversion.query;
 
 import io.inversion.*;
 import io.inversion.rql.Term;
-import org.apache.commons.collections4.KeyValue;
-import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
+import io.inversion.utils.KeyValue;
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -196,7 +196,7 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
 
     protected T withColValue(String columnName, Object value) {
 
-        originalValues.add(new DefaultKeyValue(columnName, value));
+        originalValues.add(new KeyValue(columnName, value));
 
         Collection coll = this.collection;
         if (columnName != null) {
@@ -226,7 +226,7 @@ public class Query<T extends Query, D extends Db, S extends Select, F extends Fr
             }
         }
 
-        castValues.add(new DefaultKeyValue(columnName, value));
+        castValues.add(new KeyValue(columnName, value));
         return r();
     }
 

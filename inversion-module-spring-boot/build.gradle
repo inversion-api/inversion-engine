@@ -3,6 +3,8 @@ dependencies {
 	implementation project(':inversion-core-api')
 	implementation project(':inversion-module-servlet')
 
+
+
 	api "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
 	api "org.springframework.boot:spring-boot-starter-actuator:${springBootVersion}"
 	api "org.springframework.boot:spring-boot-starter-jdbc:${springBootVersion}"

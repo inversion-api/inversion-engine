@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-core-rql</artifactId>
-  <version>0.12.1</version>
+  <version>0.12.3</version>
   <name>inversion-core-rql</name>
   <description>Inversion Cloud API Engine</description>
   <url>https://inversion.io</url>

@@ -89,7 +89,7 @@ public class AuthFilter extends Filter<AuthFilter> {
 //        List<AuthScheme> schemes = getAuthSchemes();
 //
 //        //List<SecurityRequirement> securityRequirements = new ArrayList<>();
-//        ArrayListValuedHashMap<String, String> securityRequirementsNames = new ArrayListValuedHashMap<>();
+//        ListMap<String, String> securityRequirementsNames = new ListMap<>();
 //
 //        for (int i = 0; i < schemes.size(); i++) {
 //            AuthScheme scheme = schemes.get(i);
