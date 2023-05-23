@@ -743,10 +743,6 @@ public class EngineTest {
 
     }
 
-    @Test
-    public void testSlashCorrection() {
-        assertEquals("a/b", new Path("/a////b/////").toString());
-    }
 
     //   @Test
     //   public void test_api_with_version()

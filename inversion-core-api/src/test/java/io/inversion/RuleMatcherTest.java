@@ -19,20 +19,20 @@ package io.inversion;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class RuleMatcherTest {
 
     @Test
     public void test_parseSpec(){
-        String spec = "GET,[{a}]/[{b}]/[{c}]";
-
+        String spec = "POST,[{a}]/[{b}]/[{c},/path2,GET";
         Rule.RuleMatcher m = new Rule.RuleMatcher();
-        
         Rule.RuleMatcher.parse(m, spec);
 
-        System.out.println(m.getPaths());
-
-        System.out.println(spec);
-
+        assertEquals("GET,POST,[{a}]/[{b}]/[{c}],path2", m.toString());
+        assertTrue(m.getMethods().size() == 2);
+        assertTrue(m.getPaths().size() == 2);
     }
 
 }

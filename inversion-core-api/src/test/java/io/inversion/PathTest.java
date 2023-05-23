@@ -28,6 +28,10 @@ public class PathTest {
 
 
     @Test
+    public void testSlashCorrection() {
+        assertEquals("a/b", new Path("/a////b/////").toString());
+    }
+    @Test
     public  void test_expandOptionals(){
         Path apiPath = new Path("base/*");
         Path epPath  = new Path("[{asdf}]/[{qwer}]/[{sdfg}]");

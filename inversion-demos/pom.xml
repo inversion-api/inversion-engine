@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-demos</artifactId>
-  <version>0.12.3</version>
+  <version>1.0.0.beta1</version>
   <name>inversion-demos</name>
   <description>Inversion Cloud API Engine</description>
   <url>https://inversion.io</url>
@@ -36,73 +36,73 @@
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-core-api</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-module-azure-functions</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-module-azure-cosmosdb</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-module-aws-dynamodb</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-incubator-elasticsearch</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-module-jdbc</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-incubator-aws-kinesis</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-module-aws-lambda</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-incubator-redis</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-module-aws-s3</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-module-script</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-module-spring-boot</artifactId>
-      <version>0.12.3</version>
+      <version>1.0.0.beta1</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
