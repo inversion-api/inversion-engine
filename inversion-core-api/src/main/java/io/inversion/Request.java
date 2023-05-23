@@ -19,7 +19,7 @@ package io.inversion;
 import io.inversion.json.*;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 
 import java.util.*;
 
@@ -89,11 +89,11 @@ public class Request implements Headers, JSFind {
             withBody(body.toString());
     }
 
-    public Request(String method, String url, String body, ArrayListValuedHashMap<String, String> headers) {
+    public Request(String method, String url, String body, ListMap<String, String> headers) {
         this(method, url, body, null, headers);
     }
 
-    public Request(String method, String url, String body, Map<String, String> params, ArrayListValuedHashMap<String, String> headers) {
+    public Request(String method, String url, String body, Map<String, String> params, ListMap<String, String> headers) {
         withMethod(method);
         withUrl(url);
         withBody(body);

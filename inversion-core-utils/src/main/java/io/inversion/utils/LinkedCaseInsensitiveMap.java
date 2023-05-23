@@ -163,9 +163,6 @@ public class LinkedCaseInsensitiveMap<V> implements Map<String, V>, Serializable
 
     @Override
     public V put(String key, V value) {
-        if(key != null && key.endsWith("Id") && value != null && value.toString().startsWith("/"))
-            System.out.println("asdf");
-
         String oldKey = this.caseInsensitiveKeys.put(convertKey(key), key);
         V oldKeyValue = null;
         if (oldKey != null && !oldKey.equals(key)) {

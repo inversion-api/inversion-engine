@@ -6,16 +6,16 @@ The demo supports full GET,PUT,POST,DELETE ops with an extensive Resource Query 
 (RQL) for GET requests
 
 After running JdbcNorthwindApiDemoMain.java, your API will be running at 
-'http://localhost:8080/northwind' with REST collection endpoints for db entity
+'http://localhost:8080/' with REST collection endpoints for db entity
 
 You can get started by exploring some of these urls:
-  - GET http://localhost:8080/northwind/products
-  - GET http://localhost:8080/northwind/orders?expand=orderDetails&page=2
-  - GET http://localhost:8080/northwind/customers?in(country,France,Spain)&sort=-customerid&pageSize=10
-  - GET http://localhost:8080/northwind/customers?orders.shipCity=Mannheim
+  - GET http://localhost:8080/products
+  - GET http://localhost:8080/orders?expand=orderDetails&page=2
+  - GET http://localhost:8080/customers?in(country,France,Spain)&sort=-customerid&pageSize=10
+  - GET http://localhost:8080/customers?orders.shipCity=Mannheim
 
 Append '&explain=true' to any query string to see an explanation of what is happening under the covers
-  - GET http://localhost:8080/northwind/employees?title='Sales Representative'&sort=employeeid&pageSize=2&page=2&explain=true
+  - GET http://localhost:8080/employees?title='Sales Representative'&sort=employeeid&pageSize=2&page=2&explain=true
 
 
 The demo connects to an in memory H2 sql db that gets initialized from scratch each time this 

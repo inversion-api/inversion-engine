@@ -54,7 +54,7 @@ task allJavadocs {
     dependsOn 'aggregateJavadocs'
     doLast {
         ant.delete(dir: 'docs/javadoc/')
-        ant.move(file: 'build/docs/javadoc/', tofile: 'docs/javadoc/')
+        //ant.move(file: 'build/docs/javadoc/', tofile: 'docs/javadoc/')
     }
 }
 
@@ -98,7 +98,7 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(11)
+            languageVersion = JavaLanguageVersion.of(17)
         }
     }
 

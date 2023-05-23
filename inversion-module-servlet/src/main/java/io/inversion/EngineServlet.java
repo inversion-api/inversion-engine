@@ -19,14 +19,14 @@ package io.inversion;
 import io.inversion.json.JSNode;
 import io.inversion.utils.StreamBuffer;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -121,7 +121,7 @@ public class EngineServlet extends HttpServlet {
             }
 
 
-            ArrayListValuedHashMap headers    = new ArrayListValuedHashMap<>();
+            ListMap headers    = new ListMap<>();
             Enumeration<String>    headerEnum = httpReq.getHeaderNames();
             while (headerEnum.hasMoreElements()) {
                 String      key    = headerEnum.nextElement();
@@ -192,7 +192,7 @@ public class EngineServlet extends HttpServlet {
         http.setStatus(res.getStatusCode());
         OutputStream out = http.getOutputStream();
 
-        ArrayListValuedHashMap<String, String> headers = res.getHeaders();
+        ListMap<String, String> headers = res.getHeaders();
         headers.keySet().forEach(key -> http.setHeader(key, Utils.implode(",", res.getHeaders().get(key))));
 
         if (req.isMethod("OPTIONS")) {

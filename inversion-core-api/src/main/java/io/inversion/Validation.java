@@ -27,23 +27,6 @@ import java.util.regex.Pattern;
 /**
  * Utility designed to make it easy to validate request properties or request body
  * json values while you are retrieving them.
- *
- * <h3>Required (Not Null)</h3>
- * <p>
- * To ensure a field is not null, use the required() method:
- * <ul>
- *     <li>String nameFirst = request.validate("nameFirst", "A first name is required").required().asString();</li>
- * </ul>
- *
- * <h3>Comparison</h3>
- * <p>
- * To validate a number is greater than 5, then return its value:
- * <ul>
- * <li>int myParam = request.validate("myParamName", "optional_custom_error_message").gt(5).asInt();
- * </ul>
- *
- * @see Request#validate(String)
- * @see Request#validate(String, String)
  */
 public class Validation {
 

@@ -4,7 +4,7 @@ dependencies {
     implementation group: "io.swagger.core.v3", name: "swagger-models", version: "${swaggerModelsVersion}"
     implementation group: "io.swagger.core.v3", name: "swagger-core", version: "${swaggerCoreVersion}"
     implementation group: "io.swagger.parser.v3", name: "swagger-parser", version: "${swaggerParserVersion}"
-    implementation group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
+    
 
     testImplementation project(':inversion-module-jdbc')
     testImplementation project(':inversion-module-jdbc').sourceSets.test.output

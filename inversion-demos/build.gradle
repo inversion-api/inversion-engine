@@ -20,6 +20,8 @@ dependencies {
 
 	implementation group: "org.apache.commons", name: "commons-configuration2", version: "${commonsConfiguration2Version}"
 
+	implementation group: "com.h2database", name: "h2", version: "${h2Version}"
+
 }
 
 

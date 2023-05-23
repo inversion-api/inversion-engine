@@ -26,7 +26,8 @@ import io.inversion.query.Order.Sort;
 import io.inversion.rql.Term;
 import io.inversion.query.Where;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.KeyValue;
+import io.inversion.utils.KeyValue;
+
 
 import java.util.ArrayList;
 import java.util.List;

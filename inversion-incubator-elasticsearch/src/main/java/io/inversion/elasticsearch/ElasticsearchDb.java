@@ -130,7 +130,6 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
             SearchRequest searchReq = new SearchRequest(table.getTableName());
             searchReq.source(query.getSearchBuilder());
             try {
-                System.out.println(query.getJson());
                 res = getElasticClient().search(searchReq, RequestOptions.DEFAULT);
             } catch (IOException e) {
                 throw ApiException.new500InternalServerError("The elastic client failed to search/select. " + e.getMessage());
@@ -147,7 +146,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
             //         result.withNext(next)
 
             SearchHits hits = res.getHits();
-            System.out.println("total hits: " + hits.getTotalHits().value); // TODO verify toString() output is pretty
+            //System.out.println("total hits: " + hits.getTotalHits().value); // TODO verify toString() output is pretty
 
             SearchHit[] hitArray = hits.getHits();
 
@@ -156,8 +155,7 @@ public class ElasticsearchDb extends Db<ElasticsearchDb> {
             }
 
             result.withFoundRows((int) hits.getTotalHits().value);
-        } else
-            System.out.println("request failed (");
+        }
 
         return result;
     }

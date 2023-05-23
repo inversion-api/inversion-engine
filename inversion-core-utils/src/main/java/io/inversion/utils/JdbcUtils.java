@@ -791,7 +791,7 @@ public class JdbcUtils {
         for (Map row : rows) {
             Object key = row.get(idxCols.get(0));
             if (key == null)
-                System.out.println("Unable to determine key for row: " + row);
+                System.err.println("Unable to determine key for row.");
 
             returnKeys.add(key);
         }

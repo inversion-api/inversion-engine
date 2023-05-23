@@ -84,8 +84,6 @@ public class ElasticsearchQuery extends Query<ElasticsearchQuery, ElasticsearchD
         results.withTestQuery(debug);
         //-- end test case debug stuff
 
-        System.out.println();
-
         return results;
     }
 

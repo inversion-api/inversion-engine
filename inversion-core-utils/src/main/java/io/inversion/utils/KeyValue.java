@@ -15,24 +15,35 @@
  * limitations under the License.
  */
 
-package io.inversion;
+package io.inversion.utils;
 
-import org.junit.jupiter.api.Test;
+public class KeyValue <K, V>{
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+    K key;
+    V value;
 
-public class RuleMatcherTest {
+    public KeyValue(){
 
-    @Test
-    public void test_parseSpec(){
-        String spec = "POST,[{a}]/[{b}]/[{c},/path2,GET";
-        Rule.RuleMatcher m = new Rule.RuleMatcher();
-        Rule.RuleMatcher.parse(m, spec);
-
-        assertEquals("GET,POST,[{a}]/[{b}]/[{c}],path2", m.toString());
-        assertTrue(m.getMethods().size() == 2);
-        assertTrue(m.getPaths().size() == 2);
     }
 
+    public KeyValue (K key, V value){
+        setKey(key);
+        setValue(value);
+    }
+
+    public K getKey() {
+        return key;
+    }
+
+    public void setKey(K key) {
+        this.key = key;
+    }
+
+    public V getValue() {
+        return value;
+    }
+
+    public void setValue(V value) {
+        this.value = value;
+    }
 }

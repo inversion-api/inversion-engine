@@ -419,7 +419,7 @@ public class Utils {
     }
 
 
-//    public static ArrayListValuedHashMap addToMap(ArrayListValuedHashMap<String, String> multiMap, String... kvPairs) {
+//    public static ListMap addToMap(ListMap<String, String> multiMap, String... kvPairs) {
 //        if (kvPairs != null && kvPairs.length % 2 > 0)
 //            throw new RuntimeException("kvPairs.length must be evenly divisible by 2.");
 //
@@ -1292,12 +1292,15 @@ public class Utils {
     /**
      * Finds an input stream for <code>fileOrUrl</code> and reads it into a string
      *
-     * @param fileOrUrl the resource to read
+     * @param fileOrUrls the resource to read
      * @return the content of <code>code</code> as a String
-     * @see #findInputStream(Object, String)
+     * @see #findInputStream(Object, String[])
      */
-    public static String read(Object caller, String fileOrUrl) {
-        return read(findInputStream(caller, fileOrUrl));
+    public static String read(Object caller, String... fileOrUrls) {
+        InputStream stream = findInputStream(caller, fileOrUrls);
+        if(stream == null)
+            return null;
+        return read(stream);
     }
 
     /**
@@ -1417,34 +1420,49 @@ public class Utils {
     /**
      * Attempts to locate the stream as a file, url, or classpath resource
      *
-     * @param fileOrUrl a stream resource identifier
+     * @param fileOrUrls a stream resource identifier, the first one found will be returned
      * @return an input stream reading fileOrUrl
      * @throws RuntimeException when and IOException is thrown
      */
-    public static InputStream findInputStream(Object caller, String fileOrUrl) throws RuntimeException {
-        try {
-            if (fileOrUrl.startsWith("file:/")) {
-                fileOrUrl = URLDecoder.decode(fileOrUrl, "UTF-8");
-            }
-            if (fileOrUrl.startsWith("file:///")) {
-                fileOrUrl = fileOrUrl.substring(7);
-            }
-            if (fileOrUrl.startsWith("file:/")) {
-                fileOrUrl = fileOrUrl.substring(5);
+    public static InputStream findInputStream(Object caller, String... fileOrUrls) throws RuntimeException {
+        InputStream stream = null;
+        for(String fileOrUrl : fileOrUrls) {
+            try {
+                if (fileOrUrl.startsWith("file:/")) {
+                    fileOrUrl = URLDecoder.decode(fileOrUrl, "UTF-8");
+                }
+                if (fileOrUrl.startsWith("file:///")) {
+                    fileOrUrl = fileOrUrl.substring(7);
+                }
+                if (fileOrUrl.startsWith("file:/")) {
+                    fileOrUrl = fileOrUrl.substring(5);
+                }
+
+                if (fileOrUrl.indexOf(':') >= 0) {
+                    stream = new URL(fileOrUrl).openStream();
+                } else if (new File(fileOrUrl).exists()) {
+                    stream = new FileInputStream(fileOrUrl);
+                } else {
+                    if (caller != null && caller.getClass().getClassLoader() != null) {
+                        stream = caller.getClass().getClassLoader().getResourceAsStream(fileOrUrl);
+                    }
+                    if (stream == null)
+                        stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(fileOrUrl);
+
+                    if (stream == null)
+                        stream = ClassLoader.getSystemClassLoader().getSystemResourceAsStream(fileOrUrl);
+                }
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
             }
 
-            if (fileOrUrl.indexOf(':') >= 0) {
-                return new URL(fileOrUrl).openStream();
-            } else if (new File(fileOrUrl).exists()) {
-                return new FileInputStream(fileOrUrl);
-            } else {
-                if (caller != null)
-                    return caller.getClass().getClassLoader().getResourceAsStream(fileOrUrl);
-                return Thread.currentThread().getContextClassLoader().getResourceAsStream(fileOrUrl);
-            }
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
+            if(stream != null)
+                return stream;
         }
+        if (stream == null) {
+            System.err.println("Unable to locate resource '" + fileOrUrls[0] + "'");
+        }
+        return null;
     }
 
     /**

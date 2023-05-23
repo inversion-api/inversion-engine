@@ -16,7 +16,7 @@ public class EndpointTest {
 //        Action   a1  = new Action<Action>().withIncludeOn("{collection}/[{resource}]/[{relationship}]/");
 //        ep.withActions(a1);
 //
-//        ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//        ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
 //        }
@@ -30,7 +30,7 @@ public class EndpointTest {
 //        Action   a1  = new Action<Action>();
 //        ep.withActions(a1);
 //
-//        ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//        ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
 //        }
@@ -44,7 +44,7 @@ public class EndpointTest {
 //        Action   a1  = new Action<Action>();
 //        ep.withActions(a1);
 //
-//        ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//        ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
 //        }
@@ -59,7 +59,7 @@ public class EndpointTest {
 //        Action   a1  = new Action<Action>().withIncludeOn("GET", "b");
 //        ep.withActions(a1);
 //
-//        ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//        ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
 //        }
@@ -74,7 +74,7 @@ public class EndpointTest {
 //        //Action a2 = new Action<Action>().withIncludeOn("GET", "b/c");
 //        ep.withActions(a1);
 //
-//        ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//        ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
 //        }
@@ -91,7 +91,7 @@ public class EndpointTest {
 //        //ep.withActions(a1, a2);
 //        ep.withActions(a2);
 //
-//        ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//        ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
 //        }
@@ -106,7 +106,7 @@ public class EndpointTest {
 //        //Action a2 = new Action<Action>().withIncludeOn("GET", "b/c");
 //        ep.withActions(a1);
 //
-//        ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//        ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
 //        }
@@ -124,7 +124,7 @@ public class EndpointTest {
 //
 //        ep.withActions(a1, a2, a3);
 //
-//        ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//        ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
@@ -140,7 +140,7 @@ public class EndpointTest {
 //        ep.withActions(a1, a2);
 //        boolean thrown = false;
 //        try {
-//            ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//            ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        }
 //        catch(ApiException ex){
 //            thrown = true;
@@ -160,7 +160,7 @@ public class EndpointTest {
 //        ep.withActions(a1, a2);
 //        boolean thrown = false;
 //        try {
-//            ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//            ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        }
 //        catch(ApiException ex){
 //            thrown = true;
@@ -178,7 +178,7 @@ public class EndpointTest {
 //        Endpoint ep  = new Endpoint().withIncludeOn("GET", "1/2/3/*");
 //        Action   a1  = new Action<Action>();
 //        ep.withActions(a1);
-//        ArrayListValuedHashMap<String, Path> paths = ep.getOperationPaths(api, null);
+//        ListMap<String, Path> paths = ep.getOperationPaths(api, null);
 //        for (String method : paths.keySet()) {
 //            System.out.println(method + " - " + paths.get(method));
 //        }

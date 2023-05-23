@@ -49,7 +49,7 @@ public class OpPathTest {
         engine.withApi(api);
         engine.startup();
 
-//        ArrayListValuedHashMap operationPaths = action.getOperationPaths(api);
+//        ListMap operationPaths = action.getOperationPaths(api);
 //        System.out.println(operationPaths);
 
     }

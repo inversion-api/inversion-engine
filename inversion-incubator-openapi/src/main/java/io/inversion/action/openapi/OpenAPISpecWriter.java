@@ -29,7 +29,7 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.servers.ServerVariable;
 import io.swagger.v3.oas.models.servers.ServerVariables;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 
 import java.io.InputStream;
 import java.util.*;
@@ -119,7 +119,7 @@ public class OpenAPISpecWriter implements OpenAPIWriter<OpenAPISpecWriter> {
         if (openApi.getServers() == null) {
             List<Server> apiServers = new ArrayList();
 
-            ArrayListValuedHashMap<io.inversion.Server, Path> serversMap = new ArrayListValuedHashMap<>();
+            ListMap<io.inversion.Server, Path> serversMap = new ListMap<>();
             Api                                               api        = ops.get(0).getApi();
             for (io.inversion.Server serv : api.getServers()) {
                 if(!serv.isDocumented())

@@ -19,7 +19,7 @@ package io.inversion;
 
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 
 import java.util.ArrayList;
 import java.util.List;

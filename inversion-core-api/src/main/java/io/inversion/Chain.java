@@ -19,9 +19,10 @@ package io.inversion;
 import io.inversion.json.JSList;
 import io.inversion.json.JSMap;
 import io.inversion.json.JSNode;
+import io.inversion.utils.LinkedCaseInsensitiveMap;
 import io.inversion.utils.Path;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.map.CaseInsensitiveMap;
+
 
 import java.util.*;
 
@@ -29,12 +30,12 @@ public final class Chain {
 
     public static final Set<String> APPEND_PARAMS = Collections.unmodifiableSet(Utils.add(new HashSet(), "include", "exclude", "collapse"));
 
-    static          ThreadLocal<Stack<Chain>>          chainLocal         = new ThreadLocal<>();
-    protected final Engine                             engine;
-    protected final List<ActionMatch>                  actions            = new ArrayList<>();
-    protected final Request                            request;
-    protected final Response                           response;
-    protected final CaseInsensitiveMap<String, Object> vars               = new CaseInsensitiveMap<>();
+    static          ThreadLocal<Stack<Chain>> chainLocal         = new ThreadLocal<>();
+    protected final Engine                    engine;
+    protected final List<ActionMatch>         actions            = new ArrayList<>();
+    protected final Request                   request;
+    protected final Response                  response;
+    protected final LinkedCaseInsensitiveMap<Object> vars               = new LinkedCaseInsensitiveMap<>();
     protected       int                                next               = 0;
     protected       boolean                            canceled           = false;
     protected       User                               user               = null;

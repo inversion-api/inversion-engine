@@ -50,6 +50,8 @@ public class EngineTest {
         Response res = engine.get("books/123");
         res.dump();
         System.out.println("--------------");
+
+        throw new UnsupportedOperationException("FIX ME: Shouldn't the mock action variables result in paths???");
     }
 
     @Test
@@ -542,7 +544,7 @@ public class EngineTest {
 //    @Test
 //    public void test_buildOperations_multipleEngineAndApiAndEndpointIncludePaths() {
 //
-//        ArrayListValuedHashMap<String, Path> paths = null;
+//        ListMap<String, Path> paths = null;
 //        Api                                  api   = null;
 //
 //        api = new Api("api1").withIncludeOn("api1/*,admin/*").withEndpoint("*", "ep1/*", new MockAction().withIncludeOn("GET", "action1,{var:action2|action3}"));
@@ -568,7 +570,7 @@ public class EngineTest {
 //    @Test
 //    public void test_buildRequestPaths_optional_endpoints_paths_expand() {
 //
-//        ArrayListValuedHashMap<String, Path> paths = null;
+//        ListMap<String, Path> paths = null;
 //        Api                                  api   = null;
 //
 //        api = new Api().withServer(new Server()).withIncludeOn("GET", "test/*")//
@@ -640,7 +642,7 @@ public class EngineTest {
 //
 //        String expected = "{GET=[collectionA, collection1, collection2]}";
 //
-//        ArrayListValuedHashMap<String, Path> paths = new Engine().withApi(api1).buildRequestPaths();
+//        ListMap<String, Path> paths = new Engine().withApi(api1).buildRequestPaths();
 //        assertEquals(expected, paths.toString());
 //
 //
@@ -741,10 +743,6 @@ public class EngineTest {
 
     }
 
-    @Test
-    public void testSlashCorrection() {
-        assertEquals("a/b", new Path("/a////b/////").toString());
-    }
 
     //   @Test
     //   public void test_api_with_version()

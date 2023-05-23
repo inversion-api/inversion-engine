@@ -25,11 +25,11 @@ import io.inversion.query.Page;
 import io.inversion.rql.Term;
 import io.inversion.utils.*;
 import io.inversion.utils.Utils;
-import org.apache.commons.collections4.KeyValue;
+import io.inversion.utils.KeyValue;
 import org.apache.commons.collections4.ListValuedMap;
 import org.apache.commons.collections4.keyvalue.DefaultKeyValue;
 import org.apache.commons.collections4.map.MultiKeyMap;
-import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import io.inversion.utils.ListMap;
 
 import java.util.*;
 
@@ -467,7 +467,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A>  {
                         String parentEk = getResourceKey(collection, parentObj);
                         String childEk  = getForeignKey(rel, parentObj);
                         if (childEk != null) {
-                            relatedEks.add(new DefaultKeyValue(parentEk, childEk));
+                            relatedEks.add(new KeyValue(parentEk, childEk));
                         }
                     }
                 } else if (rel.isOneToMany()) {
@@ -482,7 +482,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A>  {
                         String parentEk = getResourceKey(collection, parentObj);
                         String childEk  = parentEk; //TODO: this will not work if the columns are not in the same order
                         if (childEk != null) {
-                            relatedEks.add(new DefaultKeyValue(parentEk, childEk));
+                            relatedEks.add(new KeyValue(parentEk, childEk));
                         }
                     }
                 }
@@ -492,7 +492,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A>  {
                         String parentEk = getResourceKey(collection, parentObj);
                         String childEk  = parentEk; //TODO: this will not work if the columns are not in the same order
                         if (childEk != null) {
-                            relatedEks.add(new DefaultKeyValue(parentEk, childEk));
+                            relatedEks.add(new KeyValue(parentEk, childEk));
                         }
                     }
                 }
@@ -519,7 +519,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A>  {
                 }
 
                 List                          unfetchedChildEks = new ArrayList<>();
-                ListValuedMap<String, String> fkCache           = new ArrayListValuedHashMap<>();
+                ListMap<String, String> fkCache           = new ListMap<>();
 
                 for (KeyValue<String, String> row : relatedEks) {
                     //the values in the many_to_many link table may have different names than the target columns so you have to
@@ -612,7 +612,7 @@ public class DbGetAction<A extends DbGetAction> extends Action<A>  {
             String parentEk  = Collection.encodeKey(idxToMatchVals);
             String relatedEk = Collection.encodeKey(idxToRetrieveVals);
 
-            related.add(new DefaultKeyValue<>(parentEk, relatedEk));
+            related.add(new KeyValue<>(parentEk, relatedEk));
         }
 
         return related;
