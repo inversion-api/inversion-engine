@@ -1,6 +1,10 @@
 dependencies {
 
-    api "com.microsoft.azure:azure-documentdb:${azureCosmosVersion}"
+    api ("com.microsoft.azure:azure-documentdb:${azureCosmosVersion}") {
+        exclude group: "org.json", module: "json"
+    }
+
+    api "org.json:json:20240303"
     api project(':inversion-api')
     api project(':inversion-jdbc')
 

@@ -6,7 +6,9 @@ dependencies {
     api group: "ch.qos.logback", name: "logback-classic", version: "${logbackVersion}"
 
     api group: "org.apache.commons", name: "commons-configuration2", version: "${commonsConfiguration2Version}"
-    api group: "commons-beanutils", name: "commons-beanutils", version: "${commonsBeanUtilsVersion}"
+    api (group: "commons-beanutils", name: "commons-beanutils", version: "${commonsBeanUtilsVersion}") {
+        exclude group: 'commons-collections', module: 'commons-collections'
+    }
     api group: "org.apache.commons", name: "commons-collections4", version: "${commonsCollections4Version}"
     api group: "org.apache.commons", name: "commons-lang3", version: "${commonsLang3Version}"
     api group: "org.apache.commons", name: "commons-csv", version: "${commonsCsvVersion}"
