@@ -8,8 +8,9 @@ stages:
 - name: snapshot
   if: branch = master AND type IN (push)
 - name: release
-  if: "(branch = release-0.7.x OR branch = release-0.8.x OR branch = release-0.9.x)
-    AND type IN (push)"
+  if: >-
+    (branch = release-0.7.x OR branch = release-0.8.x OR branch = release-0.9.x OR branch =~ ^release-0\.9\..*-security-fix-.*$) 
+    AND type IN (push)
 jobs:
   include:
   - stage: build
