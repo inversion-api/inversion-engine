@@ -16,8 +16,9 @@
  */
 package io.inversion.cosmosdb;
 
-import com.microsoft.azure.documentdb.*;
-import io.inversion.Index;
+import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.models.*;
+import com.azure.cosmos.util.CosmosPagedIterable;
 import io.inversion.*;
 import io.inversion.jdbc.SqlQuery;
 import io.inversion.rql.Order.Sort;
@@ -28,7 +29,9 @@ import io.inversion.utils.Utils;
 import org.apache.commons.collections4.KeyValue;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @see <a href="https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started">SQL Queries for Cosmos</a>
@@ -70,13 +73,11 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         Results<JSNode> results = new Results(this);
         CosmosDb        db      = getDb();
 
-        String collectionUri = db.getCollectionUri(collection);
-
         String sql = getPreparedStmt();
         sql = sql.replaceAll("\r", "");
         sql = sql.replaceAll("\n", " ");
 
-        SqlParameterCollection params = new SqlParameterCollection();
+        List<SqlParameter> params = new ArrayList<>();
         for (int i = 0; i < values.size(); i++) {
             KeyValue kv      = values.get(i);
             String   varName = asVariableName(i);
@@ -84,7 +85,7 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         }
 
         SqlQuerySpec querySpec = new SqlQuerySpec(sql, params);
-        FeedOptions  options   = new FeedOptions();
+        CosmosQueryRequestOptions options   = new CosmosQueryRequestOptions();
 
         Object partKey    = null;
         String partKeyCol;
@@ -113,17 +114,16 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         boolean partKeyMissing = false;
         if (partKey != null) {
             partKey = getDb().castJsonInput(partKeyIdx.getProperty(0), partKey);
-            options.setEnableCrossPartitionQuery(false);
             options.setPartitionKey(new PartitionKey(partKey));
         } else {
             if (getDb() != null && !getDb().isAllowCrossPartitionQueries())
                 partKeyMissing = true;
-
-            options.setEnableCrossPartitionQuery(true);
         }
 
         //-- for test cases and query explain
-        String debug = "CosmosDb: SqlQuerySpec=" + querySpec.toJson() + " FeedOptions={enableCrossPartitionQuery=" + (partKey == null) + "}";
+        String debug = "CosmosDb: SqlQuerySpec=" + querySpec.getQueryText() +
+                " Parameters=" + querySpec.getParameters().stream().map(param -> Collections.singletonMap(param.getName(), param.getValue(Object.class))).collect(Collectors.toList()) +
+                " CosmosQueryRequestOptions={enableCrossPartitionQuery=" + (partKey == null) + "}";
         debug = debug.replaceAll("\r", "");
         debug = debug.replaceAll("\n", " ");
         debug = debug.replaceAll(" +", " ");
@@ -136,30 +136,31 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         //-- end test case debug stuff
 
         if (!isDryRun()) {
-            DocumentClient         cosmos = db.getDocumentClient();
-            FeedResponse<Document> queryResults;
+            CosmosClient cosmos = db.getCosmosClient();
+            CosmosPagedIterable<String> queryResults;
             try {
-                queryResults = cosmos.queryDocuments(collectionUri, querySpec, options);
+                queryResults = cosmos.getDatabase(db.db).getContainer(collection.getTableName()).queryItems(querySpec, options, String.class);
             } catch (Exception ex) {
                 throw ApiException.new500InternalServerError(Utils.getCause(ex).getMessage());
             }
 
-            for (Document doc : queryResults.getQueryIterable()) {
-                String json = doc.toJson();
-                JSNode node = JSNode.parseJsonNode(json);
+            for (FeedResponse<String> page : queryResults.iterableByPage()) {
+                for (String resultJson : page.getResults()) {
+                    JSNode node = JSNode.parseJsonNode(resultJson);
 
-                //-- removes all cosmos applied system keys that start with "_"
-                //-- TODO: might want to make this a configuration option and/or
-                //-- specifically blacklist known cosmos keys as this algorithm
-                //-- will delete any _ prefixed property even if it was supplied
-                //-- by the user
-                for (String key : node.keySet()) {
-                    if (key.startsWith("_"))
-                        node.remove(key);
+                    //-- removes all cosmos applied system keys that start with "_"
+                    //-- TODO: might want to make this a configuration option and/or
+                    //-- specifically blacklist known cosmos keys as this algorithm
+                    //-- will delete any _ prefixed property even if it was supplied
+                    //-- by the user
+                    for (String key : node.keySet()) {
+                        if (key.startsWith("_"))
+                            node.remove(key);
+                    }
+                    //-- the JSON returned from cosmos looks crazy, keys are all jumbled up.
+                    node.sortKeys();
+                    results.withRow(node);
                 }
-                //-- the JSON returned from cosmos looks crazy, keys are all jumbled up.
-                node.sortKeys();
-                results.withRow(node);
 
             }
         }

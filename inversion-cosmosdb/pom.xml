@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-cosmosdb</artifactId>
-  <version>0.9.27.2</version>
+  <version>0.9.27.2.1</version>
   <name>inversion-cosmosdb</name>
   <description>Inversion Cloud API Engine</description>
   <url>https://inversion.io</url>
@@ -34,21 +34,21 @@
   </scm>
   <dependencies>
     <dependency>
-      <groupId>com.microsoft.azure</groupId>
-      <artifactId>azure-documentdb</artifactId>
-      <version>2.6.0</version>
+      <groupId>com.azure</groupId>
+      <artifactId>azure-cosmos</artifactId>
+      <version>4.63.3</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-api</artifactId>
-      <version>0.9.27.2</version>
+      <version>0.9.27.2.1</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-jdbc</artifactId>
-      <version>0.9.27.2</version>
+      <version>0.9.27.2.1</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
