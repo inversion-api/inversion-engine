@@ -19,6 +19,8 @@ package io.inversion.cosmosdb;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.inversion.*;
 import io.inversion.jdbc.SqlQuery;
 import io.inversion.rql.Order.Sort;
@@ -137,16 +139,21 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
 
         if (!isDryRun()) {
             CosmosClient cosmos = db.getCosmosClient();
-            CosmosPagedIterable<String> queryResults;
+            CosmosPagedIterable<Object> queryResults;
             try {
-                queryResults = cosmos.getDatabase(db.db).getContainer(collection.getTableName()).queryItems(querySpec, options, String.class);
+                queryResults = cosmos.getDatabase(db.db).getContainer(collection.getTableName()).queryItems(querySpec, options, Object.class);
             } catch (Exception ex) {
                 throw ApiException.new500InternalServerError(Utils.getCause(ex).getMessage());
             }
 
-            for (FeedResponse<String> page : queryResults.iterableByPage()) {
-                for (String resultJson : page.getResults()) {
-                    JSNode node = JSNode.parseJsonNode(resultJson);
+            for (FeedResponse<Object> page : queryResults.iterableByPage()) {
+                for (Object result : page.getResults()) {
+                    JSNode node = null;
+                    try {
+                        node = JSNode.parseJsonNode(new ObjectMapper().writeValueAsString(result));
+                    } catch (JsonProcessingException ex) {
+                        throw ApiException.new500InternalServerError(Utils.getCause(ex).getMessage());
+                    }
 
                     //-- removes all cosmos applied system keys that start with "_"
                     //-- TODO: might want to make this a configuration option and/or

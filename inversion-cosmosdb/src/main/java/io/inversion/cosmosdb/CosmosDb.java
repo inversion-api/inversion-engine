@@ -23,8 +23,8 @@ import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.models.CosmosItemRequestOptions;
 import com.azure.cosmos.models.CosmosItemResponse;
 import com.azure.cosmos.models.PartitionKey;
-import com.azure.json.JsonProviders;
-import com.azure.json.models.JsonObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.inversion.*;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
@@ -70,6 +70,7 @@ public class CosmosDb extends Db<CosmosDb> {
         return new CosmosClientBuilder()
                 .endpoint(uri)
                 .key(key)
+                .contentResponseOnWriteEnabled(true)
                 .consistencyLevel(ConsistencyLevel.SESSION)
                 .buildClient();
     }
@@ -198,12 +199,12 @@ public class CosmosDb extends Db<CosmosDb> {
             }
 
             String json = doc.toString();
-            JsonObject itemJsonObject = JsonObject.fromJson(JsonProviders.createReader(json));
+            JsonNode itemJsonObject = new ObjectMapper().readTree(json);
 
             String debug = "CosmosDb: Insert " + json;
             Chain.debug(debug);
 
-            CosmosItemResponse<JsonObject> response = getCosmosClient().getDatabase(db).getContainer(collection.getTableName())
+            CosmosItemResponse<JsonNode> response = getCosmosClient().getDatabase(db).getContainer(collection.getTableName())
                     .upsertItem(itemJsonObject, new CosmosItemRequestOptions());
 
             int statusCode = response.getStatusCode();
@@ -211,7 +212,7 @@ public class CosmosDb extends Db<CosmosDb> {
                 throw ApiException.new400BadRequest("Unexpected http status code returned from database: '{}'", statusCode);
             }
 
-            String returnedId = String.valueOf(response.getItem().getProperty("id"));
+            String returnedId = response.getItem().get("id").asText();
             if (!Utils.equal(id, returnedId))
                 throw ApiException.new500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '{}' vs. '{}'", id, returnedId);
 
