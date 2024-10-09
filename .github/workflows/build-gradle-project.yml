@@ -9,7 +9,7 @@ name: Build Gradle project
 
 on:
   push:
-    branches: [ "main", "release-*"]
+    branches: [ "release-*"]
 #  pull_request:
 #    branches: [ "main", "release-*"]
 
@@ -26,10 +26,10 @@ jobs:
         uses: gradle/gradle-build-action@v2
       - name: Execute Gradle build
         run: ./gradlew build
-#      - name: Publish to Sonotype and OSSRH
-          #        run: |
-          #          cat <(echo -e "${{ secrets.OSSRH_SIGNING }}") >> gradle.properties
-#          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
+      - name: Publish to Sonotype and OSSRH
+        run: |
+          cat <(echo -e "${{ secrets.OSSRH_SIGNING }}") >> gradle.properties
+          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
 
 #        if: ${{github.event_name == 'push' && startsWith(github.ref, 'release-')}}
 #          ./gradlew --stacktrace -DsonatypeUsername=$SONATYPE_USERNAME -DsonatypePassword=$SONATYPE_PASSWORD publishToSonatype closeAndReleaseSonatypeStagingRepository
