@@ -32,8 +32,8 @@ jobs:
         run: |
           echo -e "\n" >> gradle.properties
           echo -e "signingKey=$SIGNING_KEY" >> gradle.properties
-#          echo -e "signingKeyId=$SIGNING_KEY_ID" >> gradle.properties
-#          echo -e "signingKeyPassword=$SIGNING_PASSWORD" >> gradle.properties
+          echo -e "signingKeyId=$SIGNING_KEY_ID" >> gradle.properties
+          echo -e "signingKeyPassword=$SIGNING_PASSWORD" >> gradle.properties
 #          cat <(echo -e "${{ secrets.OSSRH_SIGNING }}") >> gradle.properties
 #          ./gradlew  --stacktrace sign
 #          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
