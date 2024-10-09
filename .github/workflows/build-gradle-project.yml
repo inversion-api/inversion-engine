@@ -24,14 +24,13 @@ jobs:
         uses: gradle/gradle-build-action@v2
       - name: Execute Gradle build
         run: ./gradlew build
-#
-#      - name: Publish to Sonotype and OSSRH
-#        env:
-#          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+      - name: Publish to Sonotype and OSSRH
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
 #          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
 #          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
-#        run: |
-#          echo -e "\n" >> gradle.properties
+        run: |
+          echo -e "\n" >> gradle.properties
 #          echo -e "signingKey=$SIGNING_KEY" >> gradle.properties
 #          echo -e "signingKeyId=$SIGNING_KEY_ID" >> gradle.properties
 #          echo -e "signingKeyPassword=$SIGNING_PASSWORD" >> gradle.properties
