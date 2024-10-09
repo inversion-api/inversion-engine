@@ -26,6 +26,7 @@ jobs:
         run: ./gradlew build
       - name: Publish to Sonotype and OSSRH
         run: |
+          echo -e "\n" >> gradle.properties
           cat <(echo -e "${{ secrets.OSSRH_SIGNING }}") >> gradle.properties
           ./gradlew sign
 #          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
