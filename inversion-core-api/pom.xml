@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.inversion</groupId>
   <artifactId>inversion-core-api</artifactId>
-  <version>1.0.0.beta1</version>
+  <version>1.0.0.beta4</version>
   <name>inversion-core-api</name>
   <description>Inversion Cloud API Engine</description>
   <url>https://inversion.io</url>
@@ -36,31 +36,31 @@
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-core-config</artifactId>
-      <version>1.0.0.beta1</version>
+      <version>1.0.0.beta4</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-core-context</artifactId>
-      <version>1.0.0.beta1</version>
+      <version>1.0.0.beta4</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-core-json</artifactId>
-      <version>1.0.0.beta1</version>
+      <version>1.0.0.beta4</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-core-rql</artifactId>
-      <version>1.0.0.beta1</version>
+      <version>1.0.0.beta4</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>io.inversion</groupId>
       <artifactId>inversion-core-utils</artifactId>
-      <version>1.0.0.beta1</version>
+      <version>1.0.0.beta4</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

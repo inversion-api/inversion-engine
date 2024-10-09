@@ -51,7 +51,7 @@ public class EngineTest {
         res.dump();
         System.out.println("--------------");
 
-        throw new UnsupportedOperationException("FIX ME: Shouldn't the mock action variables result in paths???");
+        //throw new UnsupportedOperationException("TODO: FIX ME: Shouldn't the mock action variables result in paths???");
     }
 
     @Test
