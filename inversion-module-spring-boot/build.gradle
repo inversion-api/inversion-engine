@@ -1,6 +1,6 @@
 dependencies {
 
-	implementation project(':inversion-core-api')
+	api project(':inversion-core-api')
 	implementation project(':inversion-module-servlet')
 
 
