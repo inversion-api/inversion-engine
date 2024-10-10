@@ -1,8 +1,8 @@
 rootProject.name = 'inversion'
 
-include 'inversion-core-utils'
 
-/*include 'inversion-core-api'
+
+include 'inversion-core-api'
 include 'inversion-core-config'
 include 'inversion-core-context'
 include 'inversion-core-json'
@@ -28,4 +28,3 @@ include 'inversion-incubator-elasticsearch'
 include 'inversion-incubator-aws-kinesis'
 include 'inversion-incubator-openapi'
 include 'inversion-incubator-redis'
-*/

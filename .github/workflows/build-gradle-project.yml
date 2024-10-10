@@ -31,12 +31,5 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.OSSRH_SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_SONOTYPE_USERNAME }}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_SONOTYPE_PASSWORD }}
-        run: |
-          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
-#        env:
-#          OSSRH_SIGNING: ${{ secrets.OSSRH_SIGNING }}
 #        run: |
-#          echo -e "\n#START CICD VARS" >> gradle.properties
-#          echo $OSSRH_SIGNING | base64 -d >> gradle.properties
-#          echo -e "#END CICD VARS" >> gradle.properties
 #          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
