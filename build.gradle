@@ -156,7 +156,10 @@ subprojects {
 
     //causes a new ${subpoject}/pom.xml file to be generated after each build
     gradle.buildFinished { buildResult ->
-        tasks.generatePomFileForMavenJavaPublication.doGenerate()
+        if (Boolean.valueOf(System.getProperty("release"))) {
+            tasks.generatePomFileForMavenJavaPublication.doGenerate()
+        }
+
     }
     project.getGradle().getTaskGraph().whenReady {
         tasks.withType(GenerateMavenPom.class) {
