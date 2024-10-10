@@ -10,8 +10,6 @@ name: Build Gradle project
 on:
   push:
     branches: [ "release-*"]
-#  pull_request:
-#    branches: [ "main", "release-*"]
 
 jobs:
   build-gradle-project:
@@ -27,21 +25,11 @@ jobs:
       - name: Execute Gradle build
         run: ./gradlew build
       - name: Publish to Sonotype and OSSRH
-        run: |
-          cat <(echo -e "${{ secrets.OSSRH_SIGNING }}") >> gradle.properties
-          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
-
-#        if: ${{github.event_name == 'push' && startsWith(github.ref, 'release-')}}
-#          ./gradlew --stacktrace -DsonatypeUsername=$SONATYPE_USERNAME -DsonatypePassword=$SONATYPE_PASSWORD publishToSonatype closeAndReleaseSonatypeStagingRepository
-
+        env:
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.OSSRH_SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingKeyId: ${{ secrets.OSSRH_SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.OSSRH_SIGNING_PASSWORD }}
+          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_SONOTYPE_USERNAME }}
+          ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_SONOTYPE_PASSWORD }}
 #        run: |
-#          cat <(echo -e "${{ secrets.OSSRH_GPG_SECRET_KEY }}") | gpg --batch --import
-#         gpg --list-secret-keys --keyid-format LONG  #uncomment this to verify in the action output that the cert installed correctly
-#          ./gradlew --stacktrace -DsontypeUsername=$SONATYPE_USERNAME -DsonatypePassword=$SONATYPE_PASSWORD publishToSonatype closeAndReleaseSonatypeStagingRepository
-
-#      - name: Publish to Sonotype / OSSRH
-#        env:
-#          SONATYPE_USERNAME: ${{ secrets.$SONATYPE_USERNAME }}
-#          SONATYPE_PASSWORD: ${{ secrets.$SONATYPE_PASSWORD }}
-#        if: ${{github.event_name == 'push' && contains(github.ref, 'release')}}
-#        run:
+#          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
