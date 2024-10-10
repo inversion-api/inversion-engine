@@ -31,5 +31,5 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.OSSRH_SIGNING_PASSWORD }}
           ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.OSSRH_SONOTYPE_USERNAME }}
           ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.OSSRH_SONOTYPE_PASSWORD }}
-#        run: |
-#          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
+        run: |
+          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository
