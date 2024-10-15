@@ -134,6 +134,48 @@ public class Chain {
         return buildLink(collection, null, null);
     }
 
+    @Deprecated
+    public static String buildLink(String collectionKey, String entityKey)
+    {
+        Request req = Chain.peek().getRequest();
+        String url = req.getUrl().toString();
+        if (url.indexOf("?") >= 0)
+            url = url.substring(0, url.indexOf("?"));
+
+        if (req.getSubCollectionKey() != null)
+        {
+            url = url.substring(0, url.lastIndexOf("/"));
+        }
+
+        if (req.getEntityKey() != null)
+        {
+            url = url.substring(0, url.lastIndexOf("/"));
+        }
+
+        if (collectionKey != null && req.getCollectionKey() != null)
+        {
+            url = url.substring(0, url.lastIndexOf("/"));
+        }
+
+        if (collectionKey != null)
+            url += "/" + collectionKey;
+
+        if (entityKey != null)
+            url += "/" + entityKey;
+
+        if (req.getApi().getUrl() != null && !url.startsWith(req.getApi().getUrl()))
+        {
+            String newUrl = req.getApi().getUrl();
+            while (newUrl.endsWith("/"))
+                newUrl = newUrl.substring(0, newUrl.length() - 1);
+
+            url = newUrl + url.substring(url.indexOf("/", 8));
+        }
+
+        return url;
+    }
+
+
     public static String buildLink(Collection collection, Object resourceKey, String subCollectionKey) {
         Request req = top().getRequest();
 

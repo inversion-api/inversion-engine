@@ -469,6 +469,26 @@ public class Request {
         return url.getProtocol() + "://" + url.getHost() + (url.getPort() > 0 ? ":" + url.getPort() : "") + "/" + apiPath;
     }
 
+    /**
+     * @deprecated  Replaced by {@link Url#getParam(String)}
+     */
+    @Deprecated
+    public String getParam(String name)
+    {
+        return url.getParam(name);
+    }
+
+    /**
+     * @deprecated  Replaced by {@link Url#getQueryString()}
+     */
+    @Deprecated
+    public String getQuery()
+    {
+        return url.getQuery();
+    }
+
+
+
     public Path getApiPath() {
         return apiPath;
     }
