@@ -1,6 +1,6 @@
 dependencies {
 
-    compile "com.microsoft.azure:azure-documentdb:${azureSdkVersion}"
+    compile "com.azure:azure-cosmos:${azureSdkVersion}"
     compile project(':inversion-api')
     compile project(':inversion-jdbc')
 

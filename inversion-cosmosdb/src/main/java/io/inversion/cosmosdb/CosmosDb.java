@@ -16,7 +16,14 @@
  */
 package io.inversion.cosmosdb;
 
-import com.microsoft.azure.documentdb.*;
+import com.azure.cosmos.ConsistencyLevel;
+import com.azure.cosmos.CosmosClient;
+import com.azure.cosmos.CosmosClientBuilder;
+import com.azure.cosmos.CosmosException;
+import com.azure.cosmos.implementation.Document;
+import com.azure.cosmos.models.CosmosItemRequestOptions;
+import com.azure.cosmos.models.CosmosItemResponse;
+import com.azure.cosmos.models.PartitionKey;
 import io.inversion.*;
 import io.inversion.rql.Term;
 import io.inversion.utils.JSNode;
@@ -34,7 +41,7 @@ public class CosmosDb extends Db<CosmosDb> {
 
     boolean allowCrossPartitionQueries = false;
 
-    transient protected DocumentClient documentClient = null;
+    transient protected CosmosClient cosmosClient = null;
 
     public CosmosDb() {
         this.withType("cosmosdb");
@@ -99,14 +106,15 @@ public class CosmosDb extends Db<CosmosDb> {
             String debug = "CosmosDb: Insert " + json;
             Chain.debug(debug);
 
-            ResourceResponse<Document> response = getDocumentClient().upsertDocument(cosmosCollectionUri, document, new RequestOptions(), true);
+            CosmosItemResponse<Document> response = getCosmosClient().getDatabase(db).getContainer(table.getTableName())
+                    .upsertItem(document, new CosmosItemRequestOptions());
 
             int statusCode = response.getStatusCode();
             if (statusCode > 299) {
                 ApiException.throw400BadRequest("Unexpected http status code returned from database: '{}'", statusCode);
             }
 
-            String returnedId = response.getResource().getId();
+            String returnedId = response.getItem().getId();
             if (!Utils.equal(id, returnedId))
                 ApiException.throw500InternalServerError("The supplied 'id' field does not match the returned 'id' field: '{}' vs. '{}'", id, returnedId);
 
@@ -140,19 +148,17 @@ public class CosmosDb extends Db<CosmosDb> {
         Object partitionKeyValue = indexValues.get(table.getIndex("PartitionKey").getProperty(0).getColumnName());
         String documentUri       = "/dbs/" + db + "/colls/" + table.getTableName() + "/docs/" + id;
 
-        RequestOptions options = new RequestOptions();
-        options.setPartitionKey(new PartitionKey(partitionKeyValue));
-
-        ResourceResponse<Document> response = null;
+        CosmosItemResponse<Object> response;
         try {
             Chain.debug("CosmosDb: Delete documentUri=" + documentUri + "partitionKeyValue=" + partitionKeyValue);
-            response = getDocumentClient().deleteDocument(documentUri, options);
+            response = getCosmosClient().getDatabase(db).getContainer(table.getTableName())
+                    .deleteItem(String.valueOf(id), new PartitionKey(partitionKeyValue), new CosmosItemRequestOptions());
 
             int statusCode = response.getStatusCode();
             if (statusCode >= 400) {
                 ApiException.throw500InternalServerError("Unexpected http status code returned from database: {}", statusCode);
             }
-        } catch (DocumentClientException ex) {
+        } catch (CosmosException ex) {
             ex.printStackTrace();
             int statusCode = ex.getStatusCode();
             if (statusCode == 404) {
@@ -204,24 +210,24 @@ public class CosmosDb extends Db<CosmosDb> {
         return this;
     }
 
-    public synchronized CosmosDb withDocumentClient(DocumentClient documentClient) {
-        this.documentClient = documentClient;
+    public synchronized CosmosDb withCosmosClient(CosmosClient documentClient) {
+        this.cosmosClient = documentClient;
         return this;
     }
 
-    public DocumentClient getDocumentClient() {
-        if (this.documentClient == null) {
+    public CosmosClient getCosmosClient() {
+        if (this.cosmosClient == null) {
             synchronized (this) {
-                if (this.documentClient == null) {
-                    this.documentClient = buildDocumentClient(uri, key);
+                if (this.cosmosClient == null) {
+                    this.cosmosClient = buildDocumentClient(uri, key);
                 }
             }
         }
 
-        return documentClient;
+        return cosmosClient;
     }
 
-    public static DocumentClient buildDocumentClient(String uri, String key) {
+    public static CosmosClient buildDocumentClient(String uri, String key) {
         if (Utils.empty(uri) || Utils.empty(key)) {
             String error = "";
             error += "Unable to connect to Cosmos DB because conf values for 'uri' or 'key' can not be found. ";
@@ -233,8 +239,12 @@ public class CosmosDb extends Db<CosmosDb> {
             ApiException.throw500InternalServerError(error);
         }
 
-        DocumentClient client = new DocumentClient(uri, key, ConnectionPolicy.GetDefault(), ConsistencyLevel.Session);
-        return client;
+        return new CosmosClientBuilder()
+                .endpoint(uri)
+                .key(key)
+                .consistencyLevel(ConsistencyLevel.SESSION)
+                .contentResponseOnWriteEnabled(true)
+                .buildClient();
     }
 
 }
