@@ -18,13 +18,16 @@ package io.inversion.cosmosdb;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosContainer;
 import com.azure.cosmos.implementation.Document;
 import com.azure.cosmos.models.*;
 import com.azure.cosmos.util.CosmosPagedIterable;
+import io.inversion.utils.JSArray;
 import org.apache.commons.collections4.KeyValue;
 
 import io.inversion.ApiException;
@@ -38,6 +41,7 @@ import io.inversion.rql.Term;
 import io.inversion.rql.Where;
 import io.inversion.utils.JSNode;
 import io.inversion.utils.Utils;
+import org.h2.util.json.JSONObject;
 
 /**
  * @see https://docs.microsoft.com/en-us/azure/cosmos-db/sql-query-getting-started
@@ -123,7 +127,9 @@ public class CosmosSqlQuery extends SqlQuery<CosmosDb> {
         }
 
         //-- for test cases and query explain
-        String debug = "CosmosDb: SqlQuerySpec=" + querySpec.getQueryText() + " FeedOptions={enableCrossPartitionQuery=" + (partKey == null) + "}";
+        String debug = "CosmosDb: SqlQuerySpec=" + querySpec.getQueryText() +
+                " Parameters=" + querySpec.getParameters().stream().map(param -> Collections.singletonMap(param.getName(), param.getValue(Object.class))).collect(Collectors.toList()) +
+                " CosmosQueryRequestOptions={enableCrossPartitionQuery=" + (partKey == null) + "}";
         debug = debug.replaceAll("\r", "");
         debug = debug.replaceAll("\n", " ");
         debug = debug.replaceAll(" +", " ");
