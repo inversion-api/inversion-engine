@@ -1,17 +1,17 @@
 /**
  * This is a gradle multi project build that works with Travis CI to publish:
  *
- *   - Github master branch commits as snapshot builds to oss.jfrog.org 
+ *   - Github master branch commits as snapshot builds to oss.jfrog.org
  *     (aka OJO found @ https://oss.jfrog.org/artifactory/oss-snapshot-local/)
- *       
+ *
  *   - Github release-x.x.x branch commits as releases to the inversion
  *     bintray repo which syncs with jcenter
- *           
- * We are using two different repos because at the time of writing, bintray 
- * did not accept snapshots and OJO is their specific solution to hosting snapshots.  
- * 
+ *
+ * We are using two different repos because at the time of writing, bintray
+ * did not accept snapshots and OJO is their specific solution to hosting snapshots.
+ *
  * Both the bintray and artifactory plugins have had varing support for
- * different gradle versions and gradle multi project builds specifically.  
+ * different gradle versions and gradle multi project builds specifically.
  * Most of the OJO examples around the web are for single projects what
  * works for bintray in mutli projects does not work exactly the same way for
  * artifactory.
@@ -22,12 +22,12 @@
  *
  *  - OJO Repo - https://oss.jfrog.org/artifactory/oss-snapshot-local/io/inversion/
  *             - https://oss.jfrog.org/artifactory/webapp/#/artifacts/browse/tree/General/oss-snapshot-local/io/inversion/
- * 
+ *
  *  - JCenter mirror - https://jcenter.bintray.com/io/inversion/
  *
  * Projects that want to pull both releases and snapshot dependencies should include the
  * following repos in their gradle config:
- *    
+ *
  *  repositories {
  *		jcenter()
  *		maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local' }
@@ -45,7 +45,7 @@
  *   - https://stackoverflow.com/questions/35851251/gradle-artifactory-plugin-how-to-publish-artifacts-from-multiple-modules-in-a
  *
  */
- 
+
 
 
 buildscript {
@@ -53,19 +53,20 @@ buildscript {
         jcenter()
         mavenLocal()
 		mavenCentral()
+		maven { url "https://repo.grails.org/grails/core/" }
     }
 
     dependencies {
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4"
-        
+
         //WARNING artifactory plugin 4.13.0 was the lastest as of 1/8/20
         //but artifactoryPublish was hanging, never completing.  Downgrading
         //seemed to fix the problem
-        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.10.0"
-        
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.29.2"
+
         classpath 'com.netflix.nebula:gradle-aggregate-javadocs-plugin:2.2.+'
     }
-    
+
     configurations.classpath {
         resolutionStrategy {
             cacheDynamicVersionsFor 0, 'seconds'
@@ -89,11 +90,11 @@ def buildNumber = System.getProperty("build.number")
  * The gradle-aggregate-javadocs-plugin generates a combined
  * javadoc for all subprojects but as of this writing, the
  * plugin did not seem to offer the ability to change the output
- * directory.  Running 'allJavadocs' instead of 'aggregateJavadocs' 
+ * directory.  Running 'allJavadocs' instead of 'aggregateJavadocs'
  * will generate the combined docs and put them into /docs/javadoc
  * where they can be checked into github and served up from
  * github pages.
- */ 
+ */
 task allJavadocs {
     dependsOn 'aggregateJavadocs'
     doLast {
@@ -102,40 +103,40 @@ task allJavadocs {
     }
 }
 
-tasks.withType(Javadoc) { 
+tasks.withType(Javadoc) {
 	failOnError false
 	title = "Inversion Cloud API Engine - " + project.version
  }
-	 
-//regenerate javadocs after a build	
+
+//regenerate javadocs after a build
 build.finalizedBy(allJavadocs)
-	
+
 allprojects {
 
 	apply plugin: 'com.jfrog.artifactory'
 	group = 'io.inversion'
 	def isSnapshot = Boolean.valueOf(System.getProperty("snapshot"))
 	project.version = project.version + (isSnapshot ? "-SNAPSHOT" : "")
-	
+
 	//required for generating comprehensive javadocs with
 	//gradle-aggregate-javadocs-plugin and not failing on error
-	
-	tasks.withType(Javadoc) { 
+
+	tasks.withType(Javadoc) {
 		failOnError false
 		options.bottom = "Copyright &#169; ${java.time.Year.now()} <a href=\"http://rocketpartners.io\">Rocket Partners, LLC</a>. All rights reserved."
 	 }
-	    
+
 }
 
 subprojects {
-	
+
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
     apply plugin: 'com.jfrog.bintray'
-    
+
     sourceCompatibility = 1.8
 	targetCompatibility = 1.8
-	
+
 	repositories {
 		mavenLocal()
 		mavenCentral()
@@ -143,25 +144,25 @@ subprojects {
 	}
 
 	dependencies {
-	
+
 		testCompile 'org.junit.jupiter:junit-jupiter-engine:5.6.0'
 		//testCompile 'junit:junit:4.12'
 	}
-	
+
 	task sourcesJar(type: Jar) {
 	    from sourceSets.main.allJava
 	    archiveClassifier = 'sources'
 	}
-	
+
 	javadoc.failOnError = false
 	task javadocJar(type: Jar) {
 	    from javadoc
 	    archiveClassifier = 'javadoc'
 	}
-	
+
 	//keeps integration test that require access to external systems
 	//from running as part of the standard CICD pipeline build
-	//run intergration tests via:  ./gradlew test -Dtest.profile=integration 
+	//run intergration tests via:  ./gradlew test -Dtest.profile=integration
 	test {
 		useJUnitPlatform()
   		if (System.properties['test.profile'] != 'integration') {
@@ -180,9 +181,9 @@ subprojects {
 	        destination = file("$buildDir/../pom.xml")
 	    }
 	}
-	
 
-	
+
+
 	publishing {
 	    publications {
 	        mavenJava(MavenPublication) {
@@ -190,8 +191,8 @@ subprojects {
 	            from components.java
 	            artifact sourcesJar
 	            artifact javadocJar
-	            
-	            //-- uncommenting the following will generate poms with concrete  
+
+	            //-- uncommenting the following will generate poms with concrete
 	            //-- version dependencies instead of dynamic depedencies
 	            //-- https://docs.gradle.org/current/userguide/publishing_maven.html
 	            //versionMapping {
@@ -202,7 +203,7 @@ subprojects {
 	            //        fromResolutionResult()
 	            //    }
 	            //}
-	            
+
 	            pom {
 	                name = project.name
 	                description = 'Inversion Cloud API Engine'
@@ -242,17 +243,17 @@ subprojects {
 			websiteUrl = 'http://inversion.io'
 	        issueTrackerUrl = 'https://github.com/inversion-api/inversion-engine/issues'
 	 		vcsUrl = 'https://github.com/inversion-api/inversion-engine.git'
-	
+
 	        licenses = ['Apache-2.0']
 	        labels = ['rest', 'api', 'mysql', 'dynamodb']
-			
+
 			version {
 				name = project.version
 				released  = new Date()
 			}
 		}
 	}
-	
+
 	artifactoryPublish {
         publications(publishing.publications.mavenJava)
     }
@@ -261,7 +262,7 @@ subprojects {
 
 artifactoryPublish.skip=true
 
-	
+
 artifactory {
     contextUrl = 'http://oss.jfrog.org'
     publish {
